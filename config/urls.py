@@ -12,6 +12,8 @@ from django.urls import include, path
 urlpatterns = [
     # Panel de Django: solo trastienda técnica de emergencia para el superadmin (ver diseno.md, apartado 4).
     path("trastienda/", admin.site.urls),
+    # Módulo «usuarios»: entrar, salir y «Mi cuenta».
+    path("cuenta/", include("usuarios.urls")),
     # Módulo «base»: la portada y el escaparate de componentes.
     path("", include("base.urls")),
 ]

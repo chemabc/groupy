@@ -1,0 +1,18 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Mi cuenta → Contraseña». Recibe «formulario» (PasswordChangeForm de Django: contraseña
+  actual y la nueva dos veces) y «cambiada», que es verdadero justo después de cambiarla.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-md">
+  {% if cambiada %}
+    <p class="mb-3 rounded border border-green-300 bg-green-50 p-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300"
+       role="status">Contraseña cambiada. La sesión sigue abierta.</p>
+  {% endif %}
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Cambiar la contraseña</button>
+  </form>
+</div>
+{% endblock %}

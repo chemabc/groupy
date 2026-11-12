@@ -52,7 +52,8 @@ python manage.py check
 python manage.py runserver 0.0.0.0:8000
 ```
 
-Abre http://localhost:8000: debe salir «Gestión de asambleas v2: Django responde.».
+Abre http://localhost:8000: debe salir la pantalla de entrada (antes, crea las tablas y los usuarios
+de ejemplo, como se explica más abajo).
 
 ### Los estilos y las librerías de la interfaz
 
@@ -76,7 +77,22 @@ npm install
 npm run construir
 ```
 
-**No ejecutes `python manage.py migrate` todavía:** el modelo de usuario (`Usuario`) llega en la fase 1.
+### La base de datos y los usuarios de ejemplo
+
+```bash
+# Crea o pone al día las tablas de la base de datos de la plataforma
+#     migrate: aplica las migraciones pendientes de todos los módulos
+python manage.py migrate
+
+# Crea los datos de ejemplo de todos los módulos (solo funciona en desarrollo)
+#     ejemplos: orden del módulo «ejemplos»
+#     crear: crea los que falten; con «borrar» se quitan
+python manage.py ejemplos crear
+```
+
+Los usuarios de ejemplo son animales y árboles (Lince, Nutria, Encina, Roble…). El superadmin es
+**Águila**. Todos tienen la contraseña `M3n0sL3ctiv4s`, y cada cual puede cambiarla en «Mi cuenta →
+Contraseña». Al entrar da igual escribir el alias con o sin tildes y mayúsculas («aguila»).
 
 ## 3. Seguir con Claude
 

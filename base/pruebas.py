@@ -5,13 +5,15 @@ Ayudas para las pruebas de cualquier módulo.
 - contratos_de_prueba: añade módulos de mentira al registro real mientras dura un bloque «with» y
   después lo deja como estaba. Sirve para probar eventos_sw, el menú o los permisos con declaraciones
   inventadas, sin tocar los contratos de los módulos de verdad.
-- PruebaDePantalla: clase de prueba con comprobar_consultas(), la prueba de número de consultas que
-  lleva cada pantalla nueva (ver docs/diseno.md, apartado 3.6).
+- crear_usuario_de_prueba: crea un usuario con el modelo de usuario de la aplicación, sin importarlo.
+- PruebaDePantalla: clase de prueba con la sesión ya iniciada y comprobar_consultas(), la prueba de
+  número de consultas que lleva cada pantalla nueva (ver docs/diseno.md, apartado 3.6).
 """
 
 from contextlib import contextmanager
 
 from django.apps import apps
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from .contrato import Capa, ModuloConfig
@@ -45,15 +47,43 @@ def contratos_de_prueba(*modulos_falsos):
         registro.__dict__.update(copia)
 
 
+# Contraseña de los usuarios que crean las pruebas.
+CONTRASENA_DE_PRUEBA = "contraseña-de-prueba"
+
+
+# Crea y devuelve un usuario de prueba. Usa get_user_model() en lugar de importar «usuarios», porque
+# «base» está en una capa inferior y no puede depender de él.
+#   - nombre: su alias (o lo que el modelo use para entrar).
+#   - otros: más campos del usuario.
+def crear_usuario_de_prueba(nombre="Prueba", **otros):
+    modelo = get_user_model()
+    return modelo._default_manager.create_user(
+        **{modelo.USERNAME_FIELD: nombre}, password=CONTRASENA_DE_PRUEBA, **otros
+    )
+
+
 # Tope de consultas por pantalla del presupuesto de rendimiento (docs/diseno.md, apartado 3.6).
 MAXIMO_DE_CONSULTAS = 15
 
 
 class PruebaDePantalla(TestCase):
     """
-    Clase de la que heredan las pruebas de pantalla. Añade comprobar_consultas(), que mide cuántas
-    consultas a la base de datos hace una pantalla y comprueba el presupuesto de rendimiento.
+    Clase de la que heredan las pruebas de pantalla. Cada prueba empieza con la sesión iniciada como
+    self.usuario (como nada se ve sin sesión, si no, todas las pantallas llevarían a la entrada). Añade
+    comprobar_consultas(), que mide cuántas consultas a la base de datos hace una pantalla y comprueba el
+    presupuesto de rendimiento.
+
+    Si una prueba hija redefine setUpTestData o setUp, debe llamar a super().
     """
+
+    # Una vez para toda la clase: crea el usuario con el que se inicia sesión.
+    @classmethod
+    def setUpTestData(cls):
+        cls.usuario = crear_usuario_de_prueba()
+
+    # Antes de cada prueba: inicia sesión sin pasar por la pantalla de entrada.
+    def setUp(self):
+        self.client.force_login(self.usuario)
 
     # Abre la pantalla y comprueba tres cosas:
     #   1. que hace exactamente «consultas» consultas (así, cualquier cambio en su coste se nota);

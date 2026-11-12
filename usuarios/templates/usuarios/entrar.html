@@ -1,0 +1,20 @@
+{% extends "base/suelta.html" %}
+{% comment %}
+  Pantalla de entrada: alias y contraseña. Recibe «form» (FormularioDeEntrada) y «next», la dirección
+  adonde ir después de entrar.
+{% endcomment %}
+{% block contenido %}
+<h1 class="mb-4 font-semibold">Iniciar sesión</h1>
+<form method="post">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="mb-3 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+  {% endif %}
+  {{ form.username.as_field_group }}
+  {{ form.password.as_field_group }}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button type="submit" class="w-full rounded bg-marca px-3 py-2 text-sm font-medium text-white">Entrar</button>
+</form>
+{% endblock %}

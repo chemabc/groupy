@@ -155,9 +155,9 @@ class PruebasDeTablaEnBaseDeDatos(TestCase):
 class PruebasDeLaPantallaDeComponentes(PruebaDePantalla):
     """Comprueba la pantalla «Inicio → Componentes» y sus respuestas parciales."""
 
-    # No hace ninguna consulta: los datos son inventados y están en memoria.
+    # Solo la consulta del usuario de la sesión: los datos son inventados y están en memoria.
     def test_consultas(self):
-        self.comprobar_consultas("/componentes/", 0, None)
+        self.comprobar_consultas("/componentes/", 1, None)
 
     # La página lleva las dos tablas, cada una en su modo, y el formulario.
     def test_contenido(self):

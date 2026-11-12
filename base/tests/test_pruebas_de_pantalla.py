@@ -17,6 +17,7 @@ class PruebasDeComprobarConsultas(PruebaDePantalla):
 
     # Antes de cada prueba, la lista de filas vuelve a tener una sola fila.
     def setUp(self):
+        super().setUp()
         pantallas_de_prueba.filas[:] = ["primera"]
 
     # Una pantalla con un número fijo de consultas pasa la prueba.
@@ -34,7 +35,8 @@ class PruebasDeComprobarConsultas(PruebaDePantalla):
         with self.assertRaisesMessage(AssertionError, "el presupuesto es de 15"):
             self.comprobar_consultas("/cara/", 16, None)
 
-    # Con las direcciones reales de la aplicación, la portada se mide sin problemas (0 consultas).
+    # Con las direcciones reales de la aplicación, la portada se mide sin problemas (1 consulta: el
+    # usuario de la sesión).
     @override_settings(ROOT_URLCONF="config.urls")
     def test_portada_real(self):
-        self.comprobar_consultas("/", 0, None)
+        self.comprobar_consultas("/", 1, None)

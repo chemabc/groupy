@@ -1,0 +1,30 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Mi cuenta → Preferencias»: botones para elegir el tema, la letra y la densidad. Al pulsar
+  uno, el almacén «preferencias» de base/static/base/interfaz.js aplica el cambio y lo guarda en la
+  cuenta. Recibe «preferencias» (la lista de base/preferencias.py).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-xl">
+  <section x-data class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 font-semibold">Preferencias de presentación</h2>
+    <p class="mb-3 text-sm text-slate-500">Se aplican al momento y se guardan en tu cuenta: te siguen a cualquier dispositivo en el que entres.</p>
+    <dl class="space-y-3 text-sm">
+      {# Cada fila: el nombre de la preferencia y sus opciones como botones. La lista sale de la vista. #}
+      {% for clave, nombre, opciones in preferencias %}
+        <div class="flex flex-wrap items-center gap-2">
+          <dt class="w-24 text-slate-500">{{ nombre }}</dt>
+          <dd class="flex flex-wrap gap-1">
+            {% for valor, nombre_de_opcion in opciones %}
+              <button type="button" class="rounded border px-2 py-1"
+                      data-clave="{{ clave }}" data-valor="{{ valor }}"
+                      :class="$store.preferencias[$el.dataset.clave] === $el.dataset.valor ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'"
+                      @click="$store.preferencias.poner($el.dataset.clave, $el.dataset.valor)">{{ nombre_de_opcion }}</button>
+            {% endfor %}
+          </dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </section>
+</div>
+{% endblock %}

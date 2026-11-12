@@ -4,10 +4,11 @@ Datos comunes que reciben todas las plantillas («procesador de contexto» de Dj
 Django llama a interfaz() en cada página que se pinta (está en TEMPLATES, en config/settings.py) y
 añade lo que devuelve a los datos de la plantilla. Aquí se decide todo lo que la plantilla general solo
 tiene que pintar: el menú, la sección y la vista en las que se está, su ayuda y si se manda la página
-entera o solo la zona central. No hace ninguna consulta a la base de datos: todo sale del registro,
-que está en memoria.
+entera o solo la zona central. No hace ninguna consulta propia: el menú sale del registro, que está en
+memoria, y el alias y las preferencias, del usuario que Django ya ha cargado para la petición.
 """
 
+from .preferencias import CLAVES
 from .registro import registro
 
 # Nombre de la aplicación, para el título de la pestaña del navegador.
@@ -25,6 +26,10 @@ def interfaz(request):
     seccion = camino[-1] if camino else None
     vistas = [{"vista": vista, "activa": vista.url == ruta} for vista in seccion.vistas] if seccion else []
     vista_activa = next((elemento["vista"] for elemento in vistas if elemento["activa"]), None)
+    # Quien ha iniciado sesión. Se usa el usuario de Django sin importar el módulo «usuarios» (que está en
+    # una capa superior): basta con su alias (get_username) y sus preferencias.
+    usuario = getattr(request, "user", None)
+    conectado = usuario is not None and usuario.is_authenticated
     # Título de la pestaña: «Vista · Sección · Asambleas», con lo que haya.
     partes = [vista_activa.nombre if vista_activa else "", seccion.nombre if seccion else "", NOMBRE_DE_LA_APLICACION]
     return {
@@ -39,8 +44,12 @@ def interfaz(request):
             "vistas": vistas,
             "ayuda": registro.ayuda.get(seccion.codigo) if seccion else None,
             "titulo": " · ".join(parte for parte in partes if parte),
-            # Alias de quien ha iniciado sesión. Hasta que exista «usuarios» (fase 1), no hay sesiones.
-            "alias": "Sin sesión",
+            # Si hay alguien con la sesión iniciada, y su alias (arriba, en la cabecera).
+            "conectado": conectado,
+            "alias": usuario.get_username() if conectado else "",
+            # Preferencias guardadas en su cuenta (tema, letra, densidad). La plantilla las pone en <html>
+            # para que la página salga ya con ellas, sin destello. Las vacías no se ponen.
+            "preferencias": {clave: getattr(usuario, clave, "") for clave in CLAVES} if conectado else {},
         }
     }
 

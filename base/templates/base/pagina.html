@@ -4,57 +4,34 @@
   central de base/zona.html. Se manda al cargar la página por primera vez o al recargarla; después, la
   navegación con htmx solo pide la zona central.
 {% endcomment %}
-{% load static %}
-{% block documento %}<!DOCTYPE html>
-<html lang="es" class="h-full">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  {# Ajustes de htmx: sin copia de las páginas para el botón «atrás»; al volver, se piden al servidor. #}
-  <meta name="htmx-config" content='{"historyCacheSize": 0}'>
-  <title>{{ interfaz.titulo }}</title>
-  <script>
-    // Aplica el tema, la letra, la densidad y el plegado del menú guardados ANTES de pintar la página,
-    // para que no se vea un destello claro ni un salto del menú al cargar. Va aquí, dentro de la página,
-    // porque tiene que ejecutarse antes de que exista el cuerpo. Si no hay tema guardado, sigue el del
-    // sistema operativo.
-    (function () {
-      var raiz = document.documentElement;
-      // Lee una preferencia guardada por base/static/base/interfaz.js, o devuelve la de por defecto.
-      function leer(clave, porDefecto) {
-        try { var valor = localStorage.getItem(clave); return valor === null ? porDefecto : JSON.parse(valor); }
-        catch (error) { return porDefecto; }
-      }
-      var temaDelSistema = window.matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro";
-      raiz.dataset.tema = leer("tema", temaDelSistema);
-      raiz.dataset.letra = leer("letra", "normal");
-      raiz.dataset.densidad = leer("densidad", "comoda");
-      raiz.dataset.menu = leer("menu.plegado", false) ? "plegado" : "desplegado";
-    })();
-  </script>
-  <link rel="stylesheet" href="{% static 'generado/estilos.css' %}">
-  {# «defer»: se ejecutan en este orden cuando la página ya está leída. interfaz.js va antes que Alpine. #}
-  <script defer src="{% static 'base/interfaz.js' %}"></script>
-  <script defer src="{% static 'generado/alpine.min.js' %}"></script>
-  <script defer src="{% static 'generado/htmx.min.js' %}"></script>
-</head>
-{# hx-boost: los enlaces de la página se siguen con htmx, que pide solo la zona central y la sustituye. #}
+{% block documento %}{% include "base/cabeza.html" %}
+{# hx-boost: los enlaces y formularios de la página se siguen con htmx, que pide solo la zona central y #}
+{# la sustituye. hx-headers: htmx manda en cada petición la clave contra falsificaciones (CSRF). #}
 <body class="h-full bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100"
-      hx-boost="true" hx-target="#zona" hx-swap="outerHTML scroll:#desplazable:top">
+      hx-boost="true" hx-target="#zona" hx-swap="outerHTML scroll:#desplazable:top"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <div class="flex h-full flex-col">
 
-  {# Cabecera: botón para plegar el menú, nombre de la aplicación, alias y botón del tema #}
+  {# Cabecera: botón para plegar el menú, nombre de la aplicación, alias (lleva a «Mi cuenta»), botón #}
+  {# del tema y botón para salir #}
   <header class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900">
     <button type="button" class="hidden rounded px-1 text-slate-500 hover:bg-slate-100 md:block dark:hover:bg-slate-800"
             title="Plegar o desplegar el menú" aria-label="Plegar o desplegar el menú"
             x-data @click="$dispatch('alternar-menu')">☰</button>
     <a href="{% url 'base:inicio' %}" class="font-semibold text-marca">Asambleas</a>
-    <span class="ml-auto text-xs text-slate-500">{{ interfaz.alias }}</span>
+    <a href="{% url 'usuarios:preferencias' %}" class="ml-auto text-xs text-slate-500 hover:text-marca"
+       title="Mi cuenta">{{ interfaz.alias }}</a>
     <button type="button" class="rounded px-1 hover:bg-slate-100 dark:hover:bg-slate-800"
             title="Cambiar de tema: claro, día (más contraste) u oscuro" aria-label="Cambiar de tema"
             x-data @click="$store.preferencias.siguienteTema()">
       <span x-text="$store.preferencias.iconoDelTema()">☾</span>
     </button>
+    {# Salir: un formulario normal (sin htmx), porque cerrar la sesión debe recargar la página entera. #}
+    <form method="post" action="{% url 'usuarios:salir' %}" hx-boost="false">
+      {% csrf_token %}
+      <button type="submit" class="rounded px-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Cerrar la sesión">Salir</button>
+    </form>
   </header>
 
   <div class="flex min-h-0 flex-1">

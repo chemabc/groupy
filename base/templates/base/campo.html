@@ -20,7 +20,9 @@
     {% endif %}
   </div>
   {% if field.help_text %}
-    <p id="{{ field.auto_id }}_helptext" class="mt-1 text-xs text-slate-500">{{ field.help_text|safe }}</p>
+    {# Un bloque (div) y no un párrafo, porque algunas explicaciones de Django son listas (<ul>), que no #}
+    {# caben dentro de un párrafo. #}
+    <div id="{{ field.auto_id }}_helptext" class="mt-1 text-xs text-slate-500 [&_ul]:list-disc [&_ul]:pl-4">{{ field.help_text|safe }}</div>
   {% endif %}
   {% if field.errors %}
     <div class="mt-1 text-xs text-red-600">{{ field.errors }}</div>

@@ -56,15 +56,13 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 - «Rol» es el nivel fijo (superadmin, admin_org, admin_grupo, usuario); «cometido», la función en algo
   concreto (portavoz, coordinación, facilitación, toma de acta…).
 - Nada es público por defecto: todo nace privado.
-- El modelo de usuario será `usuarios.Usuario` (su nombre visible es el alias): **no ejecutar `migrate`
-  antes de que exista esa app.**
+- El modelo de usuario es `usuarios.Usuario` (su nombre visible es el alias). Nada se ve sin sesión.
 
 ## Estado
 
-- 12 de noviembre de 2026: **fase 0 terminada**. Esqueleto (contenedor, Django y ajustes de rendimiento),
-  contrato de módulo con su registro (`base`), `eventos_sw` (bandeja de salida y orden
-  `procesar_bandeja`), herramienta de medición (debug-toolbar y `comprobar_consultas`), plantilla general
-  (Tailwind, htmx, Alpine, dos menús, tres temas, letra, densidad, ayuda y menú que no salta), tabla
-  filtrable con filtro por columna (`base/tablas.py`), botón «copiar» en todos los formularios y pruebas
-  en el navegador con Playwright. Siguiente paso: la fase 1 (ver
-  docs/diseno.md, apartado 19), empezando por `usuarios`.
+- 12 de noviembre de 2026: **fase 0 terminada** (esqueleto, contrato de módulo, `eventos_sw`, medición,
+  plantilla general, tabla filtrable, botón «copiar» y pruebas en el navegador con Playwright).
+- **Fase 1 en curso** (ver docs/diseno.md, apartado 19). Hecho: `usuarios` (entrar, salir, «Mi cuenta»
+  con preferencias y contraseña) y la orden `python manage.py ejemplos crear` (usuarios de ejemplo:
+  animales y árboles, superadmin «Águila», contraseña `M3n0sL3ctiv4s`). Siguiente: `grupos`, teniendo en
+  cuenta los proyectos conjuntos entre organizaciones (docs/diseno.md, apartado 8.1).

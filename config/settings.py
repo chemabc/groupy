@@ -59,11 +59,24 @@ INSTALLED_APPS = [
     # Capa base
     "base.apps.BaseConfig",
     "eventos_sw.apps.EventosSwConfig",
+    "ejemplos.apps.EjemplosConfig",
+    # Capa de identidad
+    "usuarios.apps.UsuariosConfig",
 ]
 
-# IMPORTANTE: el modelo de usuario será el Usuario (app «usuarios», fase 1). Django exige fijarlo ANTES de
-# crear las tablas por primera vez, así que no se ejecuta «migrate» hasta que exista esa app.
-# AUTH_USER_MODEL = "usuarios.Usuario"
+# Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,
+# que trae nombre, apellidos y correo. Django exige fijarlo antes de crear las tablas por primera vez.
+AUTH_USER_MODEL = "usuarios.Usuario"
+
+# Páginas de entrada y salida: adónde se manda a quien no ha iniciado sesión, adónde va al entrar y
+# adónde al salir. Son nombres de rutas (ver usuarios/urls.py y base/urls.py).
+LOGIN_URL = "usuarios:entrar"
+LOGIN_REDIRECT_URL = "base:inicio"
+LOGOUT_REDIRECT_URL = "usuarios:entrar"
+
+# Dónde se guardan las sesiones: en la caché (Redis) y, por si se vacía, también en la base de datos.
+# Leer la sesión en cada petición no cuesta así ninguna consulta (premisa de rapidez).
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
 # Capas por las que pasa cada petición web antes y después de llegar a la vista (seguridad, sesión,
 # usuario que ha iniciado sesión, mensajes…).
@@ -73,6 +86,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Nada se ve sin iniciar sesión, salvo la pantalla de entrada (ver usuarios/middleware.py).
+    "usuarios.middleware.EntradaObligatoria",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Avisa al navegador de que una misma dirección puede devolver la página entera o solo su zona

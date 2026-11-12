@@ -8,6 +8,7 @@ Simulan dos pantallas con una lista de «filas» (aquí, una lista de Python):
 - /cara/: hace 16 consultas, una más del presupuesto.
 """
 
+from django.contrib.auth.decorators import login_not_required
 from django.db import connection
 from django.http import HttpResponse
 from django.urls import path
@@ -22,7 +23,12 @@ def consulta():
         cursor.execute("SELECT 1")
 
 
+# Las tres pantallas se ven sin sesión (@login_not_required): así no cargan el usuario y solo cuentan
+# sus propias consultas.
+
+
 # Pantalla bien hecha: 2 consultas fijas, como si trajera todas las filas de una vez.
+@login_not_required
 def buena(request):
     consulta()
     consulta()
@@ -30,6 +36,7 @@ def buena(request):
 
 
 # Pantalla mal hecha: 1 consulta fija más 1 por cada fila.
+@login_not_required
 def mala(request):
     consulta()
     for _fila in filas:
@@ -38,6 +45,7 @@ def mala(request):
 
 
 # Pantalla demasiado cara: 16 consultas.
+@login_not_required
 def cara(request):
     for _ in range(16):
         consulta()

@@ -315,8 +315,8 @@ JavaScript y una posible aplicación móvil.
   - densidad **cómoda**, **compacta** y **supercompacta**.
   Un script en la cabecera de la página los aplica antes de pintar, para que no haya destello. La letra
   grande sube el tamaño base (todo va en `rem`) y la densidad compacta reduce `--spacing` (Tailwind
-  calcula con ella todos los espacios). De momento se guardan en el navegador; en la fase 1, también en
-  las preferencias del usuario.
+  calcula con ella todos los espacios). Se guardan en el navegador y, con sesión, también en la cuenta
+  (apartado 7.1).
 - **Color de marca** `--color-marca` (clases `text-marca`, `bg-marca`…), que cada organización podrá
   redefinir.
 - **Sección «Inicio» de demostración** en el contrato de `base`, con las vistas «Estructura» y
@@ -539,6 +539,35 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
 - **Mientras no esté programado el alta real**, el superadmin crea los usuarios a mano (como en la
   versión 1).
 
+### 7.1 El módulo `usuarios` (12 de noviembre de 2026)
+
+- **Modelo propio sobre `AbstractBaseUser`** con lo justo: `alias` (con el que se entra),
+  `correo_alternativo` (opcional), `es_superadmin`, `activo`, `activado_el` (**solo el día**, nunca la
+  hora) y las preferencias `tema`, `letra` y `densidad`.
+  - *Motivo:* ningún campo invita a guardar datos reales, y se respeta la regla de solo fechas.
+  - *Descartado:* `AbstractUser` (trae nombre, apellidos, correo y la hora exacta del alta).
+  - Superadmin es una marca del usuario (apartado 5.1). Solo él entra en la trastienda.
+- **Alias:** de 3 a 30 caracteres (letras, números, espacio, `.`, `_` y `-`). **No se distinguen
+  mayúsculas ni tildes:** si existe «María», no se puede crear «maria». Se guarda el alias normalizado
+  en una columna única (`alias_normalizado`) y se entra escribiéndolo de cualquiera de las dos formas.
+  - *Descartado:* distinguir solo mayúsculas (dejaría suplantar con «Maria» a «María»).
+- **Nada se ve sin sesión**, salvo la pantalla de entrada (`usuarios/middleware.py`, basada en
+  `LoginRequiredMiddleware`). Lo público (fase 8) se marcará con `@login_not_required`.
+- **Sesiones en la caché con respaldo en la base** (`cached_db`): leer la sesión no cuesta consultas.
+  Cada pantalla con sesión cuesta 1 consulta de base: cargar el usuario.
+- **Preferencias en la cuenta**, con el navegador como respaldo sin sesión. El servidor las pone en
+  `<html>` al pintar, sin destello. El plegado del menú se queda solo en el navegador, porque depende de
+  la pantalla.
+  - *Descartado:* solo en el navegador (no viajan entre el móvil y el ordenador).
+- **Esta pieza incluye:** entrar (alias y contraseña), salir, «Mi cuenta → Preferencias» y «Mi cuenta →
+  Contraseña» (cualquiera puede cambiar la suya). Contraseñas cifradas con **Argon2**.
+- **Códigos de recuperación:** se dejan para la fase 8, con la bóveda real, de la que dependen. Hasta
+  entonces, quien olvide su contraseña se la pide al superadmin.
+- **Datos de ejemplo:** el módulo `ejemplos` aporta ya la orden `python manage.py ejemplos crear|borrar`,
+  que llama a los `datos_de_ejemplo` de cada contrato en el orden de las capas y solo funciona en
+  desarrollo. Los usuarios de ejemplo son **animales y árboles**; el superadmin es **Águila**. Todos
+  tienen la contraseña `M3n0sL3ctiv4s` (a petición de la persona usuaria).
+
 ---
 
 ## 8. Organizaciones, grupos, lugares y talentos
@@ -551,6 +580,14 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
   permisos (tabla de cierre).
 - Cada usuario tiene una **asamblea base** (su grupo más local).
 - Borrar un grupo: lo pide un admin y lo aprueba el superadmin.
+- **Proyectos conjuntos entre organizaciones** (12 de noviembre de 2026, a petición de la persona
+  usuaria). En general, la comunicación es solo entre personas que comparten grupo. Pero a veces grupos
+  de organizaciones distintas necesitan un proyecto común: un grupo crea el proyecto e **invita a un
+  grupo de otra organización**. Una vez aceptada la invitación, las personas del proyecto pueden
+  **comunicarse entre ellas** dentro del proyecto. Es una excepción a la independencia de las
+  organizaciones y debe quedar limitada al proyecto (no abre nada más de cada organización).
+  *(por diseñar: al hacer `grupos` y `audiencias` en la fase 1, y `proyectos` y `comunicaciones`
+  después; ver apartado 20)*
 
 ### 8.2 Lugares
 
@@ -849,6 +886,8 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 ## 20. Pendiente de decidir
 
 - Admisión en grupos: cuántos votos hacen falta además del del admin_grupo, quién vota y en qué plazo.
+- Proyectos conjuntos entre organizaciones (apartado 8.1): quién acepta la invitación del otro grupo,
+  qué audiencia tiene el proyecto, qué ve cada organización del otro grupo y cómo se comunican.
 - Trabajador de colas: Celery o RQ.
 - Qué mensajes de Telegram entran a un chat o a un debate.
 - Detección de comportamientos sospechosos (señales sin mirar identidades).

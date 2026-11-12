@@ -27,10 +27,12 @@ class CampoLigado(forms.BoundField):
     saber y que no debe decidir ella.
     """
 
-    # Si el campo lleva botón «copiar».
+    # Si el campo lleva botón «copiar»: todos, salvo los tipos de NO_SE_COPIAN y los que lo desactivan
+    # a propósito con el atributo «data-sin-copiar» (por ejemplo, el alias de la pantalla de entrada).
     @property
     def se_puede_copiar(self):
-        return not isinstance(self.field.widget, NO_SE_COPIAN)
+        widget = self.field.widget
+        return not isinstance(widget, NO_SE_COPIAN) and "data-sin-copiar" not in widget.attrs
 
 
 class Renderizador(DjangoTemplates):

@@ -49,19 +49,35 @@ document.addEventListener("alpine:init", () => {
   // Almacén de preferencias de presentación. Las aplica como atributos de <html> (data-tema,
   // data-letra, data-densidad), que la hoja de estilos usa para cambiar colores, tamaño y espacios.
   // El script del <head> ya las aplicó al cargar; aquí se leen de nuevo para poder cambiarlas.
-  // Cuando exista «usuarios» (fase 1), se guardarán también en las preferencias de cada persona.
+  // Se guardan en el navegador y, si hay sesión, también en la cuenta (usuarios/views.py,
+  // guardar_preferencia), para que sigan a la persona en cualquier dispositivo.
   Alpine.store("preferencias", {
     tema: document.documentElement.dataset.tema,
     letra: document.documentElement.dataset.letra,
     densidad: document.documentElement.dataset.densidad,
 
-    // Cambia una preferencia, la aplica a la página y la guarda en el navegador.
+    // Cambia una preferencia, la aplica a la página y la guarda en el navegador y en la cuenta.
     //   - clave: «tema», «letra» o «densidad».
     //   - valor: por ejemplo «oscuro», «grande» o «compacta».
     poner(clave, valor) {
       this[clave] = valor;
       document.documentElement.dataset[clave] = valor;
       guardar(clave, valor);
+      this.guardarEnLaCuenta(clave, valor);
+    },
+
+    // Manda la preferencia al servidor para guardarla en la cuenta. Solo si hay sesión: entonces <html>
+    // lleva la dirección en data-guardar-preferencias (ver base/templates/base/cabeza.html). Si falla
+    // (por ejemplo, sin conexión), el cambio sigue aplicado y guardado en este navegador.
+    guardarEnLaCuenta(clave, valor) {
+      const direccion = document.documentElement.dataset.guardarPreferencias;
+      if (!direccion) return;
+      const claveCsrf = document.querySelector('meta[name="csrf-token"]').content;
+      fetch(direccion, {
+        method: "POST",
+        headers: { "X-CSRFToken": claveCsrf },
+        body: new URLSearchParams({ clave, valor }),
+      }).catch(() => {});
     },
 
     // Pasa al tema siguiente: claro → día (claro con más contraste) → oscuro → claro… Lo usa el botón

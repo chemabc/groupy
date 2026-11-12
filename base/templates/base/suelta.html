@@ -1,0 +1,12 @@
+{% comment %}
+  Página suelta, sin menús: solo el nombre de la aplicación y una caja centrada con el contenido. Para
+  las pantallas que se ven sin sesión, como la de entrada (usuarios/entrar.html). Las páginas que
+  heredan de ella rellenan el bloque «contenido».
+{% endcomment %}{% include "base/cabeza.html" %}
+<body class="grid min-h-full place-items-center bg-slate-50 p-4 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+  <main class="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <p class="mb-4 text-lg font-semibold text-marca">Asambleas</p>
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>

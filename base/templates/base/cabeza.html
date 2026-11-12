@@ -1,0 +1,41 @@
+{% comment %}
+  Principio común de todas las páginas enteras (base/pagina.html y base/suelta.html): la etiqueta
+  <html> con las preferencias de la cuenta y la cabecera <head> con estilos y librerías.
+{% endcomment %}{% load static %}<!DOCTYPE html>
+{# Si hay sesión, las preferencias de la cuenta van ya en <html> (data-tema…) y se dice adónde guardar #}
+{# los cambios (data-guardar-preferencias, lo usa interfaz.js). #}
+<html lang="es" class="h-full"{% for clave, valor in interfaz.preferencias.items %}{% if valor %} data-{{ clave }}="{{ valor }}"{% endif %}{% endfor %}{% if interfaz.conectado %} data-guardar-preferencias="{% url 'usuarios:guardar_preferencia' %}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Ajustes de htmx: sin copia de las páginas para el botón «atrás»; al volver, se piden al servidor. #}
+  <meta name="htmx-config" content='{"historyCacheSize": 0}'>
+  {# Clave contra falsificaciones (CSRF) que interfaz.js envía al guardar las preferencias. #}
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{{ interfaz.titulo }}</title>
+  <script>
+    // Aplica el tema, la letra, la densidad y el plegado del menú ANTES de pintar la página, para que no
+    // se vea un destello claro ni un salto del menú al cargar. Va aquí, dentro de la página, porque
+    // tiene que ejecutarse antes de que exista el cuerpo. Manda lo que ya venga en <html> (las
+    // preferencias de la cuenta); si falta algo, se usa lo guardado en el navegador y, para el tema,
+    // el del sistema operativo.
+    (function () {
+      var raiz = document.documentElement;
+      // Lee una preferencia guardada por base/static/base/interfaz.js, o devuelve la de por defecto.
+      function leer(clave, porDefecto) {
+        try { var valor = localStorage.getItem(clave); return valor === null ? porDefecto : JSON.parse(valor); }
+        catch (error) { return porDefecto; }
+      }
+      var temaDelSistema = window.matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro";
+      raiz.dataset.tema = raiz.dataset.tema || leer("tema", temaDelSistema);
+      raiz.dataset.letra = raiz.dataset.letra || leer("letra", "normal");
+      raiz.dataset.densidad = raiz.dataset.densidad || leer("densidad", "comoda");
+      raiz.dataset.menu = leer("menu.plegado", false) ? "plegado" : "desplegado";
+    })();
+  </script>
+  <link rel="stylesheet" href="{% static 'generado/estilos.css' %}">
+  {# «defer»: se ejecutan en este orden cuando la página ya está leída. interfaz.js va antes que Alpine. #}
+  <script defer src="{% static 'base/interfaz.js' %}"></script>
+  <script defer src="{% static 'generado/alpine.min.js' %}"></script>
+  <script defer src="{% static 'generado/htmx.min.js' %}"></script>
+</head>

@@ -17,13 +17,14 @@ CABECERAS_DE_HTMX = {"HX-Request": "true", "HX-Target": "zona"}
 class PruebasDeLaPlantilla(PruebaDePantalla):
     """Comprueba las pantallas de «Inicio» y lo que pinta la plantilla general."""
 
-    # «Inicio → Estructura» no hace ninguna consulta: el menú y la ayuda salen del registro, en memoria.
+    # «Inicio → Estructura» hace una sola consulta, la que carga el usuario de la sesión (la sesión está
+    # en la caché). El menú y la ayuda salen del registro, en memoria.
     def test_consultas_de_inicio(self):
-        self.comprobar_consultas("/", 0, None)
+        self.comprobar_consultas("/", 1, None)
 
     # «Inicio → Componentes», igual.
     def test_consultas_de_componentes(self):
-        self.comprobar_consultas("/componentes/", 0, None)
+        self.comprobar_consultas("/componentes/", 1, None)
 
     # Una visita normal recibe la página entera, con los menús, la zona y la ayuda.
     def test_pagina_entera(self):

@@ -216,3 +216,38 @@ sirve aquí y dónde se usa.
   el que estás escribiendo se cambiaría por otro y perderías el cursor. Por eso, al filtrar solo se
   sustituyen las filas. El recuento, que está fuera de ellas, se actualiza con `hx-swap-oob="true"`:
   htmx coloca ese trozo de la respuesta en el elemento con el mismo `id`, esté donde esté.
+
+## 9. Las cuentas de usuario: alias, sesión obligatoria y preferencias (12 de noviembre de 2026)
+
+- **Un modelo de usuario propio.** El usuario de Django (`AbstractUser`) trae nombre, apellidos, correo y
+  la hora exacta del alta: justo lo que la plataforma no debe saber. Por eso `usuarios.Usuario` parte de
+  `AbstractBaseUser`, que solo pone la contraseña y el último inicio de sesión, y añade lo justo: alias,
+  correo alternativo, superadmin, activo, el **día** de activación y las preferencias.
+  - `AUTH_USER_MODEL = "usuarios.Usuario"` debe fijarse **antes de la primera `migrate`**: las tablas de
+    Django (la trastienda, las sesiones) apuntan al modelo de usuario desde su primera migración, y
+    cambiarlo después es muy difícil. Por eso no se ejecutó `migrate` hasta ahora.
+  - El «gestor» (`GestorDeUsuarios`) es la clase que crea usuarios (`create_user`, `create_superuser`)
+    y la que Django usa para buscarlos al iniciar sesión (`get_by_natural_key`).
+- **Alias que no se pueden confundir.** Cada usuario guarda también su alias normalizado (sin tildes, en
+  minúsculas y sin espacios de más), con una restricción única en la base de datos. Así «María» y
+  «maria» no pueden convivir, y se puede entrar escribiendo «aguila» en la cuenta de «Águila».
+  - Se guarda en una columna en lugar de usar `unaccent` en un índice porque PostgreSQL no deja usar
+    `unaccent` en índices (no la considera «inmutable»).
+- **Nada se ve sin sesión.** `LoginRequiredMiddleware` (Django 5.1+) exige sesión en todas las vistas,
+  salvo las marcadas con `@login_not_required`. La nuestra (`usuarios/middleware.py`) añade dos cosas:
+  - si la petición es de htmx, responde con la cabecera `HX-Redirect` para que htmx cargue la entrada
+    como página entera (si no, la metería dentro de la zona central);
+  - mira la marca `@login_not_required` antes de cargar el usuario, y así ahorra una consulta en las
+    pantallas que no lo necesitan.
+- **Sesiones en la caché.** Con `SESSION_ENGINE = "...cached_db"` la sesión se lee de Redis y solo se
+  escribe también en la base de datos. Cada pantalla cuesta así una sola consulta por la sesión: la que
+  carga el usuario.
+- **Preferencias en la cuenta, sin destello.** El servidor escribe las preferencias en `<html>`
+  (`data-tema="dia"`) al pintar la página, y el script de la cabecera solo rellena lo que falte con lo
+  guardado en el navegador. Al cambiar una, `interfaz.js` la manda con `fetch` a
+  `/cuenta/preferencias/guardar/`, con la clave CSRF que va en `<meta name="csrf-token">`.
+- **CSRF con htmx.** Los formularios que envía htmx necesitan la clave contra falsificaciones. Va en
+  `hx-headers` del `<body>`, y htmx la añade a cada petición.
+- **Las pruebas inician sesión.** `PruebaDePantalla` entra como un usuario de prueba con
+  `force_login`, y `base/pruebas_navegador.py` entra por la pantalla de entrada, como una persona.
+  `base` crea ese usuario con `get_user_model()`, sin importar `usuarios`, para respetar las capas.
