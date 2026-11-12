@@ -11,6 +11,7 @@ JIT de PostgreSQL apagado, conexiones persistentes y caché en Redis.
 """
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -24,6 +25,13 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "solo-para-desarrollo-cambiar-e
 
 # Modo de desarrollo: muestra los errores con detalle. Nunca encendido en producción.
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+
+# Si se están pasando las pruebas («python manage.py test»). Algunas cosas cambian entonces: no se
+# carga la barra de depuración y la caché va en memoria.
+PROBANDO = sys.argv[1:2] == ["test"]
+
+# Si se muestra la barra de depuración (django-debug-toolbar): en desarrollo sí, en las pruebas no.
+USAR_BARRA_DE_DEPURACION = DEBUG and not PROBANDO
 
 # Nombres de servidor desde los que se acepta la aplicación.
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
@@ -59,6 +67,18 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Barra de depuración, solo en desarrollo: se añade su app y su capa, la primera de la lista para que
+# mida todo lo que hacen las demás.
+if USAR_BARRA_DE_DEPURACION:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    DEBUG_TOOLBAR_CONFIG = {
+        # Normalmente la barra solo sale si el navegador llega desde 127.0.0.1. Desde el contenedor,
+        # tu navegador llega desde otra dirección (la de la red de Docker), así que se muestra siempre
+        # que esté activada.
+        "SHOW_TOOLBAR_CALLBACK": lambda peticion: True,
+    }
 
 # Fichero con la lista de direcciones web de la aplicación.
 ROOT_URLCONF = "config.urls"
@@ -122,11 +142,21 @@ CACHES = {
     }
 }
 
+# En las pruebas, la caché va en la memoria del propio proceso: cada ejecución empieza limpia y no
+# mezcla datos con el Redis de desarrollo.
+if PROBANDO:
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
 # Cómo se guardan las contraseñas: primero Argon2 (el recomendado); los demás, por compatibilidad.
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
 ]
+
+# En las pruebas, un cifrado de contraseñas rápido (y nada seguro): Argon2 es lento a propósito y
+# multiplicaría el tiempo de las pruebas que crean usuarios (ver docs/diseno.md, apartado 3.6).
+if PROBANDO:
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # Reglas mínimas para las contraseñas nuevas: que no se parezcan al alias, longitud mínima, que no
 # sean de las más comunes y que no sean solo números.

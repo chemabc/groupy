@@ -5,11 +5,14 @@ Ayudas para las pruebas de cualquier módulo.
 - contratos_de_prueba: añade módulos de mentira al registro real mientras dura un bloque «with» y
   después lo deja como estaba. Sirve para probar eventos_sw, el menú o los permisos con declaraciones
   inventadas, sin tocar los contratos de los módulos de verdad.
+- PruebaDePantalla: clase de prueba con comprobar_consultas(), la prueba de número de consultas que
+  lleva cada pantalla nueva (ver docs/diseno.md, apartado 3.6).
 """
 
 from contextlib import contextmanager
 
 from django.apps import apps
+from django.test import TestCase
 
 from .contrato import Capa, ModuloConfig
 from .registro import registro
@@ -40,3 +43,48 @@ def contratos_de_prueba(*modulos_falsos):
     finally:
         registro.__dict__.clear()
         registro.__dict__.update(copia)
+
+
+# Tope de consultas por pantalla del presupuesto de rendimiento (docs/diseno.md, apartado 3.6).
+MAXIMO_DE_CONSULTAS = 15
+
+
+class PruebaDePantalla(TestCase):
+    """
+    Clase de la que heredan las pruebas de pantalla. Añade comprobar_consultas(), que mide cuántas
+    consultas a la base de datos hace una pantalla y comprueba el presupuesto de rendimiento.
+    """
+
+    # Abre la pantalla y comprueba tres cosas:
+    #   1. que hace exactamente «consultas» consultas (así, cualquier cambio en su coste se nota);
+    #   2. que no pasa del tope de MAXIMO_DE_CONSULTAS;
+    #   3. que, después de crear más filas con crear_mas_datos(), sigue haciendo las mismas. Si crece,
+    #      es que hay una consulta por cada fila, el error de rendimiento más típico.
+    # Antes de medir hace una visita de calentamiento, para que lo que se guarda en la caché tras la
+    # primera visita (permisos, audiencias) no cuente: se mide la visita normal, no la primera.
+    #   - url: dirección de la pantalla.
+    #   - consultas: número exacto de consultas esperado.
+    #   - crear_mas_datos: función sin parámetros que añade filas a lo que muestra la pantalla. Solo
+    #     puede ser None si la pantalla no muestra ninguna lista.
+    # Devuelve la respuesta de la última visita, por si la prueba quiere revisar su contenido.
+    def comprobar_consultas(self, url, consultas, crear_mas_datos):
+        self.assertLessEqual(
+            consultas,
+            MAXIMO_DE_CONSULTAS,
+            f"{url} hace {consultas} consultas; el presupuesto es de {MAXIMO_DE_CONSULTAS} como mucho.",
+        )
+        self._visitar(url)
+        with self.assertNumQueries(consultas):
+            respuesta = self._visitar(url)
+        if crear_mas_datos is not None:
+            crear_mas_datos()
+            # Se mide igual: con más filas, las consultas deben ser las mismas.
+            with self.assertNumQueries(consultas):
+                respuesta = self._visitar(url)
+        return respuesta
+
+    # Pide la pantalla y comprueba que responde bien (código 200). La usa comprobar_consultas.
+    def _visitar(self, url):
+        respuesta = self.client.get(url)
+        self.assertEqual(respuesta.status_code, 200, f"{url} responde con el código {respuesta.status_code}.")
+        return respuesta

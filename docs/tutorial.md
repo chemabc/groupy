@@ -79,3 +79,27 @@ sirve aquí y dónde se usa.
   En la base real aún no se aplican (no se ejecuta `migrate` hasta que exista `usuarios`).
 - **`assertNumQueries`.** Comprueba cuántas consultas hace un trozo de código. Aquí asegura que
   apuntar varios avisos cuesta una sola consulta (`bulk_create`).
+
+## 4. Medir el coste de cada pantalla (12 de noviembre de 2026)
+
+- **Por qué contar consultas.** Cada consulta a PostgreSQL es un viaje de ida y vuelta. Una pantalla
+  rápida hace pocas consultas, y siempre las mismas, tenga 10 filas o 500.
+- **El error típico: «N+1».** Se traen las filas con una consulta y, luego, por cada fila, se pide algo
+  más (su grupo, su autor…), lo que suma una consulta por fila. Con 5 filas no se nota, pero con 500 la
+  pantalla tarda segundos. En Django se evita con `select_related` y `prefetch_related`, que traen lo
+  relacionado de una vez.
+- **`comprobar_consultas(url, n, crear_mas_datos)`** (`base/pruebas.py`):
+  1. Visita la pantalla una vez para calentarla.
+  2. La visita otra vez y cuenta las consultas, que deben ser exactamente `n`.
+  3. Añade filas y la vuelve a contar: si sale más de `n`, hay un N+1.
+
+  Las pruebas de `base/tests/test_pruebas_de_pantalla.py` lo demuestran con una pantalla buena y otra mala.
+- **`override_settings`.** Cambia un ajuste solo durante una prueba. Ahí se usa para que la aplicación
+  use una lista de direcciones de mentira (`ROOT_URLCONF`).
+- **La barra de depuración.** Con `runserver` en marcha, a la derecha de cada página sale una barra.
+  En «SQL» se ven todas las consultas de esa página, con su tiempo, y las repetidas marcadas: es la
+  forma rápida de encontrar un N+1 mientras se programa.
+- **Ajustes distintos en las pruebas** (`PROBANDO` en `config/settings.py`):
+  - La caché va en la memoria del propio proceso, para que cada ejecución empiece limpia.
+  - Las contraseñas se cifran con MD5, que es rápido. Argon2 es lento a propósito, para frenar a quien
+    intente adivinarlas, y en las pruebas solo haría perder tiempo.

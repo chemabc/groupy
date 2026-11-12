@@ -203,6 +203,21 @@ dentro de una ficha**):
 | Pruebas rápidas | Cifrado de contraseñas rápido en las pruebas y factorías pequeñas |
 | Herramientas de desarrollo | django-debug-toolbar |
 
+**Cómo se mide (12 de noviembre de 2026).**
+- Cada prueba de pantalla hereda de `base.pruebas.PruebaDePantalla` y llama a
+  `comprobar_consultas(url, n, crear_mas_datos)`. La ayuda hace una visita de calentamiento y después
+  comprueba tres cosas: que la pantalla hace **exactamente** `n` consultas, que `n` no pasa de 15 y que,
+  tras añadir más filas con `crear_mas_datos`, sigue haciendo `n`. `crear_mas_datos` solo puede ser
+  `None` en pantallas sin listas.
+  - *Motivo:* así se comprueban a la vez el tope y que el número no crezca con las filas, y queda escrito
+    el coste exacto de cada pantalla.
+  - *Descartado:* solo un tope de 15 (no detecta una consulta por fila mientras haya pocas filas) y solo el
+    `assertNumQueries` exacto (no comprueba qué pasa con más filas).
+- **django-debug-toolbar** (BSD-3) se activa siempre que `DEBUG` esté encendido, salvo en las pruebas.
+  Desde el contenedor el navegador no llega por 127.0.0.1, así que no se filtra por dirección.
+- En las pruebas (`PROBANDO` en los ajustes), la caché va en memoria y las contraseñas se cifran con
+  MD5, que es rápido.
+
 ### 3.7 eventos_sw
 
 - **Síncronos:** lo que debe ocurrir en la misma transacción (invalidar la caché, copiar la audiencia).

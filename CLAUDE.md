@@ -24,8 +24,8 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 - Método socrático: antes de programar una pantalla o un módulo, propón opciones con pros y contras (una
   recomendada) y pregunta. No programes sin acuerdo.
 - Commit al terminar cada pieza acordada, con el mensaje en castellano.
-- Cada pantalla nueva llega con su prueba de número de consultas (`assertNumQueries`), como mucho
-  unas 15, y se mide con datos de ejemplo.
+- Cada pantalla nueva llega con su prueba de número de consultas, como mucho unas 15, que no crezca con
+  las filas (`PruebaDePantalla.comprobar_consultas`, en `base/pruebas.py`), y se mide con datos de ejemplo.
 
 ## Normas de código
 
@@ -60,6 +60,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 ## Estado
 
 - 12 de noviembre de 2026: esqueleto (contenedor, Django y ajustes de rendimiento) y contrato de módulo
-  con su registro (`base`) y `eventos_sw` (bandeja de salida y orden `procesar_bandeja`). Siguiente
-  paso: herramienta de medición (debug-toolbar y prueba de consultas), y después el resto de la fase 0
-  (ver docs/diseno.md, apartado 19).
+  con su registro (`base`) `eventos_sw` (bandeja de salida y orden `procesar_bandeja`) y la
+  herramienta de medición (debug-toolbar y `comprobar_consultas`). Siguiente paso: la interfaz
+  (Tailwind, htmx, Alpine y la plantilla con dos menús), y después el resto de la fase 0 (ver
+  docs/diseno.md, apartado 19).

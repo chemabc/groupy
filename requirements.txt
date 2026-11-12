@@ -16,3 +16,7 @@ argon2-cffi>=23.1
 
 # Cliente de Redis, que Django usa para la caché (permisos y audiencias precalculados). Licencia MIT.
 redis>=5.0,<7
+
+# Barra de depuración: en desarrollo muestra, en cada página, las consultas a la base de datos y lo que
+# tarda cada una. Licencia BSD-3. Solo se activa con DEBUG encendido.
+django-debug-toolbar>=8.0,<9
