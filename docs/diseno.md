@@ -278,6 +278,37 @@ JavaScript y una posible aplicación móvil.
   MIT), mapas (Leaflet, BSD-2, con `referrerPolicy` correcto para OpenStreetMap) y editor (Yjs, MIT).
 - **Errores que explican:** si falta un permiso, se dice cuál y quién puede darlo.
 
+**Cómo está hecha la plantilla general (12 de noviembre de 2026).**
+- **Librerías servidas por el propio servidor**, instaladas con npm en versiones exactas: Tailwind 4.3.3,
+  htmx 2.0.11 y Alpine 3.17.5. `npm run construir` las deja en `static/generado/` (que no se guarda en
+  Git y se regenera al crear el contenedor).
+  - *Descartado:* el ejecutable suelto de Tailwind (npm hace falta igualmente), Tailwind 3 y htmx 4
+    (demasiado reciente y con muchos cambios).
+- **El menú no salta porque no se vuelve a pintar.** Los enlaces se siguen con htmx (`hx-boost`), que pide
+  solo la zona central (`#zona`) y la sustituye. El servidor sabe que basta con la zona por las cabeceras
+  `HX-Request` y `HX-Target: zona`. Las páginas heredan de `interfaz.plantilla`, que vale `base/zona.html`
+  o `base/pagina.html` (la página entera, que envuelve la zona). Las vistas no tienen que hacer nada.
+  Qué secciones están plegadas, si el menú está plegado y hasta dónde se había bajado se guardan en el
+  navegador, para recuperarlo al recargar.
+  - *Descartado:* cargar siempre la página entera y recuperar después la posición (parpadeo en cada clic y
+    se envía todo de nuevo).
+- **Botón «atrás»:** htmx no guarda copias de las páginas (`historyCacheSize: 0`). Al volver, pide la
+  página entera al servidor. La capa `base.middleware.VariarSegunHtmx` añade `Vary: HX-Request, HX-Target`
+  para que el navegador no confunda la zona suelta con la página.
+- **La sección y la vista actuales salen de la dirección:** el registro sabe a qué entrada del menú lleva
+  cada ruta (`registro.rutas`). Lo usa `base/contexto.py`, que da a todas las plantillas el menú, la
+  sección, las vistas, la ayuda y el título, sin ninguna consulta.
+- **La ayuda «?» viene ya en la página**, en una ventana de Alpine: abrirla no cuesta ninguna petición.
+- **Tema, letra y densidad** son atributos de `<html>` (`data-tema`, `data-letra`, `data-densidad`).
+  Un script en la cabecera de la página los aplica antes de pintar, para que no haya destello. La letra
+  grande sube el tamaño base (todo va en `rem`) y la densidad compacta reduce `--spacing` (Tailwind
+  calcula con ella todos los espacios). De momento se guardan en el navegador; en la fase 1, también en
+  las preferencias del usuario.
+- **Color de marca** `--color-marca` (clases `text-marca`, `bg-marca`…), que cada organización podrá
+  redefinir.
+- **Sección «Inicio» de demostración** en el contrato de `base`, con las vistas «Estructura» y
+  «Componentes», mientras no haya otros módulos.
+
 ---
 
 ## 5. Roles y cometidos

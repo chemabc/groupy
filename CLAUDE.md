@@ -60,7 +60,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 ## Estado
 
 - 12 de noviembre de 2026: esqueleto (contenedor, Django y ajustes de rendimiento) y contrato de módulo
-  con su registro (`base`) `eventos_sw` (bandeja de salida y orden `procesar_bandeja`) y la
-  herramienta de medición (debug-toolbar y `comprobar_consultas`). Siguiente paso: la interfaz
-  (Tailwind, htmx, Alpine y la plantilla con dos menús), y después el resto de la fase 0 (ver
-  docs/diseno.md, apartado 19).
+  con su registro (`base`) `eventos_sw` (bandeja de salida y orden `procesar_bandeja`) , la
+  herramienta de medición (debug-toolbar y `comprobar_consultas`) y la plantilla general (Tailwind,
+  htmx, Alpine, dos menús, tema, ayuda y menú que no salta). Siguiente paso: tabla filtrable y botón
+  «copiar», que cierran la fase 0 (ver docs/diseno.md, apartado 19).

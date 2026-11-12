@@ -9,6 +9,7 @@ mitad de una pantalla.
 
 from django.apps import apps
 from django.core import checks
+from django.urls import NoReverseMatch, reverse
 from django.utils.module_loading import import_string
 
 from .registro import registro
@@ -23,6 +24,7 @@ def comprobar_contrato(app_configs=None, **kwargs):
     errores = [checks.Error(texto, id="base.E001") for texto in registro.errores]
     errores += _comprobar_funciones()
     errores += _comprobar_modelos()
+    errores += _comprobar_direcciones()
     return errores
 
 
@@ -53,4 +55,16 @@ def _comprobar_modelos():
             apps.get_model(modelo)
         except (LookupError, ValueError):
             errores.append(checks.Error(f"No existe el modelo «{modelo}».", id="base.E003"))
+    return errores
+
+
+# Comprueba que existen las direcciones web a las que llevan las entradas y las vistas del menú. Si un
+# módulo escribe mal el nombre de una ruta, se ve aquí y no al pintar el menú.
+def _comprobar_direcciones():
+    errores = []
+    for url in registro.rutas:
+        try:
+            reverse(url)
+        except NoReverseMatch:
+            errores.append(checks.Error(f"El menú lleva a «{url}», pero esa dirección no existe.", id="base.E004"))
     return errores

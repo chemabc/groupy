@@ -34,7 +34,7 @@ class PruebasDeComprobarConsultas(PruebaDePantalla):
         with self.assertRaisesMessage(AssertionError, "el presupuesto es de 15"):
             self.comprobar_consultas("/cara/", 16, None)
 
-    # La página de comprobación real de la aplicación no hace ninguna consulta.
+    # Con las direcciones reales de la aplicación, la portada se mide sin problemas (0 consultas).
     @override_settings(ROOT_URLCONF="config.urls")
-    def test_pagina_de_comprobacion(self):
+    def test_portada_real(self):
         self.comprobar_consultas("/", 0, None)

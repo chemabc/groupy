@@ -54,6 +54,10 @@ class RegistroDeModulos:
         self.menu = []
         # Textos de ayuda, por código de sección.
         self.ayuda = {}
+        # Camino del menú de cada dirección web: del nombre de la ruta («base:inicio») a la tupla de
+        # entradas desde la sección principal hasta la subsección a la que pertenece. Sirve para marcar
+        # en el menú dónde se está, sin que cada vista tenga que decirlo.
+        self.rutas = {}
         # Errores de declaración encontrados durante la carga, como textos.
         self.errores = []
         # Si ya se ha cargado al menos una vez.
@@ -77,6 +81,8 @@ class RegistroDeModulos:
         self._comprobar_ayuda()
         # Ordena el menú por su número de orden y, a igualdad, por nombre.
         self.menu.sort(key=lambda entrada: (entrada.orden, entrada.nombre))
+        for entrada in self.menu:
+            self._apuntar_rutas(entrada, ())
         self.cargado = True
 
     # Añade al registro todo lo que declara un módulo.
@@ -120,6 +126,23 @@ class RegistroDeModulos:
             self.errores.append(
                 f"En «{apartado}» del módulo «{etiqueta}», «{codigo}» debe empezar por «{etiqueta}.»."
             )
+
+    # Apunta en self.rutas la dirección de una entrada de menú y las de sus vistas, y sigue con sus
+    # subsecciones. Una subsección puede repetir la dirección de la sección de la que cuelga (gana la
+    # subsección, que es más concreta); dos entradas que no cuelgan una de otra, no.
+    #   - entrada: la entrada de menú.
+    #   - antecesores: las entradas de las que cuelga, desde la sección principal.
+    def _apuntar_rutas(self, entrada, antecesores):
+        camino = (*antecesores, entrada)
+        for url in (entrada.url, *(vista.url for vista in entrada.vistas)):
+            anterior = self.rutas.get(url)
+            if anterior is not None and anterior[-1] not in antecesores and anterior[-1] is not entrada:
+                self.errores.append(
+                    f"La dirección «{url}» está en dos entradas del menú: «{anterior[-1].codigo}» y «{entrada.codigo}»."
+                )
+            self.rutas[url] = camino
+        for subseccion in entrada.subsecciones:
+            self._apuntar_rutas(subseccion, camino)
 
     # Apunta un error por cada escucha de un eventos_sw que ningún módulo emite (suele ser una errata).
     def _comprobar_escuchas(self):

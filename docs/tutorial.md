@@ -103,3 +103,40 @@ sirve aquí y dónde se usa.
   - La caché va en la memoria del propio proceso, para que cada ejecución empiece limpia.
   - Las contraseñas se cifran con MD5, que es rápido. Argon2 es lento a propósito, para frenar a quien
     intente adivinarlas, y en las pruebas solo haría perder tiempo.
+
+## 5. La plantilla general: Tailwind, htmx y Alpine (12 de noviembre de 2026)
+
+- **Tailwind.** En lugar de escribir CSS, se ponen clases pequeñas en el HTML: `p-4` (relleno), `flex`,
+  `text-sm`, `dark:bg-slate-900` (fondo oscuro en modo oscuro)… `npm run construir` lee las plantillas y
+  genera un CSS solo con las clases que se usan. Mientras programas, `npm run vigilar` lo regenera al
+  guardar. Si una clase nueva no hace nada, casi siempre es que no se ha vuelto a construir.
+- **npm y `package.json`.** npm es el instalador de librerías de JavaScript. `package.json` dice cuáles
+  y en qué versión exacta, y `package-lock.json` fija también las de sus dependencias. Se instalan en
+  `node_modules/`, que no se guarda en Git.
+- **htmx.** Permite que un enlace o un botón pida HTML al servidor y lo coloque en un trozo de la página,
+  sin recargarla. Con `hx-boost` en `<body>`, todos los enlaces lo hacen: piden la página, htmx toma la
+  zona central de la respuesta y la cambia por la anterior. El menú izquierdo no se toca y por eso no salta.
+- **Una dirección, dos respuestas.** Si la pide htmx, el servidor manda solo la zona; si la pide el
+  navegador, la página entera. Lo decide `base/contexto.py` mirando las cabeceras de htmx. Las páginas
+  escriben `{% extends interfaz.plantilla %}` y no se enteran.
+- **Herencia de plantillas con `block.super`.** `pagina.html` hereda de `zona.html` y pone la zona entera
+  (`{{ block.super }}`) en medio de la cabecera y los menús. Así la zona se escribe una sola vez.
+- **Procesador de contexto** (`base/contexto.py`). Es una función que Django llama en cada página para
+  añadir datos comunes a todas las plantillas. Aquí da el menú, la sección actual, la ayuda y el título,
+  sin consultar la base de datos.
+- **Alpine.js.** Añade comportamiento con atributos en el HTML:
+  - `x-data` crea un componente con sus datos;
+  - `x-show` muestra u oculta;
+  - `@click` reacciona a un clic;
+  - `:class` cambia clases según los datos;
+  - `$store` es un almacén compartido por toda la página.
+
+  Los componentes comunes están en `base/static/base/interfaz.js`.
+- **`localStorage`.** Es un pequeño almacén de cada navegador, que se conserva al recargar y al cerrar.
+  Ahí se guardan el tema, la letra, la densidad y el estado del menú.
+- **Evitar el destello del tema.** Si el tema se aplicara cuando ya se ha pintado la página, se vería un
+  instante en claro. Por eso un script corto, dentro de `<head>`, lo aplica antes de pintar.
+- **Variables de CSS** (`--color-marca`, `--spacing`). Cambiar una variable cambia todo lo que la usa.
+  Así funcionan la densidad compacta, el color de marca y el modo oscuro.
+- **La cabecera `Vary`.** Le dice al navegador que la misma dirección puede dar respuestas distintas
+  según ciertas cabeceras. Sin ella, podría guardar la zona suelta y enseñarla sin menú.

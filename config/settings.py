@@ -66,6 +66,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Avisa al navegador de que una misma dirección puede devolver la página entera o solo su zona
+    # central (navegación con htmx). Ver base/middleware.py.
+    "base.middleware.VariarSegunHtmx",
 ]
 
 # Barra de depuración, solo en desarrollo: se añade su app y su capa, la primera de la lista para que
@@ -94,6 +97,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # Menú, sección actual, ayuda y plantilla de la interfaz (ver base/contexto.py).
+                "base.contexto.interfaz",
             ],
         },
     },

@@ -1,0 +1,48 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Inicio → Estructura». Explica las partes de la pantalla y deja probar las preferencias de
+  presentación (tema, letra, densidad), que guarda el almacén «preferencias» de interfaz.js.
+{% endcomment %}
+{% block contenido %}
+<div class="grid gap-4 md:grid-cols-2">
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 font-semibold">Partes de la pantalla</h2>
+    <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+      <li><strong>Menú izquierdo:</strong> las secciones. Se pliega con ☰ y no salta al navegar ni al recargar.</li>
+      <li><strong>Menú superior:</strong> las vistas de la sección elegida (aquí, «Estructura» y «Componentes»).</li>
+      <li><strong>Botón «?»:</strong> junto al título, explica para qué sirve la sección.</li>
+      <li><strong>Arriba a la derecha:</strong> el alias de quien ha iniciado sesión y el botón del tema.</li>
+      <li><strong>En el móvil:</strong> las secciones pasan a una barra inferior y las vistas se deslizan de lado.</li>
+    </ul>
+  </section>
+
+  <section x-data class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 font-semibold">Preferencias de presentación</h2>
+    <p class="mb-3 text-sm text-slate-500">De momento se guardan en este navegador. Con las cuentas de usuario, irán a tus preferencias.</p>
+    <dl class="space-y-3 text-sm">
+      {# Cada fila: el nombre de la preferencia y sus opciones como botones #}
+      <div class="flex flex-wrap items-center gap-2">
+        <dt class="w-24 text-slate-500">Tema</dt>
+        <dd class="flex gap-1">
+          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.tema === 'claro' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('tema', 'claro')">Claro</button>
+          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.tema === 'oscuro' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('tema', 'oscuro')">Oscuro</button>
+        </dd>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <dt class="w-24 text-slate-500">Letra</dt>
+        <dd class="flex gap-1">
+          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.letra === 'normal' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('letra', 'normal')">Normal</button>
+          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.letra === 'grande' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('letra', 'grande')">Grande</button>
+        </dd>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <dt class="w-24 text-slate-500">Densidad</dt>
+        <dd class="flex gap-1">
+          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.densidad === 'comoda' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('densidad', 'comoda')">Cómoda</button>
+          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.densidad === 'compacta' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('densidad', 'compacta')">Compacta</button>
+        </dd>
+      </div>
+    </dl>
+  </section>
+</div>
+{% endblock %}

@@ -19,3 +19,37 @@
 /* Modo oscuro: las clases «dark:…» se aplican cuando la etiqueta <html> tiene data-tema="oscuro". Lo
    pone el script del tema de la plantilla base, según lo que haya elegido la persona. */
 @custom-variant dark (&:where([data-tema="oscuro"], [data-tema="oscuro"] *));
+
+/* Colores y medidas propios de la aplicación. «@theme» crea a la vez la variable de CSS y las clases de
+   Tailwind: --color-marca da text-marca, bg-marca, border-marca… Una organización podrá cambiar su color
+   redefiniendo la variable. */
+@theme {
+  --color-marca: oklch(0.52 0.12 165);
+}
+
+@layer base {
+  /* En modo oscuro, el color de marca un poco más claro para que se lea bien sobre fondo oscuro, y los
+     controles del navegador (barras de desplazamiento, casillas) también oscuros. */
+  [data-tema="oscuro"] {
+    --color-marca: oklch(0.72 0.12 165);
+    color-scheme: dark;
+  }
+
+  /* Tamaño de letra: todo en Tailwind se mide en «rem» (relativo a la letra de <html>), así que al
+     subirla crece toda la interfaz por igual. */
+  html[data-letra="grande"] {
+    font-size: 112.5%;
+  }
+
+  /* Densidad compacta: Tailwind calcula todos los espacios (p-4, gap-2…) multiplicando --spacing, así
+     que al reducirla se aprieta toda la interfaz sin tocar ninguna plantilla. */
+  html[data-densidad="compacta"] {
+    --spacing: 0.18rem;
+  }
+
+  /* Alpine quita x-cloak cuando arranca: hasta entonces, lo que lo lleva no se ve (evita que asomen
+     ventanas o textos que deben empezar ocultos). */
+  [x-cloak] {
+    display: none !important;
+  }
+}
