@@ -127,6 +127,26 @@ anclas, huecos en fichas, eventos con fecha para el calendario, eventos_sw que e
 de etiquetas, tipos de elemento que se pueden limpiar, datos de ejemplo, entradas de menú y textos de
 ayuda «?». El registro se lee **una vez al arrancar**. Nada de buscar ficheros por su nombre.
 
+**Cómo se declara (12 de noviembre de 2026).**
+- El contrato **es la propia configuración del módulo**: la clase de `apps.py` hereda de
+  `base.contrato.ModuloConfig` (que hereda de `AppConfig`) y rellena sus apartados con fichas
+  inmutables (`Permiso`, `Escucha`, `EntradaDeMenu`…).
+  - *Motivo:* es literalmente «una sola clase en `apps.py`», y Django ya la carga al arrancar.
+  - *Descartado:* una clase `Contrato` en un fichero aparte (dos clases por módulo y buscar el fichero por
+    su nombre) y los decoradores repartidos por el código (lo que aporta un módulo no se vería de un
+    vistazo).
+- **Todos los apartados se declaran desde ya**, vacíos por defecto. Se podrán ajustar cuando llegue el
+  módulo que los usa.
+- Todo código declarado empieza por la etiqueta del módulo (`eventos.convocar_reunion`). Las funciones y
+  los modelos de otros módulos se nombran **como texto**, nunca importándolos.
+- `base/registro.py` reúne los contratos en `BaseConfig.ready()` y apunta los errores de declaración.
+  `base/comprobaciones.py` los muestra con las comprobaciones de Django (`manage.py check`), junto con
+  las funciones y los modelos nombrados que no existen.
+- La regla de capas se vigila con una prueba (`base/tests/test_dependencias.py`) que lee el código de
+  cada módulo y falla si un módulo importa otro de una capa superior, o un funcional importa otro funcional.
+- En `INSTALLED_APPS` los módulos del proyecto se escriben con la ruta de su configuración
+  (`base.apps.BaseConfig`).
+
 ### 3.4 Visibilidad: audiencias **[con cuidado: es una pieza central]**
 
 **Qué puede elegir quien publica algo** (un proyecto, un evento, un debate o **cada bloque de información

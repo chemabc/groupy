@@ -28,8 +28,10 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 # Nombres de servidor desde los que se acepta la aplicación.
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 
-# Módulos que forman la aplicación. De momento, solo los de Django; los del proyecto (base, eventos_sw,
-# usuarios, grupos…) se irán añadiendo fase a fase, en el orden de docs/diseno.md, apartado 19.
+# Módulos que forman la aplicación: primero los de Django y después los del proyecto, que se irán
+# añadiendo fase a fase, en el orden de docs/diseno.md, apartado 19.
+# Los del proyecto se escriben con la ruta completa de su configuración («base.apps.BaseConfig»): como
+# en su apps.py también está importada ModuloConfig, Django no sabría cuál de las dos clases elegir.
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -37,6 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Capa base
+    "base.apps.BaseConfig",
 ]
 
 # IMPORTANTE: el modelo de usuario será el Usuario (app «usuarios», fase 1). Django exige fijarlo ANTES de
