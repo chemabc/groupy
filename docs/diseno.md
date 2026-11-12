@@ -209,6 +209,25 @@ dentro de una ficha**):
 - **Asíncronos:** notificaciones, correos y Telegram. El aviso se guarda en una «bandeja de salida»
   dentro de la transacción y un trabajador lo procesa (Celery o RQ, por decidir al llegar ahí).
 
+**Cómo funciona (12 de noviembre de 2026).**
+- Se emite con `emitir("consultas.cerrada", consulta_id=7, grupo_id=3)` (`eventos_sw/servicios.py`),
+  **dentro de `transaction.atomic()`**: fuera de una transacción da error.
+  - *Motivo:* sin transacción, un fallo de un receptor dejaría el cambio guardado a medias.
+- El nombre debe estar en el `emite` de algún contrato. Los datos son **valores simples** (JSON), nunca
+  objetos, porque los asíncronos se guardan en una tabla. Ambas cosas se comprueban siempre.
+- Cada receptor recibe los datos como parámetros con nombre (`def copiar(consulta_id, **resto)`). El modo
+  (síncrono o asíncrono) lo elige quien escucha, en su `Escucha`.
+- **Bandeja de salida:** la tabla `AvisoPendiente`, con una fila por cada escucha asíncrona, guardadas
+  todas con una sola consulta. Al entregarse bien, la fila se borra. Si falla, se reintenta a los 1, 2,
+  4 y 8 minutos, y al 5.º fallo queda marcada como «fallida» para revisarla a mano (de momento, en la
+  trastienda).
+- **Trabajador provisional:** la orden `python manage.py procesar_bandeja`, que usa
+  `SELECT … FOR UPDATE SKIP LOCKED` para que varios procesos no se pisen. Cuando se decida entre Celery y
+  RQ, solo cambiará quién la llama.
+  - *Descartado por ahora:* decidir ya Celery o RQ (pieza grande que nadie usa hasta la fase 2) y ejecutar
+    los asíncronos en el mismo proceso al guardar (escondería fallos y se comportaría distinto en el
+    servidor real).
+
 ### 3.8 API
 
 Django Ninja (MIT), que llama a los mismos servicios que las vistas. La usarán el bot, las islas de

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Capa base
     "base.apps.BaseConfig",
+    "eventos_sw.apps.EventosSwConfig",
 ]
 
 # IMPORTANTE: el modelo de usuario será el Usuario (app «usuarios», fase 1). Django exige fijarlo ANTES de

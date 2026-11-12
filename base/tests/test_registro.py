@@ -8,26 +8,9 @@ bien lo que declaran y que avisa de cada error de declaración. No tocan la base
 
 from django.test import SimpleTestCase
 
-from base.contrato import (
-    Ayuda,
-    Capa,
-    EntradaDeMenu,
-    Emision,
-    Escucha,
-    ModuloConfig,
-    Permiso,
-)
+from base.contrato import Ayuda, EntradaDeMenu, Emision, Escucha, Permiso
+from base.pruebas import contratos_de_prueba, modulo_falso
 from base.registro import RegistroDeModulos, registro
-
-
-# Crea la configuración de un módulo de mentira con la etiqueta y los apartados indicados.
-#   - etiqueta: nombre del módulo (p. ej. «alfa»).
-#   - apartados: los atributos del contrato que se quieren rellenar (permisos=…, menu=…).
-def modulo_falso(etiqueta, **apartados):
-    # Clase creada al vuelo que hereda de ModuloConfig. «path» se fija a mano porque el módulo no existe
-    # en disco y Django lo pediría.
-    clase = type(f"{etiqueta}Config", (ModuloConfig,), {"capa": Capa.FUNCIONAL, "path": "/tmp", **apartados})
-    return clase(etiqueta, None)
 
 
 class PruebasDelRegistro(SimpleTestCase):
@@ -86,6 +69,13 @@ class PruebasDelRegistro(SimpleTestCase):
         nuevo = RegistroDeModulos()
         nuevo.cargar([modulo_falso("alfa", capa=None)])
         self.assertIn("no dice a qué capa pertenece", nuevo.errores[0])
+
+    # contratos_de_prueba añade un módulo de mentira y, al salir del bloque, el registro vuelve a ser el real.
+    def test_contratos_de_prueba_restaura_el_registro(self):
+        with contratos_de_prueba(modulo_falso("alfa", permisos=(Permiso("alfa.crear", "…"),))):
+            self.assertIn("alfa.crear", registro.permisos)
+        self.assertNotIn("alfa.crear", registro.permisos)
+        self.assertNotIn("alfa", registro.modulos)
 
     # El registro real de la aplicación se ha cargado al arrancar y no tiene errores.
     def test_el_registro_real_esta_limpio(self):

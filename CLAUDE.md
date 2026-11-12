@@ -60,5 +60,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 ## Estado
 
 - 12 de noviembre de 2026: esqueleto (contenedor, Django y ajustes de rendimiento) y contrato de módulo
-  con su registro (`base`). Siguiente paso: `eventos_sw`, y después el resto de la
-  fase 0 (ver docs/diseno.md, apartado 19).
+  con su registro (`base`) y `eventos_sw` (bandeja de salida y orden `procesar_bandeja`). Siguiente
+  paso: herramienta de medición (debug-toolbar y prueba de consultas), y después el resto de la fase 0
+  (ver docs/diseno.md, apartado 19).
