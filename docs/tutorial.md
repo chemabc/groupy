@@ -276,3 +276,31 @@ sirve aquí y dónde se usa.
 - **Servicios.** Las operaciones (`admitir`, `invitar`…) están en `grupos/servicios.py`: comprueban,
   guardan y avisan con eventos_sw en una sola transacción. Así una pantalla, la API o una orden hacen
   exactamente lo mismo.
+
+## 11. La trastienda: ordenarla y explicarla (12 de noviembre de 2026)
+
+- **Un `AdminSite` propio.** El panel de Django es una clase (`AdminSite`). La nuestra
+  (`config/trastienda.py`) cambia el título, añade una portada explicada y reagrupa las tablas por lo
+  que significan con `get_app_list`, en lugar de por módulo. Se activa con una configuración
+  (`config/apps.py`) que sustituye a `django.contrib.admin` en `INSTALLED_APPS`.
+- **Ayuda en cada pantalla.** `base/trastienda.py` tiene `ConAyuda`, un añadido para cualquier
+  `ModelAdmin`. Pasa el texto `ayuda` a dos plantillas que heredan de las de Django
+  (`admin/change_list.html` y `admin/change_form.html`) y lo pintan encima.
+- **Campos calculados de solo lectura.** Un método con `@admin.display` dentro del `ModelAdmin`, puesto
+  en `readonly_fields`, sale en la ficha como un campo más: así se ven «todos sus grupos» o «miembros por
+  sus subgrupos» sin guardarlos en ninguna tabla.
+- **Ampliar la ficha de otro módulo sin romper las capas.** `usuarios` no puede conocer los grupos, así
+  que `grupos/admin.py` toma la ficha de usuario ya registrada, la amplía con las pertenencias y la
+  vuelve a registrar.
+- **Modelo «proxy».** `AdminDeGrupo` no crea tabla: es otra forma de ver `Pertenencia`, con un gestor
+  que solo devuelve las de rol admin. Sirve para tener en la trastienda una lista propia de «admins de
+  grupo».
+- **Dos trampas del orden en el panel.**
+  1. `ModelAdmin.get_queryset()` ya ordena con `get_ordering()`. Si ese orden usa un campo calculado
+     (`orden`), hay que añadir el campo antes de ordenar, así que la consulta se construye a mano.
+  2. Django usa el `get_ordering()` de la lista de grupos también para los desplegables de grupos de
+     otras fichas. Por eso a esos desplegables se les da su propia consulta (`ElegirGrupoConCamino`).
+- **Ordenar texto «letra a letra».** PostgreSQL ordena según el idioma («intercalación»): ignora signos
+  y espacios en la primera pasada, y así «GRU Duero › GRU Adaja» quedaba antes que «GRU Duero». Con
+  `Collate(..., "C")` se compara carácter a carácter. Para que las tildes no estorben, la clave va antes
+  sin tildes y en minúsculas.

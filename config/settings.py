@@ -48,7 +48,8 @@ CSRF_COOKIE_NAME = "asambleas2_csrf"
 # Los del proyecto se escriben con la ruta completa de su configuración («base.apps.BaseConfig»): como
 # en su apps.py también está importada ModuloConfig, Django no sabría cuál de las dos clases elegir.
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # El panel de Django (la trastienda), con las secciones ordenadas y explicadas (config/trastienda.py).
+    "config.apps.TrastiendaConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

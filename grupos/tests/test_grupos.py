@@ -60,6 +60,25 @@ class PruebasDeLaTablaDeCierre(TestCase):
         henares.save()
         self.assertEqual(antecesores(self.badiel), {"GRU Badiel": 0, "GRU Henares": 1})
 
+    # En orden de árbol cada grupo va justo después de su padre, y los hermanos por orden alfabético sin
+    # contar tildes («Órbigo» entre «Esla» y «Pisuerga»), aunque un hermano empiece igual que el padre.
+    def test_orden_de_arbol(self):
+        duero, general = crear_organizacion("ORG Duero", "GRU Duero")
+        for nombre in ["GRU Pisuerga", "GRU Órbigo", "GRU Esla", "GRU Duero Alto"]:
+            crear_grupo(duero, nombre, padre=general)
+        adaja = crear_grupo(duero, "GRU Adaja", padre=general)
+        crear_grupo(duero, "GRU Eresma", padre=adaja)
+        nombres = list(Grupo.objects.filter(organizacion=duero).en_orden_de_arbol().values_list("camino", flat=True))
+        self.assertEqual(nombres, [
+            "GRU Duero",
+            "GRU Duero › GRU Adaja",
+            "GRU Duero › GRU Adaja › GRU Eresma",
+            "GRU Duero › GRU Duero Alto",
+            "GRU Duero › GRU Esla",
+            "GRU Duero › GRU Órbigo",
+            "GRU Duero › GRU Pisuerga",
+        ])
+
     # Un grupo no puede quedar dentro de sí mismo ni de uno de sus subgrupos.
     def test_sin_circulos(self):
         jarama = Grupo.objects.get(pk=self.jarama.pk)
@@ -190,7 +209,9 @@ class PruebasDeLosEjemplos(TestCase):
         call_command("ejemplos", "crear", stdout=None)
         self.assertEqual(Organizacion.objects.count(), len(ejemplos.ESTRUCTURA))
         henares = Grupo.objects.get(nombre="GRU Henares")
-        self.assertEqual(antecesores(henares), {"GRU Henares": 0, "GRU Jarama": 1})
+        self.assertEqual(antecesores(henares), {"GRU Henares": 0, "GRU Jarama": 1, "GRU Tajo": 2})
+        # Cinco niveles: Ebro ⊃ Segre ⊃ Cinca ⊃ Ésera ⊃ Isábena.
+        self.assertEqual(antecesores(Grupo.objects.get(nombre="GRU Isábena"))["GRU Ebro"], 4)
         lince = Pertenencia.objects.get(usuario__alias="Lince", es_base=True)
         self.assertEqual((lince.grupo.nombre, lince.rol), ("GRU Henares", Pertenencia.ADMIN_GRUPO))
         self.assertEqual(Organizacion.objects.get(nombre="ORG Tajo").admins.get().usuario.alias, "Lince")

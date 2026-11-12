@@ -1,0 +1,9 @@
+{% comment %}
+  Recuadro de ayuda de una pantalla de la trastienda. Recibe «ayuda» (texto; los saltos de línea dobles
+  separan párrafos). Lo incluyen lista.html, ficha.html e inicio.html.
+{% endcomment %}
+{% if ayuda %}
+  <div style="margin: 0 0 1.25em; padding: .75em 1em; border-left: 4px solid var(--primary); background: var(--darkened-bg); max-width: 60em; font-size: .95em; line-height: 1.5;">
+    {{ ayuda|linebreaks }}
+  </div>
+{% endif %}

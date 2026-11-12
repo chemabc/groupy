@@ -1,0 +1,9 @@
+{% extends "admin/index.html" %}
+{% comment %}
+  Portada de la trastienda: una explicación general y, debajo, las secciones en el orden de
+  config/trastienda.py.
+{% endcomment %}
+{% block content %}
+{% include "trastienda/ayuda.html" with ayuda=ayuda_de_inicio %}
+{{ block.super }}
+{% endblock %}

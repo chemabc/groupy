@@ -1,7 +1,9 @@
 """
-Organizaciones y grupos de ejemplo. Las organizaciones son ríos ibéricos («ORG Tajo») y sus grupos, sus
-afluentes («GRU Jarama»). Los subgrupos son afluentes de los afluentes (el Henares desemboca en el
-Jarama), así que el árbol de grupos sigue al de los ríos.
+Organizaciones y grupos de ejemplo. Las organizaciones son ríos ibéricos («ORG Tajo»). Su grupo general
+es el propio río («GRU Tajo») y los grupos que contiene son sus afluentes, y los afluentes de estos, a
+varios niveles: general (GRU Tajo) → zona (GRU Jarama) → centro (GRU Henares) → … (GRU Sorbe). Así el
+árbol de grupos sigue al de los ríos (el Sorbe desemboca en el Henares, este en el Jarama y este en el
+Tajo).
 
 Los crea y borra la orden «python manage.py ejemplos» (módulo «ejemplos»), después de los usuarios de
 ejemplo (usuarios/ejemplos.py), que reparte por los grupos.
@@ -12,31 +14,47 @@ from django.contrib.auth import get_user_model
 from .models import AdminDeOrganizacion, Grupo, Organizacion, Pertenencia
 from .servicios import crear_grupo, crear_organizacion
 
-# Árbol de ejemplo: organización → [(grupo, [subgrupos])].
+# Árbol de ejemplo: cada organización con su grupo general, y cada grupo como (nombre, [subgrupos]).
 ESTRUCTURA = {
-    "ORG Tajo": [
-        ("GRU Jarama", ["GRU Henares", "GRU Manzanares", "GRU Lozoya"]),
-        ("GRU Alberche", []),
-        ("GRU Tiétar", []),
-        ("GRU Alagón", []),
-    ],
-    "ORG Ebro": [
-        ("GRU Aragón", ["GRU Arga"]),
-        ("GRU Segre", ["GRU Cinca"]),
-        ("GRU Jalón", []),
-        ("GRU Gállego", []),
-    ],
-    "ORG Duero": [
-        ("GRU Pisuerga", ["GRU Carrión", "GRU Arlanza"]),
-        ("GRU Adaja", ["GRU Eresma"]),
-        ("GRU Esla", []),
-        ("GRU Tormes", []),
-    ],
-    "ORG Guadalquivir": [
-        ("GRU Genil", ["GRU Darro"]),
-        ("GRU Guadalimar", []),
-        ("GRU Guadiana Menor", []),
-    ],
+    "ORG Tajo": (
+        "GRU Tajo",
+        [
+            ("GRU Jarama", [
+                ("GRU Henares", [("GRU Sorbe", []), ("GRU Badiel", [])]),
+                ("GRU Manzanares", []),
+                ("GRU Lozoya", []),
+            ]),
+            ("GRU Alberche", []),
+            ("GRU Tiétar", []),
+            ("GRU Alagón", []),
+        ],
+    ),
+    "ORG Ebro": (
+        "GRU Ebro",
+        [
+            ("GRU Aragón", [("GRU Arga", [])]),
+            ("GRU Segre", [("GRU Cinca", [("GRU Ésera", [("GRU Isábena", [])])])]),
+            ("GRU Jalón", []),
+            ("GRU Gállego", []),
+        ],
+    ),
+    "ORG Duero": (
+        "GRU Duero",
+        [
+            ("GRU Pisuerga", [("GRU Carrión", []), ("GRU Arlanza", [("GRU Arlanzón", [])])]),
+            ("GRU Adaja", [("GRU Eresma", [])]),
+            ("GRU Esla", [("GRU Órbigo", [("GRU Tuerto", [])])]),
+            ("GRU Tormes", []),
+        ],
+    ),
+    "ORG Guadalquivir": (
+        "GRU Guadalquivir",
+        [
+            ("GRU Genil", [("GRU Darro", [])]),
+            ("GRU Guadalimar", []),
+            ("GRU Guadiana Menor", []),
+        ],
+    ),
 }
 
 # Asamblea base de cada usuario de ejemplo y si es admin de ella. El superadmin (Águila) no está en
@@ -46,21 +64,21 @@ ASAMBLEAS_BASE = [
     ("Lince", "GRU Henares", Pertenencia.ADMIN_GRUPO),
     ("Nutria", "GRU Henares", Pertenencia.USUARIO),
     ("Tejón", "GRU Manzanares", Pertenencia.ADMIN_GRUPO),
-    ("Garza", "GRU Lozoya", Pertenencia.USUARIO),
+    ("Garza", "GRU Sorbe", Pertenencia.USUARIO),
     ("Búho", "GRU Alberche", Pertenencia.ADMIN_GRUPO),
     ("Ardilla", "GRU Tiétar", Pertenencia.USUARIO),
     # ORG Ebro
     ("Zorro", "GRU Arga", Pertenencia.ADMIN_GRUPO),
     ("Cigüeña", "GRU Arga", Pertenencia.USUARIO),
-    ("Erizo", "GRU Cinca", Pertenencia.ADMIN_GRUPO),
+    ("Erizo", "GRU Ésera", Pertenencia.ADMIN_GRUPO),
     ("Jabalí", "GRU Jalón", Pertenencia.USUARIO),
     ("Lobo", "GRU Gállego", Pertenencia.USUARIO),
     ("Grulla", "GRU Aragón", Pertenencia.ADMIN_GRUPO),
     # ORG Duero
     ("Encina", "GRU Carrión", Pertenencia.ADMIN_GRUPO),
     ("Roble", "GRU Carrión", Pertenencia.USUARIO),
-    ("Castaño", "GRU Arlanza", Pertenencia.USUARIO),
-    ("Abedul", "GRU Esla", Pertenencia.ADMIN_GRUPO),
+    ("Castaño", "GRU Arlanzón", Pertenencia.USUARIO),
+    ("Abedul", "GRU Órbigo", Pertenencia.ADMIN_GRUPO),
     ("Fresno", "GRU Tormes", Pertenencia.USUARIO),
     ("Madroño", "GRU Eresma", Pertenencia.USUARIO),
     # ORG Guadalquivir
@@ -78,6 +96,7 @@ OTRAS_PERTENENCIAS = [
     ("Lince", "GRU Segre"),
     ("Encina", "GRU Jarama"),
     ("Nutria", "GRU Lozoya"),
+    ("Búho", "GRU Tajo"),
 ]
 
 # Admin de cada organización.
@@ -96,13 +115,10 @@ def crear():
     nuevas = [nombre for nombre in ESTRUCTURA if not Organizacion.objects.filter(nombre=nombre).exists()]
     grupos = {}
     for nombre in nuevas:
-        principales = ESTRUCTURA[nombre]
-        organizacion, primero = crear_organizacion(nombre, principales[0][0])
-        for nombre_del_grupo, subgrupos in principales:
-            grupo = primero if nombre_del_grupo == primero.nombre else crear_grupo(organizacion, nombre_del_grupo)
-            grupos[nombre_del_grupo] = grupo
-            for nombre_del_subgrupo in subgrupos:
-                grupos[nombre_del_subgrupo] = crear_grupo(organizacion, nombre_del_subgrupo, padre=grupo)
+        general, subgrupos = ESTRUCTURA[nombre]
+        organizacion, grupo_general = crear_organizacion(nombre, general)
+        grupos[general] = grupo_general
+        _crear_subgrupos(organizacion, grupo_general, subgrupos, grupos)
     usuarios = {usuario.alias: usuario for usuario in get_user_model().objects.all()}
     Pertenencia.objects.bulk_create(
         [
@@ -121,6 +137,18 @@ def crear():
         for alias, nombre in ADMINS_DE_ORGANIZACION
         if nombre in nuevas and alias in usuarios
     )
+
+
+# Crea los subgrupos de un grupo y, dentro de cada uno, los suyos, a cualquier profundidad (se llama a
+# sí misma para cada nivel). Apunta cada grupo creado en «grupos», por su nombre.
+#   - organizacion: la organización de todos ellos.
+#   - padre: el grupo que los contiene.
+#   - subgrupos: lista de (nombre, [subgrupos]).
+#   - grupos: diccionario de nombre a grupo, que se va rellenando.
+def _crear_subgrupos(organizacion, padre, subgrupos, grupos):
+    for nombre, debajo in subgrupos:
+        grupos[nombre] = crear_grupo(organizacion, nombre, padre=padre)
+        _crear_subgrupos(organizacion, grupos[nombre], debajo, grupos)
 
 
 # Devuelve la organización llamada «nombre» a partir de cualquiera de sus grupos recién creados. La usa

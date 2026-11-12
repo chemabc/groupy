@@ -2,7 +2,8 @@
 Tablas del módulo «grupos»: organizaciones, grupos y lo que cada persona es en ellos.
 
 - Organizacion: ámbito independiente de las demás (ver docs/diseno.md, apartado 8.1).
-- Grupo: colectivo real; puede contener subgrupos (campo «padre»).
+- Grupo: colectivo real; puede contener subgrupos (campo «padre»), a cualquier profundidad (grupo
+  general → grupo de zona → grupo de centro → …).
 - Contencion: la tabla de cierre, con cada par «antecesor contiene a descendiente». Se mantiene sola al
   guardar un grupo y permite saber de una vez todos los grupos que contienen a otro, sin recorrer el
   árbol consulta a consulta.
@@ -13,8 +14,12 @@ Tablas del módulo «grupos»: organizaciones, grupos y lo que cada persona es e
 """
 
 from django.conf import settings
+from django.contrib.postgres.aggregates import StringAgg
+from django.contrib.postgres.lookups import Unaccent
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.db.models import OuterRef, Subquery
+from django.db.models.functions import Collate, Lower
 from django.utils import timezone
 
 from eventos_sw.servicios import emitir
@@ -46,6 +51,52 @@ class Organizacion(models.Model):
         return self.nombre
 
 
+# Subconsulta con el «camino» de un grupo: los nombres de todos sus antecesores, del más alto al propio
+# grupo («GRU Tajo › GRU Jarama › GRU Henares»). Sale de la tabla de cierre dentro de la misma consulta
+# (PostgreSQL la resuelve para todas las filas de una vez), así que no añade consultas aunque haya
+# muchas filas. Ordenar por el camino deja los grupos en orden de árbol.
+#   - referencia: campo de la consulta de fuera que lleva al grupo («pk» en una consulta de grupos,
+#     «grupo» en una de pertenencias).
+def camino(referencia="pk"):
+    return Subquery(
+        Contencion.objects.filter(descendiente=OuterRef(referencia))
+        .values("descendiente")
+        .annotate(texto=StringAgg("antecesor__nombre", delimiter=" › ", order_by="-distancia"))
+        .values("texto")
+    )
+
+
+# Subconsulta con la clave para ordenar grupos en orden de árbol: cada grupo justo después de su padre
+# y, entre hermanos, por orden alfabético. Es el camino sin tildes y en minúsculas, unido con un carácter
+# de control que va antes que cualquier letra, y se compara letra a letra (intercalación «C»). Hace falta
+# porque al ordenar el camino que se ve («GRU Duero › GRU Adaja»), PostgreSQL sigue las reglas del idioma
+# y no tiene en cuenta los signos como «›», así que «GRU Duero» acabaría entre sus afluentes.
+#   - referencia: como en camino().
+def orden_de_arbol(referencia="pk"):
+    claves = (
+        Contencion.objects.filter(descendiente=OuterRef(referencia))
+        .values("descendiente")
+        .annotate(texto=StringAgg(Lower(Unaccent("antecesor__nombre")), delimiter="\x01", order_by="-distancia"))
+        .values("texto")
+    )
+    return Collate(Subquery(claves), "C")
+
+
+class ConsultaDeGrupos(models.QuerySet):
+    """
+    Consultas de grupos con añadidos útiles para las listas. Se usa como Grupo.objects.
+    """
+
+    # Añade a cada grupo su camino (ver camino()).
+    def con_camino(self):
+        return self.annotate(camino=camino("pk"))
+
+    # Añade el camino y ordena en orden de árbol: por organización y, dentro, cada grupo después de su
+    # padre (ver orden_de_arbol()).
+    def en_orden_de_arbol(self):
+        return self.con_camino().annotate(orden=orden_de_arbol("pk")).order_by("organizacion__nombre", "orden")
+
+
 class Grupo(models.Model):
     """
     Grupo: colectivo real y concreto (asamblea, grupo de trabajo, comisión…) de una organización. Puede
@@ -68,8 +119,9 @@ class Grupo(models.Model):
         related_name="hijos",
         verbose_name="grupo padre",
         help_text=(
-            "Grupo que lo contiene, de la misma organización. Vacío si es un grupo principal. Sus "
-            "miembros también cuentan como miembros del padre, del abuelo, etc."
+            "Grupo que lo contiene, de la misma organización. Vacío si es un grupo principal. Puede haber "
+            "tantos niveles como hagan falta (general → zona → centro → …): sus miembros cuentan también "
+            "como miembros del padre, del abuelo y de todos los que están por encima."
         ),
     )
     nombre = models.CharField(
@@ -85,6 +137,8 @@ class Grupo(models.Model):
     creado_el = models.DateField(
         "creado el día", default=timezone.localdate, help_text="Día en que se dio de alta en la plataforma."
     )
+
+    objects = ConsultaDeGrupos.as_manager()
 
     class Meta:
         verbose_name = "grupo"
@@ -264,6 +318,29 @@ class Pertenencia(models.Model):
     # Texto con el que se muestra: «Lince en GRU Henares».
     def __str__(self):
         return f"{self.usuario} en {self.grupo}"
+
+
+class SoloAdminsDeGrupo(models.Manager):
+    """Gestor que solo devuelve las pertenencias con rol de admin del grupo. Lo usa AdminDeGrupo."""
+
+    # Consulta base: las pertenencias cuyo rol es admin_grupo.
+    def get_queryset(self):
+        return super().get_queryset().filter(rol=Pertenencia.ADMIN_GRUPO)
+
+
+class AdminDeGrupo(Pertenencia):
+    """
+    Admin de un grupo: no es una tabla aparte, sino las pertenencias con rol «admin del grupo» (un
+    «modelo proxy» de Django: otra forma de ver la misma tabla). Existe para poder listar juntos, en la
+    trastienda, los admins de grupo y los de organización.
+    """
+
+    objects = SoloAdminsDeGrupo()
+
+    class Meta:
+        proxy = True
+        verbose_name = "admin de grupo"
+        verbose_name_plural = "admins de grupo"
 
 
 class AdminDeOrganizacion(models.Model):

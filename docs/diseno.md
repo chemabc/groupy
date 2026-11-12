@@ -616,10 +616,35 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
   `grupos.invitacion_*`) para que `permisos` y `audiencias` rehagan sus cálculos.
 - `grupos_de(usuario)`: los grupos de los que es miembro, también los que contienen a los suyos, con una
   sola consulta.
+- **Niveles sin límite.** Un grupo puede contener subgrupos a cualquier profundidad. Lo normal serán tres
+  (grupo general → grupo de zona → grupo de centro), pero puede haber más; la pertenencia se hereda hacia
+  todos los que están por encima. *(Si hiciera falta nombrar los niveles, se añadiría después un tipo de
+  grupo; de momento no.)*
 - **Datos de ejemplo:** organizaciones con nombres de ríos ibéricos («ORG Tajo», «ORG Ebro», «ORG Duero»,
-  «ORG Guadalquivir») y grupos con nombres de sus afluentes («GRU Jarama» ⊃ «GRU Henares»…), a petición
-  de la persona usuaria. Cada usuario de ejemplo tiene su asamblea base; algunos están en dos
-  organizaciones.
+  «ORG Guadalquivir»). El grupo general de cada una es el propio río («GRU Tajo») y dentro van sus
+  afluentes y los afluentes de estos, hasta cinco niveles («GRU Ebro › GRU Segre › GRU Cinca › GRU Ésera
+  › GRU Isábena»), a petición de la persona usuaria. Cada usuario de ejemplo tiene su asamblea base;
+  algunos están en dos organizaciones.
+- **Camino y orden de árbol.** Cada grupo se muestra con su camino completo («ORG Tajo › GRU Tajo › GRU
+  Jarama › GRU Henares»), calculado con la tabla de cierre dentro de la misma consulta
+  (`Grupo.objects.con_camino()`). Para listar en orden de árbol (cada grupo tras su padre, hermanos por
+  orden alfabético sin tildes) se usa una clave aparte (`en_orden_de_arbol()`), porque PostgreSQL ordena
+  el texto según el idioma y no tiene en cuenta los signos como «›».
+
+**La trastienda, reordenada (12 de noviembre de 2026, a petición de la persona usuaria).** Aunque es solo
+para emergencias, debe entenderse la jerarquía:
+- Secciones en este orden (`config/trastienda.py`): **Usuarios** (usuarios y pertenencias),
+  **Organizaciones y grupos** (organizaciones, grupos, relaciones e invitaciones), **Admins** (de
+  organización y de grupo, juntos) y **Funcionamiento interno**. Lo que no esté en la lista sale en
+  «Otros».
+- Se quita la tabla «Grupos» de Django (Autenticación y autorización): son grupos de permisos del panel,
+  no tienen nada que ver con los de las asambleas y confundían.
+- Cada pantalla lleva un texto de ayuda (qué muestra y qué se puede gestionar), con `base/trastienda.py`.
+- Ficha de usuario: sus pertenencias directas y la lista de todos sus grupos, también los heredados, y de
+  qué es admin. Ficha de grupo: su camino, todos sus subgrupos, sus miembros directos y los que le llegan
+  de sus subgrupos. Los desplegables de grupos muestran el camino completo, en orden de árbol.
+- **Admins de grupo** es otra forma de ver las pertenencias con rol de admin (modelo «proxy»
+  `AdminDeGrupo`). Nombrar a alguien que ya está en el grupo le cambia el rol, sin duplicar nada.
 
 ### 8.2 Lugares
 
