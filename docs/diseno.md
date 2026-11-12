@@ -586,8 +586,40 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
   grupo de otra organización**. Una vez aceptada la invitación, las personas del proyecto pueden
   **comunicarse entre ellas** dentro del proyecto. Es una excepción a la independencia de las
   organizaciones y debe quedar limitada al proyecto (no abre nada más de cada organización).
-  *(por diseñar: al hacer `grupos` y `audiencias` en la fase 1, y `proyectos` y `comunicaciones`
-  después; ver apartado 20)*
+  - **Decidido (12 de noviembre de 2026): invitación de grupo a grupo, colgada de lo invitado.** El grupo
+    que crea el proyecto invita a un grupo de otra organización (`InvitacionDeGrupo`, con un ancla al
+    proyecto). Al aceptarla, ese grupo entra en la audiencia del proyecto y el chat del proyecto llega a
+    quienes lo ven. Nadie cambia de organización ni de grupo.
+    - *Descartado:* un «grupo puente» con miembros de las dos organizaciones (rompe que cada grupo es de
+      una sola organización y deja una vía permanente entre ellas).
+  - **La acepta o rechaza el admin_grupo del grupo invitado** (o el superadmin), y se avisa a todo el
+    grupo (cuando exista `comunicaciones`). *Descartado:* una solicitud con apoyos (llega en la fase 2).
+  - Solo se invita a grupos de **otra** organización; dentro de la misma basta con la audiencia. Invita
+    cualquier miembro del grupo que invita (lo afinará `permisos`), y cualquiera de ellos puede retirarla.
+  - *(por diseñar: qué audiencia tiene el proyecto y cómo se comunican, con `audiencias`, `proyectos` y
+    `comunicaciones`)*
+- **Asamblea base: una por persona en toda la plataforma** (12 de noviembre de 2026). Es donde se valida
+  en la bóveda; con dos, una persona podría validarse dos veces. *(revisable: la persona usuaria no lo ve
+  del todo claro; pasar a una por organización solo cambia una restricción de la tabla.)*
+
+**Cómo está hecho `grupos` (12 de noviembre de 2026).**
+- `Organizacion`; `Grupo` (con `padre`, de la misma organización y sin círculos; no cambia de
+  organización); `Contencion`, la **tabla de cierre** (un par por cada «antecesor contiene a
+  descendiente», también el grupo consigo mismo), que mantiene el propio `Grupo.save()` al crear o mover
+  un grupo; `Pertenencia` (rol `usuario` o `admin_grupo`, desde qué día, asamblea base);
+  `AdminDeOrganizacion` (debe estar en algún grupo de la organización; deja de serlo al salir del
+  último); `RelacionEntreGrupos` (libre, para el grafo; no afecta a permisos); `InvitacionDeGrupo`.
+- Los cambios se hacen con `grupos/servicios.py` (`crear_organizacion`, que crea también su primer
+  grupo; `crear_grupo`, `admitir`, `sacar`, `cambiar_rol`, `cambiar_asamblea_base`,
+  `nombrar_admin_de_organizacion`, `invitar`, `responder_invitacion`, `retirar_invitacion`), que avisan
+  con eventos_sw (`grupos.pertenencias_cambiadas`, `grupos.estructura_cambiada`,
+  `grupos.invitacion_*`) para que `permisos` y `audiencias` rehagan sus cálculos.
+- `grupos_de(usuario)`: los grupos de los que es miembro, también los que contienen a los suyos, con una
+  sola consulta.
+- **Datos de ejemplo:** organizaciones con nombres de ríos ibéricos («ORG Tajo», «ORG Ebro», «ORG Duero»,
+  «ORG Guadalquivir») y grupos con nombres de sus afluentes («GRU Jarama» ⊃ «GRU Henares»…), a petición
+  de la persona usuaria. Cada usuario de ejemplo tiene su asamblea base; algunos están en dos
+  organizaciones.
 
 ### 8.2 Lugares
 
@@ -886,8 +918,8 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 ## 20. Pendiente de decidir
 
 - Admisión en grupos: cuántos votos hacen falta además del del admin_grupo, quién vota y en qué plazo.
-- Proyectos conjuntos entre organizaciones (apartado 8.1): quién acepta la invitación del otro grupo,
-  qué audiencia tiene el proyecto, qué ve cada organización del otro grupo y cómo se comunican.
+- Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
+  organización del otro grupo y cómo se comunican.
 - Trabajador de colas: Celery o RQ.
 - Qué mensajes de Telegram entran a un chat o a un debate.
 - Detección de comportamientos sospechosos (señales sin mirar identidades).

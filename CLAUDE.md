@@ -63,6 +63,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 - 12 de noviembre de 2026: **fase 0 terminada** (esqueleto, contrato de módulo, `eventos_sw`, medición,
   plantilla general, tabla filtrable, botón «copiar» y pruebas en el navegador con Playwright).
 - **Fase 1 en curso** (ver docs/diseno.md, apartado 19). Hecho: `usuarios` (entrar, salir, «Mi cuenta»
-  con preferencias y contraseña) y la orden `python manage.py ejemplos crear` (usuarios de ejemplo:
-  animales y árboles, superadmin «Águila», contraseña `M3n0sL3ctiv4s`). Siguiente: `grupos`, teniendo en
-  cuenta los proyectos conjuntos entre organizaciones (docs/diseno.md, apartado 8.1).
+  con preferencias y contraseña), `grupos` (organizaciones, grupos con tabla de cierre, pertenencias,
+  asamblea base, admin_org, relaciones e invitaciones entre organizaciones) y la orden
+  `python manage.py ejemplos crear` (usuarios: animales y árboles, superadmin «Águila», contraseña
+  `M3n0sL3ctiv4s`; organizaciones «ORG <río>» y grupos «GRU <afluente>»). Siguiente: `permisos`.

@@ -251,3 +251,28 @@ sirve aquí y dónde se usa.
 - **Las pruebas inician sesión.** `PruebaDePantalla` entra como un usuario de prueba con
   `force_login`, y `base/pruebas_navegador.py` entra por la pantalla de entrada, como una persona.
   `base` crea ese usuario con `get_user_model()`, sin importar `usuarios`, para respetar las capas.
+
+## 10. Grupos dentro de grupos: la tabla de cierre (12 de noviembre de 2026)
+
+- **El problema.** Quien está en «GRU Henares» es también miembro de «GRU Jarama», que lo contiene, y
+  de lo que contenga a Jarama. Con solo el campo `padre`, saber todos los grupos de alguien obliga a
+  subir por el árbol consulta a consulta, y el número de consultas crecería con la profundidad.
+- **La solución: una tabla con todos los pares.** `Contencion` guarda una fila por cada pareja
+  «antecesor contiene a descendiente», con la distancia, incluido cada grupo consigo mismo
+  (distancia 0). Para Jarama ⊃ Henares ⊃ Badiel hay 6 filas: las 3 de cada grupo consigo mismo, más
+  Jarama-Henares (1), Henares-Badiel (1) y Jarama-Badiel (2). Con eso, «todos los grupos de Lince» es
+  una sola consulta (`grupos_de`).
+- **Mantenerla al mover un subárbol.** `Grupo.save()` lo hace solo:
+  1. borra los pares que unen el subárbol (el grupo y sus subgrupos) con sus antiguos antecesores;
+  2. añade los pares de cada antecesor del nuevo padre con cada grupo del subárbol, con una sola
+     escritura (`bulk_create`).
+
+  Los pares de dentro del subárbol no cambian.
+- **`from_db`.** Django llama a este método al leer un objeto de la base. Ahí se apunta el padre con el
+  que estaba guardado, para saber al guardarlo si ha cambiado.
+- **Restricciones con condición.** «Una asamblea base por persona» es una restricción única solo sobre
+  las filas con `es_base=True` (`UniqueConstraint(..., condition=Q(es_base=True))`). La comprueba
+  PostgreSQL, y también `full_clean()` antes de guardar, con un mensaje propio.
+- **Servicios.** Las operaciones (`admitir`, `invitar`…) están en `grupos/servicios.py`: comprueban,
+  guardan y avisan con eventos_sw en una sola transacción. Así una pantalla, la API o una orden hacen
+  exactamente lo mismo.
