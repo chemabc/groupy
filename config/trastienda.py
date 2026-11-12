@@ -17,6 +17,7 @@ SECCIONES = [
     ("Usuarios", ["usuarios.Usuario", "grupos.Pertenencia"]),
     ("Organizaciones y grupos", ["grupos.Organizacion", "grupos.Grupo", "grupos.RelacionEntreGrupos", "grupos.InvitacionDeGrupo"]),
     ("Admins (de organización y de grupo)", ["grupos.AdminDeOrganizacion", "grupos.AdminDeGrupo"]),
+    ("Roles y permisos", ["permisos.Rol", "permisos.ExcepcionDePermiso", "permisos.Cometido"]),
     ("Funcionamiento interno", ["eventos_sw.AvisoPendiente"]),
 ]
 
@@ -29,6 +30,8 @@ AYUDA_DE_INICIO = (
     "contener subgrupos a cualquier profundidad (general → zona → centro → …). También las relaciones "
     "libres entre grupos y las invitaciones a grupos de otras organizaciones.\n\n"
     "«Admins»: quién administra cada organización y cada grupo.\n\n"
+    "«Roles y permisos»: qué puede hacer cada rol (también los roles que cree el superadmin), las "
+    "excepciones de una persona en un grupo y los cometidos de cada cual en cosas concretas.\n\n"
     "«Funcionamiento interno»: avisos pendientes entre módulos; normalmente no hay que tocar nada."
 )
 

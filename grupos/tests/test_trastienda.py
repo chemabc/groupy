@@ -38,7 +38,7 @@ class PruebasDeLaTrastienda(PruebaDePantalla):
         secciones = [seccion["name"] for seccion in respuesta.context["app_list"]]
         self.assertEqual(
             secciones,
-            ["Usuarios", "Organizaciones y grupos", "Admins (de organización y de grupo)", "Funcionamiento interno"],
+            ["Usuarios", "Organizaciones y grupos", "Admins (de organización y de grupo)", "Roles y permisos", "Funcionamiento interno"],
         )
         self.assertEqual([tabla["object_name"] for tabla in respuesta.context["app_list"][0]["models"]], ["Usuario", "Pertenencia"])
         self.assertContains(respuesta, "Trastienda técnica: solo para emergencias")
@@ -49,7 +49,7 @@ class PruebasDeLaTrastienda(PruebaDePantalla):
         for direccion, consultas in [
             ("/trastienda/usuarios/usuario/", 4),
             ("/trastienda/grupos/grupo/", 5),
-            ("/trastienda/grupos/pertenencia/", 5),
+            ("/trastienda/grupos/pertenencia/", 6),
             ("/trastienda/grupos/admindegrupo/", 5),
             ("/trastienda/grupos/organizacion/", 4),
         ]:

@@ -13,6 +13,7 @@ Tablas del módulo «grupos»: organizaciones, grupos y lo que cada persona es e
 - InvitacionDeGrupo: un grupo invita a un grupo de otra organización a algo concreto (un proyecto).
 """
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.postgres.aggregates import StringAgg
 from django.contrib.postgres.lookups import Unaccent
@@ -260,11 +261,11 @@ class Pertenencia(models.Model):
     Una de sus pertenencias, como mucho, es su asamblea base.
     """
 
-    # Roles posibles dentro de un grupo. El superadmin es una marca del usuario, y el admin de una
+    # Códigos de los roles de grupo del sistema. Hay más roles posibles: los que crea el superadmin
+    # (tabla Rol del módulo «permisos»). El superadmin es una marca del usuario, y el admin de una
     # organización está en AdminDeOrganizacion.
     USUARIO = "usuario"
     ADMIN_GRUPO = "admin_grupo"
-    ROLES = [(USUARIO, "Usuario"), (ADMIN_GRUPO, "Admin del grupo")]
 
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -282,10 +283,12 @@ class Pertenencia(models.Model):
     )
     rol = models.CharField(
         "rol",
-        max_length=20,
-        choices=ROLES,
+        max_length=40,
         default=USUARIO,
-        help_text="Usuario o admin del grupo. El admin del grupo cuida la estructura, no filtra (apartado 5.3).",
+        help_text=(
+            "Código de su rol en el grupo: «usuario», «admin_grupo» (cuida la estructura, no filtra) o uno "
+            "de los roles de grupo que haya creado el superadmin (ver «Roles y permisos»)."
+        ),
     )
     rol_desde = models.DateField(
         "con este rol desde",
@@ -318,6 +321,14 @@ class Pertenencia(models.Model):
     # Texto con el que se muestra: «Lince en GRU Henares».
     def __str__(self):
         return f"{self.usuario} en {self.grupo}"
+
+    # Comprueba que el rol existe y es de grupo. La tabla de roles es del módulo «permisos» y se busca por
+    # su nombre (apps.get_model), sin importarlo, para no formar un círculo entre los dos módulos.
+    def clean(self):
+        super().clean()
+        roles = apps.get_model("permisos", "Rol").objects.filter(nivel="grupo")
+        if not roles.filter(codigo=self.rol).exists():
+            raise ValidationError({"rol": f"No existe el rol de grupo «{self.rol}»."})
 
 
 class SoloAdminsDeGrupo(models.Manager):

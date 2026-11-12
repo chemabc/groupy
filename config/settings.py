@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "usuarios.apps.UsuariosConfig",
     # Capa de organización
     "grupos.apps.GruposConfig",
+    "permisos.apps.PermisosConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,

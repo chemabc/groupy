@@ -304,3 +304,30 @@ sirve aquí y dónde se usa.
   y espacios en la primera pasada, y así «GRU Duero › GRU Adaja» quedaba antes que «GRU Duero». Con
   `Collate(..., "C")` se compara carácter a carácter. Para que las tildes no estorben, la clave va antes
   sin tildes y en minúsculas.
+
+## 12. Permisos: calcular una vez, preguntar sin coste (12 de noviembre de 2026)
+
+- **La idea.** Saber si alguien puede hacer algo mirando sus grupos, roles y excepciones en cada
+  pregunta costaría varias consultas cada vez. Por eso `permisos_de(usuario)` lo calcula todo de una vez
+  (unas 7 consultas) y lo guarda en la caché como un mapa: `{grupo: {permisos}}`. Después,
+  `puede(usuario, "grupos.invitar", grupo=g)` solo mira el mapa.
+- **Versiones en la caché.** La clave lleva un número de versión (`permisos:12:v3`). Para invalidar el
+  cálculo de todo el mundo no hace falta buscar y borrar claves: se sube la versión y las claves viejas
+  dejan de usarse (y caducan solas).
+- **`transaction.on_commit`.** La caché se borra cuando la transacción ha terminado bien. Si se borrara
+  antes, otra petición podría recalcular con los datos viejos y guardarlos de nuevo. En las pruebas
+  (`TestCase`), la transacción nunca termina; se usa `captureOnCommitCallbacks(execute=True)`.
+- **Señales de Django.** `post_save` y `post_delete` avisan cada vez que se guarda o se borra una fila,
+  venga de donde venga (también de la trastienda). Ojo: `bulk_create` y `update` no las lanzan.
+- **`post_migrate`.** Django lanza esta señal después de cada `migrate` y también cuando las pruebas con
+  servidor de verdad vacían la base. `sincronizar_permisos()` la escucha para que los roles del sistema y
+  sus permisos por defecto estén siempre.
+- **Evitar círculos entre módulos.** `permisos` usa las tablas de `grupos`, y `grupos` pregunta a
+  `permisos` antes de invitar. Para que no se importen el uno al otro al arrancar, `grupos` importa
+  `permisos` dentro de la función que lo usa, y busca la tabla de roles por su nombre
+  (`apps.get_model("permisos", "Rol")`).
+- **La caché en las pruebas.** En las pruebas la caché vive en la memoria del proceso y pasa de una
+  prueba a otra, aunque la base de datos vuelva atrás. Por eso las pruebas que usan permisos empiezan
+  con `cache.clear()`.
+- **htmx y los errores.** Por defecto, htmx no pinta las respuestas 4xx y 5xx. Con `responseHandling` (en
+  `htmx-config`) se le dice que la 403 sí la pinte, porque trae la explicación.

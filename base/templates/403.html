@@ -1,0 +1,12 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «sin permiso» (código 403). Django la usa cuando una vista o un servicio lanza
+  PermissionDenied (por ejemplo, SinPermiso del módulo «permisos»). Recibe «exception»: la explicación
+  de qué falta y a quién pedirlo. Va dentro de la zona central, así que el menú sigue en su sitio.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" role="alert">
+  <h2 class="mb-2 font-semibold">No tienes permiso para esto</h2>
+  <p>{{ exception|default:"Te falta un permiso para hacer esto. Pregunta al admin de tu grupo." }}</p>
+</div>
+{% endblock %}

@@ -196,6 +196,40 @@ dentro de una ficha**):
 - «Explicar permiso» (el razonamiento paso a paso) se usa solo en las pantallas de soporte, con una
   prueba que asegura que decide igual que la forma rápida.
 
+**Cómo está hecho `permisos` (12 de noviembre de 2026).**
+- **Roles en una tabla que ajusta el superadmin** (`Rol` y `PermisoDeRol`). Cada módulo declara en su
+  contrato los roles que tienen cada permiso por defecto (`Permiso(..., roles=("admin_grupo",))`), y
+  `sincronizar_permisos()` se los da **solo la primera vez** que aparece el permiso (`PermisoConocido`):
+  si después el superadmin se lo quita a un rol, no vuelve. Se ejecuta sola tras cada `migrate`.
+  *Descartado:* los permisos solo en el código (cambiar algo obligaría a programar).
+- **Roles personalizados** (a petición de la persona usuaria; cambia los «cinco roles fijos» del
+  apartado 5): el superadmin puede crear roles de grupo (por ejemplo, «Tesorería») y poner o quitar
+  permisos a cualquier rol, también a los del sistema (`usuario`, `admin_grupo`, `admin_org`, que no se
+  pueden borrar). Un rol personalizado se da cambiando el rol de una pertenencia, y vale solo en ese
+  grupo. *(Roles personalizados de organización y «qué rol tendrá por defecto el admin de cada grupo u
+  organización»: más adelante, con las pantallas de nombrar admins.)*
+- **El cálculo** (`permisos_de`) sigue las reglas de arriba: el rol `usuario` en sus grupos y en los que
+  los contienen; su rol de cada grupo solo allí; `admin_org` en la organización y en todos sus grupos;
+  después las **excepciones individuales** (`ExcepcionDePermiso`: dar o quitar un permiso en un grupo;
+  quitar gana); y los **cometidos**. Unas 7 consultas, sea cual sea el número de grupos, y a la caché
+  (`permisos:<id>:v<versión>`).
+- **Invalidación:** con señales de Django (`permisos/senales.py`), para cubrir también la trastienda.
+  Cambiar pertenencias, admins, excepciones o cometidos borra el cálculo de esa persona; cambiar grupos,
+  roles o sus permisos sube la versión de todos. Siempre al terminar bien la transacción.
+- **Cometidos aparte del mapa por grupos** (`Cometido`: persona, código, ancla y el grupo donde vive
+  aquello). `tiene_cometido(usuario, código, tipo, id)`, y cada cometido declara en el contrato los
+  permisos que da sobre eso concreto (`puede(..., ancla=("debates.debate", 7))`).
+  `cometidos_en_grupo(grupo)` da los de la gente de un grupo y sus subgrupos, para que sus miembros vean
+  quién hace qué (petición de la persona usuaria). *(Su visibilidad la afinará `audiencias`: un cometido
+  en algo privado solo lo verá quien vea ese algo.)*
+- **Errores que explican:** `exigir()` y el decorador `@requiere_permiso` lanzan `SinPermiso` con un texto
+  como «Para editar los datos del grupo en «GRU Henares» hace falta el permiso «grupos.editar_grupo». Lo
+  tienen estos roles: … Puedes pedírselo a: Lince (admin de GRU Henares), Zorro (admin de ORG Tajo), el
+  superadmin.». Se muestra en la pantalla 403, dentro de la zona central (htmx la pinta gracias al
+  ajuste `responseHandling`).
+- `grupos` ya usa `exigir` para invitar (`grupos.invitar`, por defecto cualquier miembro) y para
+  responder a una invitación (`grupos.responder_invitacion`, por defecto el admin del grupo).
+
 ### 3.6 Presupuesto de rendimiento
 
 | Regla | Cómo se comprueba |

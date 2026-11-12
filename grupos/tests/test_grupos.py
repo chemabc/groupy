@@ -4,6 +4,7 @@ invitaciones entre organizaciones y datos de ejemplo.
 """
 
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 
@@ -12,6 +13,7 @@ from base.pruebas import contratos_de_prueba, crear_usuario_de_prueba, modulo_fa
 from eventos_sw.tests import receptores
 from grupos import ejemplos
 from grupos.models import Contencion, Grupo, InvitacionDeGrupo, Organizacion, Pertenencia
+from permisos.servicios import SinPermiso
 from grupos.servicios import (
     admitir,
     cambiar_asamblea_base,
@@ -145,6 +147,7 @@ class PruebasDeInvitaciones(TestCase):
 
     # Tajo (Jarama, con Lince) invita a Ebro (Segre, con Zorro de admin y Grulla de usuaria).
     def setUp(self):
+        cache.clear()
         contexto = contratos_de_prueba(ALFA)
         contexto.__enter__()
         self.addCleanup(contexto.__exit__, None, None, None)
@@ -172,7 +175,7 @@ class PruebasDeInvitaciones(TestCase):
     # Una usuaria normal del grupo invitado no puede responder.
     def test_solo_responde_el_admin(self):
         invitacion = self.invitar()
-        with self.assertRaisesMessage(ValidationError, "Solo el admin de «GRU Segre»"):
+        with self.assertRaisesMessage(SinPermiso, "hace falta el permiso «grupos.responder_invitacion»"):
             responder_invitacion(invitacion, self.grulla, acepta=True)
 
     # Una invitación respondida o retirada ya no se puede responder.
@@ -189,11 +192,12 @@ class PruebasDeInvitaciones(TestCase):
         casos = [
             (("alfa.proyecto", 7, self.jarama, henares, self.lince), "otra organización"),
             (("alfa.nada", 7, self.jarama, self.segre, self.lince), "ningún módulo lo declara"),
-            (("alfa.proyecto", 7, self.jarama, self.segre, self.zorro), "hay que ser miembro"),
         ]
         for argumentos, mensaje in casos:
             with self.subTest(mensaje=mensaje), self.assertRaisesMessage(ValidationError, mensaje):
                 invitar(*argumentos)
+        with self.assertRaisesMessage(SinPermiso, "hace falta el permiso «grupos.invitar»"):
+            invitar("alfa.proyecto", 7, self.jarama, self.segre, self.zorro)
         self.invitar()
         with self.assertRaisesMessage(ValidationError, "ya tiene una invitación pendiente"):
             self.invitar()

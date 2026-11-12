@@ -14,6 +14,7 @@ from contextlib import contextmanager
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 
 from .contrato import Capa, ModuloConfig
@@ -81,8 +82,10 @@ class PruebaDePantalla(TestCase):
     def setUpTestData(cls):
         cls.usuario = crear_usuario_de_prueba()
 
-    # Antes de cada prueba: inicia sesión sin pasar por la pantalla de entrada.
+    # Antes de cada prueba: vacía la caché (vive en la memoria del proceso y pasaría de una prueba a otra,
+    # con cálculos de permisos de usuarios que ya no existen) e inicia sesión sin pasar por la entrada.
     def setUp(self):
+        cache.clear()
         self.client.force_login(self.usuario)
 
     # Abre la pantalla y comprueba tres cosas:

@@ -49,6 +49,14 @@ class Modo(IntEnum):
     ASINCRONO = 2
 
 
+# Roles que existen siempre (ver docs/diseno.md, apartado 5). Los contratos solo pueden nombrar estos al
+# decir qué roles tienen un permiso por defecto; los roles personalizados los crea el superadmin después.
+#   - usuario: cualquier miembro de un grupo (y, por herencia, de los grupos que lo contienen).
+#   - admin_grupo: admin de un grupo concreto (no se hereda).
+#   - admin_org: admin de una organización (en todos sus grupos).
+ROLES_DEL_SISTEMA = ("usuario", "admin_grupo", "admin_org")
+
+
 @dataclass(frozen=True)
 class Permiso:
     """
@@ -58,8 +66,13 @@ class Permiso:
 
     # Código único, empezando por la etiqueta del módulo. Ejemplo: «eventos.convocar_reunion».
     codigo: str
-    # Explicación en lenguaje llano que se ve en la pantalla de roles y permisos.
+    # Explicación en lenguaje llano que se ve en la pantalla de roles y permisos. Conviene que empiece
+    # por un verbo: «Convocar una reunión del grupo».
     descripcion: str
+    # Roles que lo tienen por defecto, de ROLES_DEL_SISTEMA. Solo se aplica la primera vez que aparece
+    # el permiso: después, el superadmin puede ponerlo o quitarlo a cada rol. El superadmin lo tiene
+    # siempre, aunque no se diga.
+    roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -75,6 +88,9 @@ class Cometido:
     nombre: str
     # Qué hace quien lo asume, en lenguaje llano.
     descripcion: str
+    # Permisos que da sobre aquello en lo que se tiene (por ejemplo, la facilitación de un debate da
+    # «debates.moderar» en ese debate). Deben estar declarados en algún contrato.
+    permisos: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

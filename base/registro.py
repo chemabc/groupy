@@ -12,7 +12,7 @@ módulo que escucha un eventos_sw que nadie emite…). No los lanza: las comprob
 
 from pathlib import Path
 
-from .contrato import Capa, ModuloConfig
+from .contrato import ROLES_DEL_SISTEMA, Capa, ModuloConfig
 
 # Apartados del contrato que son listas de fichas con un código único, y el nombre del campo que hace de
 # código en cada una. El registro los recorre todos igual: comprueba el prefijo y que no se repitan.
@@ -79,6 +79,7 @@ class RegistroDeModulos:
                 )
         self._comprobar_escuchas()
         self._comprobar_ayuda()
+        self._comprobar_permisos()
         # Ordena el menú por su número de orden y, a igualdad, por nombre.
         self.menu.sort(key=lambda entrada: (entrada.orden, entrada.nombre))
         for entrada in self.menu:
@@ -149,6 +150,21 @@ class RegistroDeModulos:
         for evento in self.escuchas:
             if evento not in self.emite:
                 self.errores.append(f"Algún módulo escucha «{evento}», pero ningún módulo lo emite.")
+
+    # Apunta un error por cada permiso que nombra un rol que no es del sistema, y por cada cometido que da
+    # un permiso que nadie declara (suele ser una errata).
+    def _comprobar_permisos(self):
+        for permiso in self.permisos.values():
+            for rol in permiso.roles:
+                if rol not in ROLES_DEL_SISTEMA:
+                    self.errores.append(
+                        f"El permiso «{permiso.codigo}» da por defecto el rol «{rol}», que no es de los del sistema "
+                        f"({', '.join(ROLES_DEL_SISTEMA)})."
+                    )
+        for cometido in self.cometidos.values():
+            for codigo in cometido.permisos:
+                if codigo not in self.permisos:
+                    self.errores.append(f"El cometido «{cometido.codigo}» da el permiso «{codigo}», que nadie declara.")
 
     # Apunta un error por cada texto de ayuda de una sección que no existe en el menú.
     def _comprobar_ayuda(self):

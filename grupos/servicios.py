@@ -4,9 +4,12 @@ de tocar las tablas directamente, para que siempre se compruebe lo mismo y se av
 
 Todas trabajan dentro de una transacción: o se hace todo, o nada.
 
-Quién puede hacer cada cosa lo decidirá el módulo «permisos» (pieza siguiente). De momento, solo
-responder a una invitación comprueba quién lo hace, porque está acordado: el admin del grupo invitado
-(o el superadmin).
+Las operaciones que hace una persona desde la aplicación (invitar, responder a una invitación…)
+comprueban su permiso con el módulo «permisos». Las demás (admitir, crear grupos…) las comprobarán las
+vistas que las usen, cuando existan.
+
+Se importa «permisos» dentro de las funciones, no arriba, porque «permisos» importa las tablas de
+«grupos» y se formaría un círculo al arrancar.
 """
 
 from django.core.exceptions import ValidationError
@@ -132,14 +135,15 @@ def grupos_de(usuario):
 #   - mensaje: explicación para el grupo invitado.
 @transaction.atomic
 def invitar(ancla_tipo, ancla_id, grupo_que_invita, grupo_invitado, invitada_por, mensaje=""):
+    from permisos.servicios import exigir
+
     if ancla_tipo not in registro.anclas:
         raise ValidationError(f"No se puede invitar a «{ancla_tipo}»: ningún módulo lo declara como ancla.")
     if grupo_que_invita.organizacion_id == grupo_invitado.organizacion_id:
         raise ValidationError(
             "Solo se invita a grupos de otra organización; dentro de la misma basta con elegir a quién llega."
         )
-    if grupo_que_invita.pk not in grupos_de(invitada_por):
-        raise ValidationError(f"Para invitar en nombre de «{grupo_que_invita}» hay que ser miembro de ese grupo.")
+    exigir(invitada_por, "grupos.invitar", grupo=grupo_que_invita)
     invitacion = InvitacionDeGrupo(
         ancla_tipo=ancla_tipo,
         ancla_id=ancla_id,
@@ -154,21 +158,17 @@ def invitar(ancla_tipo, ancla_id, grupo_que_invita, grupo_invitado, invitada_por
     return invitacion
 
 
-# Acepta o rechaza una invitación pendiente. Solo puede hacerlo el admin del grupo invitado (o el
-# superadmin). Avisa con «grupos.invitacion_aceptada» o «grupos.invitacion_rechazada»; quien lleve lo
+# Acepta o rechaza una invitación pendiente. Hace falta el permiso «grupos.responder_invitacion» en el
+# grupo invitado (por defecto, su admin; y siempre el superadmin). Avisa con «grupos.invitacion_aceptada» o «grupos.invitacion_rechazada»; quien lleve lo
 # invitado (por ejemplo, «proyectos») escucha el aviso y abre el proyecto al grupo.
 #   - invitacion: la invitación.
 #   - usuario: quién responde.
 #   - acepta: True para aceptar, False para rechazar.
 @transaction.atomic
 def responder_invitacion(invitacion, usuario, acepta):
-    es_admin = Pertenencia.objects.filter(
-        usuario=usuario, grupo_id=invitacion.grupo_invitado_id, rol=Pertenencia.ADMIN_GRUPO
-    ).exists()
-    if not (es_admin or usuario.is_superuser):
-        raise ValidationError(
-            f"Solo el admin de «{invitacion.grupo_invitado}» (o el superadmin) puede responder a esta invitación."
-        )
+    from permisos.servicios import exigir
+
+    exigir(usuario, "grupos.responder_invitacion", grupo=invitacion.grupo_invitado)
     _cerrar(invitacion, usuario, InvitacionDeGrupo.ACEPTADA if acepta else InvitacionDeGrupo.RECHAZADA)
     emitir(f"grupos.invitacion_{invitacion.estado}", **invitacion.datos_del_aviso())
 

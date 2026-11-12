@@ -11,6 +11,7 @@ o mover grupos, que avisa el propio modelo).
 """
 
 from django import forms
+from django.apps import apps
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.db.models import Count, OuterRef, Subquery
@@ -67,10 +68,27 @@ class ElegirGrupoConCamino:
         return campo
 
 
+class ElegirRol:
+    """
+    Añadido para las fichas y tablas de la trastienda con el rol de una pertenencia: lo muestra como un
+    desplegable con los roles de grupo que existen (los del sistema y los personalizados). La tabla de
+    roles es del módulo «permisos» y se busca por su nombre, sin importarlo.
+    """
+
+    # Django la llama para cada campo. Cambia el campo «rol» por un desplegable.
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "rol":
+            roles = apps.get_model("permisos", "Rol").objects.filter(nivel="grupo")
+            return forms.ChoiceField(
+                label="rol", choices=[(rol.codigo, rol.nombre) for rol in roles], help_text=db_field.help_text
+            )
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
+
+
 # ── Usuarios ─────────────────────────────────────────────────────────────────────────────────────────
 
 
-class PertenenciasDelUsuario(ElegirGrupoConCamino, admin.TabularInline):
+class PertenenciasDelUsuario(ElegirRol, ElegirGrupoConCamino, admin.TabularInline):
     """En la ficha de un usuario: los grupos en los que está directamente, con su rol."""
 
     model = Pertenencia
@@ -146,7 +164,7 @@ class UsuarioConGrupos(FichaDeUsuarioBase):
 
 
 @admin.register(Pertenencia)
-class PertenenciaEnLaTrastienda(ConAyuda, ElegirGrupoConCamino, admin.ModelAdmin):
+class PertenenciaEnLaTrastienda(ConAyuda, ElegirRol, ElegirGrupoConCamino, admin.ModelAdmin):
     """Todas las pertenencias: quién está en cada grupo, con su rol."""
 
     ayuda = (
@@ -220,7 +238,7 @@ class OrganizacionEnLaTrastienda(ConAyuda, admin.ModelAdmin):
         return ", ".join(str(admin_org.usuario) for admin_org in organizacion.admins.select_related("usuario")) or "—"
 
 
-class PertenenciasDelGrupo(admin.TabularInline):
+class PertenenciasDelGrupo(ElegirRol, admin.TabularInline):
     """En la ficha de un grupo: quién está directamente en él, con su rol."""
 
     model = Pertenencia
@@ -377,7 +395,7 @@ class FormularioDeAdminDeGrupo(forms.ModelForm):
 
 
 @admin.register(AdminDeGrupo)
-class AdminDeGrupoEnLaTrastienda(ConAyuda, ElegirGrupoConCamino, admin.ModelAdmin):
+class AdminDeGrupoEnLaTrastienda(ConAyuda, ElegirRol, ElegirGrupoConCamino, admin.ModelAdmin):
     """Admins de cada grupo: las pertenencias con rol «admin del grupo»."""
 
     ayuda = (
