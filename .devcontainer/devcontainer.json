@@ -37,8 +37,9 @@
   // Orden que se ejecuta cada vez que se crea o reconstruye el contenedor: instala lo que no
   // forma parte de la imagen
   //   - pip install --user -r requirements.txt: librerías de Python (Django…) en /home/dev/.local
-  //   (En la fase 0 se añadirán npm install y npm run construir para Tailwind, htmx y Alpine.js)
-  "postCreateCommand": "pip install --user -r requirements.txt",
+  //   - npm install: librerías de la interfaz (Tailwind, htmx, Alpine) en node_modules
+  //   - npm run construir: copia htmx y Alpine y compila el CSS en static/generado
+  "postCreateCommand": "pip install --user -r requirements.txt && npm install && npm run construir",
   // Usuario sin privilegios creado en el Dockerfile (más seguro que root)
   "remoteUser": "dev"
 }

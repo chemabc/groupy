@@ -1,0 +1,19 @@
+{
+  "name": "gestion-de-asambleas",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Librerías de la interfaz (Tailwind, htmx, Alpine). Las órdenes se explican en herramientas/construir.mjs y en docs/arranque.md.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "construir": "node herramientas/construir.mjs && tailwindcss -i base/estilos/entrada.css -o static/generado/estilos.css --minify",
+    "vigilar": "node herramientas/construir.mjs && tailwindcss -i base/estilos/entrada.css -o static/generado/estilos.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "tailwindcss": "4.3.3"
+  },
+  "dependencies": {
+    "alpinejs": "3.17.5",
+    "htmx.org": "2.0.11"
+  }
+}

@@ -177,3 +177,7 @@ USE_TZ = True
 # publicarlos en producción.
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Carpetas comunes de ficheros estáticos, además de las «static/» de cada módulo. En static/generado/
+# deja «npm run construir» el CSS de Tailwind, htmx y Alpine.
+STATICFILES_DIRS = [BASE_DIR / "static"]

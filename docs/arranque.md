@@ -54,6 +54,28 @@ python manage.py runserver 0.0.0.0:8000
 
 Abre http://localhost:8000: debe salir «Gestión de asambleas v2: Django responde.».
 
+### Los estilos y las librerías de la interfaz
+
+Al crear el contenedor ya se ejecutan `npm install` y `npm run construir`. Si cambias plantillas o
+estilos mientras programas, deja en otra terminal:
+
+```bash
+# Recompila el CSS cada vez que guardas una plantilla
+#     run vigilar: orden definida en package.json (copia htmx y Alpine y vigila con Tailwind)
+npm run vigilar
+```
+
+Si alguna vez falta `static/generado/` (por ejemplo, tras clonar el repositorio fuera del contenedor):
+
+```bash
+# Instala las librerías de la interfaz
+#     install: lee package.json y package-lock.json y llena node_modules
+npm install
+# Genera static/generado/ una vez
+#     run construir: copia htmx y Alpine y compila el CSS reducido
+npm run construir
+```
+
 **No ejecutes `python manage.py migrate` todavía:** el modelo de usuario (`Usuario`) llega en la fase 1.
 
 ## 3. Seguir con Claude

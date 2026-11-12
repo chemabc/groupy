@@ -1,0 +1,21 @@
+/*
+  Hoja de estilos de entrada de toda la aplicación.
+
+  Tailwind la lee, busca en las plantillas qué clases se usan (bg-white, flex, p-4…) y genera
+  static/generado/estilos.css solo con esas. Se compila con «npm run construir» (o «npm run vigilar»
+  mientras se programa). Ver docs/tutorial.md.
+*/
+
+/* Carga Tailwind. «source(none)» desactiva la búsqueda automática de ficheros: se le dice abajo dónde
+   mirar, para que no recorra node_modules, la documentación, etc. */
+@import "tailwindcss" source(none);
+
+/* Dónde busca Tailwind las clases que se usan (rutas relativas a este fichero):
+     - las plantillas de cada módulo (<módulo>/templates/);
+     - las plantillas comunes (plantillas/). */
+@source "../../*/templates/**/*.html";
+@source "../../plantillas/**/*.html";
+
+/* Modo oscuro: las clases «dark:…» se aplican cuando la etiqueta <html> tiene data-tema="oscuro". Lo
+   pone el script del tema de la plantilla base, según lo que haya elegido la persona. */
+@custom-variant dark (&:where([data-tema="oscuro"], [data-tema="oscuro"] *));
