@@ -1,7 +1,8 @@
 {% comment %}
   Una entrada del menú izquierdo y, debajo, sus subsecciones (que se pintan con esta misma plantilla, a
   cualquier profundidad). Recibe «entrada» (una EntradaDeMenu del contrato) y vive dentro del componente
-  «menuLateral» de base/static/base/interfaz.js, del que usa «plegado», «abiertas» y «alternarSeccion».
+  «menuLateral» de base/static/base/interfaz.js, del que usa «abiertas» y «alternarSeccion». Con el menú
+  plegado, la variante «plegado:» oculta los textos y las subsecciones y deja solo la inicial.
 {% endcomment %}
 <div>
   <div class="flex items-center">
@@ -9,11 +10,11 @@
        :class="$store.navegacion.secciones.includes($el.dataset.codigo) ? 'bg-marca/10 text-marca font-medium' : 'hover:bg-slate-100 dark:hover:bg-slate-800'"
        class="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1.5 text-sm">
       <span class="grid size-6 shrink-0 place-items-center rounded bg-slate-100 text-xs dark:bg-slate-800">{{ entrada.icono|default:entrada.nombre|first }}</span>
-      <span x-show="!plegado" class="truncate">{{ entrada.nombre }}</span>
+      <span class="truncate plegado:hidden">{{ entrada.nombre }}</span>
     </a>
     {% if entrada.subsecciones %}
-      <button type="button" x-show="!plegado" data-codigo="{{ entrada.codigo }}"
-              class="rounded px-1 text-xs text-slate-400 transition-transform hover:bg-slate-100 dark:hover:bg-slate-800"
+      <button type="button" data-codigo="{{ entrada.codigo }}"
+              class="rounded px-1 plegado:hidden text-xs text-slate-400 transition-transform hover:bg-slate-100 dark:hover:bg-slate-800"
               :class="abiertas.includes($el.dataset.codigo) && 'rotate-90'"
               :aria-expanded="abiertas.includes($el.dataset.codigo)"
               aria-label="Mostrar u ocultar las subsecciones de {{ entrada.nombre }}"
@@ -21,7 +22,7 @@
     {% endif %}
   </div>
   {% if entrada.subsecciones %}
-    <div data-codigo="{{ entrada.codigo }}" x-show="!plegado && abiertas.includes($el.dataset.codigo)" x-cloak class="ml-4">
+    <div data-codigo="{{ entrada.codigo }}" x-show="abiertas.includes($el.dataset.codigo)" x-cloak class="ml-4 plegado:hidden">
       {% for entrada in entrada.subsecciones %}{% include "base/entrada_de_menu.html" %}{% endfor %}
     </div>
   {% endif %}

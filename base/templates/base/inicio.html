@@ -11,7 +11,7 @@
       <li><strong>Menú izquierdo:</strong> las secciones. Se pliega con ☰ y no salta al navegar ni al recargar.</li>
       <li><strong>Menú superior:</strong> las vistas de la sección elegida (aquí, «Estructura» y «Componentes»).</li>
       <li><strong>Botón «?»:</strong> junto al título, explica para qué sirve la sección.</li>
-      <li><strong>Arriba a la derecha:</strong> el alias de quien ha iniciado sesión y el botón del tema.</li>
+      <li><strong>Arriba a la derecha:</strong> el alias de quien ha iniciado sesión y el botón del tema (☀ claro, ◐ día, ☾ oscuro).</li>
       <li><strong>En el móvil:</strong> las secciones pasan a una barra inferior y las vistas se deslizan de lado.</li>
     </ul>
   </section>
@@ -20,28 +20,20 @@
     <h2 class="mb-2 font-semibold">Preferencias de presentación</h2>
     <p class="mb-3 text-sm text-slate-500">De momento se guardan en este navegador. Con las cuentas de usuario, irán a tus preferencias.</p>
     <dl class="space-y-3 text-sm">
-      {# Cada fila: el nombre de la preferencia y sus opciones como botones #}
-      <div class="flex flex-wrap items-center gap-2">
-        <dt class="w-24 text-slate-500">Tema</dt>
-        <dd class="flex gap-1">
-          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.tema === 'claro' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('tema', 'claro')">Claro</button>
-          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.tema === 'oscuro' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('tema', 'oscuro')">Oscuro</button>
-        </dd>
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <dt class="w-24 text-slate-500">Letra</dt>
-        <dd class="flex gap-1">
-          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.letra === 'normal' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('letra', 'normal')">Normal</button>
-          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.letra === 'grande' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('letra', 'grande')">Grande</button>
-        </dd>
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <dt class="w-24 text-slate-500">Densidad</dt>
-        <dd class="flex gap-1">
-          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.densidad === 'comoda' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('densidad', 'comoda')">Cómoda</button>
-          <button type="button" class="rounded border px-2 py-1" :class="$store.preferencias.densidad === 'compacta' ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'" @click="$store.preferencias.poner('densidad', 'compacta')">Compacta</button>
-        </dd>
-      </div>
+      {# Cada fila: el nombre de la preferencia y sus opciones como botones. La lista sale de la vista. #}
+      {% for clave, nombre, opciones in preferencias %}
+        <div class="flex flex-wrap items-center gap-2">
+          <dt class="w-24 text-slate-500">{{ nombre }}</dt>
+          <dd class="flex flex-wrap gap-1">
+            {% for valor, nombre_de_opcion in opciones %}
+              <button type="button" class="rounded border px-2 py-1"
+                      data-clave="{{ clave }}" data-valor="{{ valor }}"
+                      :class="$store.preferencias[$el.dataset.clave] === $el.dataset.valor ? 'border-marca text-marca' : 'border-slate-300 dark:border-slate-700'"
+                      @click="$store.preferencias.poner($el.dataset.clave, $el.dataset.valor)">{{ nombre_de_opcion }}</button>
+            {% endfor %}
+          </dd>
+        </div>
+      {% endfor %}
     </dl>
   </section>
 </div>

@@ -44,9 +44,17 @@ document.addEventListener("alpine:init", () => {
       guardar(clave, valor);
     },
 
-    // Pasa de claro a oscuro o al revés. Lo usa el botón del tema de la cabecera.
-    alternarTema() {
-      this.poner("tema", this.tema === "oscuro" ? "claro" : "oscuro");
+    // Pasa al tema siguiente: claro → día (claro con más contraste) → oscuro → claro… Lo usa el botón
+    // del tema de la cabecera.
+    siguienteTema() {
+      const orden = ["claro", "dia", "oscuro"];
+      const siguiente = orden[(orden.indexOf(this.tema) + 1) % orden.length];
+      this.poner("tema", siguiente);
+    },
+
+    // Icono del botón del tema según el tema actual: ☀ claro, ◐ día, ☾ oscuro.
+    iconoDelTema() {
+      return { claro: "☀", dia: "◐", oscuro: "☾" }[this.tema] || "☀";
     },
   });
 
@@ -56,8 +64,10 @@ document.addEventListener("alpine:init", () => {
 
   // Componente del menú izquierdo: si está plegado, qué secciones tienen abiertas sus subsecciones y
   // hasta dónde se había bajado. Todo se guarda en el navegador para que el menú no salte al recargar.
+  // El plegado se aplica como atributo data-menu de <html> («plegado» o «desplegado»): la hoja de estilos
+  // cambia con él la anchura del menú y oculta sus textos (variante «plegado:»), y el script del <head>
+  // lo aplica antes de pintar.
   Alpine.data("menuLateral", () => ({
-    plegado: leerGuardado("menu.plegado", false),
     abiertas: leerGuardado("menu.abiertas", []),
 
     // Al arrancar, vuelve a bajar el menú hasta donde estaba.
@@ -67,8 +77,9 @@ document.addEventListener("alpine:init", () => {
 
     // Pliega o despliega el menú entero. Lo usa el botón ☰ de la cabecera.
     alternarPlegado() {
-      this.plegado = !this.plegado;
-      guardar("menu.plegado", this.plegado);
+      const plegado = document.documentElement.dataset.menu !== "plegado";
+      document.documentElement.dataset.menu = plegado ? "plegado" : "desplegado";
+      guardar("menu.plegado", plegado);
     },
 
     // Abre o cierra las subsecciones de una sección.

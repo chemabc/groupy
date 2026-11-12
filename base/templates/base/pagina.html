@@ -14,9 +14,10 @@
   <meta name="htmx-config" content='{"historyCacheSize": 0}'>
   <title>{{ interfaz.titulo }}</title>
   <script>
-    // Aplica el tema, la letra y la densidad guardados ANTES de pintar la página, para que no se vea un
-    // destello claro al cargar en modo oscuro. Va aquí, dentro de la página, porque tiene que ejecutarse
-    // antes de que exista el cuerpo. Si no hay nada guardado, sigue el tema del sistema operativo.
+    // Aplica el tema, la letra, la densidad y el plegado del menú guardados ANTES de pintar la página,
+    // para que no se vea un destello claro ni un salto del menú al cargar. Va aquí, dentro de la página,
+    // porque tiene que ejecutarse antes de que exista el cuerpo. Si no hay tema guardado, sigue el del
+    // sistema operativo.
     (function () {
       var raiz = document.documentElement;
       // Lee una preferencia guardada por base/static/base/interfaz.js, o devuelve la de por defecto.
@@ -28,6 +29,7 @@
       raiz.dataset.tema = leer("tema", temaDelSistema);
       raiz.dataset.letra = leer("letra", "normal");
       raiz.dataset.densidad = leer("densidad", "comoda");
+      raiz.dataset.menu = leer("menu.plegado", false) ? "plegado" : "desplegado";
     })();
   </script>
   <link rel="stylesheet" href="{% static 'generado/estilos.css' %}">
@@ -49,18 +51,17 @@
     <a href="{% url 'base:inicio' %}" class="font-semibold text-marca">Asambleas</a>
     <span class="ml-auto text-xs text-slate-500">{{ interfaz.alias }}</span>
     <button type="button" class="rounded px-1 hover:bg-slate-100 dark:hover:bg-slate-800"
-            title="Cambiar entre tema claro y oscuro" aria-label="Cambiar entre tema claro y oscuro"
-            x-data @click="$store.preferencias.alternarTema()">
-      <span x-show="$store.preferencias.tema !== 'oscuro'">☾</span>
-      <span x-show="$store.preferencias.tema === 'oscuro'" x-cloak>☀</span>
+            title="Cambiar de tema: claro, día (más contraste) u oscuro" aria-label="Cambiar de tema"
+            x-data @click="$store.preferencias.siguienteTema()">
+      <span x-text="$store.preferencias.iconoDelTema()">☾</span>
     </button>
   </header>
 
   <div class="flex min-h-0 flex-1">
     {# Menú izquierdo (solo en pantallas medianas o grandes). No se vuelve a pintar al navegar. #}
+    {# Su anchura depende del atributo data-menu de <html> (variante «plegado:» de entrada.css). #}
     <nav x-data="menuLateral" @alternar-menu.window="alternarPlegado()" @scroll.debounce.200ms="apuntarDesplazamiento()"
-         :class="plegado ? 'w-14' : 'w-60'"
-         class="hidden w-60 shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-slate-200 bg-white p-2 md:flex dark:border-slate-800 dark:bg-slate-900"
+         class="hidden w-60 shrink-0 plegado:w-14 flex-col gap-0.5 overflow-y-auto border-r border-slate-200 bg-white p-2 md:flex dark:border-slate-800 dark:bg-slate-900"
          aria-label="Secciones">
       {% for entrada in interfaz.menu %}{% include "base/entrada_de_menu.html" %}{% endfor %}
     </nav>

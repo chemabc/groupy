@@ -294,7 +294,9 @@ JavaScript y una posible aplicación móvil.
   `HX-Request` y `HX-Target: zona`. Las páginas heredan de `interfaz.plantilla`, que vale `base/zona.html`
   o `base/pagina.html` (la página entera, que envuelve la zona). Las vistas no tienen que hacer nada.
   Qué secciones están plegadas, si el menú está plegado y hasta dónde se había bajado se guardan en el
-  navegador, para recuperarlo al recargar.
+  navegador, para recuperarlo al recargar. El plegado del menú entero es el atributo `data-menu` de
+  `<html>` (variante `plegado:` de Tailwind). Lo aplica el script de la cabecera antes de pintar, así
+  que no salta al recargar, y la zona central ocupa todo el ancho que queda libre.
   - *Descartado:* cargar siempre la página entera y recuperar después la posición (parpadeo en cada clic y
     se envía todo de nuevo).
 - **Botón «atrás»:** htmx no guarda copias de las páginas (`historyCacheSize: 0`). Al volver, pide la
@@ -304,7 +306,13 @@ JavaScript y una posible aplicación móvil.
   cada ruta (`registro.rutas`). Lo usa `base/contexto.py`, que da a todas las plantillas el menú, la
   sección, las vistas, la ayuda y el título, sin ninguna consulta.
 - **La ayuda «?» viene ya en la página**, en una ventana de Alpine: abrirla no cuesta ninguna petición.
-- **Tema, letra y densidad** son atributos de `<html>` (`data-tema`, `data-letra`, `data-densidad`).
+- **Tema, letra y densidad** son atributos de `<html>` (`data-tema`, `data-letra`, `data-densidad`), cada
+  uno con tres valores (ampliado el 12 de noviembre de 2026, a petición de la persona usuaria):
+  - tema **claro**, **día** (claro con más contraste: fondo blanco y la escala de grises redefinida
+    más oscura, para que los recuadros se distingan bien) y **oscuro**. El botón de la cabecera pasa
+    por los tres;
+  - letra **pequeña**, **normal** y **grande**;
+  - densidad **cómoda**, **compacta** y **supercompacta**.
   Un script en la cabecera de la página los aplica antes de pintar, para que no haya destello. La letra
   grande sube el tamaño base (todo va en `rem`) y la densidad compacta reduce `--spacing` (Tailwind
   calcula con ella todos los espacios). De momento se guardan en el navegador; en la fase 1, también en

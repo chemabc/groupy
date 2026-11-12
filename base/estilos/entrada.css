@@ -20,6 +20,10 @@
    pone el script del tema de la plantilla base, según lo que haya elegido la persona. */
 @custom-variant dark (&:where([data-tema="oscuro"], [data-tema="oscuro"] *));
 
+/* Menú plegado: las clases «plegado:…» se aplican cuando <html> tiene data-menu="plegado". Lo ponen el
+   botón ☰ (interfaz.js) y, al cargar, el script de la cabecera de la página. Ejemplo: «w-60 plegado:w-14». */
+@custom-variant plegado (&:where([data-menu="plegado"] *));
+
 /* Colores y medidas propios de la aplicación. «@theme» crea a la vez la variable de CSS y las clases de
    Tailwind: --color-marca da text-marca, bg-marca, border-marca… Una organización podrá cambiar su color
    redefiniendo la variable. */
@@ -35,16 +39,39 @@
     color-scheme: dark;
   }
 
+  /* Tema «día»: claro con más contraste, para leer con mucha luz o en pantallas apagadas. Tailwind 4
+     guarda cada color en una variable (--color-slate-200…), así que basta con redefinir la escala de
+     grises un par de tonos más oscura: los bordes y los textos secundarios se marcan más y el fondo
+     pasa a blanco, sin tocar ninguna plantilla. */
+  [data-tema="dia"] {
+    --color-slate-50: #ffffff;
+    --color-slate-100: oklch(0.93 0.01 256);
+    --color-slate-200: oklch(0.70 0.04 257);
+    --color-slate-300: oklch(0.55 0.046 257);
+    --color-slate-400: oklch(0.45 0.043 257);
+    --color-slate-500: oklch(0.37 0.044 257);
+    --color-slate-600: oklch(0.28 0.04 260);
+    --color-slate-900: #000000;
+    --color-marca: oklch(0.42 0.12 165);
+  }
+
   /* Tamaño de letra: todo en Tailwind se mide en «rem» (relativo a la letra de <html>), así que al
-     subirla crece toda la interfaz por igual. */
+     cambiarla crece o mengua toda la interfaz por igual. */
+  html[data-letra="pequena"] {
+    font-size: 87.5%;
+  }
   html[data-letra="grande"] {
     font-size: 112.5%;
   }
 
-  /* Densidad compacta: Tailwind calcula todos los espacios (p-4, gap-2…) multiplicando --spacing, así
-     que al reducirla se aprieta toda la interfaz sin tocar ninguna plantilla. */
+  /* Densidad: Tailwind calcula todos los espacios (p-4, gap-2…) multiplicando --spacing (0.25rem por
+     defecto, la densidad «cómoda»), así que al reducirla se aprieta toda la interfaz sin tocar ninguna
+     plantilla. */
   html[data-densidad="compacta"] {
     --spacing: 0.18rem;
+  }
+  html[data-densidad="supercompacta"] {
+    --spacing: 0.12rem;
   }
 
   /* Alpine quita x-cloak cuando arranca: hasta entonces, lo que lo lleva no se ve (evita que asomen
