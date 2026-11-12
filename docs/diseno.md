@@ -83,6 +83,11 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 - Licencias libres compatibles; **nada de GPL**. Las librerías de la interfaz se sirven desde el propio
   servidor, sin CDN.
 - Contenedor de desarrollo (devcontainer) con PostgreSQL y Redis.
+- **Cookies con nombre propio** (12 de noviembre de 2026): `asambleas2_sesion` y `asambleas2_csrf`.
+  - *Motivo:* el navegador reparte las cookies por servidor (`localhost`), no por puerto. Con los
+    nombres de Django por defecto, la versión 2 recibía la sesión de la versión 1 y fallaba al leerla
+    (la barra de depuración la consulta). Más adelante, iniciar sesión en una versión cerraría la de la
+    otra.
 
 ### 3.2 Capas y módulos
 

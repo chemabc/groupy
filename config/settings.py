@@ -36,6 +36,13 @@ USAR_BARRA_DE_DEPURACION = DEBUG and not PROBANDO
 # Nombres de servidor desde los que se acepta la aplicación.
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 
+# Nombres propios para las cookies de la sesión y de la protección CSRF. Los navegadores reparten las
+# cookies por nombre de servidor (localhost), no por puerto, así que con los nombres de Django por
+# defecto («sessionid», «csrftoken») la versión 2 recibiría las cookies de la versión 1: intentaría leer
+# una sesión ajena y, al iniciar sesión en una versión, se cerraría la de la otra.
+SESSION_COOKIE_NAME = "asambleas2_sesion"
+CSRF_COOKIE_NAME = "asambleas2_csrf"
+
 # Módulos que forman la aplicación: primero los de Django y después los del proyecto, que se irán
 # añadiendo fase a fase, en el orden de docs/diseno.md, apartado 19.
 # Los del proyecto se escriben con la ruta completa de su configuración («base.apps.BaseConfig»): como

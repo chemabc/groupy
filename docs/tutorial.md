@@ -140,3 +140,18 @@ sirve aquí y dónde se usa.
   Así funcionan la densidad compacta, el color de marca y el modo oscuro.
 - **La cabecera `Vary`.** Le dice al navegador que la misma dirección puede dar respuestas distintas
   según ciertas cabeceras. Sin ella, podría guardar la zona suelta y enseñarla sin menú.
+
+## 6. Un error de cookies entre las dos versiones (12 de noviembre de 2026)
+
+- **El síntoma.** `relation "django_session" does not exist` al abrir la portada, aunque la portada no
+  usa la sesión.
+- **La causa.**
+  - El navegador guarda las cookies por nombre de servidor (`localhost`), sin mirar el puerto. La
+    cookie `sessionid` de la versión 1 llegaba también a la versión 2.
+  - La barra de depuración enseña la sesión en su pestaña «Request». Al leerla, Django buscó esa
+    sesión en la tabla `django_session`, que aún no existe porque no se ha ejecutado `migrate`.
+- **Cómo se encontró.** Primero se probó con una cookie inventada y no fallaba. Django descarta sin
+  consultar la base las claves de sesión de menos de 8 caracteres. Con una clave de 32 caracteres, como
+  las de verdad, el fallo apareció y la traza señaló a la barra de depuración.
+- **La solución.** Las cookies de la versión 2 tienen nombre propio (`SESSION_COOKIE_NAME` y
+  `CSRF_COOKIE_NAME` en `config/settings.py`). Así cada versión solo lee las suyas.
