@@ -1,0 +1,18 @@
+# Librerías de Python que necesita el proyecto. Se instalan solas al crear el contenedor con:
+#   pip install --user -r requirements.txt
+# Cada línea fija un rango de versiones para que todo el mundo use las mismas.
+
+# Django: el marco web. La 5.2 es versión de soporte largo (LTS), con parches hasta abril de 2028.
+Django>=5.2,<5.3
+
+# Conector entre Python y PostgreSQL. «binary» trae ya compilado lo necesario.
+psycopg[binary]>=3.2,<4
+
+# Convierte una dirección como postgres://usuario:clave@db:5432/base en la configuración de Django.
+dj-database-url>=2.3,<3
+
+# Algoritmo Argon2 para guardar contraseñas.
+argon2-cffi>=23.1
+
+# Cliente de Redis, que Django usa para la caché (permisos y audiencias precalculados). Licencia MIT.
+redis>=5.0,<7

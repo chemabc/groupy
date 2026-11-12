@@ -1,0 +1,66 @@
+# Lista de contenedores (servicios) que se arrancan juntos
+services:
+
+  # Contenedor de desarrollo: aquí viven el código, Python y Claude Code
+  app:
+    # Construye la imagen con el Dockerfile de esta misma carpeta
+    #   - context: carpeta con los ficheros para construir (.devcontainer)
+    #   - dockerfile: nombre del fichero de construcción
+    #   - args: tu UID y GID de Ubuntu, leídos del fichero .devcontainer/.env (si no existe, 1000)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${HOST_UID:-1000}
+        GID: ${HOST_GID:-1000}
+    # Monta la carpeta del proyecto dentro del contenedor
+    #   - ..: la carpeta padre de .devcontainer, es decir, la raíz del proyecto
+    #   - /workspace: ruta donde aparece dentro del contenedor
+    volumes:
+      - ..:/workspace
+    # Mantiene el contenedor encendido sin hacer nada; VS Code se conecta a él
+    command: sleep infinity
+    # Variables de entorno que leerá Django para conectarse a las bases de datos
+    #   - DATABASE_URL: dirección de la base de la plataforma (usuario:contraseña@servicio:puerto/base)
+    #   - BOVEDA_DATABASE_URL: dirección de la bóveda de identidad, con su propio usuario
+    #   - BOVEDA_CLAVE_HMAC: clave secreta para calcular las huellas del DNI y del correo
+    #     oficial; vive fuera de la base de datos (en producción, en un gestor de secretos)
+    #   - REDIS_URL: dirección de Redis (servicio:puerto/número de base)
+    environment:
+      DATABASE_URL: postgres://asambleas:asambleas@db:5432/asambleas
+      BOVEDA_DATABASE_URL: postgres://boveda:boveda@db:5432/boveda
+      BOVEDA_CLAVE_HMAC: solo-para-desarrollo-cambiar-en-produccion
+      REDIS_URL: redis://redis:6379/0
+    # Arranca primero la base de datos y Redis
+    depends_on:
+      - db
+      - redis
+
+  # Base de datos PostgreSQL 17 (imagen oficial sobre Debian 13)
+  db:
+    image: postgres:17-trixie
+    # Credenciales iniciales (solo para desarrollo, nunca en producción)
+    #   - POSTGRES_USER: usuario administrador
+    #   - POSTGRES_PASSWORD: su contraseña
+    #   - POSTGRES_DB: base de datos que se crea al arrancar
+    environment:
+      POSTGRES_USER: asambleas
+      POSTGRES_PASSWORD: asambleas
+      POSTGRES_DB: asambleas
+    # Guarda los datos en un volumen y prepara la bóveda en instalaciones nuevas
+    #   - pgdata: nombre del volumen; /var/lib/postgresql/data es donde Postgres guarda sus datos
+    #   - ./initdb: carpeta con scripts que Postgres ejecuta UNA sola vez, cuando el volumen
+    #     está vacío (instalación nueva); crea la base y el usuario de la bóveda
+    #   - /docker-entrypoint-initdb.d: carpeta donde la imagen oficial busca esos scripts
+    #   - :ro: solo lectura, el contenedor no puede modificarlos
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+
+  # Redis 8: caché, tiempo real y cola de tareas (imagen oficial sobre Debian 13)
+  redis:
+    image: redis:8-trixie
+
+# Declaración de los volúmenes con nombre usados arriba
+volumes:
+  pgdata:

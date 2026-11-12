@@ -1,0 +1,20 @@
+# Ficheros que Git no debe guardar en el historial.
+
+# Ficheros compilados de Python, que se regeneran solos
+__pycache__/
+*.pyc
+
+# Ficheros estáticos reunidos para publicar (se generan con «collectstatic»)
+staticfiles/
+
+# Entornos virtuales de Python, por si alguien trabaja fuera del contenedor
+.venv/
+venv/
+
+# Variables de entorno con datos locales o secretos
+.env
+.devcontainer/.env
+
+# Paquetes de Node (se instalan con «npm install») y ficheros generados con «npm run construir»
+node_modules/
+static/generado/

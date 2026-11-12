@@ -1,0 +1,63 @@
+# Arranque y pruebas
+
+## 1. Crear el proyecto nuevo a partir de este kit (una sola vez)
+
+En tu ordenador (Ubuntu), **fuera de VS Code**, abre una terminal:
+
+```bash
+# Copia el kit a una carpeta nueva, fuera del proyecto de la versión 1
+#     -r: copia la carpeta entera, con sus subcarpetas
+#     -T: copia el contenido de nuevo-proyecto/ dentro de la carpeta de destino (incluidos los
+#         ficheros ocultos, como .devcontainer y .gitignore), sin crear otra carpeta dentro
+#     <carpeta-v1>: ruta de tu proyecto actual en Ubuntu (la que tiene .devcontainer/)
+#     ~/asambleas-v2: carpeta del proyecto nuevo; puedes cambiar el nombre
+cp -rT <carpeta-v1>/nuevo-proyecto ~/asambleas-v2
+
+# Entra en la carpeta nueva
+cd ~/asambleas-v2
+
+# Crea el repositorio de Git con la rama principal «main»
+#     -b main: nombre de la rama inicial
+git init -b main
+
+# Guarda el primer commit con todo el kit
+#     add .: añade todos los ficheros de la carpeta
+#     -m: mensaje del commit
+git add . && git commit -m "Kit inicial: diseño, contenedor y esqueleto de Django"
+
+# Abre la carpeta en VS Code
+#     .: la carpeta actual
+code .
+```
+
+En VS Code, cuando aparezca el aviso, pulsa **«Reopen in Container»** (o usa la paleta de órdenes:
+*Dev Containers: Reopen in Container*). La primera vez tarda unos minutos: construye la imagen, arranca
+PostgreSQL y Redis e instala las librerías de Python.
+
+> Los datos de PostgreSQL de la versión 2 van en un volumen distinto del de la versión 1, porque Docker
+> le pone el nombre de la carpeta. Las dos versiones pueden convivir.
+
+## 2. Comprobar que funciona
+
+Dentro del contenedor, en la terminal de VS Code:
+
+```bash
+# Revisa la configuración de Django sin tocar la base de datos
+#     check: busca errores en los ajustes y en el código
+python manage.py check
+
+# Arranca el servidor de desarrollo
+#     runserver: servidor web de Django para desarrollo
+#     0.0.0.0:8000: escucha en todas las direcciones del contenedor, en el puerto 8000
+python manage.py runserver 0.0.0.0:8000
+```
+
+Abre http://localhost:8000: debe salir «Gestión de asambleas v2: Django responde.».
+
+**No ejecutes `python manage.py migrate` todavía:** el modelo de usuario (`Usuario`) llega en la fase 1.
+
+## 3. Seguir con Claude
+
+Abre Claude Code en el contenedor nuevo y pídele: «Lee CLAUDE.md y docs/diseno.md y empecemos la
+fase 0». La memoria de Claude (por ejemplo, responder en castellano o documentar solo en Markdown) se
+comparte entre los dos contenedores, porque los dos usan el volumen `claude-code-config`.

@@ -1,0 +1,44 @@
+{
+  // Nombre que verás en VS Code
+  "name": "Gestión de asambleas v2",
+  // Fichero de Docker Compose a usar (ruta relativa a esta carpeta)
+  "dockerComposeFile": "docker-compose.yml",
+  // Servicio al que se conecta VS Code: el de desarrollo
+  "service": "app",
+  // Carpeta que se abre dentro del contenedor
+  "workspaceFolder": "/workspace",
+  // Funcionalidades extra que se instalan en el contenedor
+  "features": {
+    // Instala Claude Code (y su extensión de VS Code) dentro del contenedor; la publica Anthropic
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+  // Guarda la sesión de Claude Code en un volumen para no iniciar sesión tras cada reconstrucción
+  //   - source: nombre del volumen (Docker lo crea solo la primera vez)
+  //   - target: carpeta de configuración de Claude dentro del contenedor (usuario dev)
+  //   - type: tipo de montaje, un volumen de Docker
+  "mounts": [
+    "source=claude-code-config,target=/home/dev/.claude,type=volume"
+  ],
+  // Indica a Claude Code dónde guardar toda su configuración (dentro del volumen)
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/dev/.claude"
+  },
+  // Extensiones de VS Code que se instalan dentro del contenedor
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Soporte de Python y depurador
+        "ms-python.python",
+        // Plantillas de Django resaltadas
+        "batisteo.vscode-django"
+      ]
+    }
+  },
+  // Orden que se ejecuta cada vez que se crea o reconstruye el contenedor: instala lo que no
+  // forma parte de la imagen
+  //   - pip install --user -r requirements.txt: librerías de Python (Django…) en /home/dev/.local
+  //   (En la fase 0 se añadirán npm install y npm run construir para Tailwind, htmx y Alpine.js)
+  "postCreateCommand": "pip install --user -r requirements.txt",
+  // Usuario sin privilegios creado en el Dockerfile (más seguro que root)
+  "remoteUser": "dev"
+}
