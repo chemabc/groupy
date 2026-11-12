@@ -322,6 +322,38 @@ JavaScript y una posible aplicación móvil.
 - **Sección «Inicio» de demostración** en el contrato de `base`, con las vistas «Estructura» y
   «Componentes», mientras no haya otros módulos.
 
+**Tabla filtrable (12 de noviembre de 2026).**
+- **Componente propio** (`base/tablas.py` y `base/templates/base/tabla.html`). La vista crea una `Tabla`
+  con sus columnas (`Columna`), su fuente (`FuenteDeConsulta` para un QuerySet o `FuenteDeLista` para
+  datos en memoria) y sus desplegables de categoría (`Filtro`). La plantilla solo la incluye.
+  - *Descartado:* django-tables2 y django-filter (no filtran en el navegador ni cambian solos de modo, y
+    habría que rehacer sus plantillas igualmente) y una isla de JavaScript (las islas se reservan para
+    calendario, kanban, grafos, mapas y editor).
+- **El modo se decide con una sola consulta:** se piden 501 filas. Si llegan 500 o menos, van todas a
+  la página y el componente `tablaLocal` de Alpine filtra y ordena en el navegador, sin peticiones. Si
+  llega la 501, se filtra en el servidor: htmx manda la búsqueda 300 ms después de dejar de escribir y
+  se cargan 100 filas, con un botón **«Mostrar más»** (por ahora, en lugar de páginas numeradas).
+  - Coste: 1 consulta en el navegador; en el servidor, 3 la página entera (tanteo, recuento y filas) y
+    2 cada petición de htmx.
+- **Búsqueda sin tildes ni mayúsculas, palabra a palabra** (deben aparecer todas). En el navegador,
+  con `normalizar()`, que hace lo mismo en Python y en JavaScript. En el servidor, con la extensión
+  `unaccent` de PostgreSQL (migración `base/0001_unaccent`). Se busca en los mismos campos
+  (`campos_de_busqueda`) en los dos modos.
+- **Los filtros van en la dirección**, con el identificador de la tabla delante (`eventos-q`,
+  `eventos-orden=-fecha`…), así que caben varias tablas en una página. Los parámetros que no
+  corresponden (una columna que no existe, una categoría que no está entre las opciones) se ignoran.
+  - *Limitación conocida:* con dos tablas en la misma página, filtrar en el servidor una de ellas
+    reescribe la dirección solo con sus filtros. No afecta a las pantallas con una sola tabla.
+
+**Botón «copiar» y explicación de cada campo (12 de noviembre de 2026).**
+- **Automático en todos los formularios:** `FORM_RENDERER = "base.formularios.Renderizador"` pinta cada
+  campo con `base/templates/base/campo.html`: etiqueta, campo, botón «copiar», explicación
+  (`help_text`, siempre visible) y errores. La clase `CampoLigado` decide qué campos llevan botón: todos,
+  salvo casillas, opciones, ficheros, contraseñas y campos ocultos.
+  - *Descartado:* una etiqueta `{% boton_copiar %}` puesta a mano (es fácil olvidarla).
+- Copia con el portapapeles del navegador y, si no lo permite (por ejemplo, sin https desde la red
+  local), con el método antiguo. En un desplegable copia el texto de la opción elegida.
+
 ---
 
 ## 5. Roles y cometidos

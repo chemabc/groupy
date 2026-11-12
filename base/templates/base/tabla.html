@@ -1,0 +1,42 @@
+{% comment %}
+  Tabla filtrable completa: buscador, desplegables de categoría y resultado. Recibe «tabla» (una Tabla de
+  base/tablas.py, que ya lo ha decidido todo). Se incluye con {% include "base/tabla.html" %}.
+
+  Dos modos, según tabla.en_navegador:
+  - En el navegador (hasta 500 filas): el componente «tablaLocal» de interfaz.js filtra y ordena al
+    instante, sin peticiones. El formulario no se envía.
+  - En el servidor: cada cambio lo manda htmx (la búsqueda, 300 ms después de dejar de escribir) y
+    sustituye el resultado. Los atributos hx-include, hx-target, hx-swap y hx-replace-url de este bloque
+    los heredan el buscador, los desplegables y los títulos de las columnas.
+{% endcomment %}
+<div id="tabla-{{ tabla.identificador }}" data-identificador="{{ tabla.identificador }}"
+     {% if tabla.en_navegador %}
+       x-data="tablaLocal"
+     {% else %}
+       hx-include="#tabla-{{ tabla.identificador }}"
+       hx-target="#tabla-{{ tabla.identificador }}-resultado"
+       hx-swap="outerHTML"
+       hx-replace-url="true"
+     {% endif %}>
+  {# Buscador y desplegables. hx-boost="false": este formulario nunca navega a otra página. #}
+  <form class="mb-2 flex flex-wrap items-center gap-2" hx-boost="false"
+        {% if tabla.en_navegador %}@submit.prevent @input="filtrar()" @change="filtrar()"{% else %}hx-get="{{ request.path }}"{% endif %}>
+    <input type="search" name="{{ tabla.parametro_busqueda }}" value="{{ tabla.busqueda }}"
+           placeholder="Buscar…" aria-label="Buscar en la tabla" autocomplete="off"
+           class="w-full max-w-xs rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+           {% if not tabla.en_navegador %}hx-get="{{ request.path }}" hx-trigger="input changed delay:300ms, search"{% endif %}>
+    {% for desplegable in tabla.desplegables %}
+      <select name="{{ desplegable.parametro }}" data-campo="{{ desplegable.filtro.campo }}" aria-label="{{ desplegable.filtro.titulo }}"
+              class="rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+              {% if not tabla.en_navegador %}hx-get="{{ request.path }}" hx-trigger="change"{% endif %}>
+        <option value="">{{ desplegable.filtro.titulo }}: todas</option>
+        {% for opcion in desplegable.opciones %}
+          <option value="{{ opcion.valor }}" {% if opcion.elegida %}selected{% endif %}>{{ opcion.nombre }}</option>
+        {% endfor %}
+      </select>
+    {% endfor %}
+    {# Indicador de que el servidor está buscando (htmx le añade la clase htmx-request mientras espera). #}
+    {% if not tabla.en_navegador %}<span class="htmx-indicator text-xs text-slate-500">Buscando…</span>{% endif %}
+  </form>
+  {% include "base/tabla_resultado.html" %}
+</div>

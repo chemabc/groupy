@@ -80,3 +80,12 @@
     display: none !important;
   }
 }
+
+@layer components {
+  /* Aspecto común de los controles de formulario dentro de cada campo (base/templates/base/campo.html).
+     Los widgets de Django se pintan sin clases, así que se les da estilo desde aquí. Las casillas y las
+     opciones se quedan con su aspecto normal. */
+  .campo-de-formulario :where(input:not([type="checkbox"], [type="radio"], [type="file"]), select, textarea) {
+    @apply w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900;
+  }
+}

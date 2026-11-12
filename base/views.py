@@ -5,6 +5,8 @@ plantilla general (menús, vistas, ayuda y tema) mientras no hay otros módulos.
 
 from django.shortcuts import render
 
+from .demostracion import FormularioDeDemostracion, tabla_de_demostracion
+
 
 # Preferencias de presentación que se pueden elegir en «Inicio → Estructura»: clave (el atributo de
 # <html> y el nombre con el que se guarda), nombre visible y opciones (valor y nombre visible). Los
@@ -22,7 +24,18 @@ def inicio(request):
     return render(request, "base/inicio.html", {"preferencias": PREFERENCIAS})
 
 
-# Pantalla «Inicio → Componentes»: escaparate de las piezas comunes de la interfaz. En la pieza 5 de la
-# fase 0 mostrará la tabla filtrable y el botón «copiar».
+# Pantalla «Inicio → Componentes»: escaparate de las piezas comunes de la interfaz, con datos inventados.
+# Muestra dos tablas filtrables (una pequeña, que se filtra en el navegador, y otra grande, que se filtra
+# en el servidor) y un formulario para probar el botón «copiar». Si htmx pide solo una parte de una de las
+# tablas (al filtrar en el servidor o con «Mostrar más»), devuelve solo esa parte.
 def componentes(request):
-    return render(request, "base/componentes.html")
+    tablas = [
+        tabla_de_demostracion(request, "pequena", 200),
+        tabla_de_demostracion(request, "grande", 2000),
+    ]
+    for tabla in tablas:
+        plantilla = tabla.plantilla_parcial()
+        if plantilla:
+            return render(request, plantilla, {"tabla": tabla})
+    contexto = {"tabla_pequena": tablas[0], "tabla_grande": tablas[1], "formulario": FormularioDeDemostracion()}
+    return render(request, "base/componentes.html", contexto)

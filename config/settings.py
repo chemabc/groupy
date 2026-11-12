@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Funciones propias de PostgreSQL; aquí, la búsqueda sin tildes (unaccent) de las tablas filtrables.
+    "django.contrib.postgres",
     # Capa base
     "base.apps.BaseConfig",
     "eventos_sw.apps.EventosSwConfig",
@@ -110,6 +112,10 @@ TEMPLATES = [
         },
     },
 ]
+
+# Cómo se pintan los formularios: cada campo con su etiqueta, su botón «copiar», su explicación y sus
+# errores (ver base/formularios.py).
+FORM_RENDERER = "base.formularios.Renderizador"
 
 # Programa que sirve la aplicación en un servidor web clásico.
 WSGI_APPLICATION = "config.wsgi.application"

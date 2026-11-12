@@ -24,6 +24,26 @@ function guardar(clave, valor) {
   }
 }
 
+// Pasa un texto a minúsculas y le quita las tildes y diéresis («Reunión» → «reunion»), igual que
+// normalizar() de base/tablas.py, para que buscar no dependa de ellas. La usa el filtro de las tablas.
+function normalizar(texto) {
+  return texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+}
+
+// Copia un texto al portapapeles con el método antiguo (un cuadro de texto oculto y la orden «copy»).
+// Hace falta cuando el navegador no deja usar el portapapeles moderno: por ejemplo, si se entra por la
+// dirección de la red local sin https. La usa el componente «copiar».
+function copiarALaAntigua(texto) {
+  const cuadro = document.createElement("textarea");
+  cuadro.value = texto;
+  cuadro.style.position = "fixed";
+  cuadro.style.opacity = "0";
+  document.body.appendChild(cuadro);
+  cuadro.select();
+  document.execCommand("copy");
+  cuadro.remove();
+}
+
 // Alpine lanza «alpine:init» justo antes de arrancar: es el momento de registrar almacenes y componentes.
 document.addEventListener("alpine:init", () => {
   // Almacén de preferencias de presentación. Las aplica como atributos de <html> (data-tema,
@@ -94,6 +114,104 @@ document.addEventListener("alpine:init", () => {
     // Apunta hasta dónde se ha bajado en el menú. Se llama al desplazarlo.
     apuntarDesplazamiento() {
       guardar("menu.desplazamiento", this.$el.scrollTop);
+    },
+  }));
+
+  // Componente de una tabla filtrable que se filtra en el navegador (hasta 500 filas; ver
+  // base/tablas.py y base/templates/base/tabla.html). Filtra y ordena las filas que ya están en la
+  // página, sin peticiones, y apunta los filtros en la dirección para que sobrevivan a una recarga.
+  Alpine.data("tablaLocal", () => ({
+    total: 0,
+    visibles: 0,
+
+    // Al arrancar: reúne las filas y aplica los filtros que vengan en la dirección.
+    init() {
+      this.filas = [...this.$el.querySelectorAll("tbody tr[data-texto]")];
+      this.total = this.filas.length;
+      this.filtrar();
+    },
+
+    // Pares [nombre, valor] de todos los campos de la tabla (buscador, desplegables y orden).
+    parametros() {
+      return [...this.$el.querySelectorAll("[name]")].map((campo) => [campo.name, campo.value]);
+    },
+
+    // Oculta las filas que no tienen todas las palabras buscadas o no son de las categorías elegidas.
+    // Se llama al escribir o al cambiar un desplegable.
+    filtrar() {
+      const identificador = this.$el.dataset.identificador;
+      const valores = Object.fromEntries(this.parametros());
+      const palabras = normalizar(valores[`${identificador}-q`] || "").split(/\s+/).filter(Boolean);
+      const categorias = [...this.$el.querySelectorAll("select[data-campo]")]
+        .filter((desplegable) => desplegable.value)
+        .map((desplegable) => [desplegable.dataset.campo, desplegable.value]);
+      let visibles = 0;
+      for (const fila of this.filas) {
+        const coincide =
+          palabras.every((palabra) => fila.dataset.texto.includes(palabra)) &&
+          categorias.every(([campo, valor]) => fila.getAttribute(`data-filtro-${campo}`) === valor);
+        fila.hidden = !coincide;
+        if (coincide) visibles += 1;
+      }
+      this.visibles = visibles;
+      this.actualizarDireccion();
+    },
+
+    // Ordena las filas por una columna: la primera vez, ascendente; si ya lo estaba, descendente.
+    // Compara los valores de data-valor como lo haría una persona («2» antes que «10», sin mirar tildes).
+    //   - boton: el botón del título de la columna, con data-indice y data-campo.
+    ordenar(boton) {
+      const indice = Number(boton.dataset.indice);
+      const campo = boton.dataset.campo;
+      const descendente = this.$refs.orden.value === campo;
+      this.$refs.orden.value = descendente ? `-${campo}` : campo;
+      const colador = new Intl.Collator("es", { numeric: true, sensitivity: "base" });
+      const signo = descendente ? -1 : 1;
+      this.filas.sort((a, b) => signo * colador.compare(a.cells[indice].dataset.valor, b.cells[indice].dataset.valor));
+      // Volver a añadir cada fila al final del cuerpo de la tabla las deja en el orden nuevo.
+      const cuerpo = this.$el.querySelector("tbody");
+      for (const fila of this.filas) cuerpo.appendChild(fila);
+      for (const flecha of this.$el.querySelectorAll("[data-flecha]")) flecha.textContent = "";
+      boton.querySelector("[data-flecha]").textContent = descendente ? "▼" : "▲";
+      this.actualizarDireccion();
+    },
+
+    // Texto del recuento bajo la tabla.
+    recuento() {
+      return this.visibles === this.total ? `${this.total} filas` : `${this.visibles} de ${this.total} filas`;
+    },
+
+    // Escribe los filtros en la dirección sin recargar (history.replaceState), para que se puedan
+    // compartir y sigan ahí al recargar. Los vacíos se quitan.
+    actualizarDireccion() {
+      const direccion = new URL(window.location.href);
+      for (const [nombre, valor] of this.parametros()) {
+        if (valor) direccion.searchParams.set(nombre, valor);
+        else direccion.searchParams.delete(nombre);
+      }
+      history.replaceState(history.state, "", direccion);
+    },
+  }));
+
+  // Componente del botón «copiar» que acompaña a cada campo de formulario (base/templates/base/campo.html).
+  // Copia el valor del campo (en un desplegable, el texto de la opción elegida) para pegarlo en otro sitio,
+  // y durante un momento muestra ✓.
+  Alpine.data("copiar", () => ({
+    copiado: false,
+
+    // Copia el valor del campo cuyo id está en data-objetivo.
+    async copiar() {
+      const campo = document.getElementById(this.$el.dataset.objetivo);
+      if (!campo) return;
+      const texto =
+        campo.tagName === "SELECT" ? [...campo.selectedOptions].map((opcion) => opcion.text).join(", ") : campo.value;
+      try {
+        await navigator.clipboard.writeText(texto);
+      } catch {
+        copiarALaAntigua(texto);
+      }
+      this.copiado = true;
+      setTimeout(() => (this.copiado = false), 1500);
     },
   }));
 });

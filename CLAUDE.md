@@ -59,8 +59,9 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 
 ## Estado
 
-- 12 de noviembre de 2026: esqueleto (contenedor, Django y ajustes de rendimiento) y contrato de módulo
-  con su registro (`base`) `eventos_sw` (bandeja de salida y orden `procesar_bandeja`) , la
-  herramienta de medición (debug-toolbar y `comprobar_consultas`) y la plantilla general (Tailwind,
-  htmx, Alpine, dos menús, tema, ayuda y menú que no salta). Siguiente paso: tabla filtrable y botón
-  «copiar», que cierran la fase 0 (ver docs/diseno.md, apartado 19).
+- 12 de noviembre de 2026: **fase 0 terminada**. Esqueleto (contenedor, Django y ajustes de rendimiento),
+  contrato de módulo con su registro (`base`), `eventos_sw` (bandeja de salida y orden
+  `procesar_bandeja`), herramienta de medición (debug-toolbar y `comprobar_consultas`), plantilla general
+  (Tailwind, htmx, Alpine, dos menús, tres temas, letra, densidad, ayuda y menú que no salta), tabla
+  filtrable (`base/tablas.py`) y botón «copiar» en todos los formularios. Siguiente paso: la fase 1 (ver
+  docs/diseno.md, apartado 19), empezando por `usuarios`.

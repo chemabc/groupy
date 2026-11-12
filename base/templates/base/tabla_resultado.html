@@ -1,0 +1,40 @@
+{% comment %}
+  Resultado de una tabla filtrable: la tabla con su cabecera, sus filas y el recuento. Es lo que se
+  sustituye cuando, filtrando en el servidor, cambia la búsqueda, una categoría o el orden. Recibe «tabla».
+{% endcomment %}
+<div id="tabla-{{ tabla.identificador }}-resultado">
+  {# Orden actual. Viaja con cada petición (hx-include) y lo cambian los títulos de las columnas. #}
+  <input type="hidden" name="{{ tabla.parametro_orden }}" value="{{ tabla.orden }}" {% if tabla.en_navegador %}x-ref="orden"{% endif %}>
+  <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-100 dark:bg-slate-800">
+        <tr>
+          {% for cabecera in tabla.cabeceras %}
+            <th scope="col" class="px-3 py-2 font-medium" {% if cabecera.sentido %}aria-sort="{{ cabecera.sentido }}"{% endif %}>
+              {% if cabecera.columna.ordenable %}
+                <button type="button" class="inline-flex items-center gap-1 hover:text-marca"
+                        title="Ordenar por {{ cabecera.columna.titulo|lower }}"
+                        {% if tabla.en_navegador %}
+                          data-indice="{{ cabecera.indice }}" data-campo="{{ cabecera.columna.campo }}" @click="ordenar($el)"
+                        {% else %}
+                          hx-get="{{ request.path }}" hx-vals="{{ cabecera.valores_al_pulsar }}"
+                        {% endif %}>
+                  {{ cabecera.columna.titulo }}<span data-flecha class="text-xs">{{ cabecera.flecha }}</span>
+                </button>
+              {% else %}
+                {{ cabecera.columna.titulo }}
+              {% endif %}
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% include "base/tabla_filas.html" %}
+      </tbody>
+    </table>
+  </div>
+  {# Recuento. En el navegador lo actualiza tablaLocal al filtrar. #}
+  <p class="mt-1 text-xs text-slate-500" {% if tabla.en_navegador %}x-text="recuento()"{% endif %}>
+    {% if tabla.en_navegador %}{{ tabla.total }} filas{% else %}Mostrando {{ tabla.siguiente_desde }} de {{ tabla.total }} (se filtra en el servidor){% endif %}
+  </p>
+</div>

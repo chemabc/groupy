@@ -1,0 +1,26 @@
+{% comment %}
+  Filas de una tabla filtrable y, si quedan más en el servidor, la fila con el botón «Mostrar más». Es
+  también lo que devuelve el servidor al pulsar ese botón: las filas siguientes y un botón nuevo, que
+  sustituyen al anterior. Recibe «tabla».
+
+  Cada fila lleva en data-texto su texto de búsqueda normalizado y en data-filtro-<campo> sus categorías,
+  y cada celda en data-valor el valor con el que se ordena: los usa tablaLocal (interfaz.js).
+{% endcomment %}
+{% for fila in tabla.filas_pintadas %}
+  <tr class="border-t border-slate-200 dark:border-slate-800" data-texto="{{ fila.texto }}"{% for campo, valor in fila.categorias %} data-filtro-{{ campo }}="{{ valor }}"{% endfor %}>
+    {% for celda in fila.celdas %}<td class="px-3 py-1.5" data-valor="{{ celda.valor }}">{{ celda.texto }}</td>{% endfor %}
+  </tr>
+{% empty %}
+  <tr><td colspan="{{ tabla.columnas|length }}" class="px-3 py-4 text-center text-slate-500">Ninguna fila coincide con el filtro.</td></tr>
+{% endfor %}
+{% if tabla.hay_mas %}
+  <tr id="tabla-{{ tabla.identificador }}-mas" class="border-t border-slate-200 dark:border-slate-800">
+    <td colspan="{{ tabla.columnas|length }}" class="px-3 py-2 text-center">
+      <button type="button" class="rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+              hx-get="{{ request.path }}" hx-vals="{{ tabla.valores_de_mostrar_mas }}"
+              hx-target="#tabla-{{ tabla.identificador }}-mas" hx-swap="outerHTML" hx-replace-url="false">
+        Mostrar más
+      </button>
+    </td>
+  </tr>
+{% endif %}

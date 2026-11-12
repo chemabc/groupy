@@ -1,0 +1,28 @@
+{% comment %}
+  Cómo se pinta cada campo de cada formulario de la aplicación (lo fija base/formularios.py). Recibe
+  «field», un CampoLigado: etiqueta, campo, botón «copiar» si field.se_puede_copiar, explicación del campo
+  (help_text, siempre visible, como piden las normas del proyecto) y errores.
+{% endcomment %}
+<div class="campo-de-formulario mb-3">
+  {% if field.label %}
+    <label for="{{ field.auto_id }}" class="mb-1 block text-sm font-medium">
+      {{ field.label }}{% if field.field.required %} <span class="text-red-600" title="Obligatorio">*</span>{% endif %}
+    </label>
+  {% endif %}
+  <div class="flex items-start gap-1">
+    <div class="min-w-0 flex-1">{{ field }}</div>
+    {% if field.se_puede_copiar %}
+      <button type="button" x-data="copiar" data-objetivo="{{ field.auto_id }}" @click="copiar()"
+              class="shrink-0 rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+              title="Copiar «{{ field.label }}»" aria-label="Copiar {{ field.label }}">
+        <span x-show="!copiado">⧉</span><span x-show="copiado" x-cloak class="text-marca">✓</span>
+      </button>
+    {% endif %}
+  </div>
+  {% if field.help_text %}
+    <p id="{{ field.auto_id }}_helptext" class="mt-1 text-xs text-slate-500">{{ field.help_text|safe }}</p>
+  {% endif %}
+  {% if field.errors %}
+    <div class="mt-1 text-xs text-red-600">{{ field.errors }}</div>
+  {% endif %}
+</div>

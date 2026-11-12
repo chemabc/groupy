@@ -155,3 +155,40 @@ sirve aquí y dónde se usa.
   las de verdad, el fallo apareció y la traza señaló a la barra de depuración.
 - **La solución.** Las cookies de la versión 2 tienen nombre propio (`SESSION_COOKIE_NAME` y
   `CSRF_COOKIE_NAME` en `config/settings.py`). Así cada versión solo lee las suyas.
+
+## 7. La tabla filtrable y el botón «copiar» (12 de noviembre de 2026)
+
+- **Dos formas de filtrar, un solo componente** (`base/tablas.py`).
+  - Con pocas filas (hasta 500), lo más rápido es mandarlas todas y que el navegador las oculte o las
+    muestre mientras se escribe: no hay viaje al servidor.
+  - Con muchas, mandarlas todas haría la página pesada, así que el servidor filtra y manda solo las
+    primeras 100.
+  - La clase `Tabla` decide sola el modo: pide 501 filas y mira si llega la 501.
+- **El tanteo de «límite + 1».** Para saber si hay más de 500 filas no hace falta contarlas (`COUNT`):
+  basta con pedir 501. Si llegan 501, hay más; si no, ya se tienen todas. Es una sola consulta.
+- **Las fuentes.** `FuenteDeConsulta` (un QuerySet de la base de datos) y `FuenteDeLista` (filas en
+  memoria) tienen los mismos métodos: `filtrar`, `ordenar`, `contar` y `cortar`. La tabla no sabe de
+  dónde salen las filas.
+- **Buscar sin tildes.**
+  - En Python, `unicodedata.normalize("NFD", …)` separa la letra de su tilde («á» pasa a ser «a» más
+    «´»), y luego se quitan las tildes sueltas.
+  - En JavaScript, `normalize("NFD")` y `/\p{Diacritic}/gu` hacen lo mismo.
+  - En PostgreSQL, la extensión `unaccent`, que se usa en Django con `campo__unaccent__icontains`.
+- **htmx con retardo:** `hx-trigger="input changed delay:300ms"` espera a que dejes de escribir
+  300 ms antes de pedir nada, así que no se hace una petición por cada letra.
+- **Herencia de atributos de htmx.** `hx-target`, `hx-swap` o `hx-include` puestos en un elemento los
+  heredan los de dentro. Por eso basta con ponerlos una vez en el bloque de la tabla.
+- **`hx-vals` y `hx-include`.**
+  - `hx-include="#tabla-x"` manda con la petición todos los campos de ese bloque: búsqueda, desplegables
+    y orden.
+  - `hx-vals` añade o sustituye valores: por ejemplo, el orden nuevo al pulsar una columna, o desde qué
+    fila cargar con «Mostrar más».
+- **`history.replaceState`.** Cambia la dirección del navegador sin recargar ni añadir un paso al botón
+  «atrás». Lo usa el filtro del navegador para dejar los filtros en la dirección.
+- **El pintor de formularios** (`FORM_RENDERER`). Desde Django 5 se puede decir con qué plantilla se
+  pinta cada campo de todos los formularios (`field_template_name`) y, desde Django 5.2, qué clase
+  representa cada campo (`bound_field_class`). Así todos los campos llevan su botón «copiar» y su
+  explicación sin tocar ningún formulario.
+- **El portapapeles.** `navigator.clipboard.writeText()` solo funciona en páginas seguras (https o
+  `localhost`). Si falla, se usa el método antiguo: un cuadro de texto oculto, se selecciona y
+  `document.execCommand("copy")`.
