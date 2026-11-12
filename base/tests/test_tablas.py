@@ -76,6 +76,15 @@ class PruebasDeTablaEnMemoria(SimpleTestCase):
         self.assertEqual(primera.filas, ordenadas[:100])
         self.assertEqual(segunda.filas, ordenadas[100:200])
 
+    # El filtro de una columna compara con el texto de la celda, sin tildes: «avila» encuentra «Ávila».
+    def test_filtro_de_columna(self):
+        tabla = tabla_de_demostracion(peticiones.get("/", {"t-c-grupo": "avila"}), "t", 2000)
+        self.assertGreater(tabla.total, 0)
+        self.assertTrue(all(fila["grupo"] == "Asamblea de Ávila" for fila in tabla.filas))
+        # En las fechas se escribe como se ven (DD/MM/AAAA).
+        tabla = tabla_de_demostracion(peticiones.get("/", {"t-c-fecha": "/03/2026"}), "t", 2000)
+        self.assertTrue(all(fila["fecha"].month == 3 for fila in tabla.filas))
+
     # Al pulsar una columna: primero ascendente, luego descendente.
     def test_cabeceras(self):
         tabla = tabla_de_demostracion(peticiones.get("/", {"t-orden": "fecha"}), "t", 200)
@@ -130,6 +139,11 @@ class PruebasDeTablaEnBaseDeDatos(TestCase):
         with self.assertNumQueries(2):
             self.tabla(peticion_de_htmx({"grupos-q": "comision"}, "tabla-grupos-resultado"), limite=4)
 
+    # El filtro de columna también usa unaccent en PostgreSQL: «CADIZ» encuentra «Cádiz».
+    def test_filtro_de_columna_con_unaccent(self):
+        tabla = self.tabla(peticion_de_htmx({"grupos-c-name": "CADIZ"}, "tabla-grupos-cuerpo"), limite=4)
+        self.assertEqual([grupo.name for grupo in tabla.filas], ["Comisión de Cádiz"])
+
     # PostgreSQL busca sin tildes gracias a unaccent: «avila» encuentra «Ávila» y «malaga», «Málaga».
     def test_unaccent(self):
         tabla = self.tabla(peticion_de_htmx({"grupos-q": "avila"}, "tabla-grupos-resultado"), limite=4)
@@ -152,7 +166,18 @@ class PruebasDeLaPantallaDeComponentes(PruebaDePantalla):
         self.assertContains(respuesta, 'id="tabla-grande-mas"', count=1)
         self.assertContains(respuesta, "Mostrando 100 de 2000")
 
-    # Al filtrar en el servidor, htmx recibe solo el resultado de esa tabla.
+    # Al escribir en un filtro (en el servidor), htmx recibe solo las filas y el recuento, marcado para
+    # que lo coloque en su sitio (hx-swap-oob); la cabecera no viene, así no se pierde el cuadro.
+    def test_solo_las_filas(self):
+        cabeceras = {"HX-Request": "true", "HX-Target": "tabla-grande-cuerpo"}
+        respuesta = self.client.get("/componentes/?grande-c-grupo=avila", headers=cabeceras)
+        self.assertNotContains(respuesta, "<thead")
+        self.assertContains(respuesta, 'id="tabla-grande-recuento"')
+        self.assertContains(respuesta, 'hx-swap-oob="true"')
+        self.assertContains(respuesta, "Ávila")
+        self.assertNotContains(respuesta, "Córdoba")
+
+    # Al cambiar el orden (en el servidor), htmx recibe la tabla entera de esa tabla.
     def test_resultado_parcial(self):
         cabeceras = {"HX-Request": "true", "HX-Target": "tabla-grande-resultado"}
         respuesta = self.client.get("/componentes/?grande-q=cordoba", headers=cabeceras)

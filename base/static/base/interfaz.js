@@ -120,36 +120,48 @@ document.addEventListener("alpine:init", () => {
   // Componente de una tabla filtrable que se filtra en el navegador (hasta 500 filas; ver
   // base/tablas.py y base/templates/base/tabla.html). Filtra y ordena las filas que ya están en la
   // página, sin peticiones, y apunta los filtros en la dirección para que sobrevivan a una recarga.
+  //
+  // Ojo: dentro de sus funciones se usa this.$root (la raíz del componente, el bloque de la tabla) y no
+  // this.$el, porque $el es el elemento donde ha ocurrido la acción (el cuadro en el que se escribe, el
+  // botón de la columna…), y desde ahí no se encuentran las filas.
   Alpine.data("tablaLocal", () => ({
     total: 0,
     visibles: 0,
 
     // Al arrancar: reúne las filas y aplica los filtros que vengan en la dirección.
     init() {
-      this.filas = [...this.$el.querySelectorAll("tbody tr[data-texto]")];
+      this.filas = [...this.$root.querySelectorAll("tbody tr[data-texto]")];
       this.total = this.filas.length;
       this.filtrar();
     },
 
-    // Pares [nombre, valor] de todos los campos de la tabla (buscador, desplegables y orden).
+    // Pares [nombre, valor] de todos los campos de la tabla (buscador, desplegables, filtros de columna
+    // y orden).
     parametros() {
-      return [...this.$el.querySelectorAll("[name]")].map((campo) => [campo.name, campo.value]);
+      return [...this.$root.querySelectorAll("[name]")].map((campo) => [campo.name, campo.value]);
     },
 
-    // Oculta las filas que no tienen todas las palabras buscadas o no son de las categorías elegidas.
-    // Se llama al escribir o al cambiar un desplegable.
+    // Oculta las filas que no cumplen todos los filtros:
+    //   - el buscador general: todas las palabras deben estar en el texto de búsqueda de la fila;
+    //   - los desplegables: la categoría de la fila debe ser la elegida;
+    //   - los filtros de columna: el texto de la celda debe contener lo escrito.
+    // Nunca importan las tildes ni las mayúsculas. Se llama al escribir o al cambiar un desplegable.
     filtrar() {
-      const identificador = this.$el.dataset.identificador;
+      const identificador = this.$root.dataset.identificador;
       const valores = Object.fromEntries(this.parametros());
       const palabras = normalizar(valores[`${identificador}-q`] || "").split(/\s+/).filter(Boolean);
-      const categorias = [...this.$el.querySelectorAll("select[data-campo]")]
+      const categorias = [...this.$root.querySelectorAll("select[data-campo]")]
         .filter((desplegable) => desplegable.value)
         .map((desplegable) => [desplegable.dataset.campo, desplegable.value]);
+      const porColumna = [...this.$root.querySelectorAll("thead input[data-indice]")]
+        .filter((cuadro) => cuadro.value.trim())
+        .map((cuadro) => [Number(cuadro.dataset.indice), normalizar(cuadro.value.trim())]);
       let visibles = 0;
       for (const fila of this.filas) {
         const coincide =
           palabras.every((palabra) => fila.dataset.texto.includes(palabra)) &&
-          categorias.every(([campo, valor]) => fila.getAttribute(`data-filtro-${campo}`) === valor);
+          categorias.every(([campo, valor]) => fila.getAttribute(`data-filtro-${campo}`) === valor) &&
+          porColumna.every(([indice, texto]) => normalizar(fila.cells[indice].textContent).includes(texto));
         fila.hidden = !coincide;
         if (coincide) visibles += 1;
       }
@@ -169,9 +181,9 @@ document.addEventListener("alpine:init", () => {
       const signo = descendente ? -1 : 1;
       this.filas.sort((a, b) => signo * colador.compare(a.cells[indice].dataset.valor, b.cells[indice].dataset.valor));
       // Volver a añadir cada fila al final del cuerpo de la tabla las deja en el orden nuevo.
-      const cuerpo = this.$el.querySelector("tbody");
+      const cuerpo = this.$root.querySelector("tbody");
       for (const fila of this.filas) cuerpo.appendChild(fila);
-      for (const flecha of this.$el.querySelectorAll("[data-flecha]")) flecha.textContent = "";
+      for (const flecha of this.$root.querySelectorAll("[data-flecha]")) flecha.textContent = "";
       boton.querySelector("[data-flecha]").textContent = descendente ? "▼" : "▲";
       this.actualizarDireccion();
     },

@@ -26,6 +26,8 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 - Commit al terminar cada pieza acordada, con el mensaje en castellano.
 - Cada pantalla nueva llega con su prueba de número de consultas, como mucho unas 15, que no crezca con
   las filas (`PruebaDePantalla.comprobar_consultas`, en `base/pruebas.py`), y se mide con datos de ejemplo.
+- Lo que lleva JavaScript propio (Alpine, htmx) se prueba también en un navegador de verdad
+  (Playwright, `base/tests/test_navegador.py`) antes de darlo por bueno.
 
 ## Normas de código
 
@@ -63,5 +65,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   contrato de módulo con su registro (`base`), `eventos_sw` (bandeja de salida y orden
   `procesar_bandeja`), herramienta de medición (debug-toolbar y `comprobar_consultas`), plantilla general
   (Tailwind, htmx, Alpine, dos menús, tres temas, letra, densidad, ayuda y menú que no salta), tabla
-  filtrable (`base/tablas.py`) y botón «copiar» en todos los formularios. Siguiente paso: la fase 1 (ver
+  filtrable con filtro por columna (`base/tablas.py`), botón «copiar» en todos los formularios y pruebas
+  en el navegador con Playwright. Siguiente paso: la fase 1 (ver
   docs/diseno.md, apartado 19), empezando por `usuarios`.

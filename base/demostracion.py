@@ -81,7 +81,8 @@ class FormularioDeDemostracion(forms.Form):
     )
     fecha = forms.DateField(
         label="Fecha",
-        widget=forms.DateInput(attrs={"type": "date"}),
+        # format: <input type="date"> exige la fecha como AAAA-MM-DD.
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         initial=datetime.date(2026, 12, 5),
         help_text="Día en que se celebra.",
     )

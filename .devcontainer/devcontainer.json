@@ -39,7 +39,10 @@
   //   - pip install --user -r requirements.txt: librerías de Python (Django…) en /home/dev/.local
   //   - npm install: librerías de la interfaz (Tailwind, htmx, Alpine) en node_modules
   //   - npm run construir: copia htmx y Alpine y compila el CSS en static/generado
-  "postCreateCommand": "pip install --user -r requirements.txt && npm install && npm run construir",
+  //   - python -m playwright install --with-deps chromium: descarga el Chromium sin interfaz de las
+  //     pruebas de pantalla
+  //       - --with-deps: instala también las librerías del sistema que necesita Chromium
+  "postCreateCommand": "pip install --user -r requirements.txt && npm install && npm run construir && python -m playwright install --with-deps chromium",
   // Usuario sin privilegios creado en el Dockerfile (más seguro que root)
   "remoteUser": "dev"
 }

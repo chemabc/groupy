@@ -192,3 +192,27 @@ sirve aquí y dónde se usa.
 - **El portapapeles.** `navigator.clipboard.writeText()` solo funciona en páginas seguras (https o
   `localhost`). Si falla, se usa el método antiguo: un cuadro de texto oculto, se selecciona y
   `document.execCommand("copy")`.
+
+## 8. Un fallo que solo se ve en el navegador: `$el` y `$root` en Alpine (12 de noviembre de 2026)
+
+- **El síntoma.** En la tabla de 200 filas, escribir en el buscador no filtraba nada, ni con tilde ni
+  sin ella. Las pruebas pasaban.
+- **Por qué las pruebas no lo vieron.** Comprobaban el HTML que manda el servidor y el código Python.
+  El filtro de esa tabla es JavaScript que se ejecuta en el navegador, y ninguna prueba lo ejecutaba.
+- **La causa.** En Alpine, `this.$el` es el elemento donde ha ocurrido la acción, no la raíz del
+  componente.
+  - Al cargar la página, `filtrar()` se ejecutaba desde la raíz (el bloque de la tabla) y funcionaba.
+  - Al escribir, se ejecutaba desde el formulario, así que buscaba las filas dentro del formulario, no
+    encontraba ninguna y no filtraba nada.
+  - La solución es `this.$root`, que es siempre la raíz del componente.
+- **Las tildes ya se quitaban.** `normalizar()` hace lo mismo en Python y en JavaScript. Lo que fallaba
+  era que el filtro no llegaba a ejecutarse.
+- **Playwright.** Abre la aplicación en un Chromium sin interfaz, escribe, pulsa y lee el resultado.
+  Ahora hay pruebas así en `base/tests/test_navegador.py`. Para comprobar que de verdad detectan el
+  fallo, se rompió el filtro a propósito, la prueba falló y después se restauró.
+- **`StaticLiveServerTestCase`.** Arranca un servidor de verdad en un puerto libre, con los ficheros
+  estáticos, para que el navegador de la prueba pueda abrir las páginas.
+- **No perder el foco al filtrar en el servidor.** Si la respuesta sustituyera la cabecera, el cuadro en
+  el que estás escribiendo se cambiaría por otro y perderías el cursor. Por eso, al filtrar solo se
+  sustituyen las filas. El recuento, que está fuera de ellas, se actualiza con `hx-swap-oob="true"`:
+  htmx coloca ese trozo de la respuesta en el elemento con el mismo `id`, esté donde esté.

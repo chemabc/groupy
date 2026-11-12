@@ -24,8 +24,12 @@ Dónde se filtra:
 - Si hay más, se filtra en el servidor: htmx manda la búsqueda 300 ms después de dejar de escribir y
   recibe solo el resultado. Se cargan TAMANO_DE_PAGINA filas y un botón «Mostrar más».
 
+Se puede filtrar con el buscador general (todas las palabras, en los campos de búsqueda), con los
+desplegables de categoría y con el cuadro de texto bajo el título de cada columna. Nunca importan las
+tildes ni las mayúsculas.
+
 Los filtros van en la dirección (con el identificador delante, para que quepan varias tablas en la
-misma página): «?eventos-q=asamblea&eventos-tipologia=reunion&eventos-orden=-fecha».
+misma página): «?eventos-q=asamblea&eventos-c-titulo=jornadas&eventos-tipologia=reunion&eventos-orden=-fecha».
 """
 
 import datetime
@@ -62,6 +66,8 @@ class Columna:
     titulo: str
     # Si se puede ordenar pulsando su título.
     ordenable: bool = True
+    # Si lleva, bajo el título, un cuadro para filtrarla escribiendo un texto.
+    filtrable: bool = True
 
 
 @dataclass(frozen=True)
@@ -88,11 +94,19 @@ class FuenteDeConsulta:
         self.campos_de_busqueda = list(campos_de_busqueda)
 
     # Devuelve una fuente con solo las filas que contienen todas las palabras (cada una en alguno de los
-    # campos de búsqueda) y que tienen los valores de categoría elegidos.
+    # campos de búsqueda), que tienen los valores de categoría elegidos y cuyas columnas contienen el texto
+    # escrito en su filtro.
     #   - palabras: lista de palabras ya normalizadas.
     #   - categorias: diccionario de campo a valor elegido.
-    def filtrar(self, palabras, categorias):
+    #   - por_columna: diccionario de campo a texto ya normalizado.
+    def filtrar(self, palabras, categorias, por_columna):
         consulta = self.consulta
+        for campo, texto in por_columna.items():
+            # En los campos de texto se quitan las tildes en la base de datos (unaccent). En los demás
+            # (fechas, números), PostgreSQL los compara como texto: las fechas, en formato AAAA-MM-DD.
+            tipo = self.consulta.model._meta.get_field(campo).get_internal_type()
+            busqueda = "unaccent__icontains" if tipo in ("CharField", "TextField") else "icontains"
+            consulta = consulta.filter(**{f"{campo}__{busqueda}": texto})
         for palabra in palabras:
             # Una condición por campo, unidas con «o»: la palabra puede estar en cualquiera de ellos.
             en_algun_campo = [Q(**{f"{campo}__unaccent__icontains": palabra}) for campo in self.campos_de_busqueda]
@@ -132,13 +146,15 @@ class FuenteDeLista:
         self.filas = filas
         self.campos_de_busqueda = list(campos_de_busqueda)
 
-    # Igual que FuenteDeConsulta.filtrar, pero recorriendo la lista.
-    def filtrar(self, palabras, categorias):
+    # Igual que FuenteDeConsulta.filtrar, pero recorriendo la lista. Los filtros de columna comparan con
+    # el texto tal como se ve en la celda (las fechas, DD/MM/AAAA), igual que el filtro del navegador.
+    def filtrar(self, palabras, categorias, por_columna):
         filas = [
             fila
             for fila in self.filas
             if all(any(palabra in normalizar(fila[campo]) for campo in self.campos_de_busqueda) for palabra in palabras)
             and all(str(fila[campo]) == valor for campo, valor in categorias.items())
+            and all(texto in normalizar(celda_de(fila[campo]).texto) for campo, texto in por_columna.items())
         ]
         return FuenteDeLista(filas, self.campos_de_busqueda)
 
@@ -221,6 +237,13 @@ class Tabla:
         ordenables = {columna.campo for columna in self.columnas if columna.ordenable}
         orden = parametros.get(self.parametro("orden"), "")
         self.orden = orden if orden.lstrip("-") in ordenables else ""
+        # Texto escrito en el filtro de cada columna (tal cual, para volver a pintarlo) y normalizado.
+        self.textos_de_columna = {}
+        for columna in self.columnas:
+            texto = parametros.get(self.parametro(f"c-{columna.campo}"), "").strip() if columna.filtrable else ""
+            if texto:
+                self.textos_de_columna[columna.campo] = texto
+        self.por_columna = {campo: normalizar(texto) for campo, texto in self.textos_de_columna.items()}
         self.categorias = {}
         for filtro in self.filtros:
             valor = parametros.get(self.parametro(filtro.campo), "")
@@ -247,19 +270,23 @@ class Tabla:
                 self.hay_mas = False
                 return
         self.en_navegador = False
-        filtrada = fuente.filtrar(self.palabras, self.categorias)
+        filtrada = fuente.filtrar(self.palabras, self.categorias, self.por_columna)
         self.total = filtrada.contar()
         self.filas = filtrada.cortar(self.desde, self.desde + self.tamano_de_pagina)
         self.hay_mas = self.desde + len(self.filas) < self.total
 
     # Si la petición es de htmx y pide solo una parte de esta tabla, devuelve la plantilla de esa parte:
-    #   - «tabla-<id>-resultado»: tras cambiar un filtro o el orden, la tabla con su recuento;
+    #   - «tabla-<id>-cuerpo»: tras escribir en un filtro o cambiar un desplegable, solo las filas y el
+    #     recuento (la cabecera no se toca, para no perder el cuadro en el que se está escribiendo);
+    #   - «tabla-<id>-resultado»: tras cambiar el orden, la tabla entera con su cabecera;
     #   - «tabla-<id>-mas»: tras pulsar «Mostrar más», las filas siguientes.
     # Si no, devuelve None y la vista pinta la página entera.
     def plantilla_parcial(self):
         if self.request.headers.get("HX-Request") != "true":
             return None
         objetivo = self.request.headers.get("HX-Target", "")
+        if objetivo == f"tabla-{self.identificador}-cuerpo":
+            return "base/tabla_cuerpo.html"
         if objetivo == f"tabla-{self.identificador}-resultado":
             return "base/tabla_resultado.html"
         if objetivo == f"tabla-{self.identificador}-mas":
@@ -271,7 +298,7 @@ class Tabla:
     def filas_pintadas(self):
         pintadas = []
         for fila in self.filas:
-            celdas = [_celda(self.fuente.valor(fila, columna.campo)) for columna in self.columnas]
+            celdas = [celda_de(self.fuente.valor(fila, columna.campo)) for columna in self.columnas]
             pintadas.append(
                 FilaPintada(
                     celdas=celdas,
@@ -294,6 +321,9 @@ class Tabla:
                     "indice": indice,
                     "actual": actual,
                     "flecha": ("▼" if descendente else "▲") if actual else "",
+                    # Filtro de texto de la columna: nombre del parámetro y lo que ya hay escrito.
+                    "parametro_filtro": self.parametro(f"c-{columna.campo}"),
+                    "texto_filtro": self.textos_de_columna.get(columna.campo, ""),
                     # Sentido para los lectores de pantalla (atributo aria-sort).
                     "sentido": ("descending" if descendente else "ascending") if actual else "",
                     # Parámetro que manda htmx al pulsarla (filtrado en el servidor), ya en JSON.
@@ -339,8 +369,8 @@ class Tabla:
 
 
 # Prepara una celda a partir del valor de un campo: las fechas se ven como DD/MM/AAAA y se ordenan como
-# AAAA-MM-DD; lo vacío se ve vacío; lo demás, como texto.
-def _celda(valor):
+# AAAA-MM-DD; lo vacío se ve vacío; lo demás, como texto. La usan Tabla y FuenteDeLista.
+def celda_de(valor):
     if valor is None:
         return Celda("", "")
     if isinstance(valor, datetime.date):

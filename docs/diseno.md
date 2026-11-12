@@ -339,6 +339,16 @@ JavaScript y una posible aplicación móvil.
   con `normalizar()`, que hace lo mismo en Python y en JavaScript. En el servidor, con la extensión
   `unaccent` de PostgreSQL (migración `base/0001_unaccent`). Se busca en los mismos campos
   (`campos_de_busqueda`) en los dos modos.
+- **Filtro por columna** (12 de noviembre de 2026, a petición de la persona usuaria): bajo el título de
+  cada columna hay un cuadro de texto; la fila se ve si la celda contiene lo escrito, sin importar tildes
+  ni mayúsculas. Se combina con el buscador general (que se mantiene) y con los desplegables. Las
+  columnas pueden desactivarlo con `Columna(filtrable=False)`.
+  - En el navegador y con `FuenteDeLista` se compara con el texto tal como se ve (fechas DD/MM/AAAA).
+    Con `FuenteDeConsulta`, los campos de texto usan `unaccent` y los demás se comparan como texto de
+    PostgreSQL (las fechas, AAAA-MM-DD).
+  - En el servidor, escribir en un filtro sustituye **solo las filas** (`tabla-<id>-cuerpo`) y el recuento
+    (con `hx-swap-oob`), no la cabecera, para no perder el cuadro en el que se escribe. Cambiar el orden
+    sí sustituye la tabla entera. `hx-sync` descarta una respuesta vieja si llega una petición nueva.
 - **Los filtros van en la dirección**, con el identificador de la tabla delante (`eventos-q`,
   `eventos-orden=-fecha`…), así que caben varias tablas en una página. Los parámetros que no
   corresponden (una columna que no existe, una categoría que no está entre las opciones) se ignoran.
@@ -813,6 +823,10 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - **Cada pantalla nueva llega con su prueba de número de consultas** y se mide con datos de ejemplo.
 - **Commit al terminar cada pieza acordada**, con el mensaje en castellano.
 - Pruebas de pantalla con un navegador sin interfaz (Playwright, Apache-2.0).
+  **Instalado el 12 de noviembre de 2026** (`playwright==1.64.1`, con su Chromium), tras un fallo de la
+  tabla filtrable que las pruebas sin navegador no podían ver. Las pruebas de pantalla viven en
+  `base/tests/test_navegador.py` (`StaticLiveServerTestCase`) y se saltan si no hay Chromium. Cada pieza
+  de interfaz con JavaScript propio llega con su prueba en el navegador.
 
 ---
 

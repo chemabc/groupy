@@ -1,0 +1,10 @@
+{% comment %}
+  Recuento bajo una tabla filtrable. Recibe «tabla» y, opcionalmente, «fuera_de_sitio»: cuando llega
+  dentro de la respuesta que solo sustituye las filas (base/tabla_cuerpo.html), hx-swap-oob le dice a
+  htmx que lo coloque en su sitio, sustituyendo al recuento que tenga el mismo id.
+  En el navegador, el texto lo actualiza tablaLocal (interfaz.js) al filtrar.
+{% endcomment %}
+<p id="tabla-{{ tabla.identificador }}-recuento" class="mt-1 text-xs text-slate-500"
+   {% if tabla.en_navegador %}x-text="recuento()"{% endif %}{% if fuera_de_sitio %} hx-swap-oob="true"{% endif %}>
+  {% if tabla.en_navegador %}{{ tabla.total }} filas{% else %}Mostrando {{ tabla.siguiente_desde }} de {{ tabla.total }} (se filtra en el servidor){% endif %}
+</p>

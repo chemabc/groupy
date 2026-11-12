@@ -83,3 +83,21 @@ npm run construir
 Abre Claude Code en el contenedor nuevo y pídele: «Lee CLAUDE.md y docs/diseno.md y empecemos la
 fase 0». La memoria de Claude (por ejemplo, responder en castellano o documentar solo en Markdown) se
 comparte entre los dos contenedores, porque los dos usan el volumen `claude-code-config`.
+
+## 4. Pasar las pruebas
+
+```bash
+# Pasa todas las pruebas, también las de pantalla en Chromium sin interfaz
+#     test: crea una base de datos temporal, ejecuta las pruebas y la borra al terminar
+python manage.py test
+```
+
+Las pruebas de pantalla (`base/tests/test_navegador.py`) usan el CSS ya construido, así que antes
+conviene haber ejecutado `npm run construir`. Si Chromium no está instalado, se saltan. Para instalarlo:
+
+```bash
+# Descarga el Chromium sin interfaz de Playwright
+#     install chromium: solo el navegador Chromium
+#     --with-deps: también las librerías del sistema que necesita
+python -m playwright install --with-deps chromium
+```

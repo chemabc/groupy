@@ -1,0 +1,8 @@
+{% comment %}
+  Respuesta del servidor cuando cambia un filtro (buscador, desplegable o filtro de columna): las filas,
+  que htmx pone dentro del cuerpo de la tabla, y el recuento, que htmx coloca en su sitio aparte
+  (hx-swap-oob). La cabecera no se toca, así no se pierde el cuadro en el que se está escribiendo.
+  Recibe «tabla».
+{% endcomment %}
+{% include "base/tabla_filas.html" %}
+{% include "base/tabla_recuento.html" with fuera_de_sitio=True %}
