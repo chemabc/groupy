@@ -1,0 +1,25 @@
+{% extends interfaz.plantilla %}
+{% load static %}
+{% comment %}
+  Pantalla «Calendario → Ver el calendario» (calendario/views.py, calendario). No recibe nada: la isla
+  «calendario» de base/static/base/interfaz.js pide las fechas a «datos» y guarda los cambios en «mover».
+{% endcomment %}
+{% block contenido %}
+<div x-data="calendario" data-estaticos="{% static 'generado/fullcalendar/' %}" data-datos="{% url 'calendario:datos' %}"
+     data-mover="{% url 'calendario:mover' %}" data-nuevo="{% url 'calendario:nuevo' %}" class="space-y-2">
+  <div class="flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="Qué se muestra">
+    <template x-for="categoria in categorias" :key="categoria.nombre">
+      <label class="inline-flex cursor-pointer items-center gap-1.5 rounded border border-slate-200 bg-white px-2 py-0.5 dark:border-slate-700 dark:bg-slate-900">
+        <input type="checkbox" :checked="categoria.visible" @change="alternar(categoria)">
+        <span class="inline-block h-3 w-3 rounded-full" :style="`background: ${categoria.color}`" aria-hidden="true"></span>
+        <span x-text="categoria.nombre"></span>
+      </label>
+    </template>
+    <a href="{% url 'calendario:nuevo' %}" class="ml-auto rounded bg-marca px-3 py-1 text-sm font-medium text-white">+ Recordatorio</a>
+  </div>
+  <p x-show="mensaje" x-cloak x-text="mensaje" role="alert"
+     class="rounded border border-red-300 bg-red-50 px-3 py-1.5 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300"></p>
+  <div x-ref="lienzo" class="rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900" role="region" aria-label="Calendario"></div>
+  <p class="text-xs text-slate-500">Pulsa un hueco para apuntar un recordatorio ese día. Lo que gestionas se puede arrastrar a otro día u hora.</p>
+</div>
+{% endblock %}

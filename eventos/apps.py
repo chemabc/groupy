@@ -9,6 +9,7 @@ from base.contrato import (
     Cometido,
     Emision,
     EntradaDeMenu,
+    FuenteDeCalendario,
     ModuloConfig,
     Permiso,
     TipoDeAviso,
@@ -59,6 +60,10 @@ class EventosConfig(ModuloConfig):
             "eventos.reunion", "Convocar una reunión", resolver="eventos.servicios.convocar_reunion",
             apoyos_por_altura=(2, 5, 10), dias=7, basta_el_superadmin=True,
         ),
+    )
+    # En el calendario común: cada evento con el color de su tipo; quien lo gestiona puede arrastrarlo.
+    fuentes_de_calendario = (
+        FuenteDeCalendario("eventos.eventos", "Eventos", "eventos.calendario.fechas", color="#e11d78", mover="eventos.calendario.mover"),
     )
     menu = (
         EntradaDeMenu(

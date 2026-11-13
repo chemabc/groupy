@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "administracion.apps.AdministracionConfig",
     "comunicaciones.apps.ComunicacionesConfig",
     "eventos.apps.EventosConfig",
+    "calendario.apps.CalendarioConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,

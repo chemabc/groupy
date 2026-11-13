@@ -411,13 +411,136 @@ document.addEventListener("alpine:init", () => {
       if (this.mapa) this.mapa.remove();
     },
   }));
+
+  // Isla de calendario (FullCalendar), para la pantalla «Calendario» (calendario/templates). Se usa así:
+  //   <div x-data="calendario" data-estaticos="/static/generado/fullcalendar/" data-datos="/calendario/datos/"
+  //        data-mover="/calendario/mover/" data-nuevo="/calendario/recordatorios/nuevo/">
+  //     <div x-ref="lienzo"></div>
+  //   </div>
+  // Pide al servidor las fechas del trozo que se ve (data-datos, en JSON), las pinta con el color de su
+  // tipo, deja ocultar tipos con las casillas de filtro (se recuerda en este navegador), arrastrar lo que
+  // se puede mover (data-mover) y, al pulsar un hueco, apuntar un recordatorio (data-nuevo). En el móvil
+  // empieza en la vista de lista. FullCalendar se carga solo la primera vez que hace falta.
+  Alpine.data("calendario", () => ({
+    // El calendario de FullCalendar, para poder quitarlo al salir de la página.
+    calendario: null,
+    // Tipos que se han visto ({nombre, color, visible}), para las casillas de filtro.
+    categorias: [],
+    // Nombres de los tipos ocultos.
+    ocultas: new Set(),
+    // Mensaje de error al mover algo (vacío si no hay).
+    mensaje: "",
+    // Últimas fechas pedidas, para no volver a pedirlas al cambiar un filtro: {clave, fechas}.
+    ultimas: { clave: "", fechas: [] },
+
+    // Al arrancar: carga FullCalendar (si aún no estaba), recupera los filtros guardados y pinta el
+    // calendario.
+    async init() {
+      const base = this.$root.dataset.estaticos;
+      await cargarUnaVez(base + "index.global.min.js");
+      await cargarUnaVez(base + "es.global.min.js");
+      try {
+        this.ocultas = new Set(JSON.parse(localStorage.getItem("calendario.ocultas") || "[]"));
+      } catch {
+        this.ocultas = new Set();
+      }
+      const estrecho = window.matchMedia("(max-width: 767px)").matches;
+      const vistas = "dayGridMonth,timeGridWeek,timeGridDay,listMonth";
+      this.calendario = new FullCalendar.Calendar(this.$refs.lienzo, {
+        locale: "es",
+        firstDay: 1,
+        height: "auto",
+        nowIndicator: true,
+        navLinks: true,
+        initialView: estrecho ? "listMonth" : "dayGridMonth",
+        headerToolbar: estrecho
+          ? { left: "prev,next", center: "title", right: "today" }
+          : { left: "prev,next today", center: "title", right: vistas },
+        footerToolbar: estrecho ? { center: vistas } : false,
+        events: (info, bien, mal) => this.pedir(info).then(bien, mal),
+        eventDrop: (info) => this.mover(info),
+        eventResize: (info) => this.mover(info),
+        dateClick: (info) => {
+          window.location.href = `${this.$root.dataset.nuevo}?inicio=${encodeURIComponent(info.dateStr)}`;
+        },
+      });
+      this.calendario.render();
+    },
+
+    // Pide las fechas del trozo visible (o reutiliza las últimas, si es el mismo trozo), apunta los tipos
+    // nuevos para los filtros y devuelve solo las de los tipos que no están ocultos.
+    //   - info: el trozo que pide FullCalendar (startStr, endStr).
+    async pedir(info) {
+      const clave = `${info.startStr}|${info.endStr}`;
+      if (this.ultimas.clave !== clave) {
+        const direccion = `${this.$root.dataset.datos}?start=${encodeURIComponent(info.startStr)}&end=${encodeURIComponent(info.endStr)}`;
+        const respuesta = await fetch(direccion, { headers: { Accept: "application/json" } });
+        if (!respuesta.ok) throw new Error("No se han podido cargar las fechas.");
+        this.ultimas = { clave, fechas: (await respuesta.json()).fechas };
+      }
+      for (const fecha of this.ultimas.fechas) {
+        if (!this.categorias.some((categoria) => categoria.nombre === fecha.categoria)) {
+          this.categorias.push({ nombre: fecha.categoria, color: fecha.color, visible: !this.ocultas.has(fecha.categoria) });
+        }
+      }
+      return this.ultimas.fechas.filter((fecha) => !this.ocultas.has(fecha.categoria));
+    },
+
+    // Muestra u oculta un tipo, lo recuerda en este navegador y vuelve a pintar (sin pedir nada).
+    //   - categoria: {nombre, visible}.
+    alternar(categoria) {
+      categoria.visible = !categoria.visible;
+      if (categoria.visible) this.ocultas.delete(categoria.nombre);
+      else this.ocultas.add(categoria.nombre);
+      try {
+        localStorage.setItem("calendario.ocultas", JSON.stringify([...this.ocultas]));
+      } catch {
+        // Sin almacenamiento (ventana privada…): el filtro vale solo mientras no se salga de la página.
+      }
+      this.calendario.refetchEvents();
+    },
+
+    // Guarda la fecha nueva de algo que se ha arrastrado (o estirado). Si el servidor no lo acepta, lo
+    // devuelve a su sitio y muestra por qué. No deja pasar algo con hora a «todo el día» ni al revés.
+    //   - info: lo que da FullCalendar (event, oldEvent, revert).
+    async mover(info) {
+      this.mensaje = "";
+      if (info.oldEvent.allDay !== info.event.allDay) {
+        info.revert();
+        this.mensaje = "Solo se puede cambiar el día o la hora, no pasarlo a «todo el día» (ni al revés).";
+        return;
+      }
+      const datos = new FormData();
+      datos.append("fuente", info.event.extendedProps.fuente);
+      datos.append("id", info.event.extendedProps.numero);
+      datos.append("todo_el_dia", info.event.allDay ? "1" : "0");
+      datos.append("inicio", info.event.startStr);
+      datos.append("fin", info.event.endStr || "");
+      const cabeceras = JSON.parse(document.body.getAttribute("hx-headers") || "{}");
+      const respuesta = await fetch(this.$root.dataset.mover, { method: "POST", body: datos, headers: cabeceras });
+      if (!respuesta.ok) {
+        info.revert();
+        this.mensaje = respuesta.headers.get("Content-Type")?.includes("json")
+          ? (await respuesta.json()).error
+          : "No se ha podido guardar el cambio.";
+        return;
+      }
+      // Las fechas guardadas ya no valen: la próxima vez se piden de nuevo.
+      this.ultimas = { clave: "", fechas: [] };
+    },
+
+    // Al quitar el componente (al navegar a otra página): libera el calendario.
+    destroy() {
+      if (this.calendario) this.calendario.destroy();
+    },
+  }));
 });
 
 // Ficheros (scripts u hojas de estilo) ya pedidos, para no cargarlos dos veces: {dirección: promesa}.
 const ficherosCargados = {};
 
 // Carga un script o una hoja de estilos (por su terminación) y devuelve una promesa que se cumple cuando
-// está listo. Si ya se pidió antes, devuelve la misma promesa. La usa el componente «mapa».
+// está listo. Si ya se pidió antes, devuelve la misma promesa. La usan los componentes «mapa» y «calendario».
 //   - direccion: la dirección del fichero.
 function cargarUnaVez(direccion) {
   if (!ficherosCargados[direccion]) {

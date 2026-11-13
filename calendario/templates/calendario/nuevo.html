@@ -1,0 +1,18 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Calendario → Recordatorios → Apuntar uno» (calendario/views.py, nuevo). Recibe «formulario»
+  y «sin_grupos» (si la persona no está en ningún grupo).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  {% if sin_grupos %}
+    <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">Para apuntar recordatorios tienes que estar en algún grupo.</p>
+  {% else %}
+    <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      {% csrf_token %}
+      {{ formulario }}
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Apuntar</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

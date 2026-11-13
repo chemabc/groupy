@@ -172,3 +172,23 @@
   }
 }
 
+
+/* Calendario (FullCalendar, la isla «calendario» de interfaz.js): sus colores se ajustan con variables.
+   En modo oscuro, bordes y fondos oscuros para que no deslumbre. */
+[data-tema="oscuro"] .fc {
+  --fc-border-color: var(--color-slate-700);
+  --fc-page-bg-color: var(--color-slate-900);
+  --fc-neutral-bg-color: var(--color-slate-800);
+  --fc-list-event-hover-bg-color: var(--color-slate-800);
+  --fc-today-bg-color: color-mix(in oklab, var(--color-amber-400) 15%, transparent);
+}
+/* Botones del calendario con el color de la aplicación. */
+.fc {
+  --fc-button-bg-color: var(--color-slate-600);
+  --fc-button-border-color: var(--color-slate-600);
+  --fc-button-active-bg-color: var(--color-marca);
+  --fc-button-active-border-color: var(--color-marca);
+}
+.fc .fc-toolbar-title {
+  font-size: 1.15rem;
+}

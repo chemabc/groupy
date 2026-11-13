@@ -1,0 +1,26 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Calendario → Suscripción» (calendario/views.py, suscripcion). Recibe «direccion» (la dirección
+  secreta del .ics) y «clave» (para saber desde cuándo vale).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Copia esta dirección en el programa de calendario de tu móvil u ordenador («Añadir calendario desde una URL» o «Suscribirse»). Verás tus fechas de los últimos 2 meses y del próximo año, y se pondrán al día solas.</p>
+  <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <label for="direccion-ics" class="mb-1 block text-sm font-semibold">Tu dirección secreta</label>
+    <div class="flex gap-2">
+      <input id="direccion-ics" type="text" readonly value="{{ direccion }}" class="min-w-0 flex-1 font-mono text-xs" @focus="$el.select()" x-data>
+      <button type="button" x-data="copiar" data-objetivo="direccion-ics" @click="copiar()"
+              class="rounded border border-slate-300 px-2 text-sm dark:border-slate-700" title="Copiar la dirección">
+        <span x-text="copiado ? '✓' : 'Copiar'">Copiar</span>
+      </button>
+    </div>
+    <p class="mt-2 text-xs text-slate-500">Vale desde el {{ clave.creada|date:"d/m/Y H:i" }}. Quien la tenga ve tus fechas sin entrar: no la compartas.</p>
+  </div>
+  <form method="post" class="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950">
+    {% csrf_token %}<input type="hidden" name="accion" value="cambiar">
+    <p class="mb-2 text-sm">Si crees que alguien más la tiene, cámbiala: la anterior dejará de funcionar y tendrás que poner la nueva en tus programas.</p>
+    <button type="submit" class="rounded border border-amber-400 bg-white px-3 py-1 text-sm dark:border-amber-700 dark:bg-slate-900">Cambiar la dirección</button>
+  </form>
+</div>
+{% endblock %}

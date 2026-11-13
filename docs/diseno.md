@@ -1106,6 +1106,31 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
   elegir si la ve su grupo. El admin del grupo puede hacerla visible a los grupos padre y abuelo.
 - Calendario público y suscripción `.ics` con una clave secreta que se puede cambiar.
 
+### 10.6 Cómo está hecho `calendario` (13 de noviembre de 2026, a partir de lo acordado en 10.4)
+
+- **Contrato:** `FuenteDeCalendario` lleva ahora `color` (de CSS) y `mover` (función para arrastrar), y su
+  función devuelve `FechaDeCalendario` (título, inicio, fin, día entero, enlace, tipo para los filtros,
+  color, lugar y si esa persona puede arrastrarla). En lo de día entero, `fin` es el último día (no el
+  siguiente, como hacen FullCalendar e iCalendar). Fuentes: «Eventos» (un color por tipo principal:
+  Reunión violeta, Acción roja, Recaudatorio verde, Genérico azul; los cancelados en gris y los
+  pendientes de apoyos, solo para quien convoca) y «Recordatorios».
+- **Isla:** FullCalendar 6.1.22 (MIT), servido desde el propio servidor y cargado solo en el calendario.
+  Mes, semana, día y lista (en el móvil empieza en lista del mes). Casillas de filtro por tipo, que se
+  recuerdan en ese navegador. Se arrastra lo que se gestiona (los eventos propios o del grupo que se
+  administra; los recordatorios propios). No se pasa algo con hora a día entero ni al revés. Pulsar un
+  hueco abre «Apuntar un recordatorio» con ese día. Descartada la 7.x: salió en julio de 2026 y aún
+  cambia cada pocas semanas.
+- **Recordatorios:** en un grupo propio; «Solo yo» es contenido personal (ni el superadmin lo ve), «Mi
+  grupo» llega también a sus subgrupos. Con el permiso `calendario.ampliar_recordatorios` (admin_grupo y
+  admin_org), hasta el padre o el abuelo, si la organización lo permite. Los cambia o borra quien lo
+  apuntó o la administración del grupo.
+- **Suscripción .ics:** «Calendario → Suscripción» muestra la dirección con la clave secreta (se guarda
+  tal cual para poder mostrarla siempre; descartado guardarla cifrada, que obligaría a enseñarla una
+  sola vez) y un botón para cambiarla. El .ics trae los últimos 2 meses y el próximo año, se pide sin
+  sesión y lleva título, tipo, lugar y enlace de cada fecha.
+- **Menú:** sección «Calendario» (▦) con «Ver el calendario», «Recordatorios» y «Suscripción».
+- *(Más adelante: el calendario público, con el módulo `publico`.)*
+
 ---
 
 ## 11. Debates

@@ -133,9 +133,44 @@ class FuenteDeCalendario:
     # Nombre visible en los filtros del calendario.
     nombre: str
     # Ruta de la función que devuelve las fechas, como texto. Ejemplo: «proyectos.calendario.fechas».
+    # Recibe (usuario, desde, hasta) y devuelve una lista de FechaDeCalendario: solo lo que esa persona
+    # puede ver entre esas dos fechas. Debe hacer siempre las mismas consultas, haya lo que haya.
     funcion: str
-    # Color con el que se pinta en el calendario (nombre de color de Tailwind). Ejemplo: «amber».
-    color: str = "slate"
+    # Color con el que se pinta en el calendario, como color de CSS («#e11d78»). Cada fecha puede
+    # traer el suyo (por ejemplo, uno por tipo de evento).
+    color: str = "#64748b"
+    # Ruta de la función que cambia la fecha de una de sus cosas al arrastrarla en el calendario. Recibe
+    # (usuario, id, inicio, fin) y lanza ValidationError si no se puede. Vacío: no se arrastra nada.
+    mover: str = ""
+
+
+@dataclass(frozen=True)
+class FechaDeCalendario:
+    """
+    Una cosa con fecha que una fuente del calendario entrega para pintarla (un evento, un recordatorio…).
+    """
+
+    # Identificador dentro de su fuente (el número de la fila). Sirve para moverla al arrastrar.
+    id: int
+    # Título que se ve en el calendario.
+    titulo: str
+    # Cuándo empieza (fecha y hora, con su zona horaria).
+    inicio: object
+    # Cuándo termina. None: no tiene fin (se pinta como un punto en el tiempo, o un solo día). En las de
+    # día entero, el último día que ocupa (a las 00:00).
+    fin: object = None
+    # Si ocupa días enteros (sin hora). Entonces «inicio» es el primer día a las 00:00.
+    todo_el_dia: bool = False
+    # Dirección de su ficha, para abrirla al pulsarla. Vacío: no se abre nada.
+    enlace: str = ""
+    # Nombre con el que se filtra («Reunión», «Acción», «Recordatorio»). Vacío: el nombre de la fuente.
+    categoria: str = ""
+    # Color de CSS con el que se pinta. Vacío: el de la fuente.
+    color: str = ""
+    # Dónde es, en texto (para la suscripción .ics). Opcional.
+    lugar: str = ""
+    # Si esta persona puede arrastrarla para cambiarle la fecha (la fuente necesita «mover»).
+    se_puede_mover: bool = False
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,33 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de un recordatorio (calendario/views.py, recordatorio). Recibe «recordatorio», «formulario» (solo
+  si la persona puede cambiarlo; si no, None) y «abrir» (si el formulario sale desplegado, tras un error).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  <p><a href="{% url 'calendario:calendario' %}" class="text-sm text-marca hover:underline">← Calendario</a></p>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="text-lg font-semibold">{{ recordatorio.titulo }}</h2>
+    <p class="text-sm text-slate-500">
+      {% if recordatorio.todo_el_dia %}{{ recordatorio.inicio|date:"l d/m/Y" }}{% if recordatorio.fin %} – {{ recordatorio.fin|date:"l d/m/Y" }}{% endif %}
+      {% else %}{{ recordatorio.inicio|date:"l d/m/Y H:i" }}{% if recordatorio.fin %} – {{ recordatorio.fin|date:"l d/m/Y H:i" }}{% endif %}{% endif %}
+    </p>
+    <p class="text-sm text-slate-500">{{ recordatorio.grupo.nombre }} ({{ recordatorio.grupo.organizacion.nombre }}) · apuntado por {{ recordatorio.autor.alias|default:"alguien que ya no está" }}</p>
+    {% if recordatorio.notas %}<p class="mt-2 whitespace-pre-line text-sm">{{ recordatorio.notas }}</p>{% endif %}
+  </section>
+  {% if formulario %}
+    <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-semibold">Cambiar</summary>
+      <form method="post" class="mt-2">
+        {% csrf_token %}<input type="hidden" name="accion" value="guardar">
+        {{ formulario }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+      </form>
+    </details>
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="accion" value="borrar">
+      <button type="submit" class="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-300">Borrar el recordatorio</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

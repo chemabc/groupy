@@ -510,3 +510,28 @@ sirve aquí y dónde se usa.
   como texto.
 - **`destroy()`.** Alpine lo llama al quitar el componente (al navegar a otra página): ahí se libera el
   mapa para no dejar memoria ocupada.
+
+## 23. El calendario: una fuente por módulo, JSON para la isla y un .ics escrito a mano (13 de noviembre de 2026)
+
+- **Juntar sin importar.** El calendario no sabe nada de eventos: cada módulo declara en su contrato una
+  `FuenteDeCalendario` con la ruta de una función que recibe (persona, desde, hasta) y devuelve una lista
+  de `FechaDeCalendario` (título, inicio, fin, enlace, tipo, color, si se puede arrastrar). `calendario`
+  recorre las fuentes del registro y llama a cada función con `import_string`. Así un módulo funcional
+  aporta al calendario sin que ninguno importe al otro.
+- **La isla pide los datos.** FullCalendar no recibe las fechas en la página: cada vez que cambia de mes,
+  semana o día llama a la función `events` del componente, que pide `/calendario/datos/?start=…&end=…`.
+  Las últimas fechas se guardan; al tocar un filtro se vuelve a pintar sin pedir nada al servidor.
+- **Arrastrar con red de seguridad.** Al soltar algo, la isla manda la fecha nueva a `/calendario/mover/`.
+  Si el servidor dice que no (no es tuyo, está cancelado), `info.revert()` lo devuelve a su sitio y se
+  muestra el porqué. La comprobación de verdad está en el servidor: la casilla `editable` solo evita
+  que se intente.
+- **Días enteros.** FullCalendar (y el formato .ics) dan como final de lo que ocupa días enteros el día
+  *siguiente* al último. Aquí se guarda el último día, que es lo que entiende una persona; la conversión
+  se hace solo al hablar con FullCalendar y al escribir el .ics.
+- **El .ics es texto.** Una suscripción de calendario es un fichero de texto con bloques
+  `BEGIN:VEVENT … END:VEVENT`. Dos detalles de la norma: las comas, los puntos y coma y los saltos de línea
+  se escapan con `\`, y ninguna línea puede pasar de 75 *bytes* (una «ñ» ocupa 2): las largas se parten y
+  la continuación empieza con un espacio.
+- **Una vista sin sesión.** Los programas de calendario no inician sesión, así que la vista del .ics lleva
+  `@login_not_required` y se protege con una clave secreta larga en la dirección. Por eso se puede
+  cambiar: la anterior deja de funcionar al momento.

@@ -18,6 +18,8 @@ urlpatterns = [
     path("organizaciones/", include("grupos.urls")),
     # Módulo «eventos»: listas, convocar, ficha, editar y cartel.
     path("eventos/", include("eventos.urls")),
+    # Módulo «calendario»: el calendario común, recordatorios y suscripción .ics.
+    path("calendario/", include("calendario.urls")),
     # Módulo «lugares»: mi lugar, mapa, lista, propuestas e importación.
     path("lugares/", include("lugares.urls")),
     # Módulo «talentos»: mis talentos, peticiones, recuentos y catálogo.

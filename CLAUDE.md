@@ -97,4 +97,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   nombres, peticiones con «Lo ofrezco» y «Tengo dudas»). Fase 2 cerrada (salvo `moderacion`).
 - **Fase 3 en curso.** Hecho: `eventos` (convocar con el selector de visibilidad y los campos de la
   tipología; reuniones con solicitud de apoyos 2/5/10; cartel privado; «¿Vas a ir?» con alias solo para
-  quien convoca y los cometidos; cometidos; compartir; cancelar). Siguiente: `calendario`, después series. Recuerda `migrate --database=boveda`.
+  quien convoca y los cometidos; cometidos; compartir; cancelar) y `calendario` (FullCalendar con las
+  fuentes de cada módulo, filtros por tipo, arrastrar lo propio, recordatorios y suscripción .ics con
+  clave secreta). Siguiente: series periódicas. Recuerda `migrate --database=boveda`.

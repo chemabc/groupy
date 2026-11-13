@@ -35,6 +35,7 @@ def comprobar_contrato(app_configs=None, **kwargs):
 def _comprobar_funciones():
     rutas = [escucha.receptor for lista in registro.escuchas.values() for escucha in lista]
     rutas += [fuente.funcion for fuente in registro.fuentes_de_calendario.values()]
+    rutas += [fuente.mover for fuente in registro.fuentes_de_calendario.values() if fuente.mover]
     rutas += [aviso.preparar for aviso in registro.avisos.values()]
     rutas += [tipo.resolver for tipo in registro.solicitudes.values()]
     rutas += [tipo.comprobar for tipo in registro.solicitudes.values() if tipo.comprobar]
