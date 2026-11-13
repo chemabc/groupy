@@ -233,8 +233,13 @@ class EntradaDeMenu:
     nombre: str
     # Nombre de la dirección web a la que lleva al pulsarla.
     url: str
-    # Nombre del icono que se dibuja a su lado.
+    # Icono que se dibuja a su lado: un símbolo de texto de un solo color («⇄», «✉»), para que tome el
+    # color de abajo (los emoji de colores no lo toman). No puede repetirse en todo el menú.
     icono: str = ""
+    # Color del icono, como color de CSS («#16a34a»). El icono se pinta con este color sobre un fondo del
+    # mismo color, muy claro. Tampoco puede repetirse (13 de noviembre de 2026, a petición de la persona
+    # usuaria: cada entrada se reconoce de un vistazo).
+    color: str = "#64748b"
     # Posición en el menú: los números más bajos salen antes.
     orden: int = 100
     # Permiso que hace falta para verla. Vacío: la ve cualquier persona que haya iniciado sesión.

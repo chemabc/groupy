@@ -33,6 +33,7 @@ class TipologiasConfig(ModuloConfig):
             nombre="Configuración",
             url="tipologias:eventos",
             icono="⚙",
+            color="#0891b2",
             orden=850,
             permiso="tipologias.gestionar",
             subsecciones=(
@@ -41,6 +42,7 @@ class TipologiasConfig(ModuloConfig):
                     nombre="Tipologías",
                     url="tipologias:eventos",
                     icono="❖",
+                    color="#c026d3",
                     vistas=(Vista("De eventos", "tipologias:eventos"), Vista("De proyectos", "tipologias:proyectos")),
                 ),
             ),

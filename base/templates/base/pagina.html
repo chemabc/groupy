@@ -56,7 +56,7 @@
       <a href="{% url entrada.url %}" data-codigo="{{ entrada.codigo }}"
          :class="$store.navegacion.secciones.includes($el.dataset.codigo) ? 'text-marca font-medium' : 'text-slate-500'"
          class="flex min-w-20 flex-1 flex-col items-center gap-0.5 px-2 py-2 text-xs">
-        <span class="grid size-6 place-items-center rounded bg-slate-100 dark:bg-slate-800">{{ entrada.icono|default:entrada.nombre|first }}</span>
+        <span class="grid size-6 place-items-center rounded bg-(--icono)/15 text-sm text-(--icono) dark:bg-(--icono)/25 dark:text-[color-mix(in_oklab,var(--icono)_65%,white)]" style="--icono: {{ entrada.color }}" aria-hidden="true">{{ entrada.icono|default:entrada.nombre|first }}&#xFE0E;</span>
         {{ entrada.nombre }}
       </a>
     {% endfor %}

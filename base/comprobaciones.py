@@ -25,6 +25,7 @@ def comprobar_contrato(app_configs=None, **kwargs):
     errores += _comprobar_funciones()
     errores += _comprobar_modelos()
     errores += _comprobar_direcciones()
+    errores += _comprobar_iconos()
     return errores
 
 
@@ -78,6 +79,35 @@ def _comprobar_direcciones():
             except NoReverseMatch:
                 errores.append(checks.Error(f"El menú lleva a «{url}», que pide datos en la dirección: va en «otras_rutas».", id="base.E004"))
     return errores
+
+
+# Comprueba que cada entrada del menú (secciones y subsecciones) tiene icono y color, y que ninguno se
+# repite en todo el menú: así cada entrada se reconoce de un vistazo (13 de noviembre de 2026, a petición
+# de la persona usuaria).
+def _comprobar_iconos():
+    errores = []
+    vistos = {"icono": {}, "color": {}}
+    for entrada in _todas_las_entradas(registro.menu):
+        if not entrada.icono:
+            errores.append(checks.Error(f"La entrada del menú «{entrada.codigo}» no tiene icono.", id="base.E005"))
+        for campo in ("icono", "color"):
+            valor = getattr(entrada, campo).lower()
+            if valor and valor in vistos[campo]:
+                errores.append(
+                    checks.Error(
+                        f"«{entrada.codigo}» repite el {campo} «{valor}» de «{vistos[campo][valor]}»: cada entrada del menú lleva uno distinto.",
+                        id="base.E005",
+                    )
+                )
+            vistos[campo].setdefault(valor, entrada.codigo)
+    return errores
+
+
+# Recorre las entradas del menú y todas sus subsecciones, a cualquier profundidad.
+def _todas_las_entradas(entradas):
+    for entrada in entradas:
+        yield entrada
+        yield from _todas_las_entradas(entrada.subsecciones)
 
 
 # Direcciones de una entrada del menú, de sus vistas y de sus subsecciones (no sus «otras_rutas»), que

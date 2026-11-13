@@ -395,6 +395,15 @@ su sección se abre sola en el menú izquierdo. Cuando no esté claro en qué ni
 La entrada en la que se está lleva fondo; la sección que la contiene, solo el texto en color (más
 discreto, a petición de la persona usuaria).
 
+**Iconos de colores (13 de noviembre de 2026, a petición de la persona usuaria).** Cada sección y cada
+subsección lleva un icono distinto y un color distinto (`EntradaDeMenu.icono` y `EntradaDeMenu.color`),
+para reconocerlas de un vistazo. El icono es un símbolo de texto de un solo color («⇄», «✉»), pintado
+con su color sobre un fondo del mismo color muy claro (más claro aún en el tema oscuro). Tras el símbolo
+va `&#xFE0E;`, que pide dibujarlo como texto y no como emoji (un emoji no toma el color). Si dos entradas
+repiten icono o color, o una no tiene icono, `manage.py check` da el error `base.E005`. *Descartado:*
+emoji de colores (no se pueden teñir y cada sistema los dibuja distinto) y una librería de iconos SVG
+(otra dependencia, por ahora innecesaria).
+
 **Tabla filtrable (12 de noviembre de 2026).**
 - **Componente propio** (`base/tablas.py` y `base/templates/base/tabla.html`). La vista crea una `Tabla`
   con sus columnas (`Columna`), su fuente (`FuenteDeConsulta` para un QuerySet o `FuenteDeLista` para

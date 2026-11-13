@@ -87,7 +87,8 @@ class GruposConfig(ModuloConfig):
             codigo="grupos.organizaciones",
             nombre="Organizaciones y grupos",
             url="grupos:mis_grupos",
-            icono="⌂",
+            icono="⬢",
+            color="#16a34a",
             orden=200,
             otras_rutas=("grupos:grupo", "grupos:organizacion"),
             subsecciones=(
@@ -96,6 +97,7 @@ class GruposConfig(ModuloConfig):
                     nombre="Mis grupos",
                     url="grupos:mis_grupos",
                     icono="◉",
+                    color="#059669",
                     vistas=(Vista("Mis grupos", "grupos:mis_grupos"),),
                 ),
                 EntradaDeMenu(
@@ -103,6 +105,7 @@ class GruposConfig(ModuloConfig):
                     nombre="Árbol",
                     url="grupos:arbol",
                     icono="⋔",
+                    color="#65a30d",
                     permiso="grupos.ver_arbol",
                     vistas=(Vista("Árbol", "grupos:arbol"),),
                 ),
@@ -111,6 +114,7 @@ class GruposConfig(ModuloConfig):
                     nombre="Relaciones",
                     url="grupos:relaciones",
                     icono="⇄",
+                    color="#0d9488",
                     vistas=(Vista("Lista", "grupos:relaciones"),),
                 ),
                 EntradaDeMenu(
@@ -118,6 +122,7 @@ class GruposConfig(ModuloConfig):
                     nombre="Invitaciones",
                     url="grupos:invitaciones",
                     icono="✉",
+                    color="#d97706",
                     contador="grupos.contadores.invitaciones_pendientes",
                     vistas=(Vista("Recibidas y enviadas", "grupos:invitaciones"),),
                 ),

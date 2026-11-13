@@ -24,7 +24,8 @@ class UsuariosConfig(ModuloConfig):
             codigo="usuarios.cuenta",
             nombre="Mi cuenta",
             url="usuarios:preferencias",
-            icono="☺",
+            icono="✦",
+            color="#db2777",
             orden=900,
             vistas=(
                 Vista("Preferencias", "usuarios:preferencias"),

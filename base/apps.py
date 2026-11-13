@@ -26,6 +26,8 @@ class BaseConfig(ModuloConfig):
             codigo="base.inicio",
             nombre="Inicio",
             url="base:inicio",
+            icono="⌂",
+            color="#0284c7",
             orden=0,
             vistas=(
                 Vista("Estructura", "base:inicio"),

@@ -28,7 +28,8 @@ class AdministracionConfig(ModuloConfig):
             codigo="administracion.usuarios",
             nombre="Usuarios",
             url="administracion:personas",
-            icono="☷",
+            icono="☺",
+            color="#2563eb",
             orden=800,
             permiso="administracion.usuarios",
             subsecciones=(
@@ -37,6 +38,7 @@ class AdministracionConfig(ModuloConfig):
                     nombre="Bóveda (personas reales)",
                     url="administracion:personas",
                     icono="▣",
+                    color="#4f46e5",
                     vistas=(
                         Vista("Personas", "administracion:personas"),
                         Vista("Dominios permitidos", "administracion:dominios"),
@@ -47,6 +49,7 @@ class AdministracionConfig(ModuloConfig):
                     nombre="Alias (usuarios de la app)",
                     url="administracion:alias",
                     icono="@",
+                    color="#7c3aed",
                     vistas=(Vista("Lista", "administracion:alias"),),
                 ),
             ),
