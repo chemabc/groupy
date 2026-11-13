@@ -36,6 +36,6 @@ class PruebasDeGruposEnElNavegador(PruebaEnElNavegador):
             self.pagina.locator('button[value="aceptar"]').click()
             self.pagina.wait_for_selector("text=Aceptada")
             self.assertEqual(contador.inner_text(), "(0)")
-            # Solo hay un contador en la página (htmx lo ha sustituido, no duplicado).
-            self.assertEqual(self.pagina.locator("[data-contador]").count(), 1)
+            # Solo hay un contador de invitaciones en la página (htmx lo ha sustituido, no duplicado).
+            self.assertEqual(self.pagina.locator("#contador-gruposinvitaciones").count(), 1)
         self.assertEqual(self.errores, [])

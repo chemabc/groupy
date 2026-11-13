@@ -163,6 +163,60 @@ class Escucha:
     receptor: str
     # Si se ejecuta en la misma transacción (SINCRONO) o después, desde la bandeja (ASINCRONO).
     modo: Modo = Modo.ASINCRONO
+    # Datos fijos que se añaden a los del eventos_sw al llamar al receptor, como pares (nombre, valor).
+    # Los usa el registro para decir al repartidor de avisos qué tipo de aviso toca (ver TipoDeAviso).
+    extra: tuple = ()
+
+
+# Orígenes de las notificaciones: las bandejas de «Comunicaciones» (ver docs/diseno.md, apartado 17).
+# Pares (código, nombre visible).
+ORIGENES_DE_AVISO = (
+    ("grupos", "Organización y grupos"),
+    ("superadmin", "Superadmin"),
+    ("admins", "Admins"),
+    ("proyectos", "Proyectos"),
+    ("eventos", "Eventos"),
+    ("debates", "Debates"),
+    ("solicitudes", "Solicitudes"),
+    ("sistema", "Sistema"),
+)
+
+
+@dataclass(frozen=True)
+class TipoDeAviso:
+    """
+    Un tipo de notificación que el módulo manda a las personas cuando pasa algo («Han invitado a tu
+    grupo»). Cada persona puede desactivar cada tipo en «Comunicaciones → Preferencias». El módulo dice
+    cuándo (el eventos_sw) y a quién y qué (la función «preparar»); el módulo «comunicaciones» lo reparte
+    sin saber nada del módulo que lo declara.
+    """
+
+    # Código único, empezando por la etiqueta del módulo. Ejemplo: «grupos.invitacion_recibida».
+    codigo: str
+    # Nombre visible en las preferencias. Ejemplo: «Han invitado a uno de tus grupos».
+    nombre: str
+    # Bandeja en la que aparece: uno de los códigos de ORIGENES_DE_AVISO.
+    origen: str
+    # Nombre del eventos_sw que lo dispara (declarado en el «emite» de algún módulo).
+    evento: str
+    # Ruta de la función que recibe los datos del eventos_sw y devuelve una lista de AvisoPreparado.
+    # Ejemplo: «grupos.avisos.invitacion_recibida».
+    preparar: str
+
+
+@dataclass(frozen=True)
+class AvisoPreparado:
+    """
+    Lo que devuelve la función «preparar» de un TipoDeAviso: a quién se avisa y qué se le dice. Cuidado:
+    el texto no debe contar nada que esas personas no puedan ver.
+    """
+
+    # Ids de los usuarios a los que se avisa.
+    usuarios: tuple
+    # Texto de la notificación, en una o dos frases.
+    texto: str
+    # Dirección a la que lleva al pulsarla (vacía si no lleva a ningún sitio).
+    enlace: str = ""
 
 
 @dataclass(frozen=True)
@@ -308,6 +362,11 @@ class ModuloConfig(AppConfig):
     grupos_de_etiquetas: tuple[GrupoDeEtiquetas, ...] = ()
     # Los tipos de elemento que se pueden archivar y borrar.
     limpiables: tuple[Limpiable, ...] = ()
+    # Los tipos de notificación que manda a las personas.
+    avisos: tuple[TipoDeAviso, ...] = ()
+    # Solo el módulo que reparte las notificaciones («comunicaciones»): ruta de la función que recibe
+    # cada aviso. El registro le añade una escucha asíncrona por cada TipoDeAviso de cualquier módulo.
+    reparte_avisos: str = ""
     # Cómo crear y borrar sus datos de ejemplo. Vacío si no tiene.
     datos_de_ejemplo: DatosDeEjemplo | None = None
     # Sus secciones del menú izquierdo.

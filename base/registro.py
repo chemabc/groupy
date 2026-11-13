@@ -13,7 +13,7 @@ módulo que escucha un eventos_sw que nadie emite…). No los lanza: las comprob
 from dataclasses import replace
 from pathlib import Path
 
-from .contrato import ROLES_DEL_SISTEMA, Capa, ModuloConfig
+from .contrato import ORIGENES_DE_AVISO, ROLES_DEL_SISTEMA, Capa, Escucha, Modo, ModuloConfig
 
 # Apartados del contrato que son listas de fichas con un código único, y el nombre del campo que hace de
 # código en cada una. El registro los recorre todos igual: comprueba el prefijo y que no se repitan.
@@ -26,6 +26,7 @@ APARTADOS_CON_CODIGO = {
     "emite": "nombre",
     "grupos_de_etiquetas": "codigo",
     "limpiables": "codigo",
+    "avisos": "codigo",
 }
 
 
@@ -49,6 +50,8 @@ class RegistroDeModulos:
             setattr(self, apartado, {})
         # Quién escucha cada eventos_sw: de nombre del evento a la lista de escuchas.
         self.escuchas = {}
+        # Ruta de la función que reparte las notificaciones (la declara «comunicaciones»), o vacío.
+        self.repartidor_de_avisos = ""
         # Datos de ejemplo de cada módulo, por su etiqueta.
         self.datos_de_ejemplo = {}
         # Secciones del menú izquierdo, ya ordenadas.
@@ -79,6 +82,7 @@ class RegistroDeModulos:
                     "ModuloConfig, así que no declara su contrato."
                 )
         self._colgar_subsecciones()
+        self._conectar_avisos()
         self._comprobar_escuchas()
         self._comprobar_ayuda()
         self._comprobar_permisos()
@@ -109,6 +113,10 @@ class RegistroDeModulos:
         # que no se comprueba el prefijo.
         for escucha in config.escucha:
             self.escuchas.setdefault(escucha.evento, []).append(escucha)
+        if config.reparte_avisos:
+            if self.repartidor_de_avisos:
+                self.errores.append(f"Dos módulos dicen repartir los avisos: «{etiqueta}» y otro.")
+            self.repartidor_de_avisos = config.reparte_avisos
         if config.datos_de_ejemplo is not None:
             self.datos_de_ejemplo[etiqueta] = config.datos_de_ejemplo
         # Menú: se comprueba el prefijo de cada entrada y de sus subsecciones.
@@ -121,6 +129,20 @@ class RegistroDeModulos:
             if ayuda.seccion in self.ayuda:
                 self.errores.append(f"La sección «{ayuda.seccion}» tiene dos textos de ayuda.")
             self.ayuda[ayuda.seccion] = ayuda
+
+    # Comprueba cada tipo de aviso (origen conocido y eventos_sw que alguien emite) y, si hay un módulo que
+    # reparte los avisos, le añade una escucha asíncrona por cada uno, con el código del aviso como dato
+    # fijo («aviso»). Así el módulo que declara el aviso no tiene que saber quién lo reparte.
+    def _conectar_avisos(self):
+        origenes = {codigo for codigo, _nombre in ORIGENES_DE_AVISO}
+        for aviso in self.avisos.values():
+            if aviso.origen not in origenes:
+                self.errores.append(f"El aviso «{aviso.codigo}» tiene un origen desconocido: «{aviso.origen}».")
+            if aviso.evento not in self.emite:
+                self.errores.append(f"El aviso «{aviso.codigo}» se dispara con «{aviso.evento}», que ningún módulo emite.")
+            if self.repartidor_de_avisos:
+                escucha = Escucha(aviso.evento, self.repartidor_de_avisos, Modo.ASINCRONO, extra=(("aviso", aviso.codigo),))
+                self.escuchas.setdefault(aviso.evento, []).append(escucha)
 
     # Cuelga cada entrada con «dentro_de» en la subsecciones de la entrada indicada (que puede ser de otro
     # módulo) y la quita de las secciones principales. Como las entradas no se pueden modificar

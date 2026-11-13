@@ -1195,6 +1195,39 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - **Chat** que se cuelga de un proyecto, un debate, un evento o un grupo. Tiempo real con Channels y Redis.
 - **Telegram:** bocetado, para una versión posterior.
 
+**Cómo están hechas las notificaciones (13 de noviembre de 2026, decisiones 1A, 2A, 3A y 4A de la
+persona usuaria).** Primera pieza de `comunicaciones`: solo notificaciones en la web. Los mensajes y
+conversaciones son la pieza siguiente; el correo, el chat y Telegram, después.
+- **Cada módulo declara sus avisos (1A).** En su contrato, `avisos = (TipoDeAviso(código, nombre,
+  origen, eventos_sw, preparar),)`. La función `preparar` recibe los datos del eventos_sw y devuelve
+  `AvisoPreparado(usuarios, texto, enlace)`: a quién y qué (sin contar nada que esas personas no puedan
+  ver). `comunicaciones` declara `reparte_avisos` y el registro le añade sola una escucha asíncrona por
+  cada aviso, con el código del aviso como dato fijo (`Escucha.extra`). Así `comunicaciones` no sabe
+  nada de los demás módulos. *Descartado:* que `comunicaciones` escuchara y redactara cada aviso
+  (acabaría conociendo todos los módulos).
+- **Orígenes (bandejas):** organización y grupos, superadmin, admins, proyectos, eventos, debates,
+  solicitudes y sistema (`ORIGENES_DE_AVISO`). Se añade «Organización y grupos» a la lista del diseño
+  para los avisos de `grupos`.
+- **Trabajador (2A):** servicio `trabajador` en docker que ejecuta `procesar_bandeja --espera 2`. Sin
+  Celery ni RQ todavía; cuando se elijan, solo cambiará quién llama a la bandeja.
+- **Número sin ver (3A):** «Comunicaciones → Notificaciones (N)», con `EntradaDeMenu.contador`, guardado
+  en la caché por persona y borrado al repartir, marcar o borrar. Se pone al día al navegar
+  (`hx-swap-oob`). El tiempo real (Channels) llegará con el chat.
+- **Bandeja:** pestañas por origen con las sin ver de cada una; cada notificación se abre (queda vista y
+  lleva a su enlace, solo dentro de la aplicación), se marca como vista o se borra con su **papelera**.
+  Arriba, «Marcar todas como vistas» y **«Limpiar las vistas»** (borra todas las ya vistas; las no vistas
+  se quedan), a petición de la persona usuaria.
+- **Conservación (4A):** las vistas se borrarán a los 90 días y las no vistas a los 365, con el módulo
+  `limpieza` (fase 4), y el superadmin podrá cambiar los plazos. Mientras, cada persona limpia las suyas.
+- **Preferencias:** «Comunicaciones → Preferencias de aviso», una casilla por tipo de aviso, agrupados por
+  origen. Solo se guarda lo desactivado (`PreferenciaDeAviso`); sin fila, activado. De momento, un canal
+  (la web).
+- **Primeros avisos, de `grupos`:** te han admitido en un grupo, ha cambiado tu rol, te han nombrado admin
+  de una organización, otra organización ha invitado a un grupo que administras (a sus admins y a los de
+  su organización) y han aceptado o rechazado una invitación de tu grupo (a quien invitó y a los admins).
+  Para ello `grupos` emite tres eventos_sw nuevos: `grupos.admitido`, `grupos.rol_cambiado` y
+  `grupos.admin_de_organizacion_nombrado`.
+
 ---
 
 ## 18. Forma de trabajar

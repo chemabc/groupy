@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «grupos».
 """
 
-from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, Vista
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, Vista
 
 
 class GruposConfig(ModuloConfig):
@@ -31,6 +31,18 @@ class GruposConfig(ModuloConfig):
             "han nombrado (o dejado de nombrar) admin de una organización. Datos: usuario_id.",
         ),
         Emision(
+            "grupos.admitido",
+            "Una persona ha entrado en un grupo. Datos: usuario_id, grupo_id, rol.",
+        ),
+        Emision(
+            "grupos.rol_cambiado",
+            "Ha cambiado el rol de una persona en un grupo. Datos: usuario_id, grupo_id, rol (el nuevo).",
+        ),
+        Emision(
+            "grupos.admin_de_organizacion_nombrado",
+            "Han nombrado a una persona admin de una organización. Datos: usuario_id, organizacion_id.",
+        ),
+        Emision(
             "grupos.invitacion_creada",
             "Un grupo ha invitado a un grupo de otra organización a algo (un proyecto). Datos: "
             "invitacion_id, ancla_tipo, ancla_id, grupo_invitado_id.",
@@ -46,6 +58,27 @@ class GruposConfig(ModuloConfig):
         Emision(
             "grupos.invitacion_retirada",
             "El grupo que invitó ha retirado la invitación. Datos: los de grupos.invitacion_creada.",
+        ),
+    )
+    # Notificaciones que manda el módulo (las reparte «comunicaciones»; ver grupos/avisos.py).
+    avisos = (
+        TipoDeAviso("grupos.admitido", "Te han admitido en un grupo", "grupos", "grupos.admitido", "grupos.avisos.admitido"),
+        TipoDeAviso("grupos.rol_cambiado", "Ha cambiado tu rol en un grupo", "grupos", "grupos.rol_cambiado", "grupos.avisos.rol_cambiado"),
+        TipoDeAviso(
+            "grupos.admin_de_organizacion", "Te han nombrado admin de una organización", "grupos",
+            "grupos.admin_de_organizacion_nombrado", "grupos.avisos.admin_de_organizacion",
+        ),
+        TipoDeAviso(
+            "grupos.invitacion_recibida", "Otra organización ha invitado a un grupo que administras", "grupos",
+            "grupos.invitacion_creada", "grupos.avisos.invitacion_recibida",
+        ),
+        TipoDeAviso(
+            "grupos.invitacion_aceptada", "Han aceptado una invitación de tu grupo", "grupos",
+            "grupos.invitacion_aceptada", "grupos.avisos.invitacion_respondida",
+        ),
+        TipoDeAviso(
+            "grupos.invitacion_rechazada", "Han rechazado una invitación de tu grupo", "grupos",
+            "grupos.invitacion_rechazada", "grupos.avisos.invitacion_respondida",
         ),
     )
     permisos = (

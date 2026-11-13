@@ -66,10 +66,10 @@ def emitir(nombre, **datos):
     # Primero las síncronas, en el orden en que se cargaron los módulos.
     for escucha in escuchas:
         if escucha.modo == Modo.SINCRONO:
-            import_string(escucha.receptor)(**datos)
+            import_string(escucha.receptor)(**datos, **dict(escucha.extra))
     # Después, todas las asíncronas a la bandeja de una vez (una sola consulta).
     pendientes = [
-        AvisoPendiente(evento=nombre, receptor=escucha.receptor, datos=datos)
+        AvisoPendiente(evento=nombre, receptor=escucha.receptor, datos={**datos, **dict(escucha.extra)})
         for escucha in escuchas
         if escucha.modo == Modo.ASINCRONO
     ]

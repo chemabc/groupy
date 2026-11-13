@@ -86,6 +86,7 @@ def admitir(usuario, grupo, rol=Pertenencia.USUARIO, es_base=False):
     pertenencia.full_clean()
     pertenencia.save()
     emitir("grupos.pertenencias_cambiadas", usuario_id=usuario.pk)
+    emitir("grupos.admitido", usuario_id=usuario.pk, grupo_id=grupo.pk, rol=rol)
     return pertenencia
 
 
@@ -112,6 +113,7 @@ def cambiar_rol(pertenencia, rol):
     pertenencia.full_clean()
     pertenencia.save()
     emitir("grupos.pertenencias_cambiadas", usuario_id=pertenencia.usuario_id)
+    emitir("grupos.rol_cambiado", usuario_id=pertenencia.usuario_id, grupo_id=pertenencia.grupo_id, rol=rol)
 
 
 # Hace de un grupo la asamblea base de una persona (que ya debe estar en él), y la anterior deja de
@@ -138,6 +140,7 @@ def nombrar_admin_de_organizacion(usuario, organizacion):
     nombramiento.full_clean()
     nombramiento.save()
     emitir("grupos.pertenencias_cambiadas", usuario_id=usuario.pk)
+    emitir("grupos.admin_de_organizacion_nombrado", usuario_id=usuario.pk, organizacion_id=organizacion.pk)
     return nombramiento
 
 

@@ -104,6 +104,21 @@ Para cargar muchos grupos o usuarios de golpe, entra como superadmin en **Desarr
 Pruebas**: descarga la plantilla (.ods), rellénala con LibreOffice y súbela. Para los usuarios, activa
 antes «Permitir el alta masiva de usuarios».
 
+### El trabajador de la bandeja (notificaciones)
+
+Las notificaciones no se crean en el momento: el cambio deja un aviso en la bandeja de salida de
+eventos_sw y un **trabajador** lo reparte unos segundos después. En el contenedor de desarrollo hay un
+servicio `trabajador` (en `.devcontainer/docker-compose.yml`) que lo hace solo; al añadirlo hay que
+**reconstruir el contenedor** (en VS Code: «Dev Containers: Rebuild Container»). Si no está en marcha,
+se puede lanzar a mano en otro terminal:
+
+```bash
+# Reparte los avisos pendientes y se queda esperando más (Ctrl+C para parar)
+#     procesar_bandeja: orden del módulo eventos_sw
+#     --una-vez: si se añade, reparte lo pendiente y termina
+python manage.py procesar_bandeja
+```
+
 ## 3. Seguir con Claude
 
 Abre Claude Code en el contenedor nuevo y pídele: «Lee CLAUDE.md y docs/diseno.md y empecemos la

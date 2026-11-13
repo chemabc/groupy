@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     # Capa funcional
     "mantenimiento.apps.MantenimientoConfig",
     "administracion.apps.AdministracionConfig",
+    "comunicaciones.apps.ComunicacionesConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,

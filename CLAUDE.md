@@ -84,4 +84,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   árbol, fichas de grupo y de organización, relaciones e «Invitaciones (N)»), «Usuarios → Roles y permisos»
   (roles con sus permisos, excepciones y «Explicar un permiso»), «Configuración → Visibilidad» y
   «Configuración → Etiquetas» (con `EntradaDeMenu.dentro_de`) e iconos de colores únicos en el menú.
-  Siguiente: fase 2. Recuerda `migrate --database=boveda`.
+- **Fase 2 en curso.** Hecho: `comunicaciones`, primera pieza (notificaciones en la web: los módulos
+  declaran `avisos` en su contrato y `comunicaciones` los reparte desde la bandeja; bandejas por origen,
+  papelera, «Limpiar las vistas», preferencias y número sin ver en el menú; servicio `trabajador` en
+  docker). Siguiente: mensajes y conversaciones. Recuerda `migrate --database=boveda`.

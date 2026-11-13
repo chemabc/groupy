@@ -464,3 +464,22 @@ sirve aquí y dónde se usa.
 - **Enviar al cambiar un desplegable.** `onchange="this.form.requestSubmit()"` envía el formulario como si
   se pulsara su botón; con `requestSubmit` (y no `submit`) se lanza el evento que escucha htmx, así que la
   página no se recarga entera.
+
+## 20. Avisar sin acoplar: cada módulo dice qué avisa y otro lo reparte (13 de noviembre de 2026)
+
+- **El problema.** Muchos módulos querrán avisar a la gente («te han admitido», «hay un debate nuevo»), pero
+  un módulo funcional no puede importar otro. Si `comunicaciones` tuviera que saber redactar cada aviso,
+  conocería todos los módulos.
+- **La solución: un contrato.** Cada módulo declara sus `TipoDeAviso` (cuándo, con qué eventos_sw, y una
+  función que dice a quién y qué). `comunicaciones` solo dice «yo reparto» (`reparte_avisos`). El
+  registro, al arrancar, une las dos cosas: por cada aviso añade una escucha que llama al repartidor con
+  el código del aviso. Es el mismo truco que el menú: los módulos declaran, el registro conecta.
+- **Más tarde, no ya.** El aviso se reparte desde la bandeja de salida, en otro proceso (el
+  trabajador). Así, si repartir falla, el cambio que lo provocó no se deshace, y la pantalla no espera.
+  Por eso la función que prepara el aviso vuelve a leer de la base lo que necesita: unos segundos después,
+  puede que ya no exista.
+- **Probar algo asíncrono.** En las pruebas no hay trabajador: se llama a mano a `procesar_bandeja()`
+  después del cambio, y se mira la bandeja de la persona.
+- **Confirmar antes de borrar.** «Limpiar las vistas» usa `onclick="return confirm(...)"`: si se pulsa
+  «Cancelar», el formulario no se envía. En Playwright, las ventanas de confirmación se rechazan solas;
+  para aceptarla, la prueba dice antes `pagina.once("dialog", lambda d: d.accept())`.

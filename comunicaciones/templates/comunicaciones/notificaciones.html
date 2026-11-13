@@ -1,0 +1,60 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Comunicaciones → Notificaciones» (comunicaciones/views.py, notificaciones). Recibe: bandejas
+  (cada origen con notificaciones: código, nombre, total y sin_ver), origen (el elegido, o vacío para
+  todas), total, sin_ver_total, hay_vistas (si hay alguna vista que limpiar), notificaciones (las que se
+  muestran) y mas (cuántas mostrar con «Mostrar más», o nada si no hay más).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  {# Bandejas por origen #}
+  <nav class="flex flex-wrap gap-2 text-sm" aria-label="Bandejas">
+    <a href="{% url 'comunicaciones:notificaciones' %}" class="rounded-full border px-3 py-0.5 {% if not origen %}border-marca bg-marca/10 text-marca{% else %}border-slate-300 dark:border-slate-700{% endif %}">Todas{% if sin_ver_total %} <strong>({{ sin_ver_total }})</strong>{% endif %}</a>
+    {% for bandeja in bandejas %}
+      <a href="?origen={{ bandeja.codigo }}" class="rounded-full border px-3 py-0.5 {% if origen == bandeja.codigo %}border-marca bg-marca/10 text-marca{% else %}border-slate-300 dark:border-slate-700{% endif %}">{{ bandeja.nombre }}{% if bandeja.sin_ver %} <strong>({{ bandeja.sin_ver }})</strong>{% endif %}</a>
+    {% endfor %}
+  </nav>
+
+  {# Acciones de toda la bandeja #}
+  {% if total %}
+    <div class="flex flex-wrap gap-2">
+      {% if sin_ver_total %}
+        <form method="post" action="{% url 'comunicaciones:notificaciones' %}{% if origen %}?origen={{ origen }}{% endif %}">
+          {% csrf_token %}<input type="hidden" name="accion" value="todas_vistas">
+          <button type="submit" class="rounded border border-slate-300 px-3 py-1 text-sm dark:border-slate-700">Marcar todas como vistas</button>
+        </form>
+      {% endif %}
+      {% if hay_vistas %}
+        <form method="post" action="{% url 'comunicaciones:notificaciones' %}{% if origen %}?origen={{ origen }}{% endif %}">
+          {% csrf_token %}<input type="hidden" name="accion" value="limpiar">
+          <button type="submit" class="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-300"
+                  onclick="return confirm('¿Borrar todas las notificaciones que ya has visto? Las que no has visto se quedan.')">Limpiar las vistas</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {# Lista #}
+  <ul class="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+    {% for notificacion in notificaciones %}
+      <li class="flex items-start gap-3 px-3 py-2 {% if not notificacion.vista_el %}bg-marca/5{% endif %}" data-notificacion="{{ notificacion.pk }}">
+        <span class="mt-1.5 size-2 shrink-0 rounded-full {% if notificacion.vista_el %}bg-transparent{% else %}bg-marca{% endif %}" aria-hidden="true"></span>
+        <div class="min-w-0 flex-1">
+          <a href="{% url 'comunicaciones:abrir' notificacion.pk %}" class="text-sm {% if not notificacion.vista_el %}font-medium{% endif %} hover:text-marca hover:underline">{{ notificacion.texto }}</a>
+          <p class="text-xs text-slate-500">{{ notificacion.get_origen_display }} · {{ notificacion.creada|date:"d/m/Y H:i" }}{% if not notificacion.vista_el %} · <span class="text-marca">sin ver</span>{% endif %}</p>
+        </div>
+        <form method="post" action="{% url 'comunicaciones:notificaciones' %}{% if origen %}?origen={{ origen }}{% endif %}" class="flex shrink-0 gap-1">
+          {% csrf_token %}<input type="hidden" name="notificacion" value="{{ notificacion.pk }}">
+          {% if not notificacion.vista_el %}
+            <button type="submit" name="accion" value="vista" class="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" title="Marcar como vista" aria-label="Marcar como vista">✓</button>
+          {% endif %}
+          <button type="submit" name="accion" value="borrar" class="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950" title="Borrar esta notificación" aria-label="Borrar esta notificación">🗑&#xFE0E;</button>
+        </form>
+      </li>
+    {% empty %}
+      <li class="px-3 py-4 text-sm text-slate-500">No tienes notificaciones{% if origen %} en esta bandeja{% endif %}.</li>
+    {% endfor %}
+  </ul>
+  {% if mas %}<p><a href="?{% if origen %}origen={{ origen }}&{% endif %}cuantas={{ mas }}" class="text-sm text-marca hover:underline">Mostrar más</a></p>{% endif %}
+</div>
+{% endblock %}

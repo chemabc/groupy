@@ -36,6 +36,46 @@ services:
       - db
       - redis
 
+  # Trabajador: entrega los avisos asíncronos de eventos_sw (notificaciones…) en cuanto aparecen en la
+  # bandeja de salida. Es provisional hasta elegir Celery o RQ (docs/diseno.md, apartado 20); entonces
+  # solo cambiará esta orden. Usa la misma imagen y las mismas variables que «app».
+  trabajador:
+    # Misma construcción que «app» (ver arriba)
+    #   - context, dockerfile, args: los mismos que en «app»
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${HOST_UID:-1000}
+        GID: ${HOST_GID:-1000}
+    # El mismo código que «app»
+    #   - ..: la raíz del proyecto
+    #   - /workspace: donde aparece dentro del contenedor
+    volumes:
+      - ..:/workspace
+    # Carpeta en la que se ejecuta la orden
+    working_dir: /workspace
+    # Instala las dependencias de Python (la primera vez tarda; después solo comprueba que están) y
+    # procesa la bandeja en bucle
+    #   - bash -c: ejecuta las dos órdenes seguidas, la segunda solo si la primera sale bien (&&)
+    #   - pip install --user -q -r requirements.txt: instala lo de requirements.txt en la carpeta del
+    #     usuario, sin mostrar detalles
+    #   - procesar_bandeja: la orden del módulo eventos_sw
+    #   - --espera 2: cuando no hay nada pendiente, espera 2 segundos antes de volver a mirar
+    command: bash -c "pip install --user -q -r requirements.txt && python manage.py procesar_bandeja --espera 2"
+    # Las mismas variables que «app» (bases de datos, clave HMAC y Redis)
+    environment:
+      DATABASE_URL: postgres://asambleas:asambleas@db:5432/asambleas
+      BOVEDA_DATABASE_URL: postgres://boveda:boveda@db:5432/boveda
+      BOVEDA_CLAVE_HMAC: solo-para-desarrollo-cambiar-en-produccion
+      REDIS_URL: redis://redis:6379/0
+    # Si se para por un error (por ejemplo, la base aún no está lista), vuelve a arrancar solo
+    restart: unless-stopped
+    # Arranca después de la base de datos y Redis
+    depends_on:
+      - db
+      - redis
+
   # Base de datos PostgreSQL 17 (imagen oficial sobre Debian 13)
   db:
     image: postgres:17-trixie
