@@ -110,6 +110,25 @@ def configuracion_de(organizacion):
         return ConfiguracionDeVisibilidad(organizacion=organizacion)
 
 
+# Guarda la configuración de visibilidad de una organización (la crea si aún usaba la de por defecto).
+# Lo ya publicado no cambia: la configuración solo limita lo que se elige a partir de ahora. Devuelve la
+# configuración.
+#   - organizacion: la organización.
+#   - altura_maxima: hasta cuántos niveles por encima del grupo se puede subir.
+#   - permite_toda_la_organizacion, permite_publico: sí o no.
+@transaction.atomic
+def guardar_configuracion(organizacion, altura_maxima, permite_toda_la_organizacion, permite_publico):
+    configuracion, _nueva = ConfiguracionDeVisibilidad.objects.update_or_create(
+        organizacion=organizacion,
+        defaults={
+            "altura_maxima": altura_maxima,
+            "permite_toda_la_organizacion": permite_toda_la_organizacion,
+            "permite_publico": permite_publico,
+        },
+    )
+    return configuracion
+
+
 # Crea la audiencia de algo a partir de lo que eligió quien lo publica, comprobando lo que permite su
 # organización. Es la función que usan los módulos. Devuelve la audiencia.
 #   - nivel: «privado», «grupo» (su grupo y, con «altura», los de arriba), «grupos» (unos concretos),

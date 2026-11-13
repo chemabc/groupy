@@ -138,6 +138,32 @@ def poner_relacionadas(etiqueta, texto):
     return etiqueta
 
 
+# Crea una etiqueta desde la pantalla «Configuración → Etiquetas», con sus palabras relacionadas. Si ya
+# hay una igual (en la organización o común), da error en lugar de devolverla. Devuelve la etiqueta.
+#   - nombre: lo escrito.
+#   - organizacion: la organización (objeto), o None para una común (solo el superadmin).
+#   - relacionadas: palabras relacionadas, separadas por comas.
+#   - usuario: quién la crea.
+@transaction.atomic
+def crear_etiqueta(nombre, organizacion, relacionadas="", usuario=None):
+    etiqueta = Etiqueta(organizacion=organizacion, nombre=nombre, creada_por=usuario)
+    etiqueta.full_clean()
+    etiqueta.save()
+    return poner_relacionadas(etiqueta, relacionadas)
+
+
+# Cambia el nombre de una etiqueta (comprobando que no choca con otra) y sus palabras relacionadas.
+# Lo etiquetado con ella la sigue llevando. Devuelve la etiqueta.
+#   - etiqueta: la etiqueta.
+#   - nombre: el nombre nuevo.
+#   - relacionadas: palabras relacionadas, separadas por comas.
+@transaction.atomic
+def renombrar(etiqueta, nombre, relacionadas):
+    etiqueta.nombre = nombre
+    etiqueta.full_clean()
+    return poner_relacionadas(etiqueta, relacionadas)
+
+
 # Fusiona etiquetas repetidas en una: lo etiquetado con las otras pasa a llevar la que se queda, sus
 # nombres pasan a ser palabras relacionadas de ella y las otras se borran. Deben ser de la misma
 # organización (o comunes). Devuelve la etiqueta que se queda.

@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «etiquetas».
 """
 
-from base.contrato import Capa, DatosDeEjemplo, ModuloConfig, Permiso
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, EntradaDeMenu, ModuloConfig, Permiso, Vista
 
 
 class EtiquetasConfig(ModuloConfig):
@@ -27,3 +27,33 @@ class EtiquetasConfig(ModuloConfig):
         ),
     )
     datos_de_ejemplo = DatosDeEjemplo(crear="etiquetas.ejemplos.crear", borrar="etiquetas.ejemplos.borrar")
+    # «Configuración → Etiquetas» (13 de noviembre de 2026), colgada de la sección de «tipologias».
+    menu = (
+        EntradaDeMenu(
+            codigo="etiquetas.etiquetas",
+            nombre="Etiquetas",
+            url="etiquetas:etiquetas",
+            icono="#",
+            color="#be185d",
+            permiso="etiquetas.ordenar",
+            dentro_de="tipologias.configuracion",
+            orden=30,
+            vistas=(Vista("Lista", "etiquetas:etiquetas"),),
+        ),
+    )
+    ayuda = (
+        Ayuda(
+            seccion="etiquetas.etiquetas",
+            titulo="Etiquetas",
+            texto=(
+                "Palabras sueltas o grupos de dos o tres palabras para encontrar información («Huelga», «Local "
+                "nuevo»). Se crean solas cuando alguien las usa, y el selector propone las que ya hay para no "
+                "repetirlas. Se guardan con la primera letra en mayúscula, el resto en minúsculas y sin tildes "
+                "(la ñ se queda).\n\n"
+                "Cada organización tiene las suyas, que no se ven en otras. El superadmin crea además etiquetas "
+                "comunes, que sirven en todas.\n\n"
+                "Aquí se ordenan: renombrar, poner palabras relacionadas (buscar cualquiera de ellas encuentra la "
+                "etiqueta), fusionar las repetidas y borrar. «La llevan» dice cuántas cosas la tienen puesta."
+            ),
+        ),
+    )

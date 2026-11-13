@@ -65,7 +65,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 
 - 12 de noviembre de 2026: **fase 0 terminada** (esqueleto, contrato de módulo, `eventos_sw`, medición,
   plantilla general, tabla filtrable, botón «copiar» y pruebas en el navegador con Playwright).
-- **Fase 1 en curso** (ver docs/diseno.md, apartado 19). Hecho: `usuarios` (entrar, salir, «Mi cuenta»
+- 13 de noviembre de 2026: **fase 1 terminada** (ver docs/diseno.md, apartado 19). Hecho: `usuarios` (entrar, salir, «Mi cuenta»
   con preferencias y contraseña), `grupos` (organizaciones, grupos a cualquier profundidad con tabla de
   cierre, pertenencias, asamblea base, admins, relaciones e invitaciones entre organizaciones),
   `permisos` (roles del sistema y personalizados, permisos por defecto en el contrato, excepciones,
@@ -82,4 +82,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   tildes) y `tipologias` («Configuración → Tipologías»: árbol común del superadmin, subtipos propios de cada
   organización, campos heredados y ordenados arrastrando) y la sección «Organizaciones y grupos» (mis grupos,
   árbol, fichas de grupo y de organización, relaciones e «Invitaciones (N)»), «Usuarios → Roles y permisos»
-  (roles con sus permisos, excepciones y «Explicar un permiso») e iconos de colores únicos en el menú. Recuerda `migrate --database=boveda`.
+  (roles con sus permisos, excepciones y «Explicar un permiso»), «Configuración → Visibilidad» y
+  «Configuración → Etiquetas» (con `EntradaDeMenu.dentro_de`) e iconos de colores únicos en el menú.
+  Siguiente: fase 2. Recuerda `migrate --database=boveda`.

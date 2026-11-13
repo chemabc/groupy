@@ -10,6 +10,7 @@ módulo que escucha un eventos_sw que nadie emite…). No los lanza: las comprob
 (base/comprobaciones.py) los muestran todos juntos al arrancar o al ejecutar «manage.py check».
 """
 
+from dataclasses import replace
 from pathlib import Path
 
 from .contrato import ROLES_DEL_SISTEMA, Capa, ModuloConfig
@@ -77,6 +78,7 @@ class RegistroDeModulos:
                     f"El módulo «{config.label}» es del proyecto pero su apps.py no hereda de "
                     "ModuloConfig, así que no declara su contrato."
                 )
+        self._colgar_subsecciones()
         self._comprobar_escuchas()
         self._comprobar_ayuda()
         self._comprobar_permisos()
@@ -119,6 +121,19 @@ class RegistroDeModulos:
             if ayuda.seccion in self.ayuda:
                 self.errores.append(f"La sección «{ayuda.seccion}» tiene dos textos de ayuda.")
             self.ayuda[ayuda.seccion] = ayuda
+
+    # Cuelga cada entrada con «dentro_de» en la subsecciones de la entrada indicada (que puede ser de otro
+    # módulo) y la quita de las secciones principales. Como las entradas no se pueden modificar
+    # (frozen), se crea una copia de la madre con sus subsecciones nuevas, ordenadas por «orden».
+    def _colgar_subsecciones(self):
+        colgadas = [entrada for entrada in self.menu if entrada.dentro_de]
+        self.menu = [entrada for entrada in self.menu if not entrada.dentro_de]
+        for hija in colgadas:
+            nuevo, colgada = _colgar(self.menu, hija)
+            if colgada:
+                self.menu = nuevo
+            else:
+                self.errores.append(f"«{hija.codigo}» quiere ir dentro de «{hija.dentro_de}», pero esa entrada del menú no existe.")
 
     # Apunta un error si un código no empieza por la etiqueta del módulo que lo declara. Así se sabe
     # siempre de qué módulo es cada cosa y dos módulos no pueden chocar.
@@ -172,6 +187,23 @@ class RegistroDeModulos:
         for seccion in self.ayuda:
             if seccion not in secciones:
                 self.errores.append(f"Hay un texto de ayuda para «{seccion}», pero esa sección no está en el menú.")
+
+
+# Busca, entre unas entradas y sus subsecciones, la entrada en la que va «hija» (hija.dentro_de) y le
+# añade «hija» a sus subsecciones. Devuelve la lista de entradas nueva y si la encontró. La usa
+# RegistroDeModulos._colgar_subsecciones.
+def _colgar(entradas, hija):
+    nuevas, colgada = [], False
+    for entrada in entradas:
+        if not colgada and entrada.codigo == hija.dentro_de:
+            subsecciones = sorted((*entrada.subsecciones, hija), key=lambda sub: sub.orden)
+            entrada, colgada = replace(entrada, subsecciones=tuple(subsecciones)), True
+        elif not colgada and entrada.subsecciones:
+            subsecciones, colgada = _colgar(entrada.subsecciones, hija)
+            if colgada:
+                entrada = replace(entrada, subsecciones=tuple(subsecciones))
+        nuevas.append(entrada)
+    return nuevas, colgada
 
 
 # Devuelve el código de una entrada de menú y los de todas sus subsecciones, a cualquier profundidad.

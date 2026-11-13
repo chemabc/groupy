@@ -256,6 +256,11 @@ class EntradaDeMenu:
     # en cada página): lo normal es que guarde el resultado en la caché. Ejemplo:
     # «grupos.contadores.invitaciones_pendientes».
     contador: str = ""
+    # Código de la entrada de otro módulo dentro de la cual se cuelga esta como subsección (por ejemplo,
+    # «tipologias.configuracion» para poner «Etiquetas» dentro de «Configuración»). Vacío: es una
+    # sección principal (o ya va en las subsecciones de su madre, si es del mismo módulo). Las
+    # subsecciones se ordenan por «orden».
+    dentro_de: str = ""
 
 
 @dataclass(frozen=True)

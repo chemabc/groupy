@@ -205,7 +205,10 @@ dentro de una ficha**):
 - **Configuración por organización (4A):** `ConfiguracionDeVisibilidad` con la altura máxima, si permite
   «toda la organización» y si permite lo público. Sin configuración, la más cerrada: hasta el grupo
   padre, sin toda la organización y sin lo público. La ajusta el admin de la organización
-  (`audiencias.configurar`) o el superadmin.
+  (`audiencias.configurar`) o el superadmin, en **«Configuración → Visibilidad»** (13 de noviembre de
+  2026, opción A de la persona usuaria): una tarjeta por organización con una frase que resume lo que se
+  puede elegir («Se puede elegir: privado; su grupo: hasta el grupo padre; grupos concretos. No se
+  permite lo público.») y el formulario para cambiarlo. Lo ya publicado no cambia.
 - **Uso:** `audiencia_para(nivel, grupo, altura, grupos, personas, ancla)` crea la audiencia de lo que
   se publica; `filtrar_visibles(consulta, usuario)` deja en una lista solo lo visible; `puede_ver` para una
   cosa; `describir(audiencia)` da la frase («Lo ven las personas de GRU Jarama y de sus subgrupos (12
@@ -410,6 +413,13 @@ nivel son las **vistas del menú superior** de cada subsección. Ejemplo: «Desa
 su sección se abre sola en el menú izquierdo. Cuando no esté claro en qué nivel va algo, se pregunta.
 La entrada en la que se está lleva fondo; la sección que la contiene, solo el texto en color (más
 discreto, a petición de la persona usuaria).
+
+**Subsecciones de otro módulo (13 de noviembre de 2026).** Una entrada con `dentro_de` se cuelga dentro
+de la sección de otro módulo (así `audiencias` y `etiquetas` ponen «Visibilidad» y «Etiquetas» dentro de
+«Configuración», que es de `tipologias`), ordenada por `orden`. La sección «Configuración» ya no pide
+permiso: una sección se oculta si todas sus subsecciones están ocultas. *(Limitación: el enlace de la
+sección lleva a «Tipologías»; quien solo pudiera ver otra subsección recibiría un 403 al pulsarla. Hoy los
+tres permisos los tiene el mismo rol, admin de la organización.)*
 
 **Iconos de colores (13 de noviembre de 2026, a petición de la persona usuaria).** Cada sección y cada
 subsección lleva un icono distinto y un color distinto (`EntradaDeMenu.icono` y `EntradaDeMenu.color`),
@@ -653,7 +663,12 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
 - **Quién las crea (1A):** cualquiera, al usarlas. El selector propone las que ya existen mientras se
   escribe (también por sus relacionadas), para no duplicar. El admin de la organización
   (`etiquetas.ordenar`) y el superadmin pueden **fusionar** repetidas (las otras pasan a ser relacionadas
-  de la que se queda), renombrar y poner relacionadas. De momento, en la trastienda («Clasificación»).
+  de la que se queda), renombrar y poner relacionadas, en **«Configuración → Etiquetas»** (13 de
+  noviembre de 2026, opción A de la persona usuaria): arriba se elige de quién (una organización o, el
+  superadmin, las comunes) y se busca (también en las relacionadas); la tabla dice cuántas cosas lleva
+  cada etiqueta; se crean, se cambian, se borran y se fusionan marcando varias y eligiendo cuál se queda.
+  Las casillas de la tabla pertenecen al formulario de fusionar por su atributo `form`, para que cada
+  fila pueda tener también sus propios formularios (los formularios no se pueden meter unos en otros).
 - **De cada organización (2A):** las de una organización no se sugieren ni se usan en otra (una etiqueta
   ya cuenta algo). El superadmin crea **etiquetas comunes** (sin organización), que sirven en todas. Si
   existe una común igual, se usa la común. *Descartado:* una sola base común para todas (como decía el

@@ -35,7 +35,8 @@ class TipologiasConfig(ModuloConfig):
             icono="⚙",
             color="#0891b2",
             orden=850,
-            permiso="tipologias.gestionar",
+            # La sección no pide permiso: se ve si alguna de sus subsecciones se ve. Otros módulos cuelgan
+            # aquí las suyas (Visibilidad, Etiquetas) con «dentro_de».
             subsecciones=(
                 EntradaDeMenu(
                     codigo="tipologias.tipologias",
@@ -43,6 +44,8 @@ class TipologiasConfig(ModuloConfig):
                     url="tipologias:eventos",
                     icono="❖",
                     color="#c026d3",
+                    permiso="tipologias.gestionar",
+                    orden=10,
                     vistas=(Vista("De eventos", "tipologias:eventos"), Vista("De proyectos", "tipologias:proyectos")),
                 ),
             ),

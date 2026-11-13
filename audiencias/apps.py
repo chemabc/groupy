@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «audiencias».
 """
 
-from base.contrato import Capa, ModuloConfig, Permiso
+from base.contrato import Ayuda, Capa, EntradaDeMenu, ModuloConfig, Permiso, Vista
 
 
 class AudienciasConfig(ModuloConfig):
@@ -24,6 +24,38 @@ class AudienciasConfig(ModuloConfig):
             "audiencias.configurar",
             "Ajustar qué niveles de visibilidad ofrece la organización (hasta dónde subir, toda la organización, público)",
             roles=("admin_org",),
+        ),
+    )
+
+    # «Configuración → Visibilidad» (13 de noviembre de 2026), colgada de la sección de «tipologias».
+    menu = (
+        EntradaDeMenu(
+            codigo="audiencias.visibilidad",
+            nombre="Visibilidad",
+            url="audiencias:visibilidad",
+            icono="◎",
+            color="#0369a1",
+            permiso="audiencias.configurar",
+            dentro_de="tipologias.configuracion",
+            orden=20,
+            vistas=(Vista("Por organización", "audiencias:visibilidad"),),
+        ),
+    )
+    ayuda = (
+        Ayuda(
+            seccion="audiencias.visibilidad",
+            titulo="Visibilidad",
+            texto=(
+                "Quien publica algo elige quién lo ve. Todo nace privado (solo las personas implicadas). Puede "
+                "abrirse a su grupo con sus subgrupos y, subiendo, al grupo padre, al abuelo… (cada nivel "
+                "incluye todos los subgrupos de ese grupo); a unos grupos concretos; a toda la organización; o "
+                "al público (cualquiera, sin cuenta y sin alias).\n\n"
+                "Aquí cada organización decide cuáles de esas opciones ofrece: hasta qué altura se puede subir, "
+                "si se permite «toda la organización» y si se permite lo público. Sin ajustar, vale la más "
+                "cerrada: hasta el grupo padre, sin toda la organización y sin lo público. Lo ya publicado no "
+                "cambia.\n\n"
+                "Nada llega nunca a otra organización sin una invitación hecha y aceptada por quien tiene permiso."
+            ),
         ),
     )
 

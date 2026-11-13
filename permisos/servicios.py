@@ -25,7 +25,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 
 from base.registro import registro
-from grupos.models import AdminDeOrganizacion, Contencion, Grupo, Pertenencia
+from grupos.models import AdminDeOrganizacion, Contencion, Grupo, Organizacion, Pertenencia
 
 from .models import Cometido, ExcepcionDePermiso, PermisoConocido, PermisoDeRol, Rol
 
@@ -209,6 +209,21 @@ def puede_en_alguna_parte(usuario, permiso):
     mapa = permisos_de(usuario)
     lugares = (*mapa.grupos.values(), *mapa.organizaciones.values())
     return mapa.es_superadmin or any(permiso in codigos for codigos in lugares)
+
+
+# Organizaciones donde una persona tiene un permiso de organización (todas, si es superadmin), en orden
+# alfabético. Devuelve una consulta (no la ejecuta). Lo usan las pantallas de «Configuración» para
+# saber qué organizaciones puede ajustar cada cual.
+#   - usuario: quién.
+#   - permiso: código del permiso (por ejemplo, «audiencias.configurar»).
+def organizaciones_con(usuario, permiso):
+    if permiso not in registro.permisos:
+        raise PermisoNoDeclarado(f"Ningún módulo declara el permiso «{permiso}».")
+    mapa = permisos_de(usuario)
+    consulta = Organizacion.objects.order_by("nombre")
+    if mapa.es_superadmin:
+        return consulta
+    return consulta.filter(pk__in=[pk for pk, codigos in mapa.organizaciones.items() if permiso in codigos])
 
 
 # Como puede(), pero si no tiene el permiso lanza SinPermiso con una explicación para la persona. Lo

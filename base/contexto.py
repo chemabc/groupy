@@ -38,6 +38,11 @@ def interfaz(request):
     ocultas, contadores = set(), {}
     for entrada in menu:
         _recorrer_subsecciones(usuario, entrada, ocultas, contadores)
+    # Una sección cuyas subsecciones están todas ocultas tampoco se muestra (no habría nada que ver).
+    menu = [
+        entrada for entrada in menu
+        if not entrada.subsecciones or any(sub.codigo not in ocultas for sub in entrada.subsecciones)
+    ]
     solo_la_zona = pide_solo_la_zona(request)
     # Título de la pestaña: «Vista · Sección · Asambleas», con lo que haya.
     partes = [vista_activa.nombre if vista_activa else "", seccion.nombre if seccion else "", NOMBRE_DE_LA_APLICACION]

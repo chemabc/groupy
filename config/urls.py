@@ -20,6 +20,8 @@ urlpatterns = [
     path("usuarios/", include("administracion.urls")),
     # Módulo «tipologias»: Configuración → Tipologías.
     path("configuracion/tipologias/", include("tipologias.urls")),
+    # Módulo «audiencias»: Configuración → Visibilidad.
+    path("configuracion/visibilidad/", include("audiencias.urls")),
     # Módulo «etiquetas»: sugerencias del selector de etiquetas.
     path("etiquetas/", include("etiquetas.urls")),
     # Módulo «mantenimiento»: documentación del proyecto y entrada a la trastienda.

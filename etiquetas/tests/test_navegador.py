@@ -33,3 +33,37 @@ class PruebasDelSelectorEnElNavegador(PruebaEnElNavegador):
         cuadro.press("Enter")
         self.assertEqual(valores.nth(2).input_value(), "Reunion de año")
         self.assertEqual(self.errores, [])
+
+
+class PruebasDeLaPantallaDeEtiquetasEnElNavegador(PruebaEnElNavegador):
+    """«Configuración → Etiquetas» como admin de ORG Tajo, con otra organización (ORG Ebro) que también administra."""
+
+    # Cambiar el desplegable «De» lleva a la otra organización sin pulsar nada (se envía solo, con htmx);
+    # marcar dos etiquetas en la tabla y pulsar «Fusionar las marcadas» (un formulario aparte, al que
+    # pertenecen las casillas por su atributo «form») las fusiona.
+    def test_cambiar_de_organizacion_y_fusionar(self):
+        from etiquetas.servicios import crear_etiqueta
+        from grupos.servicios import admitir, crear_organizacion, nombrar_admin_de_organizacion
+
+        tajo, general = crear_organizacion("ORG Tajo", "GRU Tajo")
+        ebro, gru_ebro = crear_organizacion("ORG Ebro", "GRU Ebro")
+        for organizacion, grupo in ((tajo, general), (ebro, gru_ebro)):
+            admitir(self.usuario, grupo)
+            nombrar_admin_de_organizacion(self.usuario, organizacion)
+        huelga = crear_etiqueta("Huelga", tajo)
+        crear_etiqueta("Huelgas", tajo)
+        crear_etiqueta("Riego", ebro)
+
+        self.abrir(f"/etiquetas/?de={tajo.pk}")
+        self.pagina.locator('select[name="de"]').select_option(str(ebro.pk))
+        self.pagina.wait_for_selector("td:has-text('Riego')")
+        self.pagina.locator('select[name="de"]').select_option(str(tajo.pk))
+        self.pagina.wait_for_selector("td:has-text('Huelgas')")
+        self.pagina.get_by_label("Marcar «Huelga» para fusionar").check()
+        self.pagina.get_by_label("Marcar «Huelgas» para fusionar").check()
+        self.pagina.locator('select[name="destino"]').select_option(str(huelga.pk))
+        self.pagina.get_by_role("button", name="Fusionar las marcadas").click()
+        # «Huelgas» desaparece como etiqueta (queda como palabra relacionada de «Huelga»).
+        self.pagina.wait_for_selector("td.font-medium:text-is('Huelgas')", state="detached")
+        self.assertEqual(list(Etiqueta.objects.filter(organizacion=tajo).values_list("nombre", "relacionadas")), [("Huelga", "Huelgas")])
+        self.assertEqual(self.errores, [])

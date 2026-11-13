@@ -450,3 +450,17 @@ sirve aquí y dónde se usa.
   y todas las claves viejas dejan de usarse solas. Se sube al **terminar** la transacción
   (`transaction.on_commit`): si se hiciera antes, otra petición podría guardar el número viejo. En las
   pruebas, `TestCase` nunca termina la transacción, así que se usa `captureOnCommitCallbacks(execute=True)`.
+
+## 19. Formularios que no se pueden anidar: el atributo `form` (13 de noviembre de 2026)
+
+- **El problema.** En «Configuración → Etiquetas», cada fila tiene sus formularios (cambiar, borrar) y,
+  a la vez, una casilla para «Fusionar las marcadas». HTML no deja meter un formulario dentro de otro, así
+  que no se puede envolver la tabla entera en el formulario de fusionar.
+- **La solución.** Un campo puede pertenecer a un formulario que está en otro sitio de la página:
+  `<input type="checkbox" name="etiquetas" form="fusionar">` se envía con `<form id="fusionar">`, aunque esté
+  dentro de la tabla. htmx (que envía los formularios con `hx-boost`) lo respeta, porque recoge los campos
+  del formulario con `form.elements`, que incluye estos. Se ha comprobado en Chromium
+  (`etiquetas/tests/test_navegador.py`).
+- **Enviar al cambiar un desplegable.** `onchange="this.form.requestSubmit()"` envía el formulario como si
+  se pulsara su botón; con `requestSubmit` (y no `submit`) se lanza el evento que escucha htmx, así que la
+  página no se recarga entera.

@@ -38,6 +38,34 @@ class PruebasDelRegistro(SimpleTestCase):
         # El menú sale ordenado por «orden», no por el orden de carga.
         self.assertEqual([entrada.codigo for entrada in nuevo.menu], ["beta.inicio", "alfa.inicio"])
 
+    # Una entrada con «dentro_de» se cuelga en la sección de otro módulo, ordenada por «orden», y deja de
+    # ser sección principal; si la sección no existe, es un error.
+    def test_subsecciones_de_otro_modulo(self):
+        alfa = modulo_falso(
+            "alfa",
+            menu=(
+                EntradaDeMenu(
+                    "alfa.ajustes", "Ajustes", url="alfa:a",
+                    subsecciones=(EntradaDeMenu("alfa.uno", "Uno", url="alfa:uno", orden=10),),
+                ),
+            ),
+        )
+        beta = modulo_falso(
+            "beta",
+            menu=(
+                EntradaDeMenu("beta.dos", "Dos", url="beta:dos", dentro_de="alfa.ajustes", orden=20),
+                EntradaDeMenu("beta.cero", "Cero", url="beta:cero", dentro_de="alfa.ajustes", orden=5),
+            ),
+        )
+        nuevo = RegistroDeModulos()
+        nuevo.cargar([alfa, beta])
+        self.assertEqual(nuevo.errores, [])
+        self.assertEqual([entrada.codigo for entrada in nuevo.menu], ["alfa.ajustes"])
+        self.assertEqual([sub.codigo for sub in nuevo.menu[0].subsecciones], ["beta.cero", "alfa.uno", "beta.dos"])
+        self.assertEqual(nuevo.rutas["beta:dos"][0].codigo, "alfa.ajustes")
+        nuevo.cargar([modulo_falso("beta", menu=(EntradaDeMenu("beta.dos", "Dos", url="beta:dos", dentro_de="alfa.nada"),))])
+        self.assertIn("esa entrada del menú no existe", nuevo.errores[0])
+
     # Un código que no empieza por la etiqueta del módulo es un error.
     def test_avisa_del_prefijo_equivocado(self):
         nuevo = RegistroDeModulos()

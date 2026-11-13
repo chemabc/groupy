@@ -1,0 +1,84 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Configuración → Etiquetas» (etiquetas/views.py, etiquetas). Recibe: opciones (pares valor,
+  nombre de las organizaciones que puede ordenar quien mira y, si es superadmin, las comunes), de (la
+  elegida), q (lo buscado), etiquetas (con usos_totales), nueva (formulario), error, editada (la que se
+  estaba cambiando si falló) y abrir.
+  Las casillas de cada fila pertenecen al formulario «fusionar» (atributo form), que está debajo de la
+  tabla: así cada fila puede tener además sus propios formularios de cambiar y borrar.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-5xl space-y-4">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Las etiquetas se crean solas al usarlas. Aquí se ordenan: renombrar, poner palabras relacionadas (al buscar cualquiera, aparece la etiqueta), fusionar repetidas (las otras pasan a ser relacionadas de la que se queda) y borrar.</p>
+  <form method="get" class="flex flex-wrap items-end gap-2 text-sm">
+    <label class="flex flex-col gap-1">De
+      <select name="de" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+        {% for valor, nombre in opciones %}<option value="{{ valor }}" {% if valor == de %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">Buscar
+      <input type="search" name="q" value="{{ q }}" placeholder="También en las relacionadas" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+    </label>
+    <button type="submit" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Ver</button>
+  </form>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+
+  <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-xs text-slate-500 dark:bg-slate-800/50">
+        <tr><th class="px-3 py-2"><span class="sr-only">Marcar para fusionar</span></th><th class="px-3 py-2">Etiqueta</th><th class="px-3 py-2">Palabras relacionadas</th><th class="px-3 py-2">La llevan</th><th class="px-3 py-2"><span class="sr-only">Acciones</span></th></tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for etiqueta in etiquetas %}
+          <tr class="align-top">
+            <td class="px-3 py-1.5"><input type="checkbox" name="etiquetas" value="{{ etiqueta.pk }}" form="fusionar" aria-label="Marcar «{{ etiqueta.nombre }}» para fusionar"></td>
+            <td class="px-3 py-1.5 font-medium">{{ etiqueta.nombre }}</td>
+            <td class="px-3 py-1.5 text-slate-500">{{ etiqueta.relacionadas|default:"—" }}</td>
+            <td class="px-3 py-1.5">{{ etiqueta.usos_totales }}</td>
+            <td class="px-3 py-1.5">
+              <details {% if editada.pk == etiqueta.pk %}open{% endif %}>
+                <summary class="cursor-pointer text-marca">Cambiar</summary>
+                <form method="post" class="mt-2 flex flex-col gap-2">
+                  {% csrf_token %}<input type="hidden" name="accion" value="editar"><input type="hidden" name="de" value="{{ de }}"><input type="hidden" name="etiqueta" value="{{ etiqueta.pk }}">
+                  <label class="flex flex-col gap-1 text-xs">Etiqueta<input name="nombre" value="{{ etiqueta.nombre }}" maxlength="40" required class="rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"></label>
+                  <label class="flex flex-col gap-1 text-xs">Palabras relacionadas (separadas por comas)<input name="relacionadas" value="{{ etiqueta.relacionadas }}" class="rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"></label>
+                  <button type="submit" class="self-start rounded bg-marca px-2 py-0.5 text-white">Guardar</button>
+                </form>
+                <form method="post" class="mt-2">
+                  {% csrf_token %}<input type="hidden" name="accion" value="borrar"><input type="hidden" name="de" value="{{ de }}"><input type="hidden" name="etiqueta" value="{{ etiqueta.pk }}">
+                  <button type="submit" class="rounded border border-red-300 px-2 py-0.5 text-xs text-red-700 dark:border-red-800 dark:text-red-300"
+                          onclick="return confirm('¿Borrar «{{ etiqueta.nombre|escapejs }}»? Se quitará de las {{ etiqueta.usos_totales }} cosas que la llevan.')">Borrar</button>
+                </form>
+              </details>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="px-3 py-3 text-slate-500">{% if q %}Ninguna etiqueta coincide con «{{ q }}».{% else %}Aún no hay etiquetas.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <form id="fusionar" method="post" class="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+      {% csrf_token %}<input type="hidden" name="accion" value="fusionar"><input type="hidden" name="de" value="{{ de }}">
+      <h2 class="mb-1 font-semibold">Fusionar repetidas</h2>
+      <p class="mb-2 text-xs text-slate-500">Marca en la tabla las que son la misma y elige cuál se queda. Lo etiquetado con las otras pasa a llevar esta, y sus nombres pasan a ser palabras relacionadas.</p>
+      <label class="flex flex-col gap-1">Se queda
+        <select name="destino" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+          {% for etiqueta in etiquetas %}<option value="{{ etiqueta.pk }}">{{ etiqueta.nombre }}</option>{% endfor %}
+        </select>
+      </label>
+      <button type="submit" class="mt-2 rounded bg-marca px-3 py-1.5 font-medium text-white">Fusionar las marcadas</button>
+    </form>
+    <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir == "crear" %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-semibold">+ Nueva etiqueta</summary>
+      <form method="post" class="mt-2">
+        {% csrf_token %}<input type="hidden" name="accion" value="crear"><input type="hidden" name="de" value="{{ de }}">
+        {{ nueva }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+      </form>
+    </details>
+  </div>
+</div>
+{% endblock %}
