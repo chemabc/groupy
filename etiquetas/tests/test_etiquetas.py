@@ -37,32 +37,46 @@ class PruebasDeEtiquetas(TestCase):
     # De una a tres palabras, sin símbolos; se limpian espacios, comas y almohadillas.
     def test_forma(self):
         self.assertEqual(comprobar_nombre("  #Local   nuevo "), "Local nuevo")
+        # Forma fija: primera letra en mayúscula, el resto en minúsculas y sin tildes; la ñ se queda.
+        self.assertEqual(comprobar_nombre("REUNIÓN general"), "Reunion general")
+        self.assertEqual(comprobar_nombre("año PINGÜINO"), "Año pinguino")
         for malo in ["", "una dos tres cuatro", "a@b", "x" * 41]:
             with self.subTest(malo=malo), self.assertRaises(ValidationError):
                 comprobar_nombre(malo)
 
     # Cada organización ve sus etiquetas y las comunes, nunca las de otra; las relacionadas también se buscan.
     def test_sugerencias(self):
-        self.assertEqual([s["nombre"] for s in sugerir("lo", self.tajo)], ["local nuevo"])
+        self.assertEqual([s["nombre"] for s in sugerir("lo", self.tajo)], ["Local nuevo"])
         self.assertEqual(sugerir("lo", self.ebro), [])
-        self.assertEqual(sugerir("par", self.ebro), [{"nombre": "huelga", "comun": True}])
-        self.assertEqual(sugerir("HUEL", None), [{"nombre": "huelga", "comun": True}])
+        self.assertEqual(sugerir("par", self.ebro), [{"nombre": "Huelga", "comun": True}])
+        self.assertEqual(sugerir("HUEL", None), [{"nombre": "Huelga", "comun": True}])
 
     # Al usarlas se crean las que faltan; si hay una común igual, se usa la común; sin repetir.
     def test_obtener_o_crear(self):
         etiquetas = obtener_o_crear(["Huelga", "Cuidados", "cuidados"], self.ebro)
-        self.assertEqual([(e.nombre, e.organizacion_id) for e in etiquetas], [("huelga", None), ("Cuidados", self.ebro.pk)])
+        self.assertEqual([(e.nombre, e.organizacion_id) for e in etiquetas], [("Huelga", None), ("Cuidados", self.ebro.pk)])
+
+    # Al guardar (también desde la trastienda, sin pasar por los servicios), el nombre y las palabras
+    # relacionadas quedan en la forma fija; buscar con tildes o mayúsculas las encuentra igual.
+    def test_forma_al_guardar_y_al_buscar(self):
+        etiqueta = Etiqueta.objects.create(organizacion=self.ebro, nombre="  DIFUSIÓN ", relacionadas="CARTELES,  redes Sociales ")
+        self.assertEqual((etiqueta.nombre, etiqueta.relacionadas), ("Difusion", "Carteles, Redes sociales"))
+        etiquetar(("alfa.cosa", 3), ["Difusión"], self.ebro)
+        self.assertEqual(etiquetas_de(("alfa.cosa", 3)), ["Difusion"])
+        self.assertEqual(buscar("DIFUSIÓN", "alfa.cosa", self.ebro), {3})
+        self.assertEqual(buscar("redes sociales", "alfa.cosa", self.ebro), {3})
+        self.assertEqual(sugerir("difusión", self.ebro), [{"nombre": "Difusion", "comun": False}])
 
     # No se puede crear en una organización una etiqueta igual a una común (ni repetida).
     def test_repetidas(self):
-        with self.assertRaisesMessage(ValidationError, "Ya hay una etiqueta «huelga» igual"):
+        with self.assertRaisesMessage(ValidationError, "Ya hay una etiqueta «Huelga» igual"):
             Etiqueta(organizacion=self.tajo, nombre="Huelga").full_clean()
 
     # Etiquetar pone exactamente esas etiquetas; buscar por una relacionada encuentra lo etiquetado.
     def test_etiquetar_y_buscar(self):
         etiquetar(("alfa.cosa", 7), ["huelga", "local nuevo"], self.tajo)
         etiquetar(("alfa.cosa", 7), ["huelga"], self.tajo)
-        self.assertEqual(etiquetas_de(("alfa.cosa", 7)), ["huelga"])
+        self.assertEqual(etiquetas_de(("alfa.cosa", 7)), ["Huelga"])
         self.assertEqual(buscar("Paro", "alfa.cosa", self.tajo), {7})
         self.assertEqual(buscar("nada", "alfa.cosa", self.tajo), set())
         with self.assertRaisesMessage(ValidationError, "ningún módulo lo declara como ancla"):
@@ -75,9 +89,9 @@ class PruebasDeEtiquetas(TestCase):
         etiquetar(("alfa.cosa", 2), ["sede"], self.tajo)
         fusionar(local, [sede])
         local.refresh_from_db()
-        self.assertEqual(local.relacionadas, "sede")
+        self.assertEqual(local.relacionadas, "Sede")
         self.assertEqual(sorted(EtiquetaDe.objects.filter(etiqueta=local).values_list("ancla_id", flat=True)), [1, 2])
-        self.assertFalse(Etiqueta.objects.filter(nombre="sede").exists())
+        self.assertFalse(Etiqueta.objects.filter(normalizada="sede").exists())
         de_ebro = obtener_o_crear(["otra"], self.ebro)[0]
         with self.assertRaisesMessage(ValidationError, "es de otra organización"):
             fusionar(local, [de_ebro])
@@ -85,7 +99,7 @@ class PruebasDeEtiquetas(TestCase):
     # El campo de formulario limpia, quita repetidas y explica las que no sirven.
     def test_campo(self):
         campo = CampoDeEtiquetas(organizacion=self.tajo)
-        self.assertEqual(campo.clean(["huelga", " Huelga ", "local  nuevo"]), ["huelga", "local nuevo"])
+        self.assertEqual(campo.clean(["huelga", " Huelga ", "local  nuevo"]), ["Huelga", "Local nuevo"])
         self.assertIn(f"?organizacion={self.tajo.pk}", campo.widget.url_de_sugerencias)
         with self.assertRaisesMessage(ValidationError, "no sirve como etiqueta"):
             campo.clean(["una dos tres cuatro"])
@@ -107,7 +121,7 @@ class PruebasDeSugerenciasEnLaWeb(PruebaDePantalla):
     # Fuera de la organización, solo las comunes; dentro, también las suyas.
     def test_solo_quien_esta_dentro(self):
         direccion = f"/etiquetas/sugerencias/?q=lo&organizacion={self.tajo.pk}"
-        self.assertEqual(self.client.get(direccion).json()["sugerencias"], [{"nombre": "lote común", "comun": True}])
+        self.assertEqual(self.client.get(direccion).json()["sugerencias"], [{"nombre": "Lote comun", "comun": True}])
         self.client.force_login(self.lince)
         nombres = [s["nombre"] for s in self.client.get(direccion).json()["sugerencias"]]
-        self.assertEqual(nombres, ["local nuevo", "lote común"])
+        self.assertEqual(nombres, ["Local nuevo", "Lote comun"])

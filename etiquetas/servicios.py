@@ -14,21 +14,23 @@ from django.db import transaction
 from django.db.models import Q
 
 from base.registro import registro
-from base.tablas import normalizar
+from base.tablas import forma_de_frase, normalizar
 
 from .models import Etiqueta, EtiquetaDe
 
 # Máximo de palabras de una etiqueta y de sugerencias que se devuelven.
 MAXIMO_DE_PALABRAS = 3
 MAXIMO_DE_SUGERENCIAS = 10
-# Forma de una etiqueta: letras (con tilde o ñ), números y guiones, separados por espacios.
+# Forma de una etiqueta: letras (sin tildes; la ñ sí), números y guiones, separados por espacios.
 FORMA = re.compile(r"^[\w\-]+( [\w\-]+){0,2}$")
 
 
-# Deja el nombre de una etiqueta en su forma limpia: sin espacios de más ni comas o almohadillas sueltas.
+# Deja el nombre de una etiqueta en su forma fija: sin espacios de más ni comas o almohadillas sueltas,
+# sin tildes, y en minúsculas salvo la primera letra («  #REUNIÓN   general» → «Reunion general»). Así
+# todas se ven igual, se escriban como se escriban. Se usa al guardar, al etiquetar y al buscar.
 #   - nombre: lo escrito («  Local   nuevo », «#huelga»).
 def limpiar(nombre):
-    return " ".join(nombre.replace(",", " ").split()).lstrip("#").strip()
+    return forma_de_frase(" ".join(str(nombre).replace(",", " ").split()).lstrip("#").strip())
 
 
 # Comprueba que un nombre sirve como etiqueta (de una a tres palabras, sin símbolos raros, hasta 40

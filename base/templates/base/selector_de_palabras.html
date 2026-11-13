@@ -1,9 +1,11 @@
 {% comment %}
   Cuadro de varias palabras con sugerencias (base/formularios.py, SelectorDePalabras), movido por el
   componente «selectorDePalabras» de interfaz.js. Las palabras elegidas se ven como pastillas con una ×
-  y se envían en campos ocultos con el nombre del campo. Recibe «widget» (name, attrs, valores_json y url).
+  y se envían en campos ocultos con el nombre del campo. Recibe «widget» (name, attrs, valores_json, url
+  y forma: «frase» para pasar cada palabra a la forma de las etiquetas al añadirla, o vacío).
 {% endcomment %}
 <div x-data="selectorDePalabras" data-nombre="{{ widget.name }}" data-url="{{ widget.url }}" data-valores="{{ widget.valores_json }}"
+     data-forma="{{ widget.forma }}"
      class="relative" @click.outside="sugerencias = []">
   <div class="flex flex-wrap items-center gap-1 rounded border border-slate-300 bg-white px-1 py-1 dark:border-slate-700 dark:bg-slate-900">
     <template x-for="(palabra, indice) in palabras" :key="palabra">

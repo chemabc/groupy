@@ -27,7 +27,7 @@ class CampoDeEtiquetas(CampoDePalabras):
         direccion = reverse("etiquetas:sugerencias")
         if organizacion is not None:
             direccion += f"?organizacion={getattr(organizacion, 'pk', organizacion)}"
-        self.widget = SelectorDePalabras(url_de_sugerencias=direccion)
+        self.widget = SelectorDePalabras(url_de_sugerencias=direccion, forma="frase")
 
     # Comprueba cada etiqueta y devuelve la lista limpia; junta todos los errores en uno.
     def clean(self, value):

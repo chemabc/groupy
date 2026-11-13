@@ -7,6 +7,7 @@ from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count
 
+from base.tablas import normalizar
 from base.trastienda import ConAyuda
 
 from .models import Etiqueta
@@ -29,6 +30,11 @@ class EtiquetaEnLaTrastienda(ConAyuda, admin.ModelAdmin):
     search_fields = ["normalizada", "relacionadas_normalizadas"]
     fields = ["organizacion", "nombre", "relacionadas"]
     actions = ["fusionar_seleccionadas"]
+
+    # Busca con lo escrito normalizado (sin tildes ni mayúsculas), porque las etiquetas se guardan sin
+    # tildes: buscar «Difusión» encuentra «Difusion».
+    def get_search_results(self, request, consulta, termino):
+        return super().get_search_results(request, consulta, normalizar(termino))
 
     # Añade el número de usos a cada fila, en la misma consulta.
     def get_queryset(self, request):

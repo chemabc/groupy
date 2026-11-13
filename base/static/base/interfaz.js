@@ -30,6 +30,22 @@ function normalizar(texto) {
   return texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
 
+// Da a un texto la «forma de frase» de las etiquetas, igual que forma_de_frase() de base/tablas.py: sin
+// espacios de más, sin tildes ni diéresis (pero conservando la ñ), todo en minúsculas salvo la primera
+// letra («  REUNIÓN  general» → «Reunion general»). La usa el selector de palabras con data-forma="frase".
+function formaDeFrase(texto) {
+  const minusculas = texto
+    .trim()
+    .replace(/\s+/g, " ")
+    .normalize("NFD")
+    .replace(/([nN])\u0303/g, "$1\u0000")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\u0000/g, "\u0303")
+    .normalize("NFC")
+    .toLowerCase();
+  return minusculas.charAt(0).toUpperCase() + minusculas.slice(1);
+}
+
 // Copia un texto al portapapeles con el método antiguo (un cuadro de texto oculto y la orden «copy»).
 // Hace falta cuando el navegador no deja usar el portapapeles moderno: por ejemplo, si se entra por la
 // dirección de la red local sin https. La usa el componente «copiar».
@@ -268,8 +284,11 @@ document.addEventListener("alpine:init", () => {
     },
 
     // Añade una palabra (la escrita o una sugerencia), limpia de comas y espacios de más, si no está ya.
+    // Si el selector lleva data-forma="frase" (las etiquetas), la pasa a esa forma al añadirla, para
+    // que se vea ya tal como se guardará.
     anadir(palabra) {
-      const limpia = palabra.replace(/,/g, " ").trim().replace(/\s+/g, " ");
+      let limpia = palabra.replace(/,/g, " ").trim().replace(/\s+/g, " ");
+      if (limpia && this.$root.dataset.forma === "frase") limpia = formaDeFrase(limpia);
       if (limpia && !this.tiene(limpia)) this.palabras.push(limpia);
       this.texto = "";
       this.sugerencias = [];

@@ -12,13 +12,14 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from base.tablas import normalizar
+from base.tablas import forma_de_frase, normalizar
 
 
 class Etiqueta(models.Model):
     """
-    Etiqueta: una palabra o un grupo de dos o tres palabras («huelga», «local nuevo»). Se comparan sin
-    mayúsculas ni tildes, así que «Huelga» y «huelga» son la misma.
+    Etiqueta: una palabra o un grupo de dos o tres palabras («Huelga», «Local nuevo»). Se guardan
+    siempre con la primera letra en mayúscula, el resto en minúsculas y sin tildes (la ñ se queda), así
+    que «HUELGA», «huelga» y «Huélga» son la misma.
     """
 
     organizacion = models.ForeignKey(
@@ -30,7 +31,10 @@ class Etiqueta(models.Model):
         verbose_name="organización",
         help_text="Organización a la que pertenece. Vacía: etiqueta común a todas (solo la crea el superadmin).",
     )
-    nombre = models.CharField("nombre", max_length=40, help_text="De una a tres palabras, tal como se verán.")
+    nombre = models.CharField(
+        "nombre", max_length=40,
+        help_text="De una a tres palabras. Al guardar queda con la primera letra en mayúscula, el resto en minúsculas y sin tildes.",
+    )
     normalizada = models.CharField(
         "nombre normalizado",
         max_length=40,
@@ -83,10 +87,12 @@ class Etiqueta(models.Model):
         if repetidas.exists():
             raise ValidationError({"nombre": f"Ya hay una etiqueta «{repetidas.first()}» igual (en esta organización o común)."})
 
-    # Guarda la etiqueta con su nombre y sus palabras relacionadas ya normalizados, se llame o no a clean().
+    # Guarda la etiqueta con su nombre y sus palabras relacionadas en la forma fija (primera letra en
+    # mayúscula, el resto en minúsculas y sin tildes) y normalizados, se llame o no a clean().
     def save(self, *args, **kwargs):
-        self.normalizada = normalizar(" ".join(self.nombre.split()))
-        palabras = [" ".join(palabra.split()) for palabra in self.relacionadas.split(",") if palabra.strip()]
+        self.nombre = forma_de_frase(self.nombre)
+        self.normalizada = normalizar(self.nombre)
+        palabras = [forma_de_frase(palabra) for palabra in self.relacionadas.split(",") if palabra.strip()]
         self.relacionadas = ", ".join(palabras)
         self.relacionadas_normalizadas = ",".join(normalizar(palabra) for palabra in palabras)
         super().save(*args, **kwargs)

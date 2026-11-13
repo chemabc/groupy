@@ -103,10 +103,10 @@ class FormularioDeDemostracion(forms.Form):
     etiquetas = CampoDePalabras(
         label="Etiquetas",
         required=False,
-        initial=["acogida"],
-        # Sugiere las etiquetas comunes (sin organización). En los módulos de verdad, la dirección lleva la
-        # organización: «?organizacion=3».
-        widget=SelectorDePalabras(url_de_sugerencias=reverse_lazy("etiquetas:sugerencias")),
+        initial=["Acogida"],
+        # Sugiere las etiquetas comunes (sin organización) y les da la forma de las etiquetas. En los
+        # módulos de verdad, la dirección lleva la organización: «?organizacion=3».
+        widget=SelectorDePalabras(url_de_sugerencias=reverse_lazy("etiquetas:sugerencias"), forma="frase"),
         help_text="Palabras para encontrar la actividad. Escribe y pulsa Intro, o elige una sugerencia.",
     )
     publica = forms.BooleanField(

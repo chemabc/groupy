@@ -57,6 +57,22 @@ def normalizar(texto):
     return "".join(letra for letra in descompuesto if not unicodedata.combining(letra)).lower()
 
 
+# Da a un texto la «forma de frase» con la que se guardan las etiquetas: sin espacios de más, sin
+# tildes ni diéresis, todo en minúsculas salvo la primera letra («  REUNIÓN  general» → «Reunion
+# general»). La ñ se conserva, porque es otra letra y no una tilde («año» no es «ano»). La usan las
+# etiquetas al guardarse y al buscarse; interfaz.js hace lo mismo (formaDeFrase) en el selector.
+def forma_de_frase(texto):
+    descompuesto = unicodedata.normalize("NFD", " ".join(str(texto).split()))
+    letras = []
+    for letra in descompuesto:
+        # La virgulilla (U+0303) sobre una n es la de la ñ: se queda. Las demás marcas se quitan.
+        if unicodedata.combining(letra) and not (letra == "̃" and letras and letras[-1] in "nN"):
+            continue
+        letras.append(letra)
+    minusculas = unicodedata.normalize("NFC", "".join(letras)).lower()
+    return minusculas[:1].upper() + minusculas[1:]
+
+
 @dataclass(frozen=True)
 class Columna:
     """Una columna de la tabla."""

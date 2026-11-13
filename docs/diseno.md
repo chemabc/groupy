@@ -617,6 +617,14 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
 - **Qué son:** palabras sueltas o grupos de dos o tres palabras para encontrar información útil
   («huelga», «local nuevo»), con **palabras relacionadas** (sinónimos): buscar cualquiera de ellas
   encuentra lo etiquetado. Se comparan sin mayúsculas ni tildes.
+- **Forma fija (13 de noviembre de 2026, petición de la persona usuaria):** toda etiqueta, y sus palabras
+  relacionadas, se guarda con la **primera letra en mayúscula, el resto en minúsculas y sin tildes**
+  («REUNIÓN general» → «Reunion general»). La **ñ se conserva** («Año», no «Ano»), porque es otra letra.
+  El selector las pasa a esa forma al añadirlas (se ven ya como se guardarán), el modelo al guardar
+  (también desde la trastienda) y la búsqueda compara sin tildes ni mayúsculas, así que buscar «Difusión»
+  encuentra «Difusion». Función `forma_de_frase` en `base/tablas.py` (y `formaDeFrase` en `interfaz.js`).
+  Una migración pasó a esta forma las que ya había. *Descartado:* guardarlas tal como se escriben (salían
+  «huelga», «Huelga» y «HUELGA» mezcladas en las listas).
 - **Quién las crea (1A):** cualquiera, al usarlas. El selector propone las que ya existen mientras se
   escribe (también por sus relacionadas), para no duplicar. El admin de la organización
   (`etiquetas.ordenar`) y el superadmin pueden **fusionar** repetidas (las otras pasan a ser relacionadas

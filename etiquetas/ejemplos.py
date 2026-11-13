@@ -5,6 +5,8 @@ las borra la orden «python manage.py ejemplos» (después de las organizaciones
 
 from grupos.models import Organizacion
 
+from base.tablas import normalizar
+
 from .models import Etiqueta
 
 # Etiquetas comunes: nombre y palabras relacionadas.
@@ -21,15 +23,18 @@ DE_TAJO = [("local nuevo", "sede"), ("cuidados", "conciliación")]
 # Crea las etiquetas de ejemplo que falten.
 def crear():
     for nombre, relacionadas in COMUNES:
-        if not Etiqueta.objects.filter(organizacion__isnull=True, nombre=nombre).exists():
+        if not Etiqueta.objects.filter(organizacion__isnull=True, normalizada=normalizar(nombre)).exists():
             Etiqueta.objects.create(nombre=nombre, relacionadas=relacionadas)
     tajo = Organizacion.objects.filter(nombre="ORG Tajo").first()
     for nombre, relacionadas in DE_TAJO if tajo else []:
-        if not Etiqueta.objects.filter(organizacion=tajo, nombre=nombre).exists():
+        if not Etiqueta.objects.filter(organizacion=tajo, normalizada=normalizar(nombre)).exists():
             Etiqueta.objects.create(organizacion=tajo, nombre=nombre, relacionadas=relacionadas)
 
 
-# Borra las etiquetas de ejemplo (las de ORG Tajo se van con la organización).
+# Borra las etiquetas de ejemplo (las de ORG Tajo se van con la organización). Se buscan por su forma
+# normalizada, porque al guardarse cambian de forma («difusión» queda «Difusion»).
 def borrar():
-    Etiqueta.objects.filter(organizacion__isnull=True, nombre__in=[nombre for nombre, _ in COMUNES]).delete()
-    Etiqueta.objects.filter(organizacion__nombre="ORG Tajo", nombre__in=[nombre for nombre, _ in DE_TAJO]).delete()
+    comunes = [normalizar(nombre) for nombre, _ in COMUNES]
+    de_tajo = [normalizar(nombre) for nombre, _ in DE_TAJO]
+    Etiqueta.objects.filter(organizacion__isnull=True, normalizada__in=comunes).delete()
+    Etiqueta.objects.filter(organizacion__nombre="ORG Tajo", normalizada__in=de_tajo).delete()

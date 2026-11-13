@@ -62,15 +62,19 @@ class SelectorDePalabras(forms.Widget):
     # Prepara el cuadro.
     #   - url_de_sugerencias: dirección que devuelve las sugerencias en JSON ({"sugerencias": [{"nombre",
     #     "comun"}]}); se le añade «q» con lo escrito. Puede llevar ya otros parámetros (?organizacion=3).
-    def __init__(self, url_de_sugerencias="", attrs=None):
+    #   - forma: «frase» para que cada palabra se pase, al añadirla, a la forma de las etiquetas (primera
+    #     letra en mayúscula, el resto en minúsculas y sin tildes); vacío para dejarla como se escribe.
+    def __init__(self, url_de_sugerencias="", attrs=None, forma=""):
         super().__init__({"data-sin-copiar": "", **(attrs or {})})
         self.url_de_sugerencias = url_de_sugerencias
+        self.forma = forma
 
-    # Datos para la plantilla: las palabras actuales (en JSON) y la dirección de las sugerencias.
+    # Datos para la plantilla: las palabras actuales (en JSON), la dirección de las sugerencias y la forma.
     def get_context(self, name, value, attrs):
         contexto = super().get_context(name, value, attrs)
         contexto["widget"]["valores_json"] = json.dumps(list(value or []), ensure_ascii=False)
         contexto["widget"]["url"] = str(self.url_de_sugerencias)
+        contexto["widget"]["forma"] = self.forma
         return contexto
 
     # Lo que llega del navegador: una lista con las palabras (un campo oculto por palabra).
