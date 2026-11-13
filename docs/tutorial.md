@@ -578,3 +578,18 @@ sirve aquí y dónde se usa.
   `update_fields`, hay que añadirle esos campos, o no se guardarían.
 - **Pruebas con el reloj en la mano.** `limpiar(ahora)` recibe el momento: las pruebas «viajan» 16 días al
   futuro sin esperar ni trucar el reloj del sistema.
+
+## 27. Dependencias: un grafo pequeño y una regla que se aplica sola (13 de noviembre de 2026)
+
+- **Una relación de una tabla consigo misma.** `Tarea.espera_a` es un `ManyToManyField("self",
+  symmetrical=False)`: «A espera a B» no implica que «B espera a A». Por el otro lado, `related_name=
+  "desbloquea"` da las tareas que esperan a una.
+- **Buscar círculos sin recursión en la base de datos.** Antes de guardar, se cargan todas las esperas
+  del árbol con una consulta (la tabla intermedia, `Tarea.espera_a.through`) y se recorren en Python
+  desde las tareas elegidas: si se llega a la tarea que se edita, habría un círculo.
+- **Una sola función que pone al día.** `poner_al_dia(tareas)` decide el estado según las esperas, y la
+  llaman todos los sitios donde algo cambia (mover, editar, crear, borrar). Así la regla vive en un solo
+  sitio. El campo `bloqueo_automatico` distingue lo que bloqueó la aplicación (que también desbloquea)
+  de lo que bloqueó una persona (que se respeta).
+- **La isla se entera de los cambios ajenos.** Cuando mover una tarjeta cambia otras, el servidor lo dice
+  en la respuesta (`"otras": 1`) y la isla recarga el tablero, en lugar de intentar recolocar tarjetas.

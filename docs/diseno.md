@@ -1292,12 +1292,33 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
   proyecto.
 - **Kanban (2A):** isla con SortableJS: columnas pendiente, en curso, bloqueada y hecha. El de un proyecto
   incluye las tareas de todos sus subproyectos; también «Mis tareas → Kanban». Solo se arrastra lo que se
-  puede cambiar. *(El bloqueo automático por dependencias, con las dependencias.)*
+  puede cambiar. (El bloqueo automático por dependencias, en el apartado 14.1.2.)
 - **Personales (3A):** proyectos (con subproyectos) y tareas «privados e individuales», con audiencia
   personal: ni el superadmin los ve. Pantalla «Proyectos → Personales».
 - **Calendario:** fuentes «Proyectos» (fechas límite) y «Tareas» (las no hechas), de día entero, que se
   arrastran para cambiar la fecha.
 - **`limpieza` (4A):** después de proyectos, como tarea diaria.
+
+### 14.1.2 Dependencias y recursos (13 de noviembre de 2026, decisiones 1A y 2A de la persona usuaria)
+
+- **Dependencias entre tareas, con bloqueo automático (1A).** Una tarea de un proyecto puede «esperar a»
+  otras tareas de su mismo árbol (el proyecto principal y todos sus subproyectos). Mientras alguna no
+  está hecha, pasa sola a «Bloqueada» (`bloqueo_automatico`); cuando lo están todas, vuelve sola a
+  «Pendiente» y se avisa a su responsable («Una tarea mía ya no espera a nada»). Si una tarea esperada
+  vuelve atrás, la que esperaba se bloquea de nuevo; si se borra, la que esperaba se pone al día. Una
+  tarea que espera no se puede sacar de «Bloqueada» a mano (el kanban muestra por qué y la devuelve a
+  su sitio). Lo bloqueado a mano no se desbloquea solo. No se permiten círculos ni esperar a tareas de
+  otro árbol; las sueltas y las personales no tienen dependencias. Se eligen en el formulario de la
+  tarea (casillas con las tareas del árbol) y la ficha muestra «Espera a» y «La esperan». Si al mover
+  una tarea cambian otras, el kanban se recarga. *Descartado (1B):* marcar dependencias sin bloquear
+  solas.
+- **Recursos, una lista sencilla (2A).** Cada proyecto tiene sus recursos (`Recurso`: qué, cuánto, de
+  dónde sale y si ya se tiene). Quien gestiona el proyecto los apunta, los marca como conseguidos y los
+  quita. Si además puede pedir talentos al grupo (`talentos.pedir`), «Pedir al grupo» crea una petición
+  de talentos con el título del proyecto, el recurso (que entra en el catálogo como «recurso») y la
+  cantidad si es un número, anclada al proyecto; el recurso enlaza a su petición. *Descartado (2B):* un
+  texto libre. *(Aún no: tipos de recurso configurables, totales que suman tareas y subproyectos, y
+  dependencias entre proyectos con su vista gráfica.)*
 
 ### 14.2 Tarea
 

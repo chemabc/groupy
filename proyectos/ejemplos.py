@@ -1,7 +1,8 @@
 """
 Proyectos de ejemplo: «Huerto comunitario» de la asamblea base de Nutria, con un subproyecto («Riego»)
-que tiene el suyo («Bomba solar»), y unas tareas repartidas en las columnas del kanban. Los crea y borra
-la orden «python manage.py ejemplos».
+que tiene el suyo («Bomba solar»), unas tareas repartidas en las columnas del kanban («Elegir el panel»
+espera al presupuesto de tuberías, así que está bloqueada sola) y unos recursos. Los crea y borra la orden
+«python manage.py ejemplos».
 """
 
 from datetime import timedelta
@@ -13,7 +14,7 @@ from grupos.models import Pertenencia
 from tipologias.models import Tipologia
 
 from .models import Proyecto, Tarea
-from .servicios import crear_proyecto, crear_tarea
+from .servicios import anadir_recurso, crear_proyecto, crear_tarea
 
 # Título del proyecto principal de ejemplo (sirve para saber si ya está y para borrarlo).
 PRINCIPAL = "Huerto comunitario"
@@ -33,15 +34,25 @@ def crear():
     )
     riego = crear_proyecto(nutria, generico, {"titulo": "Riego", "limite": hoy + timedelta(days=60)}, padre=huerto)
     bomba = crear_proyecto(nutria, generico, {"titulo": "Bomba solar"}, padre=riego)
+    tareas = {}
     for titulo, proyecto, estado, dias in [
         ("Pedir permiso al distrito", huerto, Tarea.EN_CURSO, 10),
         ("Comprar semillas", huerto, Tarea.PENDIENTE, 20),
         ("Medir la parcela", huerto, Tarea.HECHA, None),
         ("Presupuesto de tuberías", riego, Tarea.PENDIENTE, 15),
-        ("Elegir el panel", bomba, Tarea.BLOQUEADA, None),
     ]:
         limite = hoy + timedelta(days=dias) if dias else None
-        crear_tarea(nutria, {"titulo": titulo, "responsable": nutria, "estado": estado, "limite": limite}, proyecto=proyecto)
+        tareas[titulo] = crear_tarea(nutria, {"titulo": titulo, "responsable": nutria, "estado": estado, "limite": limite}, proyecto=proyecto)
+    crear_tarea(nutria, {"titulo": "Elegir el panel", "responsable": nutria}, proyecto=bomba, espera_a=[tareas["Presupuesto de tuberías"]])
+    for nombre, cantidad, origen, conseguido in [
+        ("Mangueras", "4", "Ferretería del barrio", False),
+        ("Herramientas de cavar", "6", "Las trae la gente", True),
+        ("Dinero para semillas", "80 €", "Bote de la asamblea", False),
+    ]:
+        recurso = anadir_recurso(nutria, huerto, {"nombre": nombre, "cantidad": cantidad, "origen": origen})
+        if conseguido:
+            recurso.conseguido = True
+            recurso.save(update_fields=["conseguido"])
 
 
 # Borra el árbol de ejemplo (con sus subproyectos y tareas).

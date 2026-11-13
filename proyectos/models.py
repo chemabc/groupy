@@ -7,8 +7,12 @@ Tablas del módulo «proyectos» (ver docs/diseno.md, apartado 14):
 - Tarea: algo concreto con una persona responsable (y colaboradoras), dentro de un proyecto, suelta en
   un grupo o personal. Sus estados son las columnas del kanban.
 
-Los dos guardan cuándo terminaron (para el módulo «limpieza», que archiva lo terminado pasado un plazo y,
-más tarde, lo borra) y cuándo se archivaron. Los recursos y las dependencias llegarán en la siguiente pieza.
+- Recurso: algo que le hace falta a un proyecto (qué, cuánto, de dónde sale y si ya se tiene), que se puede
+  pedir con una petición de talentos.
+
+Las tareas de un mismo árbol pueden esperar a otras (dependencias): mientras alguna no está hecha, la que
+espera queda bloqueada sola. Proyectos y tareas guardan cuándo terminaron (para el módulo «limpieza», que
+archiva lo terminado pasado un plazo y, más tarde, lo borra) y cuándo se archivaron.
 """
 
 from django.conf import settings
@@ -145,6 +149,14 @@ class Tarea(models.Model):
     visibilidad = models.CharField("visibilidad elegida", max_length=30, default="privado", help_text="La opción elegida (en las sueltas).")
     creada = models.DateTimeField("creada", auto_now_add=True, help_text="Cuándo se creó.")
     actualizada = models.DateTimeField("actualizada", auto_now=True, help_text="Cuándo cambió por última vez.")
+    espera_a = models.ManyToManyField(
+        "self", symmetrical=False, blank=True, related_name="desbloquea", verbose_name="espera a",
+        help_text="Tareas del mismo proyecto (o de su árbol) que tienen que estar hechas antes. Mientras no lo están, esta queda bloqueada.",
+    )
+    bloqueo_automatico = models.BooleanField(
+        "bloqueada por dependencias", default=False,
+        help_text="Si la bloqueó la aplicación por esperar a otras tareas: cuando estén hechas, vuelve sola a «Pendiente».",
+    )
     terminado = models.DateTimeField(
         "hecha el", null=True, blank=True, help_text="Cuándo pasó a «Hecha». Vacío si no lo está. Desde aquí cuenta el plazo para archivarla."
     )
@@ -169,6 +181,34 @@ class Tarea(models.Model):
         if kwargs.get("update_fields") is not None:
             kwargs["update_fields"] = {*kwargs["update_fields"], "terminado", "archivado"}
         super().save(*args, **kwargs)
+
+
+
+class Recurso(models.Model):
+    """
+    Algo que le hace falta a un proyecto: material, dinero, un local, una furgoneta… Con cuánto, de dónde
+    sale y si ya se tiene. Se puede pedir a un grupo con una petición de talentos.
+    """
+
+    proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, related_name="recursos", verbose_name="proyecto", help_text="El proyecto que lo necesita.")
+    nombre = models.CharField("qué", max_length=60, help_text="Qué hace falta: «Furgoneta», «Mangueras», «Local para el taller».")
+    cantidad = models.CharField("cuánto", max_length=60, blank=True, help_text="Cuánto o cuántos, como se diga mejor: «3», «200 €», «un fin de semana».")
+    origen = models.CharField("de dónde sale", max_length=200, blank=True, help_text="Quién lo pone, dónde se consigue o con qué se paga.")
+    conseguido = models.BooleanField("ya se tiene", default=False, help_text="Si ya está conseguido.")
+    peticion = models.ForeignKey(
+        "talentos.PeticionDeTalentos", on_delete=models.SET_NULL, null=True, blank=True, related_name="+", verbose_name="petición de talentos",
+        help_text="La petición de talentos con la que se ha pedido, si se ha pedido así.",
+    )
+    creado = models.DateTimeField("creado", auto_now_add=True, help_text="Cuándo se apuntó.")
+
+    class Meta:
+        verbose_name = "recurso"
+        verbose_name_plural = "recursos"
+        ordering = ["conseguido", "nombre", "pk"]
+
+    # Texto con el que se muestra: qué y cuánto.
+    def __str__(self):
+        return f"{self.nombre} ({self.cantidad})" if self.cantidad else self.nombre
 
 
 # Pone al día «terminado» y «archivado» de un proyecto o una tarea antes de guardarlo: si está terminado y

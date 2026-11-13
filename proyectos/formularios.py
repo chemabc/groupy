@@ -6,7 +6,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
-from .models import Proyecto, Tarea
+from .models import Proyecto, Recurso, Tarea
 
 
 # Campo de fecha con el calendario del navegador.
@@ -67,6 +67,10 @@ class FormularioDeTarea(forms.ModelForm):
         label="Colaboran", required=False, help_text="Alias de quienes ayudan, separados por comas. Opcional."
     )
     visibilidad = forms.ChoiceField(label="Quién la ve", required=False, help_text="Solo en las tareas sueltas de un grupo.")
+    espera_a = forms.ModelMultipleChoiceField(
+        label="Espera a", queryset=Tarea.objects.none(), required=False, widget=forms.CheckboxSelectMultiple,
+        help_text="Tareas que tienen que estar hechas antes. Mientras no lo estén, esta queda bloqueada sola.",
+    )
 
     class Meta:
         model = Tarea
@@ -76,8 +80,17 @@ class FormularioDeTarea(forms.ModelForm):
     # Prepara los campos según dónde está la tarea.
     #   - visibilidades: opciones de visibilidad (tarea suelta) o None (en un proyecto o personal).
     #   - personal: si es personal (sin responsable ni colaboradores que elegir).
-    def __init__(self, *args, visibilidades=None, personal=False, **kwargs):
+    #   - candidatas: tareas del mismo árbol a las que puede esperar (consulta), o None si no está en un
+    #     proyecto (entonces no hay dependencias).
+    def __init__(self, *args, visibilidades=None, personal=False, candidatas=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if candidatas is None:
+            del self.fields["espera_a"]
+        else:
+            self.fields["espera_a"].queryset = candidatas
+            self.fields["espera_a"].label_from_instance = lambda otra: f"{otra.titulo} ({otra.proyecto.titulo}, {otra.get_estado_display().lower()})"
+            if self.instance.pk and "espera_a" not in self.initial:
+                self.initial["espera_a"] = [otra.pk for otra in self.instance.espera_a.all()]
         if visibilidades is None:
             del self.fields["visibilidad"]
         else:
@@ -113,3 +126,11 @@ class FormularioDeTarea(forms.ModelForm):
             datos["responsable"] = self.cleaned_data.get("responsable") or (self.instance.responsable if self.instance.pk else usuario)
         return datos
 
+
+
+class FormularioDeRecurso(forms.ModelForm):
+    """Un recurso que le hace falta a un proyecto: qué, cuánto y de dónde sale."""
+
+    class Meta:
+        model = Recurso
+        fields = ["nombre", "cantidad", "origen"]

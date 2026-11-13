@@ -145,12 +145,15 @@ def quienes_comparten(talento_id, grupo):
 #   - grupo: el grupo.
 #   - asunto, descripcion: para qué.
 #   - necesidades: lista de (Talento, cantidad).
+#   - ancla_tipo, ancla_id: si es para algo concreto (un proyecto), su tipo de ancla y su número.
 @transaction.atomic
-def pedir(autor, grupo, asunto, descripcion, necesidades):
+def pedir(autor, grupo, asunto, descripcion, necesidades, ancla_tipo="", ancla_id=None):
     exigir(autor, "talentos.pedir", grupo=grupo)
     if not necesidades:
         raise ValidationError("Indica al menos un talento que haga falta.")
-    peticion = PeticionDeTalentos.objects.create(grupo=grupo, autor=autor, asunto=asunto, descripcion=descripcion)
+    peticion = PeticionDeTalentos.objects.create(
+        grupo=grupo, autor=autor, asunto=asunto, descripcion=descripcion, ancla_tipo=ancla_tipo, ancla_id=ancla_id
+    )
     Necesidad.objects.bulk_create(Necesidad(peticion=peticion, talento=talento, cantidad=cantidad) for talento, cantidad in necesidades)
     emitir("talentos.peticion", peticion_id=peticion.pk)
     _invalidar()

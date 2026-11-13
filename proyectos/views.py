@@ -21,8 +21,8 @@ from tipologias.models import Tipologia
 from tipologias.servicios import a_json, arbol, campos_de, formulario_de
 
 from . import servicios
-from .formularios import FormularioDeProyecto, FormularioDeTarea
-from .models import Proyecto, Tarea
+from .formularios import FormularioDeProyecto, FormularioDeRecurso, FormularioDeTarea
+from .models import Proyecto, Recurso, Tarea
 
 # Cuántos proyectos o tareas se muestran como mucho en cada lista.
 MAXIMO = 300
@@ -117,9 +117,11 @@ def _cometidos_para_pintar(de_cometidos, usuario):
 
 # Ficha de un proyecto: su lugar en el árbol (antecesores, con el nombre solo de los que se ven), sus
 # datos, sus subproyectos (en árbol), sus tareas y sus cometidos. Quien lo gestiona cambia el estado,
-# da cometidos, crea subproyectos y lo borra desde aquí.
+# da cometidos, crea subproyectos, apunta recursos (y los pide con una petición de talentos) y lo borra
+# desde aquí.
 #   - POST «accion»: «estado» (con «estado»), «apuntar» o «desapuntar» (con «cometido» y, para otra
-#     persona, «alias»), o «borrar».
+#     persona, «alias»), «recurso» (con los campos de FormularioDeRecurso), «conseguido», «pendiente»,
+#     «quitar_recurso» o «pedir_recurso» (con «recurso»), o «borrar».
 def proyecto(request, pk):
     usuario = request.user
     proyecto = get_object_or_404(Proyecto.objects.select_related("grupo__organizacion", "tipologia", "audiencia", "creador"), pk=pk)
@@ -129,8 +131,23 @@ def proyecto(request, pk):
     gestiona = servicios.puede_gestionar(usuario, proyecto, entero)
     accion = request.POST.get("accion") if request.method == "POST" else None
     error = ""
+    nuevo_recurso = FormularioDeRecurso(request.POST if accion == "recurso" else None, prefix="recurso")
     try:
-        if accion == "estado":
+        if accion == "recurso":
+            if not nuevo_recurso.is_valid():
+                raise ValidationError(" ".join(" ".join(errores) for errores in nuevo_recurso.errors.values()))
+            servicios.anadir_recurso(usuario, proyecto, nuevo_recurso.cleaned_data)
+        elif accion in ("conseguido", "pendiente", "quitar_recurso", "pedir_recurso"):
+            recurso = get_object_or_404(Recurso, pk=request.POST.get("recurso"), proyecto=proyecto)
+            recurso.proyecto = proyecto
+            if accion == "quitar_recurso":
+                servicios.borrar_recurso(usuario, recurso)
+            elif accion == "pedir_recurso":
+                peticion = servicios.pedir_recurso(usuario, recurso)
+                return redirect("talentos:peticion", peticion.pk)
+            else:
+                servicios.marcar_recurso(usuario, recurso, accion == "conseguido")
+        elif accion == "estado":
             servicios.editar_proyecto(usuario, proyecto, {"estado": request.POST.get("estado", "")})
         elif accion in ("apuntar", "desapuntar"):
             codigo = request.POST.get("cometido", "")
@@ -155,6 +172,7 @@ def proyecto(request, pk):
     subproyectos = servicios.en_arbol([entero[pk] for pk in debajo if pk in visibles_del_arbol])
     camino = [(p, p.pk in visibles_del_arbol) for p in servicios.antecesores(proyecto, entero)]
     tareas = list(proyecto.tareas.select_related("responsable").order_by("estado", "orden", "pk"))
+    recursos = list(proyecto.recursos.all())
     de_cometidos = [] if proyecto.personal else servicios.cometidos(proyecto)
     contexto = {
         "proyecto": proyecto,
@@ -163,6 +181,9 @@ def proyecto(request, pk):
         "camino": camino,
         "subproyectos": subproyectos,
         "tareas": tareas,
+        "recursos": recursos,
+        "nuevo_recurso": nuevo_recurso,
+        "pide_recursos": bool(recursos) and servicios.puede_pedir_recursos(usuario, proyecto, gestiona),
         "gestiona": gestiona,
         "error": error,
         "estados": Proyecto.ESTADOS,
@@ -283,12 +304,14 @@ def nueva_tarea(request):
     grupo = next((g for g in grupos if str(g.pk) == request.GET.get("grupo", "")), grupos[0] if grupos else None)
     visibilidades = opciones(grupo) if grupo else None
     datos = request.POST if request.method == "POST" else None
-    formulario = FormularioDeTarea(datos, visibilidades=visibilidades, personal=personal, initial={"visibilidad": "grupo:0"})
+    candidatas = _candidatas(proyecto) if proyecto else None
+    formulario = FormularioDeTarea(datos, visibilidades=visibilidades, personal=personal, candidatas=candidatas, initial={"visibilidad": "grupo:0"})
     if request.method == "POST" and formulario.is_valid():
         try:
             tarea = servicios.crear_tarea(
                 usuario, formulario.datos_de_la_tarea(usuario), colaboradores=formulario.cleaned_data.get("colaboradores", []),
                 proyecto=proyecto, grupo=grupo, personal=personal, visibilidad=formulario.cleaned_data.get("visibilidad") or "grupo:0",
+                espera_a=formulario.cleaned_data.get("espera_a") or (),
             )
         except ValidationError as error:
             formulario.add_error(None, error)
@@ -298,7 +321,16 @@ def nueva_tarea(request):
     return render(request, "proyectos/nueva_tarea.html", contexto)
 
 
-# Ficha de una tarea, con su formulario para quien puede cambiarla y el botón de borrar.
+# Tareas a las que puede esperar una tarea de un proyecto: las de todo su árbol (consulta), salvo ella.
+#   - proyecto: el proyecto de la tarea.
+#   - tarea: la tarea, si ya existe.
+def _candidatas(proyecto, tarea=None):
+    consulta = Tarea.objects.filter(proyecto__raiz_id=proyecto.raiz_id).select_related("proyecto").order_by("proyecto__titulo", "titulo")
+    return consulta.exclude(pk=tarea.pk) if tarea else consulta
+
+
+# Ficha de una tarea, con a qué espera y a quién desbloquea, su formulario para quien puede cambiarla y
+# el botón de borrar.
 #   - POST «accion»: «guardar» o «borrar».
 def tarea(request, pk):
     usuario = request.user
@@ -311,8 +343,13 @@ def tarea(request, pk):
     if accion and not cambia:
         raise SinPermiso("Solo quien se encarga de la tarea, quien colabora o quien gestiona el proyecto pueden cambiarla.")
     formulario = None
+    espera_a = list(tarea.espera_a.order_by("titulo"))
     if cambia:
-        formulario = FormularioDeTarea(request.POST if accion == "guardar" else None, instance=tarea, personal=tarea.personal)
+        candidatas = _candidatas(tarea.proyecto, tarea) if tarea.proyecto_id else None
+        formulario = FormularioDeTarea(
+            request.POST if accion == "guardar" else None, instance=tarea, personal=tarea.personal, candidatas=candidatas,
+            initial={"espera_a": [otra.pk for otra in espera_a]},
+        )
     if accion == "borrar":
         servicios.borrar_tarea(usuario, tarea)
         return redirect("proyectos:proyecto", tarea.proyecto_id) if tarea.proyecto_id else redirect("proyectos:tareas")
@@ -321,26 +358,36 @@ def tarea(request, pk):
             servicios.editar_tarea(
                 usuario, tarea, formulario.datos_de_la_tarea(usuario),
                 colaboradores=formulario.cleaned_data.get("colaboradores") if "colaboradores" in formulario.fields else None,
+                espera_a=formulario.cleaned_data.get("espera_a") if "espera_a" in formulario.fields else None,
             )
         except ValidationError as error:
             formulario.add_error(None, error)
         else:
             return redirect("proyectos:tarea", tarea.pk)
-    contexto = {"tarea": tarea, "colaboradores": colaboradores, "formulario": formulario, "abrir": accion == "guardar"}
+    contexto = {
+        "tarea": tarea,
+        "colaboradores": colaboradores,
+        "espera_a": espera_a,
+        "desbloquea": list(tarea.desbloquea.order_by("titulo")),
+        "formulario": formulario,
+        "abrir": accion == "guardar",
+    }
     return render(request, "proyectos/tarea.html", contexto)
 
 
 # Mueve una tarea en el kanban (lo llama la isla «kanban»). Recibe JSON {tarea, estado, orden} y responde
-# {"ok": true} o un error 400 con {"error": "por qué"}.
+# {"ok": true} (con «otras»: cuántas tareas más han cambiado solas, si alguna) o un error 400 con
+# {"error": "por qué"}.
 @require_POST
 def mover_tarea(request):
     try:
         datos = json.loads(request.body)
         tarea = Tarea.objects.select_related("proyecto").get(pk=int(datos["tarea"]))
         orden = [int(pk) for pk in datos.get("orden", [])]
-        servicios.mover_tarea(request.user, tarea, datos.get("estado", ""), orden)
+        otras = servicios.mover_tarea(request.user, tarea, datos.get("estado", ""), orden)
     except (ValueError, KeyError, TypeError, Tarea.DoesNotExist):
         return JsonResponse({"error": "Datos no válidos."}, status=400)
     except ValidationError as error:
         return JsonResponse({"error": " ".join(error.messages)}, status=400)
-    return JsonResponse({"ok": True})
+    # Si otras tareas han cambiado de columna solas (esperaban a esta), la isla recarga el tablero.
+    return JsonResponse({"ok": True, "otras": otras} if otras else {"ok": True})

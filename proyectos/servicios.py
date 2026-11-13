@@ -1,7 +1,8 @@
 """
 Operaciones del módulo «proyectos»: crear proyectos y subproyectos (a cualquier profundidad), quién los
 ve y quién los gestiona, el árbol de cada proyecto, los cometidos (coordinación, documentación,
-comunicación) y las tareas (crear, cambiar, moverlas en el kanban, borrar). Las pantallas
+comunicación), las tareas (crear, cambiar, moverlas en el kanban, borrar, y las dependencias entre ellas,
+que las bloquean y desbloquean solas) y los recursos (con su petición de talentos). Las pantallas
 (proyectos/views.py) y el calendario (proyectos/calendario.py) llaman a estas funciones.
 """
 
@@ -18,7 +19,10 @@ from eventos_sw.servicios import emitir
 from permisos.models import Cometido
 from permisos.servicios import asignar_cometido, exigir, puede, quitar_cometido
 
-from .models import Proyecto, Tarea
+from talentos.models import Talento
+from talentos.servicios import obtener_o_crear, pedir
+
+from .models import Proyecto, Recurso, Tarea
 
 # Tipo de ancla de los proyectos (para los cometidos, las invitaciones, las salidas…).
 ANCLA = "proyectos.proyecto"
@@ -253,7 +257,7 @@ def _que_vean(proyecto, personas):
 #   - proyecto, grupo, personal: dónde está (uno de los tres).
 #   - visibilidad: la de una tarea suelta.
 @transaction.atomic
-def crear_tarea(usuario, datos, colaboradores=(), proyecto=None, grupo=None, personal=False, visibilidad="grupo:0"):
+def crear_tarea(usuario, datos, colaboradores=(), proyecto=None, grupo=None, personal=False, visibilidad="grupo:0", espera_a=()):
     datos = dict(datos)
     audiencia = None
     if proyecto is not None:
@@ -281,6 +285,8 @@ def crear_tarea(usuario, datos, colaboradores=(), proyecto=None, grupo=None, per
     tarea.full_clean()
     tarea.save()
     tarea.colaboradores.set(colaboradores)
+    if espera_a:
+        _poner_dependencias(tarea, espera_a)
     if tarea.responsable_id != usuario.pk:
         emitir("proyectos.tarea_asignada", tarea_id=tarea.pk)
     return tarea
@@ -303,11 +309,16 @@ def puede_cambiar(usuario, tarea, colaboradores=None):
 
 # Cambia los datos de una tarea. Si cambia la responsable, se le avisa. Devuelve la tarea.
 #   - colaboradores: la lista nueva, o None para no tocarla.
+#   - espera_a: las tareas a las que espera (lista nueva), o None para no tocarlas.
 @transaction.atomic
-def editar_tarea(usuario, tarea, datos, colaboradores=None):
+def editar_tarea(usuario, tarea, datos, colaboradores=None, espera_a=None):
     if not puede_cambiar(usuario, tarea):
         raise ValidationError("Solo quien se encarga de la tarea, quien colabora o quien gestiona el proyecto pueden cambiarla.")
-    responsable_antes = tarea.responsable_id
+    responsable_antes, estado_antes = tarea.responsable_id, tarea.estado
+    if espera_a is not None:
+        _poner_dependencias(tarea, espera_a, al_dia=False)
+    if datos.get("estado", estado_antes) != estado_antes:
+        _comprobar_que_no_espera(tarea)
     if tarea.personal:
         datos = {campo: valor for campo, valor in datos.items() if campo != "responsable"}
         colaboradores = None
@@ -315,10 +326,15 @@ def editar_tarea(usuario, tarea, datos, colaboradores=None):
         setattr(tarea, campo, valor)
     if tarea.proyecto_id and not tarea.personal:
         _que_vean(tarea.proyecto, [tarea.responsable, *(colaboradores or ())])
+    if tarea.estado != estado_antes:
+        tarea.bloqueo_automatico = False
     tarea.full_clean()
     tarea.save()
     if colaboradores is not None:
         tarea.colaboradores.set(colaboradores)
+    poner_al_dia([tarea])
+    if tarea.estado != estado_antes:
+        poner_al_dia(list(tarea.desbloquea.all()))
     if tarea.responsable_id != responsable_antes and tarea.responsable_id != usuario.pk:
         emitir("proyectos.tarea_asignada", tarea_id=tarea.pk)
     return tarea
@@ -328,14 +344,19 @@ def editar_tarea(usuario, tarea, datos, colaboradores=None):
 #   - estado: la columna de destino.
 #   - orden: ids de las tareas de esa columna, de arriba abajo, tal como han quedado (se ignoran las que
 #     no estén en esa columna).
+# Devuelve cuántas tareas más han cambiado de columna solas (las que esperaban a esta).
 @transaction.atomic
 def mover_tarea(usuario, tarea, estado, orden=()):
     if estado not in dict(Tarea.ESTADOS):
         raise ValidationError("Columna desconocida.")
     if not puede_cambiar(usuario, tarea):
         raise ValidationError("No puedes mover esta tarea.")
+    cambia = estado != tarea.estado
+    if cambia:
+        _comprobar_que_no_espera(tarea)
+        tarea.bloqueo_automatico = False
     tarea.estado = estado
-    tarea.save(update_fields=["estado", "actualizada"])
+    tarea.save(update_fields=["estado", "bloqueo_automatico", "actualizada"])
     columna = {t.pk: t for t in Tarea.objects.filter(pk__in=list(orden), estado=estado)}
     cambiadas = []
     for posicion, pk in enumerate(orden):
@@ -343,11 +364,150 @@ def mover_tarea(usuario, tarea, estado, orden=()):
             columna[pk].orden = posicion
             cambiadas.append(columna[pk])
     Tarea.objects.bulk_update(cambiadas, ["orden"])
+    return len(poner_al_dia(list(tarea.desbloquea.all()))) if cambia else 0
 
 
-# Borra una tarea.
+# Borra una tarea. Las que la esperaban se ponen al día (quizá ya no esperan a nada).
 @transaction.atomic
 def borrar_tarea(usuario, tarea):
     if not puede_cambiar(usuario, tarea):
         raise ValidationError("No puedes borrar esta tarea.")
+    esperaban = list(tarea.desbloquea.all())
     tarea.delete()
+    poner_al_dia(esperaban)
+
+
+# ── Dependencias ─────────────────────────────────────────────────────────────────────────────────────
+
+
+# Las tareas a las que espera una tarea y aún no están hechas. Una consulta.
+def pendientes_de(tarea):
+    return list(tarea.espera_a.exclude(estado=Tarea.HECHA).order_by("titulo"))
+
+
+# No deja sacar de «Bloqueada» (ni empezar ni terminar) una tarea que espera a otras sin hacer.
+def _comprobar_que_no_espera(tarea):
+    pendientes = pendientes_de(tarea)
+    if pendientes:
+        nombres = ", ".join(f"«{otra.titulo}»" for otra in pendientes)
+        raise ValidationError(f"«{tarea.titulo}» espera a {nombres}: hasta que estén hechas, sigue bloqueada.")
+
+
+# Cambia las tareas a las que espera una tarea y la pone al día (la bloquea si alguna no está hecha).
+# Solo puede esperar a tareas de su mismo árbol de proyectos, y sin formar un círculo (A espera a B y B
+# a A).
+#   - espera_a: lista de tareas.
+#   - al_dia: si se pone al día ya (False si quien llama lo hace después de guardar la tarea).
+def _poner_dependencias(tarea, espera_a, al_dia=True):
+    espera_a = list(espera_a)
+    if espera_a and not tarea.proyecto_id:
+        raise ValidationError("Solo las tareas de un proyecto pueden esperar a otras.")
+    raiz = tarea.proyecto.raiz_id if tarea.proyecto_id else None
+    for otra in espera_a:
+        if otra.pk == tarea.pk:
+            raise ValidationError("Una tarea no puede esperarse a sí misma.")
+        if otra.proyecto_id is None or otra.proyecto.raiz_id != raiz:
+            raise ValidationError(f"«{otra.titulo}» no es de este proyecto ni de sus subproyectos.")
+    if _hace_circulo(tarea, espera_a, raiz):
+        raise ValidationError("Así se formaría un círculo: alguna de esas tareas ya espera (directa o indirectamente) a esta.")
+    tarea.espera_a.set(espera_a)
+    if al_dia:
+        poner_al_dia([tarea])
+
+
+# Dice si hacer que una tarea espere a otras formaría un círculo: si desde alguna de ellas, siguiendo a
+# qué espera cada una, se llega a la tarea. Una consulta (todas las esperas del árbol).
+def _hace_circulo(tarea, espera_a, raiz):
+    if not espera_a:
+        return False
+    enlaces = Tarea.espera_a.through.objects.filter(from_tarea__proyecto__raiz_id=raiz).values_list("from_tarea_id", "to_tarea_id")
+    siguientes = {}
+    for desde, hasta in enlaces:
+        siguientes.setdefault(desde, set()).add(hasta)
+    por_mirar, vistas = [otra.pk for otra in espera_a], set()
+    while por_mirar:
+        actual = por_mirar.pop()
+        if actual == tarea.pk:
+            return True
+        if actual not in vistas:
+            vistas.add(actual)
+            por_mirar.extend(siguientes.get(actual, ()))
+    return False
+
+
+# Pone al día unas tareas según a qué esperan: si alguna de sus esperas no está hecha, pasa a
+# «Bloqueada» (marcada como bloqueo automático); si ya están todas hechas y la bloqueó la aplicación,
+# vuelve a «Pendiente» y se avisa a su responsable. Las hechas no se tocan. Devuelve las que cambian.
+#   - tareas: lista de tareas.
+def poner_al_dia(tareas):
+    cambiadas = []
+    for tarea in tareas:
+        if tarea.estado == Tarea.HECHA:
+            continue
+        espera = tarea.espera_a.exclude(estado=Tarea.HECHA).exists()
+        if espera and tarea.estado != Tarea.BLOQUEADA:
+            tarea.estado, tarea.bloqueo_automatico = Tarea.BLOQUEADA, True
+        elif not espera and tarea.estado == Tarea.BLOQUEADA and tarea.bloqueo_automatico:
+            tarea.estado, tarea.bloqueo_automatico = Tarea.PENDIENTE, False
+            emitir("proyectos.tarea_desbloqueada", tarea_id=tarea.pk)
+        else:
+            continue
+        tarea.save(update_fields=["estado", "bloqueo_automatico", "actualizada"])
+        cambiadas.append(tarea)
+    return cambiadas
+
+
+# ── Recursos ─────────────────────────────────────────────────────────────────────────────────────────
+
+
+# Apunta un recurso que le hace falta a un proyecto. Solo quien lo gestiona. Devuelve el recurso.
+#   - datos: nombre, cantidad y origen.
+def anadir_recurso(usuario, proyecto, datos):
+    if not puede_gestionar(usuario, proyecto):
+        raise ValidationError("Solo quien gestiona el proyecto puede apuntar recursos.")
+    recurso = Recurso(proyecto=proyecto, **datos)
+    recurso.full_clean()
+    recurso.save()
+    return recurso
+
+
+# Marca un recurso como conseguido, o lo vuelve a poner como pendiente.
+def marcar_recurso(usuario, recurso, conseguido):
+    if not puede_gestionar(usuario, recurso.proyecto):
+        raise ValidationError("Solo quien gestiona el proyecto puede cambiar sus recursos.")
+    recurso.conseguido = conseguido
+    recurso.save(update_fields=["conseguido"])
+
+
+# Borra un recurso (la petición de talentos, si la hay, sigue).
+def borrar_recurso(usuario, recurso):
+    if not puede_gestionar(usuario, recurso.proyecto):
+        raise ValidationError("Solo quien gestiona el proyecto puede borrar sus recursos.")
+    recurso.delete()
+
+
+# Dice si una persona puede pedir los recursos de un proyecto con una petición de talentos: lo gestiona,
+# es de un grupo (no personal) y puede pedir talentos a ese grupo («talentos.pedir»).
+def puede_pedir_recursos(usuario, proyecto, gestiona=None):
+    gestiona = puede_gestionar(usuario, proyecto) if gestiona is None else gestiona
+    return gestiona and not proyecto.personal and proyecto.grupo_id is not None and puede(usuario, "talentos.pedir", grupo=proyecto.grupo_id)
+
+
+# Pide un recurso al grupo del proyecto con una petición de talentos (el recurso entra en el catálogo
+# como «recurso» si no estaba). Llega a quienes lo comparten con el grupo. Devuelve la petición.
+def pedir_recurso(usuario, recurso):
+    proyecto = recurso.proyecto
+    if not puede_pedir_recursos(usuario, proyecto):
+        raise ValidationError("Para pedirlo hay que gestionar el proyecto y poder pedir talentos a su grupo.")
+    if recurso.peticion_id:
+        raise ValidationError("Este recurso ya se ha pedido.")
+    cantidad = int(recurso.cantidad) if recurso.cantidad.strip().isdigit() else 1
+    descripcion = f"Para el proyecto «{proyecto.titulo}»." + (f" De dónde sale: {recurso.origen}." if recurso.origen else "")
+    peticion = pedir(
+        usuario, proyecto.grupo, f"{proyecto.titulo}: {recurso.nombre}"[:120], descripcion,
+        [(obtener_o_crear(recurso.nombre, Talento.RECURSO, usuario), max(1, min(cantidad, 999)))],
+        ancla_tipo=ANCLA, ancla_id=proyecto.pk,
+    )
+    recurso.peticion = peticion
+    recurso.save(update_fields=["peticion"])
+    return peticion

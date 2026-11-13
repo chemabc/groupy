@@ -1,6 +1,7 @@
 {% extends interfaz.plantilla %}
 {% comment %}
-  Ficha de una tarea (proyectos/views.py, tarea). Recibe «tarea», «colaboradores», «formulario» (para
+  Ficha de una tarea (proyectos/views.py, tarea). Recibe «tarea», «colaboradores», «espera_a» (las tareas
+  a las que espera), «desbloquea» (las que la esperan), «formulario» (para
   quien puede cambiarla; si no, None) y «abrir» (formulario desplegado tras un error).
 {% endcomment %}
 {% block contenido %}
@@ -15,6 +16,8 @@
       <dt class="text-slate-500">Responsable</dt><dd>{{ tarea.responsable.alias }}</dd>
       {% if colaboradores %}<dt class="text-slate-500">Colaboran</dt><dd>{% for persona in colaboradores %}{{ persona.alias }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
       {% if tarea.limite %}<dt class="text-slate-500">Para el</dt><dd>{{ tarea.limite|date:"l d/m/Y" }}</dd>{% endif %}
+      {% if espera_a %}<dt class="text-slate-500">Espera a</dt><dd>{% for otra in espera_a %}<a href="{% url 'proyectos:tarea' otra.pk %}" class="hover:text-marca hover:underline {% if otra.estado == 'hecha' %}text-slate-400 line-through{% endif %}">{{ otra.titulo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if tarea.bloqueo_automatico %} <span class="text-xs text-slate-500">(bloqueada hasta que estén hechas)</span>{% endif %}</dd>{% endif %}
+      {% if desbloquea %}<dt class="text-slate-500">La esperan</dt><dd>{% for otra in desbloquea %}<a href="{% url 'proyectos:tarea' otra.pk %}" class="hover:text-marca hover:underline">{{ otra.titulo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
     </dl>
     {% if tarea.descripcion %}<p class="mt-2 whitespace-pre-line text-sm">{{ tarea.descripcion }}</p>{% endif %}
   </section>

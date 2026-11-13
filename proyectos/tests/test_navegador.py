@@ -1,7 +1,8 @@
 """
 Prueba del kanban en un navegador de verdad (ver base/pruebas_navegador.py): al arrastrar una tarea de
 «Pendiente» a «En curso», la isla «kanban» lo guarda, también al llegar navegando con htmx; una tarea de
-otra persona no se puede arrastrar.
+otra persona no se puede arrastrar; y al terminar una tarea de la que depende otra, el tablero se recarga
+y la que esperaba aparece desbloqueada.
 """
 
 from base.pruebas import crear_usuario_de_prueba
@@ -35,6 +36,23 @@ class PruebasDelKanbanEnElNavegador(PruebaEnElNavegador):
             self.arrastrar(tarjeta, self.pagina.locator('ul[data-estado="en_curso"]'))
         self.assertEqual(respuesta.value.json(), {"ok": True})
         self.assertEqual(Tarea.objects.get(pk=mia.pk).estado, Tarea.EN_CURSO)
+        self.assertEqual(self.errores, [])
+
+    # «Bomba» espera a «Zanja»: al arrastrar «Zanja» a «Hecha», el servidor desbloquea «Bomba» y la isla
+    # recarga el tablero, donde «Bomba» ya está en «Pendiente».
+    def test_desbloquea_al_terminar(self):
+        _tajo, grupo = crear_organizacion("ORG Tajo", "GRU Tajo")
+        admitir(self.usuario, grupo)
+        huerto = crear_proyecto(self.usuario, crear_tipologia("proyecto", "Genérico"), {"titulo": "Huerto"}, grupo=grupo, visibilidad="grupo:0")
+        zanja = crear_tarea(self.usuario, {"titulo": "Zanja", "responsable": self.usuario}, proyecto=huerto)
+        bomba = crear_tarea(self.usuario, {"titulo": "Bomba", "responsable": self.usuario}, proyecto=huerto, espera_a=[zanja])
+
+        self.abrir(f"/proyectos/{huerto.pk}/kanban/")
+        self.assertEqual(self.pagina.locator(f'ul[data-estado="bloqueada"] li[data-id="{bomba.pk}"]').count(), 1)
+        with self.pagina.expect_navigation():
+            self.arrastrar(self.pagina.locator(f'li[data-id="{zanja.pk}"]'), self.pagina.locator('ul[data-estado="hecha"]'))
+        self.pagina.locator(f'ul[data-estado="pendiente"] li[data-id="{bomba.pk}"]').wait_for()
+        self.assertEqual(Tarea.objects.get(pk=bomba.pk).estado, Tarea.PENDIENTE)
         self.assertEqual(self.errores, [])
 
     # Arrastra con el ratón paso a paso (SortableJS, con forceFallback, necesita ver el movimiento).

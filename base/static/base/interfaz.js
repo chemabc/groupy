@@ -455,6 +455,8 @@ document.addEventListener("alpine:init", () => {
       }
       if (respuesta && respuesta.ok) {
         this.mensaje = "";
+        // Si otras tarjetas han cambiado de columna solas (esperaban a esta), se recarga el tablero.
+        if ((await respuesta.json()).otras) window.location.reload();
         return;
       }
       this.mensaje = respuesta && respuesta.headers.get("Content-Type")?.includes("json") ? (await respuesta.json()).error : "No se ha podido guardar.";

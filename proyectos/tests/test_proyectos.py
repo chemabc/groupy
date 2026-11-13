@@ -2,7 +2,8 @@
 Pruebas de «proyectos»: crear proyectos y subproyectos a cualquier profundidad (y verlos en árbol), quién
 los ve (también los personales, ni el superadmin) y quién los gestiona (quien crea o coordina un
 antecesor, la administración del grupo), las tareas (responsable que ve el proyecto, aviso, kanban con
-las de los subproyectos, mover), su paso por el calendario y lo que cuestan las pantallas.
+las de los subproyectos, mover), las dependencias entre tareas (bloqueo y desbloqueo solos), los recursos
+(con su petición de talentos), su paso por el calendario y lo que cuestan las pantallas.
 
 Estructura: ORG Tajo (GRU Tajo ⊃ GRU Henares ⊃ GRU Sorbe) con Lince admin de GRU Henares, Nutria en GRU
 Henares (la sesión), Garza en GRU Sorbe y Zorro en GRU Tajo; Erizo en ORG Ebro.
@@ -19,7 +20,7 @@ from eventos_sw.servicios import procesar_bandeja
 from grupos.models import Pertenencia
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
 from proyectos.models import Proyecto, Tarea
-from proyectos.servicios import apuntar, crear_proyecto, crear_tarea
+from proyectos.servicios import anadir_recurso, apuntar, crear_proyecto, crear_tarea, editar_tarea
 from tipologias.servicios import crear_tipologia
 
 # Tabla de notificaciones de «comunicaciones» (otro módulo funcional: se busca por su nombre).
@@ -214,6 +215,116 @@ class PruebasDeTareas(PruebaDeProyectos):
         self.assertEqual(self.client.get(f"/proyectos/tareas/{suelta.pk}/").status_code, 403)
 
 
+class PruebasDeDependencias(PruebaDeProyectos):
+    """Tareas que esperan a otras: se bloquean y desbloquean solas, con sus reglas."""
+
+    # Mueve una tarea en el kanban como lo haría la isla; devuelve la respuesta.
+    def mover(self, tarea, estado):
+        datos = json.dumps({"tarea": tarea.pk, "estado": estado, "orden": [tarea.pk]})
+        return self.client.post("/proyectos/tareas/mover/", datos, content_type="application/json")
+
+    # Estado actual de una tarea (de la base de datos).
+    def estado(self, tarea):
+        return Tarea.objects.get(pk=tarea.pk).estado
+
+    # «Bomba» (en el subproyecto Riego) espera a «Zanja» y «Tubos»: queda bloqueada, no se puede sacar a
+    # mano y, cuando las dos están hechas, vuelve sola a «Pendiente» (el kanban recibe «otras») y se
+    # avisa a Garza. Si una vuelve atrás, se bloquea otra vez.
+    def test_bloquea_y_desbloquea(self):
+        huerto = self.proyecto()
+        riego = self.proyecto("Riego", padre=huerto)
+        zanja = crear_tarea(self.nutria, {"titulo": "Zanja", "responsable": self.nutria}, proyecto=huerto)
+        tubos = crear_tarea(self.nutria, {"titulo": "Tubos", "responsable": self.nutria}, proyecto=huerto)
+        bomba = crear_tarea(self.nutria, {"titulo": "Bomba", "responsable": self.garza}, proyecto=riego, espera_a=[zanja, tubos])
+        self.assertEqual(self.estado(bomba), Tarea.BLOQUEADA)
+        respuesta = self.mover(bomba, Tarea.EN_CURSO)
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("espera a «Tubos», «Zanja»", respuesta.json()["error"])
+        self.assertEqual(self.mover(zanja, Tarea.HECHA).json(), {"ok": True})
+        self.assertEqual(self.estado(bomba), Tarea.BLOQUEADA)
+        self.assertEqual(self.mover(tubos, Tarea.HECHA).json(), {"ok": True, "otras": 1})
+        self.assertEqual(self.estado(bomba), Tarea.PENDIENTE)
+        procesar_bandeja()
+        aviso = Notificacion.objects.get(tipo="proyectos.tarea_desbloqueada")
+        self.assertEqual(aviso.usuario, self.garza)
+        self.assertIn("Ya puedes ponerte con «Bomba»", aviso.texto)
+        self.mover(tubos, Tarea.EN_CURSO)
+        self.assertEqual(self.estado(bomba), Tarea.BLOQUEADA)
+
+    # Lo bloqueado a mano no se desbloquea solo; al borrar la tarea esperada, la que esperaba se libera.
+    def test_bloqueo_a_mano_y_borrar(self):
+        huerto = self.proyecto()
+        zanja = crear_tarea(self.nutria, {"titulo": "Zanja", "responsable": self.nutria}, proyecto=huerto)
+        manual = crear_tarea(self.nutria, {"titulo": "Manual", "responsable": self.nutria}, proyecto=huerto)
+        self.mover(manual, Tarea.BLOQUEADA)
+        manual.refresh_from_db()
+        editar_tarea(self.nutria, manual, {}, espera_a=[zanja])
+        self.mover(zanja, Tarea.HECHA)
+        self.assertEqual(self.estado(manual), Tarea.BLOQUEADA)
+        espera = crear_tarea(self.nutria, {"titulo": "Espera", "responsable": self.nutria}, proyecto=huerto, espera_a=[manual])
+        self.assertEqual(self.estado(espera), Tarea.BLOQUEADA)
+        self.client.post(f"/proyectos/tareas/{manual.pk}/", {"accion": "borrar"})
+        self.assertEqual(self.estado(espera), Tarea.PENDIENTE)
+
+    # Reglas: del mismo árbol, no a sí misma, sin círculos y solo en proyectos.
+    def test_reglas(self):
+        huerto, otro = self.proyecto(), self.proyecto("Otro")
+        a = crear_tarea(self.nutria, {"titulo": "A", "responsable": self.nutria}, proyecto=huerto)
+        b = crear_tarea(self.nutria, {"titulo": "B", "responsable": self.nutria}, proyecto=huerto, espera_a=[a])
+        c = crear_tarea(self.nutria, {"titulo": "C", "responsable": self.nutria}, proyecto=huerto, espera_a=[b])
+        fuera = crear_tarea(self.nutria, {"titulo": "Fuera", "responsable": self.nutria}, proyecto=otro)
+        for esperas, error in (([fuera], "no es de este proyecto"), ([a], "sí misma"), ([c], "círculo")):
+            with self.subTest(error=error), self.assertRaisesMessage(ValidationError, error):
+                editar_tarea(self.nutria, a, {}, espera_a=esperas)
+        suelta = crear_tarea(self.nutria, {"titulo": "Suelta", "responsable": self.nutria}, grupo=self.henares, visibilidad="grupo:0")
+        with self.assertRaisesMessage(ValidationError, "Solo las tareas de un proyecto"):
+            editar_tarea(self.nutria, suelta, {}, espera_a=[a])
+
+    # Desde la ficha: el formulario ofrece las tareas del árbol y guarda a cuáles espera; la ficha lo
+    # muestra en las dos tareas.
+    def test_desde_la_ficha(self):
+        huerto = self.proyecto()
+        a = crear_tarea(self.nutria, {"titulo": "Cavar", "responsable": self.nutria}, proyecto=huerto)
+        b = crear_tarea(self.nutria, {"titulo": "Sembrar", "responsable": self.nutria}, proyecto=huerto)
+        datos_del_formulario = {"accion": "guardar", "titulo": "Sembrar", "descripcion": "", "limite": "", "estado": "pendiente", "responsable": "Nutria", "colaboradores": "", "espera_a": [a.pk]}
+        self.assertRedirects(self.client.post(f"/proyectos/tareas/{b.pk}/", datos_del_formulario), f"/proyectos/tareas/{b.pk}/")
+        self.assertEqual(self.estado(b), Tarea.BLOQUEADA)
+        self.assertContains(self.client.get(f"/proyectos/tareas/{b.pk}/"), "bloqueada hasta que estén hechas")
+        self.assertContains(self.client.get(f"/proyectos/tareas/{a.pk}/"), "La esperan")
+
+
+class PruebasDeRecursos(PruebaDeProyectos):
+    """Los recursos de un proyecto y su petición de talentos."""
+
+    # Nutria (gestiona) apunta un recurso y lo marca como conseguido; Garza (lo ve, no lo gestiona) no puede tocarlo. Nutria no
+    # puede pedir talentos al grupo; Lince (admin del grupo) sí: se crea la petición, anclada al proyecto.
+    def test_recursos(self):
+        huerto = self.proyecto()
+        url = f"/proyectos/{huerto.pk}/"
+        self.client.post(url, {"accion": "recurso", "recurso-nombre": "Mangueras", "recurso-cantidad": "3", "recurso-origen": "Ferretería"})
+        recurso = huerto.recursos.get()
+        self.assertEqual((recurso.nombre, recurso.cantidad), ("Mangueras", "3"))
+        self.assertNotContains(self.client.get(url), "Pedir al grupo")
+        self.assertContains(self.client.post(url, {"accion": "pedir_recurso", "recurso": recurso.pk}), "poder pedir talentos")
+        self.client.post(url, {"accion": "conseguido", "recurso": recurso.pk})
+        recurso.refresh_from_db()
+        self.assertTrue(recurso.conseguido)
+        self.client.post(url, {"accion": "pendiente", "recurso": recurso.pk})
+        self.como(self.garza)
+        self.assertContains(self.client.post(url, {"accion": "quitar_recurso", "recurso": recurso.pk}), "Solo quien gestiona")
+        self.como(self.lince)
+        self.assertContains(self.client.get(url), "Pedir al grupo")
+        respuesta = self.client.post(url, {"accion": "pedir_recurso", "recurso": recurso.pk})
+        recurso.refresh_from_db()
+        peticion = recurso.peticion
+        self.assertRedirects(respuesta, f"/talentos/peticiones/{peticion.pk}/", fetch_redirect_response=False)
+        self.assertEqual((peticion.asunto, peticion.ancla_tipo, peticion.ancla_id, peticion.grupo), ("Huerto: Mangueras", "proyectos.proyecto", huerto.pk, self.henares))
+        self.assertEqual(peticion.necesidades.get().cantidad, 3)
+        self.assertContains(self.client.get(url), "petición de talentos")
+        self.client.post(url, {"accion": "quitar_recurso", "recurso": recurso.pk})
+        self.assertFalse(huerto.recursos.exists())
+
+
 class PruebasDeConsultas(PruebaDeProyectos):
     """Cada pantalla cuesta lo mismo con pocas filas que con muchas."""
 
@@ -232,9 +343,10 @@ class PruebasDeConsultas(PruebaDeProyectos):
             sub = self.proyecto(f"Sub {Proyecto.objects.count()}", padre=huerto)
             crear_tarea(self.nutria, {"titulo": "T", "responsable": self.garza}, proyecto=sub)
             crear_tarea(self.nutria, {"titulo": "U", "responsable": self.nutria}, proyecto=huerto)
+            anadir_recurso(self.nutria, huerto, {"nombre": "Mangueras", "cantidad": "3", "origen": "Ferretería"})
 
         mas()
-        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 7, mas)
+        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 8, mas)
         self.comprobar_consultas(f"/proyectos/{huerto.pk}/kanban/", 6, mas)
 
     # Mis tareas, su kanban y la ficha de una tarea.
@@ -242,9 +354,11 @@ class PruebasDeConsultas(PruebaDeProyectos):
         huerto = self.proyecto()
 
         def mas():
-            crear_tarea(self.nutria, {"titulo": "T", "responsable": self.nutria}, proyecto=huerto)
+            primera = Tarea.objects.order_by("pk").first()
+            crear_tarea(self.nutria, {"titulo": "T", "responsable": self.nutria}, proyecto=huerto, espera_a=[primera] if primera else ())
 
         mas()
         self.comprobar_consultas("/proyectos/tareas/", 2, mas)
         self.comprobar_consultas("/proyectos/tareas/kanban/", 2, mas)
-        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.first().pk}/", 5, None)
+        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').first().pk}/", 8, mas)
+        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').last().pk}/", 8, mas)

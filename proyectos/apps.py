@@ -23,7 +23,7 @@ class ProyectosConfig(ModuloConfig):
     """
     Contrato del módulo «proyectos»: proyectos de los grupos y personales, con subproyectos a cualquier
     profundidad, y tareas (en un proyecto, sueltas en un grupo o personales) con responsable,
-    colaboradoras, fecha límite y kanban. Los recursos y las dependencias llegarán después.
+    colaboradoras, fecha límite, kanban y dependencias (que bloquean solas); y recursos de cada proyecto.
     """
 
     name = "proyectos"
@@ -44,9 +44,16 @@ class ProyectosConfig(ModuloConfig):
         Cometido("proyectos.documentacion", "Documentación", "Recoge y ordena la documentación del proyecto."),
         Cometido("proyectos.comunicacion", "Comunicación", "Cuenta hacia fuera cómo va el proyecto."),
     )
-    emite = (Emision("proyectos.tarea_asignada", "Se ha encargado una tarea a alguien. Datos: tarea_id."),)
+    emite = (
+        Emision("proyectos.tarea_asignada", "Se ha encargado una tarea a alguien. Datos: tarea_id."),
+        Emision("proyectos.tarea_desbloqueada", "Una tarea ya no espera a nada (todas sus dependencias están hechas). Datos: tarea_id."),
+    )
     avisos = (
         TipoDeAviso("proyectos.tarea_asignada", "Me encargan una tarea", "proyectos", "proyectos.tarea_asignada", "proyectos.avisos.tarea_asignada"),
+        TipoDeAviso(
+            "proyectos.tarea_desbloqueada", "Una tarea mía ya no espera a nada", "proyectos", "proyectos.tarea_desbloqueada",
+            "proyectos.avisos.tarea_desbloqueada",
+        ),
     )
     limpiables = (
         Limpiable(
