@@ -56,4 +56,7 @@
     </div>
   {% endif %}
 </div>
+{# Al navegar solo se cambia la zona y el menú no se vuelve a pintar: los números del menú («Invitaciones #}
+{# (2)») se mandan aquí aparte y htmx los pone en su sitio por su id («hx-swap-oob»). #}
+{% if interfaz.solo_la_zona %}{% for codigo, numero in interfaz.contadores.items %}<span id="contador-{{ codigo|slugify }}" data-contador hx-swap-oob="true">({{ numero }})</span>{% endfor %}{% endif %}
 {% endblock %}{% endblock %}

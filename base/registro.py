@@ -135,7 +135,7 @@ class RegistroDeModulos:
     #   - antecesores: las entradas de las que cuelga, desde la sección principal.
     def _apuntar_rutas(self, entrada, antecesores):
         camino = (*antecesores, entrada)
-        for url in (entrada.url, *(vista.url for vista in entrada.vistas)):
+        for url in (entrada.url, *(vista.url for vista in entrada.vistas), *entrada.otras_rutas):
             anterior = self.rutas.get(url)
             if anterior is not None and anterior[-1] not in antecesores and anterior[-1] is not entrada:
                 self.errores.append(

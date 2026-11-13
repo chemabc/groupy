@@ -12,7 +12,7 @@ ejemplo (usuarios/ejemplos.py), que reparte por los grupos.
 from django.contrib.auth import get_user_model
 
 from .models import AdminDeOrganizacion, Grupo, Organizacion, Pertenencia
-from .servicios import crear_grupo, crear_organizacion
+from .servicios import crear_grupo, crear_organizacion, relacionar
 
 # Árbol de ejemplo: cada organización con su grupo general, y cada grupo como (nombre, [subgrupos]).
 ESTRUCTURA = {
@@ -107,9 +107,17 @@ ADMINS_DE_ORGANIZACION = [
     ("Sauce", "ORG Guadalquivir"),
 ]
 
+# Relaciones libres entre grupos de una misma organización: (origen, relación, destino).
+RELACIONES = [
+    ("GRU Jarama", "colabora con", "GRU Alberche"),
+    ("GRU Sorbe", "nació de", "GRU Badiel"),
+    ("GRU Segre", "comparte local con", "GRU Gállego"),
+    ("GRU Eresma", "colabora con", "GRU Tormes"),
+]
 
-# Crea las organizaciones, grupos, pertenencias y admins de ejemplo que falten. Una organización que ya
-# existe no se toca. Los grupos se crean con los servicios (para que se rellene la tabla de cierre); las
+
+# Crea las organizaciones, grupos, pertenencias, admins y relaciones de ejemplo que falten. Una
+# organización que ya existe no se toca. Los grupos se crean con los servicios (para que se rellene la tabla de cierre); las
 # pertenencias, todas de una vez (bulk_create), sin avisos: nadie tiene nada calculado todavía.
 def crear():
     nuevas = [nombre for nombre in ESTRUCTURA if not Organizacion.objects.filter(nombre=nombre).exists()]
@@ -137,6 +145,9 @@ def crear():
         for alias, nombre in ADMINS_DE_ORGANIZACION
         if nombre in nuevas and alias in usuarios
     )
+    for origen, tipo, destino in RELACIONES:
+        if origen in grupos and destino in grupos:
+            relacionar(grupos[origen], grupos[destino], tipo)
 
 
 # Crea los subgrupos de un grupo y, dentro de cada uno, los suyos, a cualquier profundidad (se llama a

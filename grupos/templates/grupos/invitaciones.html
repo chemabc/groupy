@@ -1,0 +1,18 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Organizaciones y grupos → Invitaciones» (grupos/views.py, invitaciones). Recibe «recibidas» y
+  «enviadas» (cada una con la invitación, qué se comparte y si quien mira puede responderla o
+  retirarla), «todo» (si es superadmin: entonces todas van en «recibidas») y error.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Invitaciones de un grupo a un grupo de otra organización para algo concreto (un proyecto conjunto…). Se hacen desde aquello que se comparte; aquí se aceptan, se rechazan o se retiran. Aceptar solo abre eso: nadie cambia de grupo.</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% if todo %}
+    {% include "grupos/lista_de_invitaciones.html" with titulo="Todas las invitaciones" filas=recibidas vacio="No hay ninguna invitación." %}
+  {% else %}
+    {% include "grupos/lista_de_invitaciones.html" with titulo="Recibidas por tus grupos" filas=recibidas vacio="Tus grupos no han recibido invitaciones." %}
+    {% include "grupos/lista_de_invitaciones.html" with titulo="Hechas por tus grupos" filas=enviadas vacio="Tus grupos no han invitado a nadie." %}
+  {% endif %}
+</div>
+{% endblock %}

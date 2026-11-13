@@ -830,8 +830,51 @@ En «Desarrollo y mantenimiento → Pruebas». Solo para el superadmin.
 - **El menú oculta las secciones sin permiso.** `EntradaDeMenu.permiso` ya existía; ahora `base` pregunta
   a una función que le presta `permisos` al arrancar (`registrar_comprobador_de_permisos`), porque `base`
   no puede importar `permisos`. Se mira si la persona tiene el permiso en alguna parte
-  (`puede_en_alguna_parte`). *(De momento solo las secciones principales; las subsecciones, cuando haga
-  falta.)*
+  (`puede_en_alguna_parte`). Desde el 13 de noviembre de 2026, también las subsecciones (por ejemplo,
+  «Árbol» de «Organizaciones y grupos»): `base/contexto.py` apunta las que no se pueden ver en
+  `interfaz.ocultas` y la plantilla del menú no las pinta.
+
+**Sección «Organizaciones y grupos» (13 de noviembre de 2026, decisiones 1A, 2A y 3A de la persona
+usuaria).** Vistas en `grupos/views.py`; qué ve cada cual, en `grupos/acceso.py`.
+- **Una sola sección para todo el mundo (1A).** Cada persona ve sus grupos y lo que administra, y los
+  botones dependen de sus permisos. *Descartado:* una sección del superadmin y otra «Mi organización»
+  para los admins (código repetido), y una sola pantalla con pestañas sin subsecciones (no se verían de
+  un vistazo las invitaciones pendientes).
+- **Subsecciones:** «Mis grupos» (todas las personas: sus grupos en árbol por organización, con los
+  heredados en gris, su asamblea base y su rol; es importante para saber dónde está cada cual, porque
+  una persona puede estar en varios grupos de la misma organización), «Árbol» (solo quien administra
+  algo, permiso nuevo `grupos.ver_arbol`: el superadmin ve todo, el admin de la organización la suya y el
+  admin de un grupo su rama; con ámbito, número de personas y admins, y la lista de organizaciones),
+  «Relaciones» (submenú propio) e «Invitaciones (N)» (submenú propio).
+- **Fichas** de grupo y de organización, que cuelgan de la sección (`EntradaDeMenu.otras_rutas`).
+  - Grupo: camino con enlaces, datos, quién lo cuida (admins del grupo y de la organización, con el
+    tiempo que llevan), subgrupos con su número de personas, miembros (también los de los subgrupos,
+    en tabla filtrable) y, para quien lo administra, editar, crear subgrupos, admitir por alias, sacar y
+    cambiar el rol. Hacer admin a alguien (o tocar a un admin) pide `grupos.nombrar_admin_grupo`. Mover
+    un grupo de padre, solo el admin de la organización (`grupos.editar_organizacion`). La ven sus
+    miembros (también los de sus subgrupos) y quienes lo administran.
+  - Organización: datos, el interruptor de la lista de miembros, grupos principales y admins (los
+    nombra o los quita el superadmin). La ven su admin y el superadmin.
+- **Quién ve la lista de miembros (2A).** Permiso nuevo `grupos.ver_miembros` (de entrada, el rol
+  `usuario`, que lo controla el superadmin) **y** el interruptor de cada organización
+  `Organizacion.miembros_ven_miembros` (lo maneja su admin para todos sus grupos). El admin de la
+  organización solo puede cerrar: si el superadmin ha quitado el permiso al rol, marcar el interruptor no
+  lo devuelve. Los admins la ven siempre. *(Los cometidos del grupo se mostrarán en la ficha cuando haya
+  módulos con cometidos y su visibilidad pase por las audiencias.)*
+- **«Invitaciones (N)» (3A):** cuenta las pendientes que la persona **puede responder** (las llegadas a
+  grupos donde tiene `grupos.responder_invitacion`; el superadmin, todas). Con 0 se escribe «(0)».
+  Dentro se ven las recibidas y las hechas por sus grupos; se aceptan, rechazan o retiran. Se crean desde
+  lo que se comparte (un proyecto), no desde aquí.
+  - **Contador en el menú:** `EntradaDeMenu.contador` es la ruta de una función (usuario → número). El
+    resultado se guarda en la caché con versión (`grupos/contadores.py`), que sube al guardar o borrar
+    cualquier invitación (señales en `grupos/senales.py`): casi siempre 0 consultas. Como al navegar el
+    menú no se vuelve a pintar, `base/zona.html` manda los números aparte con `hx-swap-oob` y htmx los
+    pone en su sitio.
+- **Relaciones:** solo entre grupos de la misma organización (las organizaciones son independientes). Las
+  ve quien ve alguno de los dos grupos; las crea o borra quien puede editar uno de los dos. El grafo
+  (isla de Cytoscape) queda para más adelante.
+- **Fuera de esta pieza:** mapa (con `lugares`), peticiones de borrado de grupos (con `solicitudes`),
+  recuento de talentos y grafo de relaciones.
 
 ### 8.2 Lugares
 

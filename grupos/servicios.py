@@ -19,7 +19,7 @@ from django.utils import timezone
 from base.registro import registro
 from eventos_sw.servicios import emitir
 
-from .models import AdminDeOrganizacion, Contencion, Grupo, InvitacionDeGrupo, Organizacion, Pertenencia
+from .models import AdminDeOrganizacion, Contencion, Grupo, InvitacionDeGrupo, Organizacion, Pertenencia, RelacionEntreGrupos
 
 
 # Crea una organización con su primer grupo, porque toda organización tiene al menos uno. Devuelve la
@@ -47,6 +47,32 @@ def crear_grupo(organizacion, nombre, padre=None, **otros):
     grupo.full_clean()
     grupo.save()
     return grupo
+
+
+# Cambia los datos de un grupo. Si cambia de padre, Grupo.save() pone al día la tabla de cierre y avisa
+# con «grupos.estructura_cambiada». Devuelve el grupo.
+#   - grupo: el grupo.
+#   - datos: los campos que cambian (nombre, descripcion, ambito, padre).
+@transaction.atomic
+def editar_grupo(grupo, **datos):
+    for campo, valor in datos.items():
+        setattr(grupo, campo, valor)
+    grupo.full_clean()
+    grupo.save()
+    return grupo
+
+
+# Cambia los datos de una organización (nombre, descripción y si los miembros ven la lista de miembros).
+# Devuelve la organización.
+#   - organizacion: la organización.
+#   - datos: los campos que cambian.
+@transaction.atomic
+def editar_organizacion(organizacion, **datos):
+    for campo, valor in datos.items():
+        setattr(organizacion, campo, valor)
+    organizacion.full_clean()
+    organizacion.save()
+    return organizacion
 
 
 # Mete a un usuario en un grupo. Devuelve su pertenencia.
@@ -113,6 +139,30 @@ def nombrar_admin_de_organizacion(usuario, organizacion):
     nombramiento.save()
     emitir("grupos.pertenencias_cambiadas", usuario_id=usuario.pk)
     return nombramiento
+
+
+# Quita a una persona de admin de una organización (sigue en sus grupos).
+#   - usuario: a quién.
+#   - organizacion: de qué organización.
+@transaction.atomic
+def quitar_admin_de_organizacion(usuario, organizacion):
+    AdminDeOrganizacion.objects.filter(usuario=usuario, organizacion=organizacion).delete()
+    emitir("grupos.pertenencias_cambiadas", usuario_id=usuario.pk)
+
+
+# Crea una relación libre entre dos grupos de la misma organización («colabora con», «nació de»…).
+# Devuelve la relación. No cambia permisos: solo se ve en las listas (y, más adelante, en el grafo).
+#   - origen, destino: los dos grupos.
+#   - tipo: cómo se relacionan, en pocas palabras.
+#   - descripcion: detalles (opcional).
+@transaction.atomic
+def relacionar(origen, destino, tipo, descripcion=""):
+    if origen.organizacion_id != destino.organizacion_id:
+        raise ValidationError("Solo se relacionan grupos de la misma organización (las organizaciones son independientes).")
+    relacion = RelacionEntreGrupos(origen=origen, destino=destino, tipo=" ".join(tipo.split()), descripcion=descripcion)
+    relacion.full_clean()
+    relacion.save()
+    return relacion
 
 
 # Devuelve los ids de los grupos de los que una persona es miembro: aquellos en los que está y todos los

@@ -1,0 +1,124 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de un grupo (grupos/views.py, grupo). Recibe: grupo (con su organización y su camino),
+  antecesores (pares id, nombre, del más alto al padre), subgrupos (con «personas»), admins (pertenencias
+  de admin del grupo), admins_de_organizacion, ve_lista (si ve la lista de miembros), tabla (los miembros,
+  si los ve), directos (miembros directos, solo para quien puede admitir), puede_editar, puede_subgrupo,
+  puede_admitir, roles_que_da, los formularios edicion, subgrupo y admision, error y abrir (la acción que
+  falló, para dejar abierto su formulario).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  {# Camino: organización y grupos que lo contienen, cada uno con enlace a su ficha #}
+  <nav class="flex flex-wrap gap-1 text-xs text-slate-500" aria-label="Camino del grupo">
+    <span>{{ grupo.organizacion.nombre }}</span>
+    {% for pk, nombre in antecesores %}<span>›</span><a href="{% url 'grupos:grupo' pk %}" class="hover:text-marca hover:underline">{{ nombre }}</a>{% endfor %}
+    <span>›</span><span class="font-medium text-slate-700 dark:text-slate-200">{{ grupo.nombre }}</span>
+  </nav>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+
+  {# Datos #}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="text-lg font-semibold">{{ grupo.nombre }}</h2>
+    {% if grupo.descripcion %}<p class="mt-1 whitespace-pre-line text-sm">{{ grupo.descripcion }}</p>{% endif %}
+    <dl class="mt-2 grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-sm">
+      <dt class="text-slate-500">Ámbito geográfico</dt><dd>{{ grupo.ambito|default:"—" }}</dd>
+      <dt class="text-slate-500">En la plataforma desde</dt><dd>{{ grupo.creado_el|date:"d/m/Y" }}</dd>
+    </dl>
+    {% if puede_editar %}
+      <details class="mt-2" {% if abrir == "editar" %}open{% endif %}>
+        <summary class="cursor-pointer text-sm text-marca">Cambiar los datos del grupo</summary>
+        <form method="post" class="mt-2 max-w-xl">
+          {% csrf_token %}<input type="hidden" name="accion" value="editar">
+          {{ edicion }}
+          <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+        </form>
+      </details>
+    {% endif %}
+  </section>
+
+  {# Admins #}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Quién cuida el grupo</h3>
+    <ul class="space-y-1 text-sm">
+      {% for admin in admins %}
+        <li>{{ admin.usuario.alias }} <span class="text-slate-500">· admin del grupo desde el {{ admin.rol_desde|date:"d/m/Y" }} ({{ admin.rol_desde|timesince }})</span></li>
+      {% empty %}
+        <li class="text-slate-500">El grupo no tiene admin propio.</li>
+      {% endfor %}
+      {% for admin in admins_de_organizacion %}
+        <li>{{ admin.usuario.alias }} <span class="text-slate-500">· admin de {{ grupo.organizacion.nombre }} desde el {{ admin.desde|date:"d/m/Y" }} ({{ admin.desde|timesince }})</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# Subgrupos #}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Subgrupos</h3>
+    <ul class="space-y-1 text-sm">
+      {% for subgrupo in subgrupos %}
+        <li><a href="{% url 'grupos:grupo' subgrupo.pk %}" class="hover:text-marca hover:underline">{{ subgrupo.nombre }}</a> <span class="text-slate-500">· {{ subgrupo.personas }} persona{{ subgrupo.personas|pluralize }}</span></li>
+      {% empty %}
+        <li class="text-slate-500">No tiene subgrupos.</li>
+      {% endfor %}
+    </ul>
+    {% if puede_subgrupo %}
+      <details class="mt-2" {% if abrir == "subgrupo" %}open{% endif %}>
+        <summary class="cursor-pointer text-sm text-marca">+ Nuevo subgrupo</summary>
+        <form method="post" class="mt-2 max-w-xl">
+          {% csrf_token %}<input type="hidden" name="accion" value="subgrupo">
+          {{ subgrupo }}
+          <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+        </form>
+      </details>
+    {% endif %}
+  </section>
+
+  {# Miembros #}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Miembros, también los de sus subgrupos</h3>
+    {% if ve_lista %}
+      {% include "base/tabla.html" %}
+    {% else %}
+      <p class="text-sm text-slate-500">En esta organización, la lista de miembros solo la ven los admins.</p>
+    {% endif %}
+  </section>
+
+  {# Gestión de los miembros directos (solo quien puede admitir) #}
+  {% if puede_admitir %}
+    <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="mb-2 font-semibold">Miembros directos: admitir, sacar y cambiar el rol</h3>
+      <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+        {% for pertenencia in directos %}
+          <li class="flex flex-wrap items-center gap-2 py-1.5">
+            <span class="min-w-32 font-medium">{{ pertenencia.usuario.alias }}</span>
+            <form method="post" class="flex items-center gap-1">
+              {% csrf_token %}<input type="hidden" name="accion" value="rol"><input type="hidden" name="pertenencia" value="{{ pertenencia.pk }}">
+              <label class="sr-only" for="rol-{{ pertenencia.pk }}">Rol de {{ pertenencia.usuario.alias }}</label>
+              <select id="rol-{{ pertenencia.pk }}" name="rol" class="rounded border border-slate-300 bg-white px-1 py-0.5 dark:border-slate-700 dark:bg-slate-900">
+                {% for codigo, nombre in roles_que_da %}<option value="{{ codigo }}" {% if codigo == pertenencia.rol %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700">Cambiar rol</button>
+            </form>
+            <form method="post" class="ml-auto">
+              {% csrf_token %}<input type="hidden" name="accion" value="sacar"><input type="hidden" name="pertenencia" value="{{ pertenencia.pk }}">
+              <button type="submit" class="rounded border border-red-300 px-2 py-0.5 text-red-700 dark:border-red-800 dark:text-red-300"
+                      onclick="return confirm('¿Sacar a {{ pertenencia.usuario.alias|escapejs }} del grupo?')">Sacar del grupo</button>
+            </form>
+          </li>
+        {% empty %}
+          <li class="py-1.5 text-slate-500">No tiene miembros directos (puede tenerlos en sus subgrupos).</li>
+        {% endfor %}
+      </ul>
+      <details class="mt-2" {% if abrir == "admitir" %}open{% endif %}>
+        <summary class="cursor-pointer text-sm text-marca">+ Admitir a una persona</summary>
+        <form method="post" class="mt-2 max-w-xl">
+          {% csrf_token %}<input type="hidden" name="accion" value="admitir">
+          {{ admision }}
+          <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Admitir</button>
+        </form>
+      </details>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

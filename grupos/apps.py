@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «grupos».
 """
 
-from base.contrato import Capa, DatosDeEjemplo, Emision, ModuloConfig, Permiso
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, Vista
 
 
 class GruposConfig(ModuloConfig):
@@ -49,6 +49,18 @@ class GruposConfig(ModuloConfig):
         ),
     )
     permisos = (
+        # Ver quién está en el grupo (13 de noviembre de 2026, a petición de la persona usuaria). Además,
+        # cada organización puede cerrarlo para sus grupos (Organizacion.miembros_ven_miembros).
+        Permiso(
+            "grupos.ver_miembros",
+            "Ver la lista de miembros del grupo y de sus subgrupos",
+            roles=("usuario", "admin_grupo", "admin_org"),
+        ),
+        Permiso(
+            "grupos.ver_arbol",
+            "Ver el árbol de los grupos que administra, con sus subgrupos, en «Organizaciones y grupos → Árbol»",
+            roles=("admin_grupo", "admin_org"),
+        ),
         Permiso("grupos.editar_grupo", "Editar los datos del grupo", roles=("admin_grupo", "admin_org")),
         Permiso("grupos.crear_subgrupo", "Crear subgrupos dentro del grupo", roles=("admin_grupo", "admin_org")),
         Permiso("grupos.admitir", "Admitir personas en el grupo o sacarlas de él", roles=("admin_grupo", "admin_org")),
@@ -68,3 +80,107 @@ class GruposConfig(ModuloConfig):
         ),
     )
     datos_de_ejemplo = DatosDeEjemplo(crear="grupos.ejemplos.crear", borrar="grupos.ejemplos.borrar")
+    # Sección «Organizaciones y grupos» (13 de noviembre de 2026): la ven todas las personas; «Árbol», solo
+    # quien administra algo. Las fichas de grupo y de organización cuelgan de la sección principal.
+    menu = (
+        EntradaDeMenu(
+            codigo="grupos.organizaciones",
+            nombre="Organizaciones y grupos",
+            url="grupos:mis_grupos",
+            icono="⌂",
+            orden=200,
+            otras_rutas=("grupos:grupo", "grupos:organizacion"),
+            subsecciones=(
+                EntradaDeMenu(
+                    codigo="grupos.mis_grupos",
+                    nombre="Mis grupos",
+                    url="grupos:mis_grupos",
+                    icono="◉",
+                    vistas=(Vista("Mis grupos", "grupos:mis_grupos"),),
+                ),
+                EntradaDeMenu(
+                    codigo="grupos.arbol",
+                    nombre="Árbol",
+                    url="grupos:arbol",
+                    icono="⋔",
+                    permiso="grupos.ver_arbol",
+                    vistas=(Vista("Árbol", "grupos:arbol"),),
+                ),
+                EntradaDeMenu(
+                    codigo="grupos.relaciones",
+                    nombre="Relaciones",
+                    url="grupos:relaciones",
+                    icono="⇄",
+                    vistas=(Vista("Lista", "grupos:relaciones"),),
+                ),
+                EntradaDeMenu(
+                    codigo="grupos.invitaciones",
+                    nombre="Invitaciones",
+                    url="grupos:invitaciones",
+                    icono="✉",
+                    contador="grupos.contadores.invitaciones_pendientes",
+                    vistas=(Vista("Recibidas y enviadas", "grupos:invitaciones"),),
+                ),
+            ),
+        ),
+    )
+    ayuda = (
+        Ayuda(
+            seccion="grupos.organizaciones",
+            titulo="Organizaciones y grupos",
+            texto=(
+                "Dónde está cada cual. Una organización (ORG) es independiente de las demás; dentro tiene grupos "
+                "(GRU), que pueden contener subgrupos a cualquier profundidad. Quien está en un grupo cuenta "
+                "también como miembro de los grupos que lo contienen.\n\n"
+                "En la ficha de un grupo se ven su camino, sus subgrupos, sus admins y, si la organización lo "
+                "permite, la lista de sus miembros. Quien lo administra puede además cambiar sus datos, crear "
+                "subgrupos, admitir o sacar personas y cambiar su rol."
+            ),
+        ),
+        Ayuda(
+            seccion="grupos.mis_grupos",
+            titulo="Mis grupos",
+            texto=(
+                "Los grupos en los que estás, por organización y en forma de árbol. Los que salen en gris no los "
+                "has elegido tú: contienen a uno de los tuyos, así que también eres miembro de ellos (por "
+                "herencia). «Asamblea base» es tu grupo más local, el que te valida; solo hay una por persona.\n\n"
+                "Pulsa un grupo para ver su ficha."
+            ),
+        ),
+        Ayuda(
+            seccion="grupos.arbol",
+            titulo="Árbol",
+            texto=(
+                "Los grupos que administras, con todos sus subgrupos: el superadmin ve todos; el admin de una "
+                "organización, la suya entera; el admin de un grupo, su rama. «Personas» cuenta a cada persona "
+                "una vez, aunque esté en varios subgrupos.\n\n"
+                "Arriba están las organizaciones: pulsa una para cambiar sus datos, sus admins y si sus miembros "
+                "ven la lista de miembros. El superadmin crea aquí las organizaciones nuevas."
+            ),
+        ),
+        Ayuda(
+            seccion="grupos.relaciones",
+            titulo="Relaciones",
+            texto=(
+                "Relaciones libres entre grupos de una misma organización («colabora con», «nació de»…). No dan "
+                "ni quitan permisos: solo «contiene» (un grupo dentro de otro) cambia quién ve qué. Ves las de "
+                "tus grupos y las de los que administras; las crea o borra quien puede editar uno de los dos "
+                "grupos. Más adelante se verán también en un grafo."
+            ),
+        ),
+        Ayuda(
+            seccion="grupos.invitaciones",
+            titulo="Invitaciones",
+            texto=(
+                "Invitaciones de un grupo a un grupo de otra organización para algo concreto (por ejemplo, un "
+                "proyecto conjunto). Aceptarla solo abre eso: nadie cambia de grupo ni de organización.\n\n"
+                "El número del menú son las pendientes que puedes responder tú (de entrada, el admin del grupo "
+                "invitado). Las invitaciones se hacen desde lo que se comparte (un proyecto…), no desde aquí; "
+                "aquí se aceptan, se rechazan o se retiran."
+            ),
+        ),
+    )
+
+    # Al arrancar: conecta las señales que ponen al día el número de invitaciones del menú.
+    def ready(self):
+        from . import senales  # noqa: F401 (importarlo basta para conectar sus señales)

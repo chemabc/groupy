@@ -1,0 +1,50 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Organizaciones y grupos → Relaciones» (grupos/views.py, relaciones). Recibe «filas» (cada
+  relación y si quien mira puede borrarla), «formulario» (para crear una; nada si no puede editar ningún
+  grupo), error y abrir.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Relaciones libres entre grupos de una misma organización. No cambian permisos: solo «contiene» (un grupo dentro de otro) cambia quién ve qué.</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-xs text-slate-500 dark:bg-slate-800/50">
+        <tr><th class="px-3 py-2">Organización</th><th class="px-3 py-2">Grupo</th><th class="px-3 py-2">Relación</th><th class="px-3 py-2">Con el grupo</th><th class="px-3 py-2">Detalles</th><th class="px-3 py-2"><span class="sr-only">Acciones</span></th></tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for fila in filas %}
+          <tr>
+            <td class="px-3 py-1.5">{{ fila.relacion.origen.organizacion.nombre }}</td>
+            <td class="px-3 py-1.5"><a href="{% url 'grupos:grupo' fila.relacion.origen_id %}" class="hover:text-marca hover:underline">{{ fila.relacion.camino_origen }}</a></td>
+            <td class="px-3 py-1.5 font-medium">{{ fila.relacion.tipo }}</td>
+            <td class="px-3 py-1.5"><a href="{% url 'grupos:grupo' fila.relacion.destino_id %}" class="hover:text-marca hover:underline">{{ fila.relacion.camino_destino }}</a></td>
+            <td class="px-3 py-1.5 text-slate-500">{{ fila.relacion.descripcion }}</td>
+            <td class="px-3 py-1.5 text-right">
+              {% if fila.editable %}
+                <form method="post">
+                  {% csrf_token %}<input type="hidden" name="accion" value="borrar"><input type="hidden" name="relacion" value="{{ fila.relacion.pk }}">
+                  <button type="submit" class="rounded border border-red-300 px-2 py-0.5 text-xs text-red-700 dark:border-red-800 dark:text-red-300">Borrar</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="px-3 py-3 text-slate-500">Tus grupos no tienen relaciones.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if formulario %}
+    <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir == "crear" %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-semibold">+ Nueva relación</summary>
+      <form method="post" class="mt-2 max-w-xl">
+        {% csrf_token %}<input type="hidden" name="accion" value="crear">
+        {{ formulario }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+      </form>
+    </details>
+  {% endif %}
+</div>
+{% endblock %}

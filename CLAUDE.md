@@ -80,4 +80,5 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   (módulo `administracion`), y `etiquetas` (de cada organización y comunes, con relacionadas, selector con
   sugerencias en `base`; siempre con la primera letra en mayúscula, el resto en minúsculas y sin
   tildes) y `tipologias` («Configuración → Tipologías»: árbol común del superadmin, subtipos propios de cada
-  organización, campos heredados y ordenados arrastrando). Recuerda `migrate --database=boveda`.
+  organización, campos heredados y ordenados arrastrando) y la sección «Organizaciones y grupos» (mis grupos,
+  árbol, fichas de grupo y de organización, relaciones e «Invitaciones (N)»). Recuerda `migrate --database=boveda`.

@@ -41,6 +41,15 @@ class Organizacion(models.Model):
     creada_el = models.DateField(
         "creada el día", default=timezone.localdate, help_text="Día en que se dio de alta en la plataforma."
     )
+    miembros_ven_miembros = models.BooleanField(
+        "los miembros ven la lista de miembros",
+        default=True,
+        help_text=(
+            "Si las personas de cada grupo ven quién más está en él (y en sus subgrupos). Lo decide el admin "
+            "de la organización para todos sus grupos. Solo puede cerrar: si el superadmin ha quitado al rol "
+            "«usuario» el permiso «grupos.ver_miembros», marcarlo no lo devuelve. Los admins lo ven siempre."
+        ),
+    )
 
     class Meta:
         verbose_name = "organización"

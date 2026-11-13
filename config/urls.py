@@ -14,6 +14,8 @@ urlpatterns = [
     path("trastienda/", admin.site.urls),
     # Módulo «usuarios»: entrar, salir y «Mi cuenta».
     path("cuenta/", include("usuarios.urls")),
+    # Módulo «grupos»: Organizaciones y grupos (mis grupos, árbol, fichas, relaciones e invitaciones).
+    path("organizaciones/", include("grupos.urls")),
     # Módulo «administracion»: pantallas del superadmin (personas de la bóveda, dominios y alias).
     path("usuarios/", include("administracion.urls")),
     # Módulo «tipologias»: Configuración → Tipologías.

@@ -8,6 +8,8 @@ entera o solo la zona central. No hace ninguna consulta propia: el menú sale de
 memoria, y el alias y las preferencias, del usuario que Django ya ha cargado para la petición.
 """
 
+from django.utils.module_loading import import_string
+
 from .preferencias import CLAVES
 from .registro import puede_ver_entrada, registro
 
@@ -30,15 +32,29 @@ def interfaz(request):
     # una capa superior): basta con su alias (get_username) y sus preferencias.
     usuario = getattr(request, "user", None)
     conectado = usuario is not None and usuario.is_authenticated
+    # Secciones principales que puede ver, y qué subsecciones hay que ocultarle y qué números lleva cada
+    # entrada con contador.
+    menu = [entrada for entrada in registro.menu if puede_ver_entrada(usuario, entrada)] if conectado else []
+    ocultas, contadores = set(), {}
+    for entrada in menu:
+        _recorrer_subsecciones(usuario, entrada, ocultas, contadores)
+    solo_la_zona = pide_solo_la_zona(request)
     # Título de la pestaña: «Vista · Sección · Asambleas», con lo que haya.
     partes = [vista_activa.nombre if vista_activa else "", seccion.nombre if seccion else "", NOMBRE_DE_LA_APLICACION]
     return {
         "interfaz": {
             # Plantilla de la que heredan las páginas: la página entera, o solo la zona central si la
             # pide la navegación con htmx.
-            "plantilla": "base/zona.html" if pide_solo_la_zona(request) else "base/pagina.html",
+            "plantilla": "base/zona.html" if solo_la_zona else "base/pagina.html",
+            # Si se manda solo la zona central. Entonces la zona lleva también los contadores del menú,
+            # para ponerlos al día sin volver a pintar el menú (ver base/zona.html).
+            "solo_la_zona": solo_la_zona,
             # Secciones del menú que puede ver (las que piden un permiso, solo si lo tiene).
-            "menu": [entrada for entrada in registro.menu if puede_ver_entrada(usuario, entrada)] if conectado else [],
+            "menu": menu,
+            # Códigos de las subsecciones que no puede ver (piden un permiso que no tiene).
+            "ocultas": ocultas,
+            # Número de cada entrada con contador: {código: número}.
+            "contadores": contadores,
             "seccion": seccion,
             # Códigos de las entradas del camino, para marcarlas en el menú.
             "codigos": [entrada.codigo for entrada in camino],
@@ -53,6 +69,22 @@ def interfaz(request):
             "preferencias": {clave: getattr(usuario, clave, "") for clave in CLAVES} if conectado else {},
         }
     }
+
+
+# Recorre una entrada del menú y sus subsecciones: apunta en «ocultas» las subsecciones que la persona
+# no puede ver (y ya no baja por ellas) y en «contadores» el número de las que lo llevan. Lo usa interfaz().
+#   - usuario: quien mira.
+#   - entrada: la EntradaDeMenu (ya se sabe que la puede ver).
+#   - ocultas: conjunto que se va rellenando con códigos.
+#   - contadores: diccionario que se va rellenando con {código: número}.
+def _recorrer_subsecciones(usuario, entrada, ocultas, contadores):
+    if entrada.contador:
+        contadores[entrada.codigo] = import_string(entrada.contador)(usuario)
+    for subseccion in entrada.subsecciones:
+        if puede_ver_entrada(usuario, subseccion):
+            _recorrer_subsecciones(usuario, subseccion, ocultas, contadores)
+        else:
+            ocultas.add(subseccion.codigo)
 
 
 # Dice si la petición la ha hecho la navegación con htmx del menú y, por tanto, basta con mandar la zona

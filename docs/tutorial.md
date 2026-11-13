@@ -427,3 +427,26 @@ sirve aquí y dónde se usa.
 - **Nadie ve lo de otra organización.** La vista de sugerencias solo usa la organización que le piden si
   quien escribe está en ella; si no, solo devuelve las comunes. La regla está en el servidor, no en el
   navegador, porque la dirección la puede escribir cualquiera.
+
+## 18. Una sección para todos: cada cual ve lo suyo (13 de noviembre de 2026)
+
+- **Una pantalla, distintas personas.** «Organizaciones y grupos» es la misma para el superadmin, los
+  admins y cualquier miembro. La vista calcula una vez el **alcance** de quien mira (`grupos/acceso.py`:
+  sus grupos y los que administra) y con eso filtra las listas y decide qué botones salen. La plantilla
+  solo pinta lo que le llega.
+- **Comprobar dos veces.** Ocultar un botón no basta: cualquiera puede mandar el formulario a mano. Por
+  eso, al recibirlo, la vista vuelve a comprobar el permiso con `exigir()`, que responde con la pantalla
+  403 y explica qué falta.
+- **Permiso y límite.** Para la lista de miembros mandan dos cosas a la vez: el permiso del rol (que
+  decide el superadmin) y un interruptor de la organización (que decide su admin). Se combinan con «y»:
+  el admin de la organización puede cerrar, pero no abrir lo que el superadmin ha cerrado.
+- **Un número en el menú que no se queda viejo.** El menú no se vuelve a pintar al navegar (para que no
+  salte), así que «Invitaciones (1)» se quedaría en 1 después de aceptar. La solución de htmx es
+  `hx-swap-oob` («fuera de banda»): la respuesta lleva, además de la zona central, un
+  `<span id="contador-…" hx-swap-oob="true">(0)</span>`, y htmx lo pone en lugar del que tiene el mismo
+  id, esté donde esté.
+- **Caché con versión.** Contar invitaciones en cada página costaría una consulta. Se guarda el
+  resultado en Redis con un número de versión en la clave; al cambiar una invitación se sube la versión
+  y todas las claves viejas dejan de usarse solas. Se sube al **terminar** la transacción
+  (`transaction.on_commit`): si se hiciera antes, otra petición podría guardar el número viejo. En las
+  pruebas, `TestCase` nunca termina la transacción, así que se usa `captureOnCommitCallbacks(execute=True)`.

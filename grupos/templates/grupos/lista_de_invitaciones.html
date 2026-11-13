@@ -1,0 +1,35 @@
+{% comment %}
+  Una lista de invitaciones, para grupos/invitaciones.html. Recibe «titulo», «filas» (invitación, «que»,
+  puede_responder, puede_retirar) y «vacio» (el texto si no hay ninguna).
+{% endcomment %}
+<section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+  <h2 class="mb-2 font-semibold">{{ titulo }}</h2>
+  <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+    {% for fila in filas %}
+      {% with invitacion=fila.invitacion %}
+        <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2" data-invitacion="{{ invitacion.pk }}">
+          <span class="rounded px-1.5 text-xs {% if invitacion.estado == 'pendiente' %}bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300{% else %}bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300{% endif %}">{{ invitacion.get_estado_display }}</span>
+          <span><strong>{{ invitacion.grupo_que_invita.nombre }}</strong> <span class="text-slate-500">({{ invitacion.grupo_que_invita.organizacion.nombre }})</span>
+            invita a <strong>{{ invitacion.grupo_invitado.nombre }}</strong> <span class="text-slate-500">({{ invitacion.grupo_invitado.organizacion.nombre }})</span>
+            a {{ fila.que }}</span>
+          <span class="text-xs text-slate-500">el {{ invitacion.creada_el|date:"d/m/Y" }}{% if invitacion.invitada_por %} · por {{ invitacion.invitada_por.alias }}{% endif %}{% if invitacion.respondida_por %} · {{ invitacion.get_estado_display|lower }} por {{ invitacion.respondida_por.alias }} el {{ invitacion.respondida_el|date:"d/m/Y" }}{% endif %}</span>
+          {% if invitacion.mensaje %}<p class="w-full whitespace-pre-line text-slate-600 dark:text-slate-300">{{ invitacion.mensaje }}</p>{% endif %}
+          {% if fila.puede_responder or fila.puede_retirar %}
+            <form method="post" class="flex w-full gap-2">
+              {% csrf_token %}<input type="hidden" name="invitacion" value="{{ invitacion.pk }}">
+              {% if fila.puede_responder %}
+                <button type="submit" name="accion" value="aceptar" class="rounded bg-marca px-2 py-0.5 text-white">Aceptar</button>
+                <button type="submit" name="accion" value="rechazar" class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700">Rechazar</button>
+              {% endif %}
+              {% if fila.puede_retirar %}
+                <button type="submit" name="accion" value="retirar" class="rounded border border-red-300 px-2 py-0.5 text-red-700 dark:border-red-800 dark:text-red-300">Retirar</button>
+              {% endif %}
+            </form>
+          {% endif %}
+        </li>
+      {% endwith %}
+    {% empty %}
+      <li class="py-1.5 text-slate-500">{{ vacio }}</li>
+    {% endfor %}
+  </ul>
+</section>

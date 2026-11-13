@@ -1,0 +1,69 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de una organización (grupos/views.py, organizacion). Recibe: organizacion, datos (formulario de
+  sus datos), nombrar (formulario para nombrar admin, solo el superadmin; si no, nada), admins,
+  principales (grupos sin padre, con «personas»), numero_de_grupos, error y abrir.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-4">
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="text-lg font-semibold">{{ organizacion.nombre }}</h2>
+    {% if organizacion.descripcion %}<p class="mt-1 whitespace-pre-line text-sm">{{ organizacion.descripcion }}</p>{% endif %}
+    <dl class="mt-2 grid grid-cols-[16rem_1fr] gap-x-3 gap-y-1 text-sm">
+      <dt class="text-slate-500">En la plataforma desde</dt><dd>{{ organizacion.creada_el|date:"d/m/Y" }}</dd>
+      <dt class="text-slate-500">Grupos (con todos los subgrupos)</dt><dd>{{ numero_de_grupos }}</dd>
+      <dt class="text-slate-500">Los miembros ven la lista de miembros</dt><dd>{{ organizacion.miembros_ven_miembros|yesno:"Sí,No (solo los admins)" }}</dd>
+    </dl>
+    <details class="mt-2" {% if abrir == "datos" %}open{% endif %}>
+      <summary class="cursor-pointer text-sm text-marca">Cambiar los datos</summary>
+      <form method="post" class="mt-2 max-w-xl">
+        {% csrf_token %}<input type="hidden" name="accion" value="datos">
+        {{ datos }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+      </form>
+    </details>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Grupos principales</h3>
+    <ul class="space-y-1 text-sm">
+      {% for grupo in principales %}
+        <li><a href="{% url 'grupos:grupo' grupo.pk %}" class="hover:text-marca hover:underline">{{ grupo.nombre }}</a> <span class="text-slate-500">· {{ grupo.personas }} persona{{ grupo.personas|pluralize }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Admins de la organización</h3>
+    <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+      {% for admin in admins %}
+        <li class="flex items-center gap-2 py-1.5">
+          <span>{{ admin.usuario.alias }} <span class="text-slate-500">· desde el {{ admin.desde|date:"d/m/Y" }} ({{ admin.desde|timesince }})</span></span>
+          {% if nombrar %}
+            <form method="post" class="ml-auto">
+              {% csrf_token %}<input type="hidden" name="accion" value="quitar"><input type="hidden" name="usuario" value="{{ admin.usuario.pk }}">
+              <button type="submit" class="rounded border border-red-300 px-2 py-0.5 text-red-700 dark:border-red-800 dark:text-red-300">Quitar de admin</button>
+            </form>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="py-1.5 text-slate-500">No tiene admins.</li>
+      {% endfor %}
+    </ul>
+    {% if nombrar %}
+      <details class="mt-2" {% if abrir == "nombrar" %}open{% endif %}>
+        <summary class="cursor-pointer text-sm text-marca">+ Nombrar admin</summary>
+        <form method="post" class="mt-2 max-w-xl">
+          {% csrf_token %}<input type="hidden" name="accion" value="nombrar">
+          {{ nombrar }}
+          <p class="mb-2 text-xs text-slate-500">Debe estar ya en algún grupo de la organización.</p>
+          <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Nombrar</button>
+        </form>
+      </details>
+    {% else %}
+      <p class="mt-2 text-xs text-slate-500">Los admins de la organización los nombra o los quita el superadmin.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

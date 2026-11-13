@@ -243,6 +243,14 @@ class EntradaDeMenu:
     vistas: tuple[Vista, ...] = ()
     # Subsecciones que cuelgan de ella en el menú izquierdo.
     subsecciones: tuple["EntradaDeMenu", ...] = ()
+    # Otras direcciones que pertenecen a esta entrada sin salir en el menú superior (por ejemplo, la
+    # ficha de un grupo). Al visitarlas, el menú marca esta entrada y la cabecera muestra su nombre.
+    otras_rutas: tuple[str, ...] = ()
+    # Ruta de una función que recibe el usuario y devuelve un número que se muestra entre paréntesis tras
+    # el nombre («Invitaciones (2)»), también cuando es 0. Vacío: sin número. Debe ser barata (se llama
+    # en cada página): lo normal es que guarde el resultado en la caché. Ejemplo:
+    # «grupos.contadores.invitaciones_pendientes».
+    contador: str = ""
 
 
 @dataclass(frozen=True)

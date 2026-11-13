@@ -9,7 +9,7 @@ mitad de una pantalla.
 
 from django.apps import apps
 from django.core import checks
-from django.urls import NoReverseMatch, reverse
+from django.urls import NoReverseMatch, URLPattern, URLResolver, get_resolver, reverse
 from django.utils.module_loading import import_string
 
 from .registro import registro
@@ -59,12 +59,44 @@ def _comprobar_modelos():
 
 
 # Comprueba que existen las direcciones web a las que llevan las entradas y las vistas del menú. Si un
-# módulo escribe mal el nombre de una ruta, se ve aquí y no al pintar el menú.
+# módulo escribe mal el nombre de una ruta, se ve aquí y no al pintar el menú. Las entradas y las vistas
+# deben poder abrirse sin datos (reverse sin parámetros); las «otras_rutas» (fichas, que llevan un
+# número), basta con que existan.
 def _comprobar_direcciones():
     errores = []
+    existentes = set(_nombres_de_rutas(get_resolver()))
+    sin_parametros = {
+        url for entrada in registro.menu for url in _direcciones_sin_parametros(entrada)
+    }
     for url in registro.rutas:
-        try:
-            reverse(url)
-        except NoReverseMatch:
+        if url not in existentes:
             errores.append(checks.Error(f"El menú lleva a «{url}», pero esa dirección no existe.", id="base.E004"))
+            continue
+        if url in sin_parametros:
+            try:
+                reverse(url)
+            except NoReverseMatch:
+                errores.append(checks.Error(f"El menú lleva a «{url}», que pide datos en la dirección: va en «otras_rutas».", id="base.E004"))
     return errores
+
+
+# Direcciones de una entrada del menú, de sus vistas y de sus subsecciones (no sus «otras_rutas»), que
+# deben poder abrirse sin datos.
+def _direcciones_sin_parametros(entrada):
+    yield entrada.url
+    yield from (vista.url for vista in entrada.vistas)
+    for subseccion in entrada.subsecciones:
+        yield from _direcciones_sin_parametros(subseccion)
+
+
+# Nombres completos de todas las rutas de la aplicación («grupos:grupo»), recorriendo las listas de
+# direcciones incluidas con su espacio de nombres.
+#   - resolutor: la lista de direcciones (al principio, la general de config/urls.py).
+#   - prefijo: el espacio de nombres acumulado («grupos:»).
+def _nombres_de_rutas(resolutor, prefijo=""):
+    for patron in resolutor.url_patterns:
+        if isinstance(patron, URLResolver):
+            espacio = f"{prefijo}{patron.namespace}:" if patron.namespace else prefijo
+            yield from _nombres_de_rutas(patron, espacio)
+        elif isinstance(patron, URLPattern) and patron.name:
+            yield f"{prefijo}{patron.name}"
