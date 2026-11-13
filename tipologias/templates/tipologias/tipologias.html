@@ -1,0 +1,108 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Configuración → Tipologías» (tipologias/views.py). Recibe: familia, ramas (cada tipología con
+  su nivel, camino y si es editable), elegida (la tipología de la derecha, o nada), camino, editable,
+  heredados y propios (sus campos), los formularios nueva, edicion y campo, error y abrir (la acción que
+  falló, para dejar abierto su formulario). Los campos propios se ordenan arrastrando (componente
+  «listaOrdenable» de interfaz.js, con SortableJS).
+{% endcomment %}
+{% block contenido %}
+<div class="grid gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
+
+  {# Árbol #}
+  <aside class="space-y-3">
+    <nav class="rounded-lg border border-slate-200 bg-white p-2 text-sm dark:border-slate-800 dark:bg-slate-900" aria-label="Árbol de tipologías">
+      {% for fila in ramas %}
+        <a href="?t={{ fila.rama.tipologia.pk }}" style="padding-left: {{ fila.rama.nivel }}.25rem"
+           class="flex items-center justify-between gap-2 rounded py-1 pr-2 {% if elegida and fila.rama.tipologia.pk == elegida.pk %}bg-marca/10 font-medium text-marca{% else %}hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}"
+           {% if elegida and fila.rama.tipologia.pk == elegida.pk %}aria-current="page"{% endif %}>
+          <span class="pl-2">{% if fila.rama.nivel %}↳ {% endif %}{{ fila.rama.tipologia.nombre }}</span>
+          {% if fila.rama.tipologia.organizacion %}<span class="shrink-0 rounded bg-slate-100 px-1 text-xs text-slate-500 dark:bg-slate-800">{{ fila.rama.tipologia.organizacion }}</span>{% endif %}
+        </a>
+      {% empty %}
+        <p class="p-2 text-slate-500">Aún no hay tipos.</p>
+      {% endfor %}
+    </nav>
+    <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir == "crear_tipologia" %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-semibold">+ Nuevo tipo o subtipo</summary>
+      <form method="post" class="mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="crear_tipologia">
+        {% if elegida %}<input type="hidden" name="t" value="{{ elegida.pk }}">{% endif %}
+        {{ nueva }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+      </form>
+    </details>
+  </aside>
+
+  {# Tipología elegida #}
+  <section class="space-y-4">
+    {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+    {% if not elegida %}
+      <p class="text-sm text-slate-600 dark:text-slate-300">Elige un tipo en el árbol para ver y cambiar sus campos, o crea uno nuevo.</p>
+    {% else %}
+      <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <p class="text-xs text-slate-500">{{ camino }}</p>
+        <h2 class="text-lg font-semibold">{{ elegida.nombre }}
+          <span class="text-sm font-normal text-slate-500">· {{ elegida.organizacion|default:"común a todas las organizaciones" }}</span></h2>
+        {% if elegida.descripcion %}<p class="mt-1 text-sm">{{ elegida.descripcion }}</p>{% endif %}
+        {% if not editable %}
+          <p class="mt-2 text-sm text-amber-800 dark:text-amber-300">Es un tipo común: solo lo cambia el superadmin. Puedes crearle subtipos propios de tu organización.</p>
+        {% else %}
+          <details class="mt-2" {% if abrir == "editar_tipologia" %}open{% endif %}>
+            <summary class="cursor-pointer text-sm text-marca">Cambiar nombre o descripción</summary>
+            <form method="post" class="mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="editar_tipologia"><input type="hidden" name="t" value="{{ elegida.pk }}">
+              {{ edicion }}
+              <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+            </form>
+          </details>
+        {% endif %}
+      </div>
+
+      <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <h3 class="mb-2 font-semibold">Campos que pide</h3>
+        {% if heredados %}
+          <ul class="mb-2 space-y-1 text-sm text-slate-500">
+            {% for c in heredados %}<li class="rounded border border-dashed border-slate-300 px-2 py-1 dark:border-slate-700">{{ c.nombre }} <span class="text-xs">({{ c.get_tipo_display|lower }}{% if c.obligatorio %}, obligatorio{% endif %}) · heredado de {{ c.tipologia }}</span></li>{% endfor %}
+          </ul>
+        {% endif %}
+        <ul x-data="listaOrdenable" data-url="{% url 'tipologias:ordenar' %}" data-tipologia="{{ elegida.pk }}" class="space-y-1 text-sm">
+          {% for c in propios %}
+            <li data-id="{{ c.pk }}" class="flex items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+              {% if editable %}<span class="asa cursor-grab select-none text-slate-400" title="Arrastra para ordenar" aria-hidden="true">⠿</span>{% endif %}
+              <span class="flex-1">{{ c.nombre }} <span class="text-xs text-slate-500">({{ c.get_tipo_display|lower }}{% if c.obligatorio %}, obligatorio{% endif %}{% if c.lista_de_opciones %}: {{ c.lista_de_opciones|join:", " }}{% endif %})</span></span>
+              {% if editable %}
+                <form method="post" x-data @submit="confirm('¿Quitar el campo «{{ c.nombre|escapejs }}»?') || $event.preventDefault()">
+                  {% csrf_token %}
+                  <input type="hidden" name="accion" value="borrar_campo"><input type="hidden" name="t" value="{{ elegida.pk }}"><input type="hidden" name="campo" value="{{ c.pk }}">
+                  <button type="submit" class="text-xs text-red-700 hover:underline dark:text-red-400" aria-label="Quitar {{ c.nombre }}">Quitar</button>
+                </form>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="text-slate-500">{% if heredados %}No pide campos propios, solo los heredados.{% else %}No pide ningún campo.{% endif %}</li>
+          {% endfor %}
+        </ul>
+        {% if editable %}
+          <details class="mt-3" {% if abrir == "crear_campo" %}open{% endif %}>
+            <summary class="cursor-pointer text-sm font-semibold text-marca">+ Añadir un campo</summary>
+            <form method="post" class="mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="crear_campo"><input type="hidden" name="t" value="{{ elegida.pk }}">
+              {{ campo }}
+              <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Añadir</button>
+            </form>
+          </details>
+          <form method="post" class="mt-4" x-data @submit="confirm('¿Borrar el tipo «{{ elegida.nombre|escapejs }}» y sus campos?') || $event.preventDefault()">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="borrar_tipologia"><input type="hidden" name="t" value="{{ elegida.pk }}">
+            <button type="submit" class="text-sm text-red-700 hover:underline dark:text-red-400">Borrar este tipo</button>
+          </form>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

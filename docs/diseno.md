@@ -96,7 +96,6 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 | Base | `base` | Contrato de módulo y registro de módulos, diseño de la interfaz, tabla filtrable, botón «copiar» de los campos |
 | Base | `eventos_sw` | Avisos internos: síncronos (misma transacción) y asíncronos (bandeja de salida + trabajador) |
 | Base | `anclas` | Referencias «tipo + id» y huecos en las fichas para colgar cosas de otros módulos |
-| Base | `tipologias` | Árbol de tipologías de proyectos y de eventos, con campos personalizados (plantillas del superadmin) |
 | Base | `ejemplos` | Datos de ejemplo reversibles por módulo |
 | Identidad | `boveda` | Identidad real, validación, pases con firma ciega, rondas de revalidación |
 | Identidad | `usuarios` | Usuario con seudónimo, preferencias (tema, letra, densidad), recuperación y **talentos** |
@@ -104,6 +103,7 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 | Organización | `grupos` | Organizaciones, grupos, relaciones, tabla de cierre, pertenencias y admisiones |
 | Organización | `permisos` | Roles, cometidos, permisos declarados por cada módulo, permisos precalculados, registro de acciones de los admin |
 | Organización | `etiquetas` | Etiquetas de una a tres palabras, de cada organización y comunes, con palabras relacionadas; sugerencias y fusión. *(Movido de Base a Organización el 13 de noviembre de 2026, porque cada organización tiene las suyas.)* El selector, genérico, está en `base` |
+| Organización | `tipologias` | Árbol de tipologías de proyectos y de eventos, con campos personalizados que heredan los subtipos. Las comunes, del superadmin; cada organización puede añadir subtipos propios. *(Movido de Base a Organización el 13 de noviembre de 2026, porque cada organización tiene las suyas.)* |
 | Organización | `audiencias` | «Quién puede ver esto», calculado una vez por persona |
 | Organización | `solicitudes` | Solicitudes con apoyos |
 | Organización | `moderacion` | Avisos, denuncias y ocultaciones provisionales |
@@ -865,6 +865,24 @@ En «Desarrollo y mantenimiento → Pruebas». Solo para el superadmin.
 - Al crear algo, la tipología se elige en una lista en árbol. Se ve en todas las listas, junto a las fechas.
 - Los valores de los campos personalizados se guardan en JSON dentro del propio objeto.
 
+### 9.1 Tipologías, fase 1 (13 de noviembre de 2026)
+
+- **Dónde se editan:** en una sección nueva del menú, **«Configuración → Tipologías»**, con dos vistas arriba
+  («De eventos» y «De proyectos»): el árbol a la izquierda y, a la derecha, el tipo elegido con sus campos.
+  La entrada se ve con el permiso `tipologias.gestionar` (admin de la organización) o siendo superadmin.
+- **Comunes y de cada organización:** las comunes las crea y cambia solo el superadmin. El admin de cada
+  organización puede añadir **subtipos propios** (de un tipo común o de otro suyo), que solo se ven en su
+  organización. Una organización nunca ve los tipos de otra, y los nombres solo se comparan con los comunes
+  y los suyos (dos organizaciones pueden tener un subtipo con el mismo nombre sin saberlo).
+- **Herencia:** un subtipo pide los campos de su tipo y los de más arriba, y después los suyos. Por eso la
+  clave de un campo no puede repetirse en la misma rama del árbol.
+- **Campos:** texto corto, texto largo, número, fecha, sí o no y lista de opciones; con explicación y si
+  es obligatorio. Se **ordenan arrastrándolos** por el asa (SortableJS, MIT, componente `listaOrdenable` de
+  `interfaz.js`). `tipologias.servicios.formulario_de()` hace el formulario que usarán proyectos y eventos, y
+  `a_json()` deja los valores listos para guardarlos en JSON.
+- **Pendiente:** los cometidos y las tareas modelo de la plantilla llegarán con `proyectos` y `eventos`;
+  borrar un tipo tendrá que comprobar entonces que nada lo usa.
+
 ---
 
 ## 10. Eventos y calendario
@@ -1143,8 +1161,6 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
   material perdido y retomarlo. Idea: cada módulo declara en su contrato una «fuente de búsqueda» (como las
   fuentes del calendario) y un buscador común las recorre, respetando las audiencias (lo personal no
   entra). *(por diseñar cuando haya módulos con material)*
-- Tipologías: si un subtipo hereda los campos de su tipo (de momento sí, revisable con el uso) y dónde
-  se editan.
 - Trabajador de colas: Celery o RQ.
 - Qué mensajes de Telegram entran a un chat o a un debate.
 - Detección de comportamientos sospechosos (señales sin mirar identidades).

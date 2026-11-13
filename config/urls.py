@@ -16,6 +16,8 @@ urlpatterns = [
     path("cuenta/", include("usuarios.urls")),
     # Módulo «administracion»: pantallas del superadmin (personas de la bóveda, dominios y alias).
     path("usuarios/", include("administracion.urls")),
+    # Módulo «tipologias»: Configuración → Tipologías.
+    path("configuracion/tipologias/", include("tipologias.urls")),
     # Módulo «etiquetas»: sugerencias del selector de etiquetas.
     path("etiquetas/", include("etiquetas.urls")),
     # Módulo «mantenimiento»: documentación del proyecto y entrada a la trastienda.

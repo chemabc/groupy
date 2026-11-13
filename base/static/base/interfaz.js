@@ -244,6 +244,48 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 
+  // Componente de una lista que se ordena arrastrando sus elementos por el asa (⠿), con SortableJS. Al
+  // soltar, manda el orden nuevo al servidor: {tipologia, orden: [ids]} a la dirección de data-url, con
+  // la clave CSRF. Cada elemento lleva su id en data-id. Si no hay asas (no se puede editar), no hace nada.
+  // Lo usa la pantalla de tipologías (tipologias/templates/tipologias/tipologias.html).
+  Alpine.data("listaOrdenable", () => ({
+    // Al arrancar: prepara SortableJS sobre la lista. forceFallback: arrastra con el ratón «a mano» en
+    // lugar del arrastre nativo del navegador, que se comporta distinto en cada uno.
+    init() {
+      if (!this.$root.querySelector(".asa") || typeof Sortable === "undefined") return;
+      Sortable.create(this.$root, {
+        handle: ".asa",
+        animation: 150,
+        forceFallback: true,
+        onEnd: () => this.guardar(),
+      });
+    },
+
+    // Manda al servidor el orden actual de los elementos. Si no se puede guardar (sin conexión, sin
+    // permiso…), lo avisa y recarga la página, para no dejar a la vista un orden que no se ha guardado.
+    async guardar() {
+      const orden = [...this.$root.querySelectorAll("[data-id]")].map((elemento) => elemento.dataset.id);
+      let guardado = false;
+      try {
+        const respuesta = await fetch(this.$root.dataset.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content,
+          },
+          body: JSON.stringify({ tipologia: this.$root.dataset.tipologia, orden }),
+        });
+        guardado = respuesta.ok;
+      } catch {
+        guardado = false;
+      }
+      if (!guardado) {
+        alert("No se ha podido guardar el nuevo orden. Se vuelve a cargar la página.");
+        window.location.reload();
+      }
+    },
+  }));
+
   // Componente del selector de varias palabras (etiquetas…) con sugerencias: base/formularios.py,
   // SelectorDePalabras, y su plantilla base/templates/base/selector_de_palabras.html. Guarda las palabras
   // elegidas, pide sugerencias al servidor mientras se escribe y no deja repetir ninguna (sin contar

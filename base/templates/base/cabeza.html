@@ -38,6 +38,8 @@
   </script>
   <link rel="stylesheet" href="{% static 'generado/estilos.css' %}">
   {# «defer»: se ejecutan en este orden cuando la página ya está leída. interfaz.js va antes que Alpine. #}
+  {# SortableJS: ordenar listas arrastrando (lo usa el componente «listaOrdenable» de interfaz.js). #}
+  <script defer src="{% static 'generado/sortable.min.js' %}"></script>
   <script defer src="{% static 'base/interfaz.js' %}"></script>
   <script defer src="{% static 'generado/alpine.min.js' %}"></script>
   <script defer src="{% static 'generado/htmx.min.js' %}"></script>
