@@ -1,0 +1,16 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Escribir a la administración» (comunicaciones/views.py, nueva_conversacion). Recibe
+  «formulario» y «aviso» (el aviso al que se responde, o nada).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Se escribe a la administración, no a una persona: la atienden todos sus admins. La pueden leer también los admins de la organización y el superadmin.</p>
+  {% if aviso %}<p class="text-sm">Respondes al aviso «<a href="{% url 'comunicaciones:aviso' aviso.pk %}" class="text-marca hover:underline">{{ aviso.asunto }}</a>».</p>{% endif %}
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Enviar</button>
+  </form>
+</div>
+{% endblock %}

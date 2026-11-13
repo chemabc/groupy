@@ -1,0 +1,18 @@
+{% comment %}
+  Los mensajes de una conversación. Se pinta dentro de comunicaciones/conversacion.html y, cada 10
+  segundos, htmx lo vuelve a pedir («?fragmento=mensajes») y lo sustituye entero (hx-target="this":
+  sin él, htmx usaría la zona central, que es el destino por defecto de la página). Recibe «conversacion»
+  y «mensajes». Los de la administración van a la derecha y en violeta.
+{% endcomment %}
+<div id="mensajes" class="space-y-2"
+     hx-get="{% url 'comunicaciones:conversacion' conversacion.pk %}?fragmento=mensajes"
+     hx-trigger="every 10s" hx-target="this" hx-swap="outerHTML">
+  {% for mensaje in mensajes %}
+    <div class="flex {% if mensaje.de_la_administracion %}justify-end{% endif %}">
+      <div class="max-w-[85%] rounded-lg px-3 py-2 text-sm {% if mensaje.de_la_administracion %}bg-violet-100 dark:bg-violet-950{% else %}bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800{% endif %}">
+        <p class="text-xs font-medium {% if mensaje.de_la_administracion %}text-violet-800 dark:text-violet-300{% else %}text-slate-500{% endif %}">{{ mensaje.firma }} · {{ mensaje.creado|date:"d/m/Y H:i" }}</p>
+        <p class="whitespace-pre-line">{{ mensaje.texto }}</p>
+      </div>
+    </div>
+  {% endfor %}
+</div>

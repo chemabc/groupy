@@ -1,0 +1,44 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Configuración → Niveles de aviso» (comunicaciones/views.py, niveles). Recibe «filas» (cada
+  nivel con su número de usos y su formulario de edición), «nuevo» (formulario), error y abrir.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Cuánta atención pide un aviso de la administración. Cada nivel se ve con su color en la bandeja de quien lo recibe.</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <ul class="space-y-2">
+    {% for fila in filas %}
+      <li class="rounded-lg border border-l-8 border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" style="border-left-color: {{ fila.nivel.color }}">
+        <div class="flex items-center gap-2">
+          <span class="rounded px-1.5 text-sm text-white" style="background: {{ fila.nivel.color }}">{{ fila.nivel.nombre }}</span>
+          <span class="text-sm text-slate-500">{{ fila.nivel.descripcion }}</span>
+          <span class="ml-auto text-xs text-slate-500">usado en {{ fila.nivel.usos }} aviso{{ fila.nivel.usos|pluralize }}</span>
+        </div>
+        <details class="mt-1">
+          <summary class="cursor-pointer text-sm text-marca">Cambiar</summary>
+          <form method="post" class="mt-2 max-w-xl">
+            {% csrf_token %}<input type="hidden" name="accion" value="editar"><input type="hidden" name="nivel" value="{{ fila.nivel.pk }}">
+            {{ fila.formulario }}
+            <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+          </form>
+          {% if not fila.nivel.usos %}
+            <form method="post" class="mt-2">
+              {% csrf_token %}<input type="hidden" name="accion" value="borrar"><input type="hidden" name="nivel" value="{{ fila.nivel.pk }}">
+              <button type="submit" class="rounded border border-red-300 px-2 py-0.5 text-xs text-red-700 dark:border-red-800 dark:text-red-300">Borrar</button>
+            </form>
+          {% endif %}
+        </details>
+      </li>
+    {% endfor %}
+  </ul>
+  <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir == "crear" %}open{% endif %}>
+    <summary class="cursor-pointer text-sm font-semibold">+ Nuevo nivel</summary>
+    <form method="post" class="mt-2 max-w-xl">
+      {% csrf_token %}<input type="hidden" name="accion" value="crear">
+      {{ nuevo }}
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+    </form>
+  </details>
+</div>
+{% endblock %}

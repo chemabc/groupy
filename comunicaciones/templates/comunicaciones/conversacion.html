@@ -1,0 +1,32 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Una conversación con la administración (comunicaciones/views.py, conversacion). Recibe «conversacion»,
+  «mensajes», «atiende» (si quien mira la atiende: puede cambiar el estado y responde en nombre de la
+  administración), «respuesta» (formulario) y «estados».
+  La lista de mensajes (comunicaciones/mensajes.html) se vuelve a pedir sola cada 10 segundos.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p><a href="{% url 'comunicaciones:conversaciones' %}" class="text-sm text-marca hover:underline">← Conversaciones</a></p>
+  <header class="rounded-lg border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-slate-900">
+    <h2 class="text-lg font-semibold">{{ conversacion.asunto }}</h2>
+    <p class="text-xs text-slate-500">{{ conversacion.persona }} ↔ {{ conversacion.nombre_de_la_administracion }} · estado: <strong>{{ conversacion.get_estado_display }}</strong>
+      {% if conversacion.aviso %} · responde al aviso «<a href="{% url 'comunicaciones:aviso' conversacion.aviso.pk %}" class="text-marca hover:underline">{{ conversacion.aviso.asunto }}</a>»{% endif %}</p>
+    {% if atiende %}
+      <form method="post" class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+        {% csrf_token %}<input type="hidden" name="accion" value="estado">
+        <span class="text-slate-500">Marcar como:</span>
+        {% for codigo, nombre in estados %}
+          {% if codigo != conversacion.estado %}<button type="submit" name="estado" value="{{ codigo }}" class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700">{{ nombre }}</button>{% endif %}
+        {% endfor %}
+      </form>
+    {% endif %}
+  </header>
+  {% include "comunicaciones/mensajes.html" %}
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}<input type="hidden" name="accion" value="responder">
+    {{ respuesta }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">{% if atiende %}Responder como {{ conversacion.nombre_de_la_administracion }}{% else %}Enviar{% endif %}</button>
+  </form>
+</div>
+{% endblock %}

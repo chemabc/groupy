@@ -87,4 +87,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 - **Fase 2 en curso.** Hecho: `comunicaciones`, primera pieza (notificaciones en la web: los módulos
   declaran `avisos` en su contrato y `comunicaciones` los reparte desde la bandeja; bandejas por origen,
   papelera, «Limpiar las vistas», preferencias y número sin ver en el menú; servicio `trabajador` en
-  docker). Siguiente: mensajes y conversaciones. Recuerda `migrate --database=boveda`.
+  docker), avisos de la administración (con niveles de color editables en «Configuración → Niveles de
+  aviso») y conversaciones con la administración (buzón compartido, firma «Admin de GRU X (alias)»,
+  estado, mensajes nuevos cada 10 s). Siguiente: `solicitudes`. Recuerda `migrate --database=boveda`.

@@ -42,3 +42,29 @@ class PruebasDeNotificacionesEnElNavegador(PruebaEnElNavegador):
         self.assertFalse(Notificacion.objects.exists())
         self.assertEqual(contador.inner_text(), "(0)")
         self.assertEqual(self.errores, [])
+
+
+class PruebasDeConversacionesEnElNavegador(PruebaEnElNavegador):
+    """Una conversación abierta en el navegador recibe sola los mensajes nuevos."""
+
+    # Con la conversación abierta, un mensaje que escribe la administración aparece sin recargar (htmx
+    # vuelve a pedir la lista cada 10 segundos), y el formulario de respuesta no se pierde.
+    def test_mensajes_nuevos_aparecen_solos(self):
+        from comunicaciones.administraciones import Buzon
+        from comunicaciones.servicios import abrir_conversacion, escribir
+        from base.pruebas import crear_usuario_de_prueba
+        from grupos.models import Pertenencia
+        from grupos.servicios import admitir, crear_organizacion
+
+        _tajo, grupo = crear_organizacion("ORG Tajo", "GRU Tajo")
+        lince = crear_usuario_de_prueba("Lince")
+        admitir(lince, grupo, rol=Pertenencia.ADMIN_GRUPO)
+        admitir(self.usuario, grupo)
+        conversacion = abrir_conversacion(self.usuario, Buzon(grupo=grupo), "Llaves", "¿Quién las tiene?")
+        self.abrir(f"/comunicaciones/conversaciones/{conversacion.pk}/")
+        self.pagina.locator('textarea[name="texto"]').fill("Escribiendo…")
+        escribir(conversacion, lince, "Las tengo yo.", como_admin=True)
+        self.pagina.wait_for_selector("text=Las tengo yo.", timeout=15000)
+        self.assertTrue(self.pagina.locator("text=Admin de GRU Tajo (Lince)").is_visible())
+        self.assertEqual(self.pagina.locator('textarea[name="texto"]').input_value(), "Escribiendo…")
+        self.assertEqual(self.errores, [])

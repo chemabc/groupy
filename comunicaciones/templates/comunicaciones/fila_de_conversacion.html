@@ -1,0 +1,12 @@
+{% comment %}
+  Una fila de la lista de conversaciones. Recibe «conversacion», «pendiente» (si tiene algo sin leer para
+  quien mira) y «como_admin».
+{% endcomment %}
+<li class="flex items-center gap-3 py-2" data-conversacion="{{ conversacion.pk }}">
+  <span class="size-2 shrink-0 rounded-full {% if pendiente %}bg-violet-600{% else %}bg-transparent{% endif %}" aria-hidden="true"></span>
+  <div class="min-w-0 flex-1">
+    <a href="{% url 'comunicaciones:conversacion' conversacion.pk %}" class="{% if pendiente %}font-semibold{% endif %} hover:text-marca hover:underline">{{ conversacion.asunto }}</a>
+    <p class="text-xs text-slate-500">{% if como_admin %}{{ conversacion.persona }} → {% endif %}{{ conversacion.nombre_de_la_administracion }} · {{ conversacion.actualizada|date:"d/m/Y H:i" }}{% if pendiente %} · <span class="text-violet-700 dark:text-violet-300">sin leer</span>{% endif %}</p>
+  </div>
+  <span class="shrink-0 rounded px-1.5 text-xs {% if conversacion.estado == 'solucionada' %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300{% elif conversacion.estado == 'en_proceso' %}bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300{% else %}bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300{% endif %}">{{ conversacion.get_estado_display }}</span>
+</li>

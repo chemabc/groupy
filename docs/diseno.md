@@ -1228,6 +1228,32 @@ conversaciones son la pieza siguiente; el correo, el chat y Telegram, después.
   Para ello `grupos` emite tres eventos_sw nuevos: `grupos.admitido`, `grupos.rol_cambiado` y
   `grupos.admin_de_organizacion_nombrado`.
 
+**Avisos y conversaciones con la administración (13 de noviembre de 2026, a petición de la persona
+usuaria).** Sustituye a los «mensajes» del principio de este apartado. Los mensajes entre personas
+llegarán con el chat (más adelante).
+- **Se escribe a la administración, nunca al alias de un admin.** Hay tres: la de un grupo, la de una
+  organización y la de la plataforma (el superadmin) (`comunicaciones/administraciones.py`).
+- **Avisos de la administración:** el superadmin y los admins (permiso `comunicaciones.avisar`, de
+  entrada admin del grupo y admin de la organización) avisan, en nombre de una de sus administraciones, a
+  grupos (con sus subgrupos) o a personas, siempre dentro de lo que esa administración alcanza. Cada aviso
+  lleva un **nivel con su color** y llega como notificación (no se puede desactivar). Con la casilla «Se
+  puede responder», el aviso trae un enlace para abrir una conversación con esa administración.
+- **Niveles de aviso** editables (`NivelDeAviso`: nombre, descripción, color y orden) en «Configuración →
+  Niveles de aviso», solo el superadmin (`comunicaciones.niveles`). Iniciales: Información (azul),
+  Atención (ámbar) y Problema (rojo). Uno usado no se borra.
+- **Conversaciones con la administración:** siempre está «Escribir a la administración» (la de cualquiera
+  de sus grupos o de los que los contienen, la de su organización o el superadmin). Cada conversación es
+  de una persona con una administración (3A) y la atienden todos sus admins, como un buzón compartido
+  (2A). La pueden leer los admins de ese grupo, los de su organización y el superadmin (3A de la segunda
+  ronda: son temas administrativos; las conversaciones entre personas, no). Quien responde firma
+  **«Admin de GRU Henares (Lince)»**. Tienen asunto y **estado** (abierta, en proceso, solucionada), que
+  cambian los admins. Se ven con borde violeta y salen primero las que tienen algo sin leer. Número en el
+  menú: «Con la administración (N)».
+- **Casi en tiempo real (1A):** con una conversación abierta, htmx vuelve a pedir los mensajes cada 10
+  segundos. *Descartado por ahora:* Channels y websockets (llegarán con el chat de grupos y proyectos, que
+  podrá reutilizar `Conversacion` y `Mensaje`).
+- *(Más adelante: temas o categorías de las conversaciones, y el chat.)*
+
 ---
 
 ## 18. Forma de trabajar

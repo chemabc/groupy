@@ -1,0 +1,18 @@
+{% comment %}
+  Una lista de conversaciones, para comunicaciones/conversaciones.html. Recibe «titulo», «filas» (las
+  conversaciones), «como_admin» (si quien mira las atiende: entonces se marca lo que la persona ha escrito
+  sin leer y se ve quién escribe) y «vacio» (el texto si no hay ninguna).
+  Las conversaciones con la administración llevan un borde de color propio (violeta) para distinguirlas
+  de los futuros chats; el punto marca las que tienen algo sin leer.
+{% endcomment %}
+<section class="rounded-lg border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-slate-900">
+  <h2 class="mb-2 font-semibold">{{ titulo }}</h2>
+  <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+    {% for conversacion in filas %}
+      {% if como_admin %}{% with pendiente=conversacion.pendiente_admins %}{% include "comunicaciones/fila_de_conversacion.html" %}{% endwith %}
+      {% else %}{% with pendiente=conversacion.pendiente_persona %}{% include "comunicaciones/fila_de_conversacion.html" %}{% endwith %}{% endif %}
+    {% empty %}
+      <li class="py-1.5 text-slate-500">{{ vacio }}</li>
+    {% endfor %}
+  </ul>
+</section>

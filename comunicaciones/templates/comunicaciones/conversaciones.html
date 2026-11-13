@@ -1,0 +1,22 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Comunicaciones → Con la administración» (comunicaciones/views.py, conversaciones). Recibe
+  «mias» (las de quien mira), «atiende» (las que llegan a las administraciones que atiende), «es_admin»,
+  «estado» (el filtro elegido) y «estados» (pares código, nombre).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <a href="{% url 'comunicaciones:nueva_conversacion' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Escribir a la administración</a>
+    <span class="ml-auto text-slate-500">Estado:</span>
+    <a href="{% url 'comunicaciones:conversaciones' %}" class="rounded-full border px-3 py-0.5 {% if not estado %}border-marca bg-marca/10 text-marca{% else %}border-slate-300 dark:border-slate-700{% endif %}">Todas</a>
+    {% for codigo, nombre in estados %}
+      <a href="?estado={{ codigo }}" class="rounded-full border px-3 py-0.5 {% if estado == codigo %}border-marca bg-marca/10 text-marca{% else %}border-slate-300 dark:border-slate-700{% endif %}">{{ nombre }}</a>
+    {% endfor %}
+  </div>
+  {% if es_admin %}
+    {% include "comunicaciones/lista_de_conversaciones.html" with titulo="Lo que llega a las administraciones que atiendes" filas=atiende como_admin=True vacio="No hay conversaciones." %}
+  {% endif %}
+  {% include "comunicaciones/lista_de_conversaciones.html" with titulo="Tus conversaciones con la administración" filas=mias como_admin=False vacio="Aún no has escrito a ninguna administración." %}
+</div>
+{% endblock %}

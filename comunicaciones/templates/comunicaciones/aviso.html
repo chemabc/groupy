@@ -1,0 +1,21 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Un aviso de la administración (comunicaciones/views.py, aviso). Recibe «aviso» (con su nivel, autor y
+  administración), «atiende» (si quien mira atiende esa administración: ve a quién se mandó) y
+  «puede_responder» (si lo recibió y se permite responder).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p><a href="{% url 'comunicaciones:notificaciones' %}" class="text-sm text-marca hover:underline">← Notificaciones</a></p>
+  <article class="rounded-lg border border-l-8 border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" style="border-left-color: {{ aviso.nivel.color }}">
+    <p class="mb-1"><span class="rounded px-1.5 text-xs text-white" style="background: {{ aviso.nivel.color }}">{{ aviso.nivel.nombre }}</span></p>
+    <h2 class="text-lg font-semibold">{{ aviso.asunto }}</h2>
+    <p class="text-xs text-slate-500">{{ aviso.nombre_de_la_administracion }}{% if aviso.autor %} ({{ aviso.autor }}){% endif %} · {{ aviso.creado|date:"d/m/Y H:i" }}</p>
+    <p class="mt-3 whitespace-pre-line text-sm">{{ aviso.texto }}</p>
+    {% if atiende %}<p class="mt-3 text-xs text-slate-500">Enviado a {{ aviso.destinatarios }} ({{ aviso.numero_de_personas }} persona{{ aviso.numero_de_personas|pluralize }}).</p>{% endif %}
+  </article>
+  {% if puede_responder %}
+    <a href="{% url 'comunicaciones:nueva_conversacion' %}?aviso={{ aviso.pk }}" class="inline-block rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Responder a {{ aviso.nombre_de_la_administracion }}</a>
+  {% endif %}
+</div>
+{% endblock %}

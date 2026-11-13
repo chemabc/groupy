@@ -483,3 +483,15 @@ sirve aquí y dónde se usa.
 - **Confirmar antes de borrar.** «Limpiar las vistas» usa `onclick="return confirm(...)"`: si se pulsa
   «Cancelar», el formulario no se envía. En Playwright, las ventanas de confirmación se rechazan solas;
   para aceptarla, la prueba dice antes `pagina.once("dialog", lambda d: d.accept())`.
+
+## 21. Pedir cada poco lo nuevo, con htmx (13 de noviembre de 2026)
+
+- **Sondeo («polling»).** `hx-get="…?fragmento=mensajes" hx-trigger="every 10s"` hace que htmx pida la
+  lista de mensajes cada 10 segundos y la sustituya. Es «casi» tiempo real sin servidor de websockets.
+- **`hx-target="this"`.** La página entera tiene como destino por defecto la zona central (`#zona`); sin
+  esto, la lista se metería en el sitio equivocado. Solo se sustituye la lista: lo que se está escribiendo
+  en el formulario de respuesta no se pierde (lo comprueba `comunicaciones/tests/test_navegador.py`).
+- **Guardar solo lo que se cambia.** Un objeto leído de la base puede quedarse viejo mientras otra
+  persona cambia la fila. Si se guarda entero (o varios campos), se pisa lo que cambió la otra. Por eso
+  `escribir()` actualiza solo su campo con `Conversacion.objects.filter(pk=…).update(…)`. Lo destapó la
+  prueba de número de consultas: una conversación ya leída volvía a salir como «sin leer».

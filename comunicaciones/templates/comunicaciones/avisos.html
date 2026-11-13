@@ -1,0 +1,32 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Comunicaciones → Avisos de la administración» (comunicaciones/views.py, avisos). Recibe
+  «formulario» (aviso nuevo) y «enviados» (los avisos de las administraciones que atiende quien mira, con
+  su nivel, su autor y su administración).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if formulario.is_bound %}open{% endif %}>
+    <summary class="cursor-pointer text-sm font-semibold">+ Nuevo aviso</summary>
+    <form method="post" class="mt-2 max-w-xl">
+      {% csrf_token %}
+      {{ formulario }}
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Enviar</button>
+    </form>
+  </details>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 font-semibold">Enviados</h2>
+    <ul class="space-y-2 text-sm">
+      {% for aviso in enviados %}
+        <li class="border-l-4 pl-3" style="border-color: {{ aviso.nivel.color }}">
+          <a href="{% url 'comunicaciones:aviso' aviso.pk %}" class="font-medium hover:text-marca hover:underline">{{ aviso.asunto }}</a>
+          <span class="rounded px-1.5 text-xs text-white" style="background: {{ aviso.nivel.color }}">{{ aviso.nivel.nombre }}</span>
+          <p class="text-xs text-slate-500">{{ aviso.nombre_de_la_administracion }}{% if aviso.autor %} ({{ aviso.autor }}){% endif %} · {{ aviso.creado|date:"d/m/Y H:i" }} · a {{ aviso.destinatarios }} ({{ aviso.numero_de_personas }} persona{{ aviso.numero_de_personas|pluralize }}){% if aviso.permite_responder %} · se puede responder{% endif %}</p>
+        </li>
+      {% empty %}
+        <li class="text-slate-500">Aún no se ha enviado ningún aviso.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

@@ -3,7 +3,8 @@
   Pantalla «Comunicaciones → Notificaciones» (comunicaciones/views.py, notificaciones). Recibe: bandejas
   (cada origen con notificaciones: código, nombre, total y sin_ver), origen (el elegido, o vacío para
   todas), total, sin_ver_total, hay_vistas (si hay alguna vista que limpiar), notificaciones (las que se
-  muestran) y mas (cuántas mostrar con «Mostrar más», o nada si no hay más).
+  muestran, con su aviso de la administración y su nivel si lo son: se pintan con el color del nivel) y
+  mas (cuántas mostrar con «Mostrar más», o nada si no hay más).
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-3xl space-y-3">
@@ -37,11 +38,12 @@
   {# Lista #}
   <ul class="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
     {% for notificacion in notificaciones %}
-      <li class="flex items-start gap-3 px-3 py-2 {% if not notificacion.vista_el %}bg-marca/5{% endif %}" data-notificacion="{{ notificacion.pk }}">
+      <li class="flex items-start gap-3 border-l-4 px-3 py-2 {% if not notificacion.vista_el %}bg-marca/5{% endif %}" data-notificacion="{{ notificacion.pk }}"
+          style="border-left-color: {% if notificacion.aviso %}{{ notificacion.aviso.nivel.color }}{% else %}transparent{% endif %}">
         <span class="mt-1.5 size-2 shrink-0 rounded-full {% if notificacion.vista_el %}bg-transparent{% else %}bg-marca{% endif %}" aria-hidden="true"></span>
         <div class="min-w-0 flex-1">
           <a href="{% url 'comunicaciones:abrir' notificacion.pk %}" class="text-sm {% if not notificacion.vista_el %}font-medium{% endif %} hover:text-marca hover:underline">{{ notificacion.texto }}</a>
-          <p class="text-xs text-slate-500">{{ notificacion.get_origen_display }} · {{ notificacion.creada|date:"d/m/Y H:i" }}{% if not notificacion.vista_el %} · <span class="text-marca">sin ver</span>{% endif %}</p>
+          <p class="text-xs text-slate-500">{% if notificacion.aviso %}<span class="rounded px-1 text-white" style="background: {{ notificacion.aviso.nivel.color }}">{{ notificacion.aviso.nivel.nombre }}</span> · {% endif %}{{ notificacion.get_origen_display }} · {{ notificacion.creada|date:"d/m/Y H:i" }}{% if not notificacion.vista_el %} · <span class="text-marca">sin ver</span>{% endif %}</p>
         </div>
         <form method="post" action="{% url 'comunicaciones:notificaciones' %}{% if origen %}?origen={{ origen }}{% endif %}" class="flex shrink-0 gap-1">
           {% csrf_token %}<input type="hidden" name="notificacion" value="{{ notificacion.pk }}">
