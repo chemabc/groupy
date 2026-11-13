@@ -1031,8 +1031,8 @@ usuaria).** Vistas en `grupos/views.py`; qué ve cada cual, en `grupos/acceso.py
   es obligatorio. Se **ordenan arrastrándolos** por el asa (SortableJS, MIT, componente `listaOrdenable` de
   `interfaz.js`). `tipologias.servicios.formulario_de()` hace el formulario que usarán proyectos y eventos, y
   `a_json()` deja los valores listos para guardarlos en JSON.
-- **Pendiente:** los cometidos y las tareas modelo de la plantilla llegarán con `proyectos` y `eventos`;
-  borrar un tipo tendrá que comprobar entonces que nada lo usa.
+- **Pendiente:** los cometidos de la plantilla llegarán con `eventos` (plazas y obligatorios); borrar un
+  tipo tendrá que comprobar entonces que nada lo usa. Las tareas modelo ya están (apartado 14.1.3).
 
 ---
 
@@ -1319,6 +1319,22 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
   cantidad si es un número, anclada al proyecto; el recurso enlaza a su petición. *Descartado (2B):* un
   texto libre. *(Aún no: tipos de recurso configurables, totales que suman tareas y subproyectos, y
   dependencias entre proyectos con su vista gráfica.)*
+
+### 14.1.3 Etiquetas y tareas modelo (13 de noviembre de 2026, decisión 1A de la persona usuaria)
+
+- **Se cierra `proyectos` con lo pequeño (1A).** La documentación por bloques irá con `documentos` (fase
+  5) y el chat, con el tiempo real. *Descartado (1B):* hacer ahora la documentación dentro de `proyectos`
+  y encajarla después.
+- **Etiquetas:** los proyectos de grupo llevan etiquetas de su organización (o comunes), con el selector
+  común (`CampoDeEtiquetas`) al crear y al editar. Salen en la ficha y en la lista de «De mis grupos»;
+  al pulsar una, la lista muestra solo los que la llevan (`?etiqueta=`). Los personales no llevan
+  etiquetas (no tienen organización y crearían etiquetas comunes).
+- **Tareas modelo (apartado 9):** `TareaModelo` en `tipologias` (título, descripción, plazo en días y «espera
+  a la anterior»), solo en los tipos de proyecto. Se heredan como los campos y se añaden o quitan en
+  «Configuración → Tipologías → De proyectos». Al crear un proyecto de ese tipo, la casilla «Crear las N
+  tareas modelo» (marcada de entrada) las crea con quien lo crea como responsable, la fecha límite a esos
+  días y, si esperan a la anterior, como dependencia (bloqueadas hasta que esté hecha). De ejemplo,
+  «Preparación de acción»: pedir permiso, preparar el material y difundir.
 
 ### 14.2 Tarea
 

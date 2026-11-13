@@ -149,6 +149,36 @@ class Campo(models.Model):
         super().save(*args, **kwargs)
 
 
+
+class TareaModelo(models.Model):
+    """
+    Tarea que se propone al crear un proyecto de un tipo: por ejemplo, en «Preparación de acción»,
+    «Pedir permiso», «Hacer el cartel» y «Difundir». Se heredan como los campos: un subtipo propone las de
+    sus tipos de arriba y las suyas. Solo en las tipologías de proyectos.
+    """
+
+    tipologia = models.ForeignKey(
+        Tipologia, on_delete=models.CASCADE, related_name="tareas_modelo", verbose_name="tipología", help_text="La tipología que la propone."
+    )
+    titulo = models.CharField("título", max_length=200, help_text="Qué hay que hacer: «Pedir permiso al distrito».")
+    descripcion = models.TextField("descripción", blank=True, help_text="Detalles o consejos para hacerla. Opcional.")
+    dias = models.PositiveSmallIntegerField(
+        "plazo en días", null=True, blank=True, help_text="Días desde que se crea el proyecto hasta su fecha límite. Vacío: sin fecha."
+    )
+    espera_a_la_anterior = models.BooleanField(
+        "espera a la anterior", default=False, help_text="Si no se puede empezar hasta que esté hecha la tarea modelo anterior (queda bloqueada hasta entonces)."
+    )
+    orden = models.PositiveSmallIntegerField("orden", default=0, help_text="Posición dentro de su tipología.")
+
+    class Meta:
+        verbose_name = "tarea modelo"
+        verbose_name_plural = "tareas modelo"
+        ordering = ["tipologia", "orden", "pk"]
+
+    # Texto con el que se muestra: su título.
+    def __str__(self):
+        return self.titulo
+
 # Clave interna a partir del nombre de un campo: sin tildes, en minúsculas y con «_» («Número de
 # asistentes» → «numero_de_asistentes»).
 def clave_de(nombre):

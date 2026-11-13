@@ -7,14 +7,18 @@ que las bloquean y desbloquean solas) y los recursos (con su petición de talent
 """
 
 from dataclasses import dataclass
+from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 
 from audiencias.models import Audiencia
 from audiencias.selector import audiencia_de
 from audiencias.servicios import anadir_personas, crear_privada, filtrar_visibles, puede_ver
+from etiquetas.models import EtiquetaDe
+from etiquetas.servicios import etiquetar
 from eventos_sw.servicios import emitir
 from permisos.models import Cometido
 from permisos.servicios import asignar_cometido, exigir, puede, quitar_cometido
@@ -149,8 +153,10 @@ def _personal(usuario):
 #   - padre: el proyecto padre, si es un subproyecto.
 #   - personal: si es «privado e individual».
 #   - campos: los de su tipología (en JSON).
+#   - etiquetas: nombres de sus etiquetas (solo en los de grupo: son de su organización).
+#   - tareas_modelo: las TareaModelo de su tipología que se crean como tareas (ver crear_tareas_modelo).
 @transaction.atomic
-def crear_proyecto(usuario, tipologia, datos, grupo=None, visibilidad="privado", padre=None, personal=False, campos=None):
+def crear_proyecto(usuario, tipologia, datos, grupo=None, visibilidad="privado", padre=None, personal=False, campos=None, etiquetas=(), tareas_modelo=()):
     if padre is not None:
         if not puede_gestionar(usuario, padre):
             raise ValidationError("Solo quien gestiona el proyecto puede crearle subproyectos.")
@@ -170,12 +176,54 @@ def crear_proyecto(usuario, tipologia, datos, grupo=None, visibilidad="privado",
     proyecto.save()
     proyecto.raiz_id = padre.raiz_id if padre is not None else proyecto.pk
     proyecto.save(update_fields=["raiz"])
+    poner_etiquetas(usuario, proyecto, etiquetas)
+    crear_tareas_modelo(usuario, proyecto, tareas_modelo)
     return proyecto
 
 
+# Pone a un proyecto de grupo exactamente estas etiquetas (de su organización o comunes; las nuevas se
+# crean en su organización). Los personales no llevan etiquetas.
+#   - nombres: los nombres escritos.
+def poner_etiquetas(usuario, proyecto, nombres):
+    if proyecto.personal or proyecto.grupo_id is None:
+        return
+    etiquetar((ANCLA, proyecto.pk), list(nombres), proyecto.grupo.organizacion, usuario)
+
+
+# Etiquetas de varios proyectos de una vez: {id del proyecto: [nombres, en orden]}. Una consulta.
+#   - ids: ids de los proyectos.
+def etiquetas_de_varios(ids):
+    resultado = {}
+    filas = EtiquetaDe.objects.filter(ancla_tipo=ANCLA, ancla_id__in=list(ids)).order_by("etiqueta__normalizada").values_list("ancla_id", "etiqueta__nombre")
+    for proyecto_id, nombre in filas:
+        resultado.setdefault(proyecto_id, []).append(nombre)
+    return resultado
+
+
+# Ids de los proyectos con una etiqueta (por su nombre exacto). Consulta, sin ejecutar.
+def con_etiqueta(nombre):
+    return EtiquetaDe.objects.filter(ancla_tipo=ANCLA, etiqueta__nombre=nombre).values("ancla_id")
+
+
+# Crea en un proyecto las tareas modelo de su tipología, en orden: la responsable es quien crea el
+# proyecto, la fecha límite sale de los días de cada una, y las que «esperan a la anterior» quedan
+# esperando (y bloqueadas) a la tarea creada justo antes. Devuelve las tareas.
+#   - modelos: lista de TareaModelo (de tipologias.servicios.tareas_modelo_de).
+def crear_tareas_modelo(usuario, proyecto, modelos):
+    hoy, anterior, creadas = timezone.localdate(), None, []
+    for modelo in modelos:
+        limite = hoy + timedelta(days=modelo.dias) if modelo.dias is not None else None
+        datos = {"titulo": modelo.titulo, "descripcion": modelo.descripcion, "responsable": usuario, "limite": limite}
+        espera = [anterior] if modelo.espera_a_la_anterior and anterior is not None else ()
+        anterior = crear_tarea(usuario, datos, proyecto=proyecto, espera_a=espera)
+        creadas.append(anterior)
+    return creadas
+
+
 # Cambia los datos de un proyecto (y, si se pasa, quién lo ve). Devuelve el proyecto.
+#   - etiquetas: los nombres de sus etiquetas, o None para no tocarlas.
 @transaction.atomic
-def editar_proyecto(usuario, proyecto, datos, visibilidad=None, campos=None):
+def editar_proyecto(usuario, proyecto, datos, visibilidad=None, campos=None, etiquetas=None):
     if not puede_gestionar(usuario, proyecto):
         raise ValidationError("Solo quien gestiona el proyecto puede cambiarlo.")
     for campo, valor in datos.items():
@@ -187,6 +235,8 @@ def editar_proyecto(usuario, proyecto, datos, visibilidad=None, campos=None):
         proyecto.visibilidad = visibilidad
     proyecto.full_clean()
     proyecto.save()
+    if etiquetas is not None:
+        poner_etiquetas(usuario, proyecto, etiquetas)
     return proyecto
 
 

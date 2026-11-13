@@ -1,6 +1,6 @@
 """
-Tipologías de ejemplo, con campos: las del diseño (apartado 9) y un subtipo propio de «ORG Tajo». Las
-crea y las borra la orden «python manage.py ejemplos».
+Tipologías de ejemplo, con campos: las del diseño (apartado 9) y un subtipo propio de «ORG Tajo»; y las
+tareas modelo de «Preparación de acción». Las crea y las borra la orden «python manage.py ejemplos».
 """
 
 from django.db.models import Q
@@ -8,7 +8,7 @@ from django.db.models import Q
 from grupos.models import Organizacion
 
 from .models import Campo, Tipologia
-from .servicios import crear_campo, crear_tipologia
+from .servicios import crear_campo, crear_tarea_modelo, crear_tipologia
 
 # Árbol común de ejemplo: familia → [(nombre, [campos (nombre, tipo, opciones)], [subtipos])].
 COMUNES = {
@@ -34,6 +34,15 @@ COMUNES = {
     ],
 }
 
+# Tareas modelo de ejemplo de cada tipo común de proyecto: (título, días, espera a la anterior).
+TAREAS_MODELO = {
+    "Preparación de acción": [
+        ("Pedir permiso al distrito", 7, False),
+        ("Preparar el material", 14, True),
+        ("Difundir la convocatoria", 21, True),
+    ],
+}
+
 
 # Crea el árbol común (si no existe ya «Reunión») y el subtipo «Acción de barrio» de ORG Tajo.
 def crear():
@@ -53,6 +62,9 @@ def _crear_ramas(familia, ramas, padre):
         tipologia = crear_tipologia(familia, nombre, padre=padre)
         for nombre_del_campo, tipo, opciones in campos:
             crear_campo(tipologia, nombre_del_campo, tipo, opciones=opciones)
+        if familia == Tipologia.PROYECTO:
+            for titulo, dias, espera in TAREAS_MODELO.get(nombre, []):
+                crear_tarea_modelo(tipologia, titulo, dias=dias, espera_a_la_anterior=espera)
         _crear_ramas(familia, subtipos, tipologia)
 
 

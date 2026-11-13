@@ -593,3 +593,15 @@ sirve aquí y dónde se usa.
   de lo que bloqueó una persona (que se respeta).
 - **La isla se entera de los cambios ajenos.** Cuando mover una tarjeta cambia otras, el servidor lo dice
   en la respuesta (`"otras": 1`) y la isla recarga el tablero, en lugar de intentar recolocar tarjetas.
+
+## 28. Reutilizar en lugar de repetir (13 de noviembre de 2026)
+
+- **Etiquetas en un módulo nuevo, sin código nuevo de etiquetas.** `proyectos` usa el campo común
+  `CampoDeEtiquetas` en su formulario y `etiquetar()` al guardar, con su ancla `proyectos.proyecto`. Para
+  la lista, una sola consulta trae las etiquetas de todos los proyectos (`etiquetas_de_varios`) y se
+  cuelgan de cada objeto antes de pintar: así no hay una consulta por fila.
+- **Herencia igual que los campos.** `tareas_modelo_de()` sigue la misma receta que `campos_de()`: la
+  cadena de la tipología da el nivel de cada una y se ordena por (nivel, orden). Una receta conocida es
+  más fácil de leer que una nueva.
+- **Las tareas modelo se apoyan en las dependencias.** «Espera a la anterior» no necesita nada propio:
+  al crear las tareas se pasa `espera_a=[la anterior]` y la regla de bloqueo hace el resto.

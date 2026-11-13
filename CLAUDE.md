@@ -107,6 +107,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   SortableJS, fechas límite en el calendario) y `limpieza` (tarea diaria: archiva lo terminado a los 30 días,
   avisa 15 días antes de borrar a los 365, «Conservar», poda del superadmin, registro de borrados,
   notificaciones viejas fuera; plazos en «Configuración → Limpieza») y dependencias entre tareas (bloqueo y desbloqueo solos, sin
-  círculos) y recursos de cada proyecto (con «Pedir al grupo» como petición de talentos). Siguiente: el
-  resto de proyectos (documentación por bloques, etiquetas, chat…), por concretar.
+  círculos) y recursos de cada proyecto (con «Pedir al grupo» como petición de talentos), etiquetas de los proyectos de
+  grupo (filtran la lista) y tareas modelo de cada tipología de proyecto (se crean al crear el proyecto).
+  **Fase 4 cerrada** (la documentación por bloques irá con `documentos`; el chat, con el tiempo real).
   Recuerda `migrate --database=boveda`.

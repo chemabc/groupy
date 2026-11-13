@@ -3,25 +3,27 @@ Pruebas de «proyectos»: crear proyectos y subproyectos a cualquier profundidad
 los ve (también los personales, ni el superadmin) y quién los gestiona (quien crea o coordina un
 antecesor, la administración del grupo), las tareas (responsable que ve el proyecto, aviso, kanban con
 las de los subproyectos, mover), las dependencias entre tareas (bloqueo y desbloqueo solos), los recursos
-(con su petición de talentos), su paso por el calendario y lo que cuestan las pantallas.
+(con su petición de talentos), las etiquetas, las tareas modelo de su tipo, su paso por el calendario y lo que cuestan las pantallas.
 
 Estructura: ORG Tajo (GRU Tajo ⊃ GRU Henares ⊃ GRU Sorbe) con Lince admin de GRU Henares, Nutria en GRU
 Henares (la sesión), Garza en GRU Sorbe y Zorro en GRU Tajo; Erizo en ORG Ebro.
 """
 
 import json
-from datetime import date
+from datetime import date, timedelta
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
+from etiquetas.servicios import etiquetas_de
 from eventos_sw.servicios import procesar_bandeja
 from grupos.models import Pertenencia
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
 from proyectos.models import Proyecto, Tarea
 from proyectos.servicios import anadir_recurso, apuntar, crear_proyecto, crear_tarea, editar_tarea
-from tipologias.servicios import crear_tipologia
+from tipologias.servicios import crear_tarea_modelo, crear_tipologia
 
 # Tabla de notificaciones de «comunicaciones» (otro módulo funcional: se busca por su nombre).
 Notificacion = apps.get_model("comunicaciones", "Notificacion")
@@ -61,10 +63,10 @@ class PruebaDeProyectos(PruebaDePantalla):
     def como(self, usuario):
         self.client.force_login(usuario)
 
-    # Un proyecto de Nutria en GRU Henares (o un subproyecto, con «padre»).
-    def proyecto(self, titulo="Huerto", padre=None, visibilidad="grupo:0", **otros):
+    # Un proyecto de Nutria en GRU Henares (o un subproyecto, con «padre»), con sus etiquetas.
+    def proyecto(self, titulo="Huerto", padre=None, visibilidad="grupo:0", etiquetas=(), **otros):
         datos_del_servicio = {"titulo": titulo, **otros}
-        return crear_proyecto(self.nutria, self.generico, datos_del_servicio, grupo=self.henares, visibilidad=visibilidad, padre=padre)
+        return crear_proyecto(self.nutria, self.generico, datos_del_servicio, grupo=self.henares, visibilidad=visibilidad, padre=padre, etiquetas=etiquetas)
 
 
 class PruebasDeSubproyectos(PruebaDeProyectos):
@@ -325,15 +327,54 @@ class PruebasDeRecursos(PruebaDeProyectos):
         self.assertFalse(huerto.recursos.exists())
 
 
+class PruebasDeEtiquetasYTareasModelo(PruebaDeProyectos):
+    """Etiquetas de los proyectos de grupo y tareas modelo de su tipo al crearlos."""
+
+    # Al crear un proyecto de «Preparación de acción» con la casilla marcada salen sus tareas modelo (la
+    # segunda, esperando a la primera) y sus etiquetas; sin la casilla, no hay tareas.
+    def test_crear_con_tareas_modelo_y_etiquetas(self):
+        accion = crear_tipologia("proyecto", "Preparación de acción")
+        crear_tarea_modelo(accion, "Pedir permiso", dias=7)
+        crear_tarea_modelo(accion, "Hacer el cartel", espera_a_la_anterior=True)
+        url = f"/proyectos/nuevo/?grupo={self.henares.pk}&tipologia={accion.pk}"
+        self.assertContains(self.client.get(url), "Crear las 2 tareas modelo de su tipo")
+        respuesta = self.client.post(url, datos(titulo="Cacerolada", etiquetas=["vivienda", "Barrio"], con_tareas_modelo="on"))
+        cacerolada = Proyecto.objects.get(titulo="Cacerolada")
+        self.assertRedirects(respuesta, f"/proyectos/{cacerolada.pk}/")
+        permiso, cartel = cacerolada.tareas.order_by("pk")
+        self.assertEqual((permiso.titulo, permiso.responsable, permiso.estado), ("Pedir permiso", self.nutria, Tarea.PENDIENTE))
+        self.assertEqual(permiso.limite, timezone.localdate() + timedelta(days=7))
+        self.assertEqual((cartel.estado, list(cartel.espera_a.all())), (Tarea.BLOQUEADA, [permiso]))
+        self.assertEqual(etiquetas_de(("proyectos.proyecto", cacerolada.pk)), ["Barrio", "Vivienda"])
+        self.client.post(url, datos(titulo="Sin tareas"))
+        self.assertFalse(Proyecto.objects.get(titulo="Sin tareas").tareas.exists())
+
+    # Las etiquetas se cambian al editar, salen en la ficha y en la lista, y filtran la lista. Los
+    # personales no llevan etiquetas.
+    def test_etiquetas(self):
+        huerto = self.proyecto(etiquetas=["Huerto"])
+        self.proyecto("Biblioteca")
+        self.client.post(f"/proyectos/{huerto.pk}/editar/", datos(etiquetas=["Huerto", "Verano"]))
+        self.assertEqual(etiquetas_de(("proyectos.proyecto", huerto.pk)), ["Huerto", "Verano"])
+        self.assertContains(self.client.get(f"/proyectos/{huerto.pk}/"), "#Verano")
+        filtrada = self.client.get("/proyectos/?etiqueta=Verano")
+        self.assertContains(filtrada, "Huerto")
+        self.assertNotContains(filtrada, "Biblioteca")
+        self.assertContains(self.client.get("/proyectos/"), "Biblioteca")
+        respuesta = self.client.get(f"/proyectos/nuevo/?personal=1&tipologia={self.generico.pk}")
+        self.assertNotContains(respuesta, 'name="etiquetas"')
+
+
 class PruebasDeConsultas(PruebaDeProyectos):
     """Cada pantalla cuesta lo mismo con pocas filas que con muchas."""
 
     # Listas: más proyectos y subproyectos.
     def test_listas(self):
         huerto = self.proyecto()
-        self.comprobar_consultas("/proyectos/", 2, lambda: self.proyecto("Otro", padre=huerto))
+        self.comprobar_consultas("/proyectos/", 3, lambda: self.proyecto("Otro", padre=huerto, etiquetas=["Barrio"]))
+        self.comprobar_consultas("/proyectos/?etiqueta=Barrio", 3, lambda: self.proyecto("Más", etiquetas=["Barrio", "Huerto"]))
         self.comprobar_consultas("/proyectos/personales/", 3, lambda: crear_proyecto(self.nutria, self.generico, {"titulo": "P"}, personal=True))
-        self.comprobar_consultas(f"/proyectos/nuevo/?grupo={self.henares.pk}&tipologia={self.generico.pk}", 6, None)
+        self.comprobar_consultas(f"/proyectos/nuevo/?grupo={self.henares.pk}&tipologia={self.generico.pk}", 7, None)
 
     # Ficha y kanban: más subproyectos y tareas.
     def test_ficha_y_kanban(self):
@@ -346,7 +387,7 @@ class PruebasDeConsultas(PruebaDeProyectos):
             anadir_recurso(self.nutria, huerto, {"nombre": "Mangueras", "cantidad": "3", "origen": "Ferretería"})
 
         mas()
-        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 8, mas)
+        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 9, mas)
         self.comprobar_consultas(f"/proyectos/{huerto.pk}/kanban/", 6, mas)
 
     # Mis tareas, su kanban y la ficha de una tarea.

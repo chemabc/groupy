@@ -2,7 +2,8 @@
 {% comment %}
   Pantalla «Configuración → Tipologías» (tipologias/views.py). Recibe: familia, ramas (cada tipología con
   su nivel, camino y si es editable), elegida (la tipología de la derecha, o nada), camino, editable,
-  heredados y propios (sus campos), los formularios nueva, edicion y campo, error y abrir (la acción que
+  heredados y propios (sus campos), tareas_heredadas y tareas_propias (sus tareas modelo, si con_tareas:
+  es de proyectos), los formularios nueva, edicion, campo y tarea_modelo, error y abrir (la acción que
   falló, para dejar abierto su formulario). Los campos propios se ordenan arrastrando (componente
   «listaOrdenable» de interfaz.js, con SortableJS).
 {% endcomment %}
@@ -95,6 +96,45 @@
               <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Añadir</button>
             </form>
           </details>
+        {% endif %}
+      </div>
+      {% if con_tareas %}
+      <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <h3 class="mb-1 font-semibold">Tareas modelo</h3>
+        <p class="mb-2 text-xs text-slate-500">Se proponen al crear un proyecto de este tipo (quien lo crea decide si las quiere).</p>
+        <ol class="space-y-1 text-sm">
+          {% for t in tareas_heredadas %}
+            <li class="rounded border border-dashed border-slate-300 px-2 py-1 text-slate-500 dark:border-slate-700">{{ t.titulo }} <span class="text-xs">{% if t.dias is not None %}(a {{ t.dias }} días){% endif %}{% if t.espera_a_la_anterior %} · espera a la anterior{% endif %} · heredada de {{ t.tipologia }}</span></li>
+          {% endfor %}
+          {% for t in tareas_propias %}
+            <li class="flex items-center gap-2 rounded border border-slate-200 px-2 py-1 dark:border-slate-700">
+              <span class="flex-1">{{ t.titulo }} <span class="text-xs text-slate-500">{% if t.dias is not None %}(a {{ t.dias }} días){% endif %}{% if t.espera_a_la_anterior %} · espera a la anterior{% endif %}</span></span>
+              {% if editable %}
+                <form method="post" x-data @submit="confirm('¿Quitar la tarea modelo «{{ t.titulo|escapejs }}»?') || $event.preventDefault()">
+                  {% csrf_token %}
+                  <input type="hidden" name="accion" value="borrar_tarea_modelo"><input type="hidden" name="t" value="{{ elegida.pk }}"><input type="hidden" name="tarea_modelo" value="{{ t.pk }}">
+                  <button type="submit" class="text-xs text-red-700 hover:underline dark:text-red-400" aria-label="Quitar {{ t.titulo }}">Quitar</button>
+                </form>
+              {% endif %}
+            </li>
+          {% endfor %}
+          {% if not tareas_heredadas and not tareas_propias %}<li class="text-slate-500">No propone ninguna tarea.</li>{% endif %}
+        </ol>
+        {% if editable %}
+          <details class="mt-3" {% if abrir == "crear_tarea_modelo" %}open{% endif %}>
+            <summary class="cursor-pointer text-sm font-semibold text-marca">+ Añadir una tarea modelo</summary>
+            <form method="post" class="mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="crear_tarea_modelo"><input type="hidden" name="t" value="{{ elegida.pk }}">
+              {{ tarea_modelo }}
+              <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Añadir</button>
+            </form>
+          </details>
+        {% endif %}
+      </div>
+      {% endif %}
+      <div>
+        {% if editable %}
           <form method="post" class="mt-4" x-data @submit="confirm('¿Borrar el tipo «{{ elegida.nombre|escapejs }}» y sus campos?') || $event.preventDefault()">
             {% csrf_token %}
             <input type="hidden" name="accion" value="borrar_tipologia"><input type="hidden" name="t" value="{{ elegida.pk }}">

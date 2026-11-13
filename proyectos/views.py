@@ -14,11 +14,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from audiencias.selector import clave_de, opciones
+from etiquetas.servicios import etiquetas_de
 from base.registro import registro
 from grupos.models import Grupo
 from permisos.servicios import SinPermiso, explicar_falta, permisos_de
 from tipologias.models import Tipologia
-from tipologias.servicios import a_json, arbol, campos_de, formulario_de
+from tipologias.servicios import a_json, arbol, campos_de, formulario_de, tareas_modelo_de
 
 from . import servicios
 from .formularios import FormularioDeProyecto, FormularioDeRecurso, FormularioDeTarea
@@ -33,10 +34,19 @@ MAXIMO = 300
 
 # Pantalla «Proyectos de mis grupos»: los proyectos de grupo que se ven, en árbol (cada uno con sus
 # subproyectos debajo). Los finalizados, al final de su rama y atenuados; los archivados (con todo su
-# árbol), no: están en «Archivo». Unas 3 consultas.
+# árbol), no: están en «Archivo». Cada uno con sus etiquetas, que se pulsan para ver solo los que la
+# llevan. Unas 4 consultas.
+#   - GET «etiqueta»: solo los proyectos con esa etiqueta (su nombre exacto).
 def proyectos(request):
-    lista = list(servicios.visibles(request.user).filter(personal=False, raiz__archivado__isnull=True).select_related("grupo__organizacion", "tipologia")[:MAXIMO])
-    return render(request, "proyectos/lista.html", {"ramas": servicios.en_arbol(lista), "personal": False})
+    etiqueta = request.GET.get("etiqueta", "").strip()
+    consulta = servicios.visibles(request.user).filter(personal=False, raiz__archivado__isnull=True)
+    if etiqueta:
+        consulta = consulta.filter(pk__in=servicios.con_etiqueta(etiqueta))
+    lista = list(consulta.select_related("grupo__organizacion", "tipologia")[:MAXIMO])
+    etiquetas = servicios.etiquetas_de_varios(p.pk for p in lista)
+    for proyecto in lista:
+        proyecto.etiquetas = etiquetas.get(proyecto.pk, [])
+    return render(request, "proyectos/lista.html", {"ramas": servicios.en_arbol(lista), "personal": False, "etiqueta": etiqueta})
 
 
 # Pantalla «Personales»: mis proyectos personales (en árbol) y mis tareas personales sueltas, sin lo
@@ -67,7 +77,8 @@ def _propios(tipologia, datos, valores=None):
 
 
 # Pantalla «Nuevo proyecto»: primero se elige el grupo (o que es personal) y el tipo, con un formulario
-# GET que se envía solo; después, los datos. Con «padre», es un subproyecto: el grupo es el del padre.
+# GET que se envía solo; después, los datos, las etiquetas y si se crean las tareas modelo de su tipo.
+# Con «padre», es un subproyecto: el grupo es el del padre.
 #   - GET «grupo», «tipologia», «padre», «personal» (= 1).
 def nuevo(request):
     usuario = request.user
@@ -88,13 +99,17 @@ def nuevo(request):
         datos = request.POST if request.method == "POST" else None
         visibilidades = None if personal else opciones(grupo)
         inicial = {"visibilidad": padre.visibilidad} if padre and not personal else {}
-        formulario = FormularioDeProyecto(datos, visibilidades=visibilidades, initial=inicial)
+        modelos = tareas_modelo_de(tipologia, {rama.tipologia.pk: rama.tipologia for rama in ramas})
+        organizacion = None if personal else grupo.organizacion
+        formulario = FormularioDeProyecto(datos, visibilidades=visibilidades, organizacion=organizacion, tareas_modelo=modelos, initial=inicial)
         propios = _propios(tipologia, datos)
         if request.method == "POST" and formulario.is_valid() and propios.is_valid():
+            limpio = formulario.cleaned_data
             try:
                 proyecto = servicios.crear_proyecto(
-                    usuario, tipologia, formulario.datos_del_proyecto(), grupo=grupo, visibilidad=formulario.cleaned_data.get("visibilidad", "privado"),
-                    padre=padre, personal=personal, campos=a_json(propios.cleaned_data),
+                    usuario, tipologia, formulario.datos_del_proyecto(), grupo=grupo, visibilidad=limpio.get("visibilidad", "privado"),
+                    padre=padre, personal=personal, campos=a_json(propios.cleaned_data), etiquetas=limpio.get("etiquetas", ()),
+                    tareas_modelo=modelos if limpio.get("con_tareas_modelo") else (),
                 )
             except ValidationError as error:
                 formulario.add_error(None, error)
@@ -173,6 +188,7 @@ def proyecto(request, pk):
     camino = [(p, p.pk in visibles_del_arbol) for p in servicios.antecesores(proyecto, entero)]
     tareas = list(proyecto.tareas.select_related("responsable").order_by("estado", "orden", "pk"))
     recursos = list(proyecto.recursos.all())
+    etiquetas = [] if proyecto.personal else etiquetas_de((servicios.ANCLA, proyecto.pk))
     de_cometidos = [] if proyecto.personal else servicios.cometidos(proyecto)
     contexto = {
         "proyecto": proyecto,
@@ -182,6 +198,7 @@ def proyecto(request, pk):
         "subproyectos": subproyectos,
         "tareas": tareas,
         "recursos": recursos,
+        "etiquetas": etiquetas,
         "nuevo_recurso": nuevo_recurso,
         "pide_recursos": bool(recursos) and servicios.puede_pedir_recursos(usuario, proyecto, gestiona),
         "gestiona": gestiona,
@@ -202,13 +219,15 @@ def editar(request, pk):
         raise SinPermiso("Solo quien gestiona el proyecto puede cambiarlo.")
     datos = request.POST if request.method == "POST" else None
     visibilidades = None if proyecto.personal else opciones(proyecto.grupo)
-    inicial = {} if proyecto.personal else {"visibilidad": clave_de(proyecto.audiencia, proyecto.grupo)}
-    formulario = FormularioDeProyecto(datos, instance=proyecto, visibilidades=visibilidades, initial=inicial)
+    inicial = {} if proyecto.personal else {"visibilidad": clave_de(proyecto.audiencia, proyecto.grupo), "etiquetas": etiquetas_de((servicios.ANCLA, proyecto.pk))}
+    organizacion = None if proyecto.personal else proyecto.grupo.organizacion
+    formulario = FormularioDeProyecto(datos, instance=proyecto, visibilidades=visibilidades, organizacion=organizacion, initial=inicial)
     propios = _propios(proyecto.tipologia, datos, proyecto.campos)
     if request.method == "POST" and formulario.is_valid() and propios.is_valid():
         try:
             servicios.editar_proyecto(
-                usuario, proyecto, formulario.datos_del_proyecto(), visibilidad=formulario.cleaned_data.get("visibilidad"), campos=a_json(propios.cleaned_data)
+                usuario, proyecto, formulario.datos_del_proyecto(), visibilidad=formulario.cleaned_data.get("visibilidad"),
+                campos=a_json(propios.cleaned_data), etiquetas=formulario.cleaned_data.get("etiquetas"),
             )
         except ValidationError as error:
             formulario.add_error(None, error)

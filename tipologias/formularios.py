@@ -53,3 +53,19 @@ class FormularioDeCampo(forms.Form):
         label="Opciones", required=False, widget=forms.Textarea(attrs={"rows": 3}),
         help_text="Solo para «Lista de opciones»: una por línea.",
     )
+
+
+class FormularioDeTareaModelo(forms.Form):
+    """Nueva tarea modelo de un tipo de proyecto."""
+
+    titulo = forms.CharField(label="Tarea", max_length=200, help_text="Qué hay que hacer: «Pedir permiso al distrito».")
+    descripcion = forms.CharField(
+        label="Descripción", required=False, widget=forms.Textarea(attrs={"rows": 2}), help_text="Detalles o consejos (opcional)."
+    )
+    dias = forms.IntegerField(
+        label="Plazo en días", required=False, min_value=0, max_value=3650,
+        help_text="Días desde que se crea el proyecto hasta su fecha límite. Vacío: sin fecha.",
+    )
+    espera_a_la_anterior = forms.BooleanField(
+        label="Espera a la anterior", required=False, help_text="Queda bloqueada hasta que esté hecha la tarea anterior de la lista.",
+    )

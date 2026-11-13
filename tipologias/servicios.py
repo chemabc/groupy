@@ -19,7 +19,7 @@ from django.db.models import Q
 from grupos.models import Organizacion
 from permisos.servicios import permisos_de
 
-from .models import Campo, Tipologia
+from .models import Campo, TareaModelo, Tipologia
 
 # Permiso para gestionar las tipologías de una organización.
 PERMISO = "tipologias.gestionar"
@@ -95,6 +95,14 @@ def campos_de(tipologia, cargadas=None):
     niveles = {t.pk: nivel for nivel, t in enumerate(cadena(tipologia, cargadas))}
     campos = list(Campo.objects.filter(tipologia_id__in=niveles).select_related("tipologia"))
     return sorted(campos, key=lambda campo: (niveles[campo.tipologia_id], campo.orden, campo.pk))
+
+
+# Tareas modelo de una tipología con las heredadas: primero las de la principal, después las de cada
+# nivel, cada una en su orden. Una consulta (más la cadena, si no se pasan las cargadas).
+def tareas_modelo_de(tipologia, cargadas=None):
+    niveles = {t.pk: nivel for nivel, t in enumerate(cadena(tipologia, cargadas))}
+    tareas = list(TareaModelo.objects.filter(tipologia_id__in=niveles).select_related("tipologia"))
+    return sorted(tareas, key=lambda tarea: (niveles[tarea.tipologia_id], tarea.orden, tarea.pk))
 
 
 # Formulario con los campos personalizados de una tipología (con los heredados). Lo usarán proyectos y
@@ -192,3 +200,19 @@ def ordenar_campos(tipologia, ids):
         if suyos[pk].orden != posicion:
             suyos[pk].orden = posicion
             suyos[pk].save(update_fields=["orden"])
+
+
+# Añade una tarea modelo al final de una tipología de proyectos. Devuelve la tarea modelo.
+#   - titulo, descripcion, dias, espera_a_la_anterior: sus datos (ver TareaModelo).
+@transaction.atomic
+def crear_tarea_modelo(tipologia, titulo, descripcion="", dias=None, espera_a_la_anterior=False):
+    if tipologia.familia != Tipologia.PROYECTO:
+        raise ValidationError("Las tareas modelo son solo de los tipos de proyecto.")
+    ultimo = tipologia.tareas_modelo.order_by("-orden").values_list("orden", flat=True).first()
+    tarea = TareaModelo(
+        tipologia=tipologia, titulo=titulo.strip(), descripcion=descripcion, dias=dias, espera_a_la_anterior=espera_a_la_anterior,
+        orden=(ultimo or 0) + 1,
+    )
+    tarea.full_clean()
+    tarea.save()
+    return tarea

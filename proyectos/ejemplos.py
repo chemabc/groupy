@@ -1,6 +1,6 @@
 """
 Proyectos de ejemplo: «Huerto comunitario» de la asamblea base de Nutria, con un subproyecto («Riego»)
-que tiene el suyo («Bomba solar»), unas tareas repartidas en las columnas del kanban («Elegir el panel»
+que tiene el suyo («Bomba solar»), unas tareas repartidas en las columnas del kanban, las etiquetas «Huerto» y «Barrio» («Elegir el panel»
 espera al presupuesto de tuberías, así que está bloqueada sola) y unos recursos. Los crea y borra la orden
 «python manage.py ejemplos».
 """
@@ -30,7 +30,7 @@ def crear():
     hoy = timezone.localdate()
     huerto = crear_proyecto(
         nutria, generico, {"titulo": PRINCIPAL, "objetivo_general": "Un huerto para el barrio.", "limite": hoy + timedelta(days=120)},
-        grupo=base.grupo, visibilidad="grupo:0",
+        grupo=base.grupo, visibilidad="grupo:0", etiquetas=["Huerto", "Barrio"],
     )
     riego = crear_proyecto(nutria, generico, {"titulo": "Riego", "limite": hoy + timedelta(days=60)}, padre=huerto)
     bomba = crear_proyecto(nutria, generico, {"titulo": "Bomba solar"}, padre=riego)

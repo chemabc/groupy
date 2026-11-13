@@ -6,6 +6,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
+from etiquetas.formularios import CampoDeEtiquetas
+
 from .models import Proyecto, Recurso, Tarea
 
 
@@ -31,14 +33,26 @@ class FormularioDeProyecto(forms.ModelForm):
             "limite": _fecha(),
         }
 
-    # Prepara el desplegable de visibilidad; en lo personal no hay que elegir (solo lo ve quien lo crea).
+    # Prepara el desplegable de visibilidad (en lo personal no hay que elegir: solo lo ve quien lo crea),
+    # las etiquetas (solo en los de grupo) y la casilla de las tareas modelo (solo al crear, si su tipo
+    # propone alguna).
     #   - visibilidades: (clave, explicación) del selector de audiencias, o None si es personal.
-    def __init__(self, *args, visibilidades, **kwargs):
+    #   - organizacion: la del grupo, para sugerir sus etiquetas; None si es personal (sin etiquetas).
+    #   - tareas_modelo: las tareas modelo que propone su tipo (al crear).
+    def __init__(self, *args, visibilidades, organizacion=None, tareas_modelo=(), **kwargs):
         super().__init__(*args, **kwargs)
         if visibilidades is None:
             del self.fields["visibilidad"]
         else:
             self.fields["visibilidad"].choices = visibilidades
+        if organizacion is not None:
+            self.fields["etiquetas"] = CampoDeEtiquetas(organizacion=organizacion)
+        if tareas_modelo:
+            titulos = ", ".join(f"«{tarea.titulo}»" for tarea in tareas_modelo)
+            self.fields["con_tareas_modelo"] = forms.BooleanField(
+                label=f"Crear las {len(tareas_modelo)} tareas modelo de su tipo" if len(tareas_modelo) > 1 else "Crear la tarea modelo de su tipo",
+                required=False, initial=True, help_text=f"{titulos}. Te quedan a ti como responsable; luego puedes encargarlas a otras personas.",
+            )
 
     # Los datos del proyecto (sin la visibilidad, que no es un campo que se copie tal cual).
     def datos_del_proyecto(self):

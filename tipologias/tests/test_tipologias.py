@@ -17,12 +17,15 @@ from tipologias.servicios import (
     borrar_tipologia,
     campos_de,
     crear_campo,
+    crear_tarea_modelo,
     crear_tipologia,
     formulario_de,
     ordenar_campos,
+    tareas_modelo_de,
 )
 
 EVENTO = Tipologia.EVENTO
+PROYECTO = Tipologia.PROYECTO
 
 
 class PruebasDelArbol(TestCase):
@@ -172,3 +175,51 @@ class PruebasDeLaPantalla(PruebaDePantalla):
                 crear_campo(barrio, f"Otro {numero}", Campo.NUMERO)
 
         self.comprobar_consultas(f"{self.direccion}?t={barrio.pk}", 4, mas_datos)
+
+
+class PruebasDeTareasModelo(PruebaDePantalla):
+    """Tareas modelo de los tipos de proyecto: se heredan, se añaden y quitan en la pantalla."""
+
+    # El usuario de la sesión es admin de ORG Tajo; «Acción» (común) propone dos tareas.
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.tajo, grupo_tajo = crear_organizacion("ORG Tajo", "GRU Tajo")
+        admitir(cls.usuario, grupo_tajo)
+        nombrar_admin_de_organizacion(cls.usuario, cls.tajo)
+        cls.accion = crear_tipologia(PROYECTO, "Preparación de acción")
+        crear_tarea_modelo(cls.accion, "Pedir permiso", dias=7)
+        crear_tarea_modelo(cls.accion, "Hacer el cartel", espera_a_la_anterior=True)
+        cls.direccion = "/configuracion/tipologias/proyectos/"
+
+    # Un subtipo propone las de arriba y las suyas, en orden; los tipos de evento no tienen.
+    def test_herencia_y_reglas(self):
+        barrio = crear_tipologia(PROYECTO, "Acción de barrio", padre=self.accion, organizacion=self.tajo)
+        crear_tarea_modelo(barrio, "Hablar con los comercios")
+        self.assertEqual([t.titulo for t in tareas_modelo_de(barrio)], ["Pedir permiso", "Hacer el cartel", "Hablar con los comercios"])
+        with self.assertRaisesMessage(ValidationError, "solo de los tipos de proyecto"):
+            crear_tarea_modelo(crear_tipologia(EVENTO, "Reunión"), "Algo")
+
+    # El admin añade y quita tareas modelo en lo suyo; en lo común, no.
+    def test_pantalla(self):
+        barrio = crear_tipologia(PROYECTO, "Acción de barrio", padre=self.accion, organizacion=self.tajo)
+        self.client.post(self.direccion, {"accion": "crear_tarea_modelo", "t": barrio.pk, "titulo": "Buzonear", "dias": "3", "espera_a_la_anterior": "on"})
+        nueva = barrio.tareas_modelo.get()
+        self.assertEqual((nueva.titulo, nueva.dias, nueva.espera_a_la_anterior), ("Buzonear", 3, True))
+        respuesta = self.client.get(f"{self.direccion}?t={barrio.pk}")
+        self.assertContains(respuesta, "heredada de Preparación de acción")
+        self.client.post(self.direccion, {"accion": "borrar_tarea_modelo", "t": barrio.pk, "tarea_modelo": nueva.pk})
+        self.assertFalse(barrio.tareas_modelo.exists())
+        respuesta = self.client.post(self.direccion, {"accion": "crear_tarea_modelo", "t": self.accion.pk, "titulo": "Colada"})
+        self.assertContains(respuesta, "solo lo cambia el superadmin")
+
+    # Número de consultas con un tipo de proyecto elegido: no crece con más tareas modelo.
+    def test_consultas(self):
+        barrio = crear_tipologia(PROYECTO, "Acción de barrio", padre=self.accion, organizacion=self.tajo)
+
+        # Añade más tareas modelo.
+        def mas_datos():
+            for numero in range(5):
+                crear_tarea_modelo(barrio, f"Tarea {numero}")
+
+        self.comprobar_consultas(f"{self.direccion}?t={barrio.pk}", 5, mas_datos)

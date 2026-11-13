@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from permisos.servicios import SinPermiso, explicar_falta
 
-from .formularios import FormularioDeCampo, FormularioDeEdicion, FormularioDeTipologia
+from .formularios import FormularioDeCampo, FormularioDeEdicion, FormularioDeTareaModelo, FormularioDeTipologia
 from .models import Tipologia
 from .servicios import (
     PERMISO,
@@ -21,10 +21,12 @@ from .servicios import (
     borrar_tipologia,
     campos_de,
     crear_campo,
+    crear_tarea_modelo,
     crear_tipologia,
     ordenar_campos,
     organizaciones_que_gestiona,
     puede_editar,
+    tareas_modelo_de,
 )
 
 # Nombre de la ruta de cada familia.
@@ -42,7 +44,8 @@ def _organizaciones_o_error(request):
 
 # Pantalla de las tipologías de una familia. Con «?t=<id>» se ve esa tipología a la derecha.
 #   - familia: «evento» o «proyecto» (lo pone la dirección).
-#   - POST «accion»: crear_tipologia, editar_tipologia, borrar_tipologia, crear_campo o borrar_campo.
+#   - POST «accion»: crear_tipologia, editar_tipologia, borrar_tipologia, crear_campo, borrar_campo,
+#     crear_tarea_modelo o borrar_tarea_modelo (estas dos, solo en los tipos de proyecto).
 def tipologias(request, familia):
     organizaciones = _organizaciones_o_error(request)
     ramas = arbol(familia, None if request.user.is_superuser else [pk for pk, _nombre in organizaciones])
@@ -57,6 +60,7 @@ def tipologias(request, familia):
     nueva = FormularioDeTipologia(datos if accion == "crear_tipologia" else None, initial={"padre": getattr(elegida, "pk", None)}, **opciones)
     edicion = FormularioDeEdicion(datos if accion == "editar_tipologia" else None, initial={"nombre": getattr(elegida, "nombre", ""), "descripcion": getattr(elegida, "descripcion", "")})
     campo = FormularioDeCampo(datos if accion == "crear_campo" else None)
+    tarea_modelo = FormularioDeTareaModelo(datos if accion == "crear_tarea_modelo" else None)
     error = ""
     try:
         if accion == "crear_tipologia" and nueva.is_valid():
@@ -69,7 +73,7 @@ def tipologias(request, familia):
                 raise ValidationError("Solo el superadmin crea tipos comunes: elige tu organización.")
             creada = crear_tipologia(familia, nueva.cleaned_data["nombre"], padre=padre, organizacion_id=organizacion, descripcion=nueva.cleaned_data["descripcion"])
             return redirect(f"{reverse(RUTAS[familia])}?t={creada.pk}")
-        if accion in ("editar_tipologia", "borrar_tipologia", "crear_campo", "borrar_campo") and not editable:
+        if accion in ("editar_tipologia", "borrar_tipologia", "crear_campo", "borrar_campo", "crear_tarea_modelo", "borrar_tarea_modelo") and not editable:
             raise ValidationError("Este tipo es común (o de otra organización): solo lo cambia el superadmin.")
         if accion == "editar_tipologia" and edicion.is_valid():
             elegida.nombre, elegida.descripcion = edicion.cleaned_data["nombre"], edicion.cleaned_data["descripcion"]
@@ -85,9 +89,16 @@ def tipologias(request, familia):
         if accion == "borrar_campo":
             elegida.campos.filter(pk=request.POST.get("campo")).delete()
             return redirect(f"{reverse(RUTAS[familia])}?t={elegida.pk}")
+        if accion == "crear_tarea_modelo" and tarea_modelo.is_valid():
+            crear_tarea_modelo(elegida, **tarea_modelo.cleaned_data)
+            return redirect(f"{reverse(RUTAS[familia])}?t={elegida.pk}")
+        if accion == "borrar_tarea_modelo":
+            elegida.tareas_modelo.filter(pk=request.POST.get("tarea_modelo")).delete()
+            return redirect(f"{reverse(RUTAS[familia])}?t={elegida.pk}")
     except ValidationError as excepcion:
         error = " ".join(excepcion.messages)
     campos = campos_de(elegida, cargadas) if elegida else []
+    tareas = tareas_modelo_de(elegida, cargadas) if elegida and familia == Tipologia.PROYECTO else []
     contexto = {
         "familia": familia,
         "ramas": [{"rama": rama, "editable": puede_editar(request.user, rama.tipologia, organizaciones)} for rama in ramas],
@@ -99,6 +110,10 @@ def tipologias(request, familia):
         "nueva": nueva,
         "edicion": edicion,
         "campo": campo,
+        "tareas_heredadas": [t for t in tareas if t.tipologia_id != elegida.pk],
+        "tareas_propias": [t for t in tareas if t.tipologia_id == elegida.pk],
+        "tarea_modelo": tarea_modelo,
+        "con_tareas": familia == Tipologia.PROYECTO,
         "error": error,
         "abrir": accion,
     }
