@@ -1,0 +1,55 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Gestión de lugares → Propuestas» (lugares/views.py, propuestas). Recibe «pendientes» (cada
+  propuesta con la lista de cambios si cambia un lugar: campo, antes y después), «revisadas», error y aviso.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% if aviso %}<p class="rounded border border-emerald-300 bg-emerald-50 p-2 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" role="status">{{ aviso }}</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}<input type="hidden" name="accion" value="recordar">
+    <button type="submit" class="rounded border border-slate-300 px-3 py-1 text-sm dark:border-slate-700">Avisar a quienes aún no han elegido lugar</button>
+  </form>
+  <section class="space-y-3">
+    <h2 class="font-semibold">Pendientes</h2>
+    {% for fila in pendientes %}
+      {% with propuesta=fila.propuesta %}
+        <article class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <h3 class="font-medium">{{ propuesta }} <span class="text-sm font-normal text-slate-500">· de {{ propuesta.propuesta_por }} · {{ propuesta.creada|date:"d/m/Y" }}</span></h3>
+          {% if propuesta.motivo %}<p class="mt-1 text-sm"><em>Motivo:</em> {{ propuesta.motivo }}</p>{% endif %}
+          {% if propuesta.lugar %}
+            <table class="mt-2 w-full text-sm">
+              <thead class="text-left text-xs text-slate-500"><tr><th class="py-1 pr-2">Dato</th><th class="py-1 pr-2">Ahora</th><th class="py-1">Propuesto</th></tr></thead>
+              <tbody>
+                {% for cambio in fila.cambios %}<tr><td class="py-1 pr-2 text-slate-500">{{ cambio.campo|capfirst }}</td><td class="py-1 pr-2 line-through decoration-red-400">{{ cambio.antes|default:"—" }}</td><td class="py-1 font-medium">{{ cambio.despues|default:"—" }}</td></tr>
+                {% empty %}<tr><td colspan="3" class="py-1 text-slate-500">No cambia ningún dato.</td></tr>{% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="mt-2">{% include "lugares/_datos.html" with lugar=propuesta %}</div>
+          {% endif %}
+          <form method="post" class="mt-3 flex flex-wrap items-end gap-2 text-sm">
+            {% csrf_token %}<input type="hidden" name="propuesta" value="{{ propuesta.pk }}">
+            <label class="flex min-w-64 flex-1 flex-col gap-1 text-xs">Respuesta (obligatoria para rechazar)
+              <input name="respuesta" class="rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900">
+            </label>
+            <button type="submit" name="accion" value="aceptar" class="rounded bg-marca px-3 py-1 text-white">Aceptar</button>
+            <button type="submit" name="accion" value="rechazar" class="rounded border border-red-300 px-3 py-1 text-red-700 dark:border-red-800 dark:text-red-300">Rechazar</button>
+          </form>
+        </article>
+      {% endwith %}
+    {% empty %}
+      <p class="text-sm text-slate-500">No hay propuestas pendientes.</p>
+    {% endfor %}
+  </section>
+  {% if revisadas %}
+    <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <h2 class="mb-2 font-semibold">Revisadas</h2>
+      <ul class="space-y-1 text-sm">
+        {% for propuesta in revisadas %}<li>{{ propuesta }} · de {{ propuesta.propuesta_por }} · <span class="text-slate-500">{{ propuesta.get_estado_display|lower }} el {{ propuesta.revisada_el|date:"d/m/Y" }}</span></li>{% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -495,3 +495,18 @@ sirve aquí y dónde se usa.
   persona cambia la fila. Si se guarda entero (o varios campos), se pisa lo que cambió la otra. Por eso
   `escribir()` actualiza solo su campo con `Conversacion.objects.filter(pk=…).update(…)`. Lo destapó la
   prueba de número de consultas: una conversación ya leída volvía a salir como «sin leer».
+
+## 22. Una isla de JavaScript que se carga sola (13 de noviembre de 2026)
+
+- **Por qué no en todas las páginas.** Leaflet pesa bastante y solo lo usa el mapa. El componente «mapa»
+  (Alpine) pide sus ficheros la primera vez que aparece un mapa, uno detrás de otro (`await`), porque el
+  complemento de agrupar necesita que Leaflet ya esté cargado. Una promesa por fichero evita pedirlo dos
+  veces.
+- **Por qué no `<script src>` en la plantilla.** Al navegar con htmx, la zona central se sustituye y los
+  scripts nuevos se cargan sin orden garantizado. Dejar que el componente los cargue funciona igual al
+  entrar de golpe que al llegar navegando (lo comprueba `lugares/tests/test_navegador.py`).
+- **Datos sin riesgo.** Los puntos van en la página con `json_script` (Django los escapa) y la ventanita
+  de cada chincheta se construye con `textContent`, no escribiendo HTML: un nombre con «<script>» se ve
+  como texto.
+- **`destroy()`.** Alpine lo llama al quitar el componente (al navegar a otra página): ahí se libera el
+  mapa para no dejar memoria ocupada.

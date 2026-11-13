@@ -1,0 +1,17 @@
+{% extends interfaz.plantilla %}
+{% load static %}
+{% comment %}
+  Pantalla «Lugares → Mapa» (lugares/views.py, mapa). Recibe «puntos» (los lugares con coordenadas: lat,
+  lon, titulo, texto, personas desde 5 y enlace) y «sin_coordenadas» (cuántos no salen por no tenerlas).
+  El mapa es la isla «mapa» de base/static/base/interfaz.js.
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-2">
+  {{ puntos|json_script:"puntos-del-mapa" }}
+  <div x-data="mapa" data-estaticos="{% static 'generado/leaflet/' %}" data-puntos="puntos-del-mapa"
+       class="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+    <div x-ref="lienzo" class="h-[70vh] min-h-80 w-full" role="region" aria-label="Mapa de lugares"></div>
+  </div>
+  <p class="text-xs text-slate-500">{{ puntos|length }} lugar{{ puntos|length|pluralize:"es" }} en el mapa{% if sin_coordenadas %}; {{ sin_coordenadas }} sin coordenadas (salen en la lista){% endif %}. El número de personas solo aparece si son 5 o más.</p>
+</div>
+{% endblock %}

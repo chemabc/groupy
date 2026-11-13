@@ -1,0 +1,10 @@
+{% comment %}
+  Los datos de un lugar, en una lista de definiciones. Recibe «lugar».
+{% endcomment %}
+<dl class="grid grid-cols-[9rem_1fr] gap-x-3 gap-y-1 text-sm">
+  <dt class="text-slate-500">Dirección</dt><dd>{{ lugar.direccion }}</dd>
+  <dt class="text-slate-500">En el mapa</dt><dd><a href="{{ lugar.url_localizacion }}" target="_blank" rel="noopener noreferrer" class="break-all text-marca hover:underline">{{ lugar.url_localizacion }}</a></dd>
+  {% if lugar.telefonos %}<dt class="text-slate-500">Teléfonos</dt><dd>{{ lugar.telefonos }}</dd>{% endif %}
+  {% if lugar.correos %}<dt class="text-slate-500">Correos</dt><dd>{{ lugar.correos }}</dd>{% endif %}
+  {% if lugar.notas %}<dt class="text-slate-500">Notas</dt><dd class="whitespace-pre-line">{{ lugar.notas }}</dd>{% endif %}
+</dl>

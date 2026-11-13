@@ -91,4 +91,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   aviso») y conversaciones con la administración (buzón compartido, firma «Admin de GRU X (alias)»,
   estado, mensajes nuevos cada 10 s) y `solicitudes` (tipos declarados en el contrato; primero, «Entrar
   en un grupo»: sí de la administración y 2 apoyos, o el sí del superadmin; ajustes en «Configuración →
-  Solicitudes»). Siguiente: `moderacion`. Recuerda `migrate --database=boveda`.
+  Solicitudes»), `lugares` (lista común con mapa Leaflet, propuestas de lugares y de cambios, importación,
+  lugar privado de cada persona, recuentos desde 5 y «Configuración → Lugares»). `moderacion` se deja para
+  cuando haya contenido. Siguiente: talentos. Recuerda `migrate --database=boveda`.

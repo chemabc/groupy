@@ -950,6 +950,31 @@ usuaria).** Vistas en `grupos/views.py`; qué ve cada cual, en `grupos/acceso.py
   se muestra si son 5 o más.
 - Los recuentos por lugar solo se muestran a partir de 5 personas.
 
+**Cómo está hecho `lugares` (13 de noviembre de 2026, decisiones 1A y 2A de la persona usuaria).**
+- **Lista común a toda la plataforma (1A).** Cada lugar tiene datos obligatorios (nombre, dirección y
+  URL de localización, de la que salen solas las coordenadas si es de OpenStreetMap o Google Maps) y
+  opcionales (latitud y longitud a mano, teléfonos, correos y notas, un texto amplio), los mismos en todos
+  los lugares. Se puede retirar uno de la lista sin quitárselo a quien ya lo tenía.
+- **Altas:** el superadmin los crea a mano o los importa desde una hoja (.ods o .csv, con plantilla), en
+  dos pasos (vista previa → confirmar; uno con el mismo nombre y dirección no se toca). Cualquier persona
+  **propone un lugar nuevo**; si el superadmin lo acepta, entra en la lista y, si aún no tenía lugar,
+  pasa a ser el suyo.
+- **Cambios:** desde «Mi lugar», un botón para **proponer un cambio** en los datos de su lugar. El
+  superadmin ve qué cambia (antes y después), lo acepta (se actualiza para todos) o lo rechaza con una
+  explicación. Se avisa a quien lo propuso.
+- **Privacidad:** el lugar de cada persona solo lo ven ella y el superadmin. Los demás ven cuántas personas
+  **de sus organizaciones** hay en cada lugar, solo a partir de 5, nunca quiénes.
+- **Configurable por organización (2A):** «Configuración → Lugares» (superadmin y admin de la
+  organización): si sus miembros ven el mapa y la lista, si ven los recuentos y si el mapa se publica en
+  su web pública (se guarda ya; se usará con el módulo `publico`).
+- **Mapa:** isla «mapa» de `base/static/base/interfaz.js` con Leaflet 1.9.4 (BSD-2) y
+  Leaflet.markercluster 1.5.3 (MIT), servidos por el propio servidor y cargados solo en la página que los
+  usa. Teselas de OpenStreetMap con `referrerPolicy`. Chinchetas agrupadas; al pulsar, nombre (enlace a la
+  ficha), dirección y número de personas.
+- **Recordatorio:** el superadmin avisa con un botón a quienes aún no han elegido lugar.
+- *(Pendiente: la «asamblea de centro», un grupo con lugar, con el aviso claro al entrar; y los avales del
+  lugar, con la bóveda real.)*
+
 ### 8.3 Talentos (parte de `usuarios`)
 
 - Son datos personales del usuario: recursos (furgoneta) y habilidades (trabajos verticales). Se eligen

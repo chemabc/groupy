@@ -368,4 +368,96 @@ document.addEventListener("alpine:init", () => {
       setTimeout(() => (this.copiado = false), 1500);
     },
   }));
+  // Isla de mapa (Leaflet), para los mapas de la aplicación (de momento, el de lugares). Se usa así:
+  //   <div x-data="mapa" data-estaticos="/static/generado/leaflet/" data-puntos="id-del-json">
+  //     <div x-ref="lienzo" class="h-96"></div>
+  //   </div>
+  // donde «id-del-json» es un <script type="application/json"> (json_script de Django) con una lista de
+  // puntos {lat, lon, titulo, texto, personas, enlace}. Leaflet no se carga en todas las páginas: lo pide
+  // este componente la primera vez que hace falta. Las chinchetas cercanas se agrupan (Leaflet.markercluster).
+  Alpine.data("mapa", () => ({
+    // El mapa de Leaflet, para poder quitarlo al salir de la página.
+    mapa: null,
+
+    // Al arrancar: carga Leaflet (si aún no estaba), pinta el mapa con las teselas de OpenStreetMap y pone
+    // una chincheta por punto, con una ventanita que muestra sus datos y un enlace.
+    async init() {
+      const base = this.$root.dataset.estaticos;
+      for (const fichero of ["leaflet.css", "MarkerCluster.css", "MarkerCluster.Default.css", "leaflet.js", "leaflet.markercluster.js"]) {
+        await cargarUnaVez(base + fichero);
+      }
+      const puntos = JSON.parse(document.getElementById(this.$root.dataset.puntos).textContent);
+      this.mapa = L.map(this.$refs.lienzo);
+      // Teselas de OpenStreetMap: piden enviar la página de origen (referrerPolicy) y la atribución.
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        referrerPolicy: "strict-origin-when-cross-origin",
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">colaboradores de OpenStreetMap</a>',
+      }).addTo(this.mapa);
+      const chinchetas = L.markerClusterGroup();
+      for (const punto of puntos) {
+        chinchetas.addLayer(L.marker([punto.lat, punto.lon], { title: punto.titulo }).bindPopup(ventanita(punto)));
+      }
+      this.mapa.addLayer(chinchetas);
+      if (puntos.length) {
+        this.mapa.fitBounds(chinchetas.getBounds(), { padding: [30, 30], maxZoom: 15 });
+      } else {
+        this.mapa.setView([40.4, -3.7], 6);
+      }
+    },
+
+    // Al quitar el componente (al navegar a otra página): libera el mapa.
+    destroy() {
+      if (this.mapa) this.mapa.remove();
+    },
+  }));
 });
+
+// Ficheros (scripts u hojas de estilo) ya pedidos, para no cargarlos dos veces: {dirección: promesa}.
+const ficherosCargados = {};
+
+// Carga un script o una hoja de estilos (por su terminación) y devuelve una promesa que se cumple cuando
+// está listo. Si ya se pidió antes, devuelve la misma promesa. La usa el componente «mapa».
+//   - direccion: la dirección del fichero.
+function cargarUnaVez(direccion) {
+  if (!ficherosCargados[direccion]) {
+    ficherosCargados[direccion] = new Promise((resolver, fallar) => {
+      const esEstilo = direccion.endsWith(".css");
+      const elemento = document.createElement(esEstilo ? "link" : "script");
+      if (esEstilo) {
+        elemento.rel = "stylesheet";
+        elemento.href = direccion;
+      } else {
+        elemento.src = direccion;
+      }
+      elemento.onload = resolver;
+      elemento.onerror = () => fallar(new Error(`No se ha podido cargar ${direccion}`));
+      document.head.appendChild(elemento);
+    });
+  }
+  return ficherosCargados[direccion];
+}
+
+// Contenido de la ventanita de una chincheta: título (enlace a su ficha), texto y número de personas.
+// Se construye con elementos y textContent (no con HTML escrito a mano), para que un nombre con «<» no
+// pueda colar código en la página.
+//   - punto: {titulo, texto, personas, enlace}.
+function ventanita(punto) {
+  const caja = document.createElement("div");
+  const titulo = document.createElement(punto.enlace ? "a" : "strong");
+  titulo.textContent = punto.titulo;
+  if (punto.enlace) titulo.href = punto.enlace;
+  titulo.className = "font-semibold";
+  caja.appendChild(titulo);
+  if (punto.texto) {
+    const texto = document.createElement("div");
+    texto.textContent = punto.texto;
+    caja.appendChild(texto);
+  }
+  if (punto.personas) {
+    const personas = document.createElement("div");
+    personas.textContent = `${punto.personas} personas`;
+    caja.appendChild(personas);
+  }
+  return caja;
+}

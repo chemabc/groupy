@@ -1,0 +1,25 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de un lugar (lugares/views.py, lugar). Recibe «lugar», «personas» (desde 5, o nada) y
+  «formulario» (para editarlo, solo el superadmin; si no, nada).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p><a href="{% url 'lugares:lista' %}" class="text-sm text-marca hover:underline">← Lista de lugares</a></p>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 text-lg font-semibold">{{ lugar.nombre }}{% if not lugar.activo %} <span class="text-sm font-normal text-slate-500">(retirado de la lista)</span>{% endif %}</h2>
+    {% include "lugares/_datos.html" %}
+    {% if personas %}<p class="mt-2 text-sm text-slate-500">{{ personas }} personas trabajan aquí.</p>{% endif %}
+  </section>
+  {% if formulario %}
+    <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if formulario.is_bound %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-semibold">Cambiar los datos</summary>
+      <form method="post" class="mt-2 max-w-xl">
+        {% csrf_token %}
+        {{ formulario }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+      </form>
+    </details>
+  {% endif %}
+</div>
+{% endblock %}

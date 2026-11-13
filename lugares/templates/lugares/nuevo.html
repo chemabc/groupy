@@ -1,0 +1,11 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Gestión de lugares → Nuevo lugar» (lugares/views.py, nuevo). Recibe «formulario».
+{% endcomment %}
+{% block contenido %}
+<form method="post" class="max-w-xl rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+  {% csrf_token %}
+  {{ formulario }}
+  <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+</form>
+{% endblock %}
