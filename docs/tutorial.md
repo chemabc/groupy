@@ -370,3 +370,24 @@ sirve aquí y dónde se usa.
   no hace una consulta aparte: Django la mete dentro de la principal como `IN (SELECT ...)`.
 - **Una regla que se comprueba en un solo sitio.** La de las organizaciones vive en `audiencias`, no en
   cada módulo que crea audiencias. Así ningún módulo nuevo puede olvidarla.
+
+## 15. Importar desde una hoja de cálculo (13 de noviembre de 2026)
+
+- **Qué es un .ods por dentro.** Un zip con varios ficheros. El primero se llama `mimetype`, va sin
+  comprimir y dice qué tipo de documento es; `META-INF/manifest.xml` es el índice; `content.xml` tiene
+  las hojas, filas y celdas en XML. Para no repetir filas vacías, el formato escribe una sola con
+  `number-rows-repeated="500"`, y lo mismo con las celdas. Al leer hay que tenerlo en cuenta.
+- **Desplegables en la plantilla.** Son «validaciones» (`table:content-validation`) con una lista de
+  opciones. Cada celda que la usa lleva su nombre. LibreOffice muestra la lista al pulsar la celda.
+- **Revisar antes de crear.** Primero se comprueba todo y se prepara un «plan» (lo que se va a crear),
+  sin tocar la base. La persona ve la vista previa y confirma. Solo entonces se aplica el plan, dentro de
+  una transacción: si algo falla a mitad, no queda nada a medias.
+- **El plan en la sesión.** Entre las dos peticiones (revisar y confirmar), el plan se guarda en la
+  sesión de quien importa. Las contraseñas van ya cifradas (`make_password`), nunca en claro: la sesión
+  se guarda en Redis y en la base de datos.
+- **Consultas que no crecen con las filas.** Al revisar, se cargan de una vez todos los grupos, roles,
+  alias y pertenencias que nombra el fichero (unas pocas consultas) y después se trabaja en memoria. Las
+  pruebas comprueban que con 3 filas o con 30 se hacen las mismas consultas.
+- **Subir ficheros con htmx.** Con `enctype="multipart/form-data"` en el formulario, htmx envía el
+  fichero igual que el navegador. Para la descarga de la plantilla se usa `hx-boost="false"`, porque es
+  un fichero, no una página.

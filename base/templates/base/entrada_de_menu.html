@@ -1,7 +1,7 @@
 {% comment %}
   Una entrada del menú izquierdo y, debajo, sus subsecciones (que se pintan con esta misma plantilla, a
   cualquier profundidad). Recibe «entrada» (una EntradaDeMenu del contrato) y vive dentro del componente
-  «menuLateral» de base/static/base/interfaz.js, del que usa «abiertas» y «alternarSeccion». Con el menú
+  «menuLateral» de base/static/base/interfaz.js, del que usa «estaAbierta» y «alternarSeccion». Con el menú
   plegado, la variante «plegado:» oculta los textos y las subsecciones y deja solo la inicial.
 {% endcomment %}
 <div>
@@ -15,14 +15,14 @@
     {% if entrada.subsecciones %}
       <button type="button" data-codigo="{{ entrada.codigo }}"
               class="rounded px-1 plegado:hidden text-xs text-slate-400 transition-transform hover:bg-slate-100 dark:hover:bg-slate-800"
-              :class="abiertas.includes($el.dataset.codigo) && 'rotate-90'"
-              :aria-expanded="abiertas.includes($el.dataset.codigo)"
+              :class="estaAbierta($el.dataset.codigo) && 'rotate-90'"
+              :aria-expanded="estaAbierta($el.dataset.codigo)"
               aria-label="Mostrar u ocultar las subsecciones de {{ entrada.nombre }}"
               @click="alternarSeccion($el.dataset.codigo)">▸</button>
     {% endif %}
   </div>
   {% if entrada.subsecciones %}
-    <div data-codigo="{{ entrada.codigo }}" x-show="abiertas.includes($el.dataset.codigo)" x-cloak class="ml-4 plegado:hidden">
+    <div data-codigo="{{ entrada.codigo }}" x-show="estaAbierta($el.dataset.codigo)" x-cloak class="ml-4 plegado:hidden">
       {% for entrada in entrada.subsecciones %}{% include "base/entrada_de_menu.html" %}{% endfor %}
     </div>
   {% endif %}

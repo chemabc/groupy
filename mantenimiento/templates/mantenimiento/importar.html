@@ -1,0 +1,117 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Pruebas → Importar grupos» o «Importar usuarios» (mantenimiento/views.py, _importar). Recibe:
+  - tipo («grupos» o «usuarios») e importacion (textos, plantilla y dirección);
+  - columnas: (clave, título) de la plantilla, para la vista previa;
+  - permitido y ajustes: si se puede importar y, en usuarios, el interruptor del alta masiva;
+  - error, revision (la vista previa), nombre_del_fichero o resultado, según el paso.
+  El formulario va con htmx (hx-boost de la página): sube el fichero y pinta la respuesta en la zona.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-6xl space-y-4">
+
+  {% if tipo == "usuarios" %}
+    {# Interruptor del alta masiva de usuarios #}
+    <form method="post" action="{% url 'mantenimiento:permitir_alta_masiva' %}"
+          class="flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm {% if ajustes.alta_masiva_de_usuarios %}border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950{% else %}border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950{% endif %}">
+      {% csrf_token %}
+      <span><strong>Alta masiva de usuarios: {{ ajustes.alta_masiva_de_usuarios|yesno:"activada,desactivada" }}.</strong>
+        Crea alias sin pasar por la bóveda: úsala solo durante las pruebas.</span>
+      <button type="submit" class="rounded border border-slate-400 bg-white px-3 py-1 dark:bg-slate-900">
+        {{ ajustes.alta_masiva_de_usuarios|yesno:"Desactivar,Activar" }}
+      </button>
+    </form>
+  {% endif %}
+
+  {% if error %}
+    <p class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>
+  {% endif %}
+
+  {% if resultado %}
+    {# Paso 3: hecho #}
+    <div class="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200" role="status">
+      <p class="font-semibold">Importación hecha.</p>
+      <ul class="mt-1 list-disc pl-5">
+        {% for clave, cuantos in resultado.items %}<li>{{ cuantos }} {{ clave }} creados.</li>{% endfor %}
+      </ul>
+      <p class="mt-2">Puedes revisarlos en la <a href="/trastienda/" hx-boost="false" class="underline">trastienda</a> o importar otro fichero.</p>
+    </div>
+  {% endif %}
+
+  {% if revision %}
+    {# Paso 2: vista previa #}
+    <section class="space-y-3">
+      <h2 class="font-semibold">Vista previa de «{{ nombre_del_fichero }}»</h2>
+      {% for mensaje in revision.errores %}
+        <p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300">{{ mensaje }}</p>
+      {% endfor %}
+      {% if revision.filas %}
+        <p class="text-sm">
+          {% with resumen=revision.resumen %}
+            Filas: {{ revision.filas|length }} ·
+            se crean: {{ resumen.nuevo|default:0 }} ·
+            ya existen: {{ resumen.existe|default:0 }} ·
+            con errores: <span class="{% if resumen.error %}font-semibold text-red-700 dark:text-red-400{% endif %}">{{ resumen.error|default:0 }}</span>
+          {% endwith %}
+        </p>
+        <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-800">
+              <tr>
+                <th class="px-2 py-1">Fila</th>
+                {% for clave, titulo in columnas %}<th class="px-2 py-1">{{ titulo }}</th>{% endfor %}
+                <th class="px-2 py-1">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fila in revision.filas %}
+                <tr data-estado="{{ fila.estado }}" class="border-t border-slate-200 align-top dark:border-slate-800 {% if fila.estado == 'error' %}bg-red-50 dark:bg-red-950/40{% elif fila.estado == 'existe' %}text-slate-500{% endif %}">
+                  <td class="px-2 py-1">{{ fila.numero }}</td>
+                  {% for celda in fila.celdas %}<td class="px-2 py-1">{{ celda }}</td>{% endfor %}
+                  <td class="px-2 py-1">
+                    <span class="font-medium {% if fila.estado == 'error' %}text-red-700 dark:text-red-400{% elif fila.estado == 'nuevo' %}text-green-700 dark:text-green-400{% endif %}">
+                      {% if fila.estado == "error" %}Error{% elif fila.estado == "existe" %}Ya existe{% else %}Se crea{% endif %}</span>
+                    {% if fila.detalle %}<div class="text-xs text-slate-500">{{ fila.detalle }}</div>{% endif %}
+                    {% for mensaje in fila.mensajes %}<div class="text-xs">{{ mensaje }}</div>{% endfor %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      <form method="post" action="{% url importacion.direccion %}" class="flex flex-wrap gap-2">
+        {% csrf_token %}
+        {% if not revision.hay_errores %}
+          <button type="submit" name="accion" value="confirmar" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Confirmar e importar</button>
+        {% else %}
+          <p class="text-sm text-red-700 dark:text-red-400">Corrige los errores en la hoja y súbela otra vez: no se importa nada mientras haya alguno.</p>
+        {% endif %}
+        <button type="submit" name="accion" value="cancelar" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">Cancelar</button>
+      </form>
+    </section>
+  {% else %}
+    {# Paso 1: plantilla y fichero #}
+    <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <h2 class="font-semibold">Importar {{ importacion.que }}</h2>
+      <ol class="list-decimal space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+        <li>Descarga la plantilla y ábrela con LibreOffice. La hoja «Instrucciones» explica cada columna.</li>
+        <li>Rellena la hoja «Datos» (puedes borrar las filas de ejemplo) y guárdala como .ods o .csv.</li>
+        <li>Súbela y pulsa «Revisar»: verás qué se crea y si hay errores. No se crea nada hasta confirmar.</li>
+      </ol>
+      <p class="text-sm">Columnas: {% for clave, titulo in columnas %}<strong>{{ titulo }}</strong>{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+      <a href="{% url importacion.plantilla %}" hx-boost="false" download
+         class="inline-block rounded border border-marca px-3 py-1.5 text-sm text-marca">⤓ Descargar la plantilla (.ods)</a>
+      {% if permitido %}
+        <form method="post" action="{% url importacion.direccion %}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2 pt-2">
+          {% csrf_token %}
+          <input type="file" name="fichero" accept=".ods,.csv" required class="text-sm">
+          <button type="submit" name="accion" value="revisar" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Revisar</button>
+        </form>
+      {% else %}
+        <p class="text-sm text-amber-800 dark:text-amber-300">Para subir un fichero, activa antes el alta masiva de usuarios (arriba).</p>
+      {% endif %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -26,6 +26,15 @@ DOCUMENTOS = [
     ("arranque", "arranque.md", "Arranque y pruebas"),
 ]
 
+
+
+# Nombre de la ruta de la página de un documento («documento_registro_y_validacion»). Cada documento
+# tiene su propia ruta para que el menú superior marque la pestaña correcta.
+#   - clave: el nombre del documento en la dirección («registro-y-validacion»).
+def nombre_de_ruta(clave):
+    return f"documento_{clave.replace('-', '_')}"
+
+
 # Enlaces de un documento a otro («[texto](tutorial.md#seccion)»), para llevarlos a su página.
 ENLACE_A_OTRO_DOCUMENTO = re.compile(r'href="([a-z0-9-]+)\.md(#[^"]*)?"')
 
@@ -73,4 +82,4 @@ def _enlace_a_su_pagina(coincidencia):
     nombre, ancla = coincidencia.group(1), coincidencia.group(2) or ""
     if nombre not in {clave for clave, _fichero, _titulo in DOCUMENTOS}:
         return coincidencia.group(0)
-    return f'href="{reverse("mantenimiento:documentacion", args=[nombre])}{ancla}"'
+    return f'href="{reverse(f"mantenimiento:{nombre_de_ruta(nombre)}")}{ancla}"'

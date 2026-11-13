@@ -57,6 +57,8 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 - «Rol» es el nivel fijo (superadmin, admin_org, admin_grupo, usuario); «cometido», la función en algo
   concreto (portavoz, coordinación, facilitación, toma de acta…).
 - Nada es público por defecto: todo nace privado.
+- Menú: al menos dos niveles a la izquierda (sección y subsección) y el tercer nivel arriba (las vistas
+  de la subsección). Si no está claro en qué nivel va algo, se pregunta.
 - El modelo de usuario es `usuarios.Usuario` (su nombre visible es el alias). Nada se ve sin sesión.
 
 ## Estado
@@ -72,5 +74,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   superadmin «Águila», contraseña `M3n0sL3ctiv4s`; organizaciones «ORG <río>» y grupos «GRU <afluente>»).
   También la sección «Desarrollo y mantenimiento» (módulo `mantenimiento`: documentación de docs/ y
   entrada a la trastienda) y `audiencias` (niveles de visibilidad, configuración por organización y regla
-  dura entre organizaciones: nada sin invitación hecha y aceptada con privilegios). Siguiente: importación
-  masiva de grupos y usuarios desde Excel (preguntas en [A-20]) y después `boveda`.
+  dura entre organizaciones: nada sin invitación hecha y aceptada con privilegios) e importación masiva de
+  grupos y usuarios desde .ods/.csv con plantillas (Desarrollo y mantenimiento → Pruebas). Siguiente:
+  tablas de la `boveda`.

@@ -94,6 +94,10 @@ Los usuarios de ejemplo son animales y árboles (Lince, Nutria, Encina, Roble…
 **Águila**. Todos tienen la contraseña `M3n0sL3ctiv4s`, y cada cual puede cambiarla en «Mi cuenta →
 Contraseña». Al entrar da igual escribir el alias con o sin tildes y mayúsculas («aguila»).
 
+Para cargar muchos grupos o usuarios de golpe, entra como superadmin en **Desarrollo y mantenimiento →
+Pruebas**: descarga la plantilla (.ods), rellénala con LibreOffice y súbela. Para los usuarios, activa
+antes «Permitir el alta masiva de usuarios».
+
 ## 3. Seguir con Claude
 
 Abre Claude Code en el contenedor nuevo y pídele: «Lee CLAUDE.md y docs/diseno.md y empecemos la

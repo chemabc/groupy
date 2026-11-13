@@ -118,6 +118,13 @@ document.addEventListener("alpine:init", () => {
       guardar("menu.plegado", plegado);
     },
 
+    // Dice si las subsecciones de una sección se ven: si se abrieron a mano o si se está dentro de ella
+    // (así, al entrar en una subsección, su sección aparece abierta aunque no se hubiera abierto).
+    //   - codigo: código de la sección.
+    estaAbierta(codigo) {
+      return this.abiertas.includes(codigo) || Alpine.store("navegacion").secciones.includes(codigo);
+    },
+
     // Abre o cierra las subsecciones de una sección.
     //   - codigo: código de la sección, como «grupos.organizaciones».
     alternarSeccion(codigo) {

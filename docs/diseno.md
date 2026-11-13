@@ -386,6 +386,12 @@ JavaScript y una posible aplicación móvil.
 - **Sección «Inicio» de demostración** en el contrato de `base`, con las vistas «Estructura» y
   «Componentes», mientras no haya otros módulos.
 
+**Menú en tres niveles (13 de noviembre de 2026, a petición de la persona usuaria).** El menú izquierdo
+tiene **al menos dos niveles** (sección y subsección, con `EntradaDeMenu.subsecciones`), y el tercer
+nivel son las **vistas del menú superior** de cada subsección. Ejemplo: «Desarrollo y mantenimiento» →
+«Pruebas» (izquierda) → «Importar grupos» · «Importar usuarios» (arriba). Al entrar en una subsección,
+su sección se abre sola en el menú izquierdo. Cuando no esté claro en qué nivel va algo, se pregunta.
+
 **Tabla filtrable (12 de noviembre de 2026).**
 - **Componente propio** (`base/tablas.py` y `base/templates/base/tabla.html`). La vista crea una `Tabla`
   con sus columnas (`Columna`), su fuente (`FuenteDeConsulta` para un QuerySet o `FuenteDeLista` para
@@ -725,6 +731,31 @@ usa `permisos`), con el permiso `mantenimiento.ver`, que de entrada solo tiene e
   - *Descartado:* el complemento de tipografía de Tailwind (otra dependencia para unas pocas reglas).
 - **Trastienda:** una página que explica qué es y un botón que la abre (sin htmx, porque es otra
   aplicación).
+- **Organización en tres niveles** (13 de noviembre de 2026): subsecciones «Ayuda y documentación»
+  (arriba, una pestaña por documento), «Pruebas» (arriba, «Importar grupos» e «Importar usuarios») y
+  «Trastienda».
+
+**Importación masiva de grupos y usuarios (13 de noviembre de 2026, a petición de la persona usuaria).**
+En «Desarrollo y mantenimiento → Pruebas». Solo para el superadmin.
+- **Plantillas en formato LibreOffice (.ods)**, que se descargan con una hoja «Datos» (cabecera en
+  negrita, filas de ejemplo y desplegables para el rol y los sí/no) y una hoja «Instrucciones». Se puede
+  subir .ods o .csv. Se escriben y se leen con código propio (`base/hojas.py`, librería estándar).
+  *Descartado:* .xlsx de Microsoft (la persona usuaria usa LibreOffice) y librerías externas (odfpy,
+  pyexcel), que harían falta solo para esto.
+- **En dos pasos (2A):** subir → **vista previa** con lo que se crea, lo que ya existe, avisos y errores
+  por fila → **confirmar**, todo o nada. Con algún error no se puede confirmar. Entre los dos pasos, el
+  plan se guarda en la sesión, sin contraseñas en claro (ya cifradas).
+- **Grupos:** columnas Organización, Grupo, Grupo padre y Localización. El orden de las filas da igual;
+  un padre vacío es un grupo principal; la organización que no existe se crea; un grupo que ya existe no
+  se toca (si el fichero le pone otro padre, se avisa); se detectan padres inexistentes y círculos. La
+  localización va al «ámbito geográfico» (cuando lleguen los lugares, se enlazará).
+- **Usuarios:** columnas Alias, Contraseña, Organización, Grupo, Rol, Asamblea base, Admin de la
+  organización y Correo alternativo. Una fila por grupo (varias filas por alias). Rol vacío = usuario
+  normal. La contraseña basta en una fila y se comprueba con las reglas de contraseñas; si el alias ya
+  existe, no se cambia (cada persona la cambia en «Mi cuenta»). **Asamblea base opcional:** si no se
+  marca ninguna, la primera fila del alias, salvo que ya tenga una. El grupo debe existir.
+- **Interruptor «Permitir el alta masiva de usuarios»** (`AjustesDeMantenimiento`), apagado al
+  empezar: crea alias sin pasar por la bóveda, así que es para el periodo de pruebas.
 - **El menú oculta las secciones sin permiso.** `EntradaDeMenu.permiso` ya existía; ahora `base` pregunta
   a una función que le presta `permisos` al arrancar (`registrar_comprobador_de_permisos`), porque `base`
   no puede importar `permisos`. Se mira si la persona tiene el permiso en alguna parte
