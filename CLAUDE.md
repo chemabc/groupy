@@ -71,4 +71,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   ordenada y explicada, y la orden `python manage.py ejemplos crear` (usuarios: animales y árboles,
   superadmin «Águila», contraseña `M3n0sL3ctiv4s`; organizaciones «ORG <río>» y grupos «GRU <afluente>»).
   También la sección «Desarrollo y mantenimiento» (módulo `mantenimiento`: documentación de docs/ y
-  entrada a la trastienda). Siguiente: `audiencias` (preguntas planteadas en [A-18], sin responder).
+  entrada a la trastienda) y `audiencias` (niveles de visibilidad, configuración por organización y regla
+  dura entre organizaciones: nada sin invitación hecha y aceptada con privilegios). Siguiente: importación
+  masiva de grupos y usuarios desde Excel (preguntas en [A-20]) y después `boveda`.

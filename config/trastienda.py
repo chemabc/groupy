@@ -18,6 +18,7 @@ SECCIONES = [
     ("Organizaciones y grupos", ["grupos.Organizacion", "grupos.Grupo", "grupos.RelacionEntreGrupos", "grupos.InvitacionDeGrupo"]),
     ("Admins (de organización y de grupo)", ["grupos.AdminDeOrganizacion", "grupos.AdminDeGrupo"]),
     ("Roles y permisos", ["permisos.Rol", "permisos.ExcepcionDePermiso", "permisos.Cometido"]),
+    ("Visibilidad", ["audiencias.ConfiguracionDeVisibilidad", "audiencias.Audiencia"]),
     ("Funcionamiento interno", ["eventos_sw.AvisoPendiente"]),
 ]
 
@@ -32,6 +33,7 @@ AYUDA_DE_INICIO = (
     "«Admins»: quién administra cada organización y cada grupo.\n\n"
     "«Roles y permisos»: qué puede hacer cada rol (también los roles que cree el superadmin), las "
     "excepciones de una persona en un grupo y los cometidos de cada cual en cosas concretas.\n\n"
+    "«Visibilidad»: qué niveles ofrece cada organización y las audiencias (quién ve cada cosa).\n\n"
     "«Funcionamiento interno»: avisos pendientes entre módulos; normalmente no hay que tocar nada."
 )
 

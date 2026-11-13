@@ -185,6 +185,35 @@ dentro de una ficha**):
 - La pantalla de elección explica en una frase a quién llega cada opción y cuántas personas son (solo si
   son 5 o más).
 
+**Cómo está hecho `audiencias` (13 de noviembre de 2026).**
+- **Regla dura entre organizaciones** (a petición de la persona usuaria, al responder 1A): una audiencia
+  nunca incluye grupos ni personas de otra organización, salvo que lo concreto (el ancla: un proyecto…)
+  tenga una invitación **hecha por alguien con permiso** del grupo que invita y **aceptada por alguien con
+  permiso** del grupo invitado. Se comprueba en el propio módulo, la pida quien la pida. Entran el grupo
+  invitado y sus subgrupos, no los grupos que lo contienen. Solo cuenta para esa cosa: la audiencia con
+  invitados no se comparte con nada más. Por eso **invitar a otra organización pasa a ser solo de los
+  admins** (`grupos.invitar`: admin del grupo y admin de la organización; migración
+  `permisos/0003`). *(Pendiente: qué pasa con lo ya compartido si algún día se puede anular una
+  invitación aceptada.)*
+- **Tablas:** `Audiencia` (tipo, huella, organización dueña, ancla si es de una sola cosa y si es
+  personal), `GrupoDeAudiencia` (grupo con todos sus subgrupos) y `PersonaDeAudiencia`.
+- **Lo privado (2A):** una audiencia propia por cosa, con la lista de personas implicadas, que mantiene el
+  módulo (`anadir_personas`, `quitar_personas`). Lo **personal** (proyectos y tareas personales) es de una
+  sola persona y ni el superadmin lo ve.
+- **Se comparten las iguales (3A):** por su huella («grupos:3,7», «organizacion:2», «publica»).
+- **Configuración por organización (4A):** `ConfiguracionDeVisibilidad` con la altura máxima, si permite
+  «toda la organización» y si permite lo público. Sin configuración, la más cerrada: hasta el grupo
+  padre, sin toda la organización y sin lo público. La ajusta el admin de la organización
+  (`audiencias.configurar`) o el superadmin.
+- **Uso:** `audiencia_para(nivel, grupo, altura, grupos, personas, ancla)` crea la audiencia de lo que
+  se publica; `filtrar_visibles(consulta, usuario)` deja en una lista solo lo visible; `puede_ver` para una
+  cosa; `describir(audiencia)` da la frase («Lo ven las personas de GRU Jarama y de sus subgrupos (12
+  personas).»).
+- **Coste:** 2 consultas por persona para calcular lo que ve, guardado en la caché con versión y
+  invalidado con señales (sus pertenencias, sus audiencias privadas; mover grupos o crear audiencias de
+  grupos, de organización o pública invalida a todo el mundo).
+- El superadmin ve todo menos lo personal de otras personas.
+
 ### 3.5 Permisos precalculados
 
 - `permisos_de(usuario)` devuelve `{grupo: {códigos}}` y se guarda en la caché con versión. Se invalida al

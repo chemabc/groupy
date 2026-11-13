@@ -54,7 +54,13 @@ class GruposConfig(ModuloConfig):
         Permiso("grupos.admitir", "Admitir personas en el grupo o sacarlas de él", roles=("admin_grupo", "admin_org")),
         Permiso("grupos.nombrar_admin_grupo", "Nombrar o quitar admins del grupo", roles=("admin_org",)),
         Permiso("grupos.editar_organizacion", "Editar los datos de la organización", roles=("admin_org",)),
-        Permiso("grupos.invitar", "Invitar a un grupo de otra organización a algo del grupo", roles=("usuario",)),
+        # Invitar a otra organización abre una puerta entre las dos: solo con privilegios (13 de noviembre
+        # de 2026, a petición de la persona usuaria).
+        Permiso(
+            "grupos.invitar",
+            "Invitar a un grupo de otra organización a algo del grupo",
+            roles=("admin_grupo", "admin_org"),
+        ),
         Permiso(
             "grupos.responder_invitacion",
             "Aceptar o rechazar las invitaciones de otras organizaciones al grupo",

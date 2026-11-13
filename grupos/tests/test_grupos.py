@@ -145,7 +145,7 @@ ALFA = modulo_falso(
 class PruebasDeInvitaciones(TestCase):
     """Comprueba las invitaciones a grupos de otra organización (proyectos conjuntos)."""
 
-    # Tajo (Jarama, con Lince) invita a Ebro (Segre, con Zorro de admin y Grulla de usuaria).
+    # Tajo (Jarama, con Lince de admin) invita a Ebro (Segre, con Zorro de admin y Grulla de usuaria).
     def setUp(self):
         cache.clear()
         contexto = contratos_de_prueba(ALFA)
@@ -157,7 +157,7 @@ class PruebasDeInvitaciones(TestCase):
         self.lince = crear_usuario_de_prueba("Lince")
         self.zorro = crear_usuario_de_prueba("Zorro")
         self.grulla = crear_usuario_de_prueba("Grulla")
-        admitir(self.lince, self.jarama)
+        admitir(self.lince, self.jarama, rol=Pertenencia.ADMIN_GRUPO)
         admitir(self.zorro, self.segre, rol=Pertenencia.ADMIN_GRUPO)
         admitir(self.grulla, self.segre)
 

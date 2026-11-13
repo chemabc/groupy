@@ -29,11 +29,14 @@ class PruebaConGrupos(TestCase):
     """
     Base de las pruebas: ORG Tajo (GRU Tajo ⊃ GRU Jarama ⊃ GRU Henares) y ORG Ebro (GRU Segre).
     Nutria es usuaria de Henares; Lince, admin de Henares; Zorro, admin de ORG Tajo (está en Jarama).
+    En estas pruebas, el rol «usuario» tiene «grupos.invitar», para tener un permiso de cualquier
+    miembro con el que probar la herencia (en la aplicación es solo de los admins).
     """
 
-    # Crea los grupos y las personas.
+    # Crea los grupos y las personas, y da «grupos.invitar» al rol «usuario».
     @classmethod
     def setUpTestData(cls):
+        PermisoDeRol.objects.get_or_create(rol_id="usuario", permiso="grupos.invitar")
         cls.tajo, cls.general = crear_organizacion("ORG Tajo", "GRU Tajo")
         cls.jarama = crear_grupo(cls.tajo, "GRU Jarama", padre=cls.general)
         cls.henares = crear_grupo(cls.tajo, "GRU Henares", padre=cls.jarama)
@@ -235,5 +238,6 @@ class PruebasDeSincronizacion(TestCase):
 
     # Tras «migrate» (al crear la base de pruebas), los permisos de los contratos ya tienen sus roles.
     def test_tras_migrate(self):
-        self.assertTrue(PermisoDeRol.objects.filter(rol_id="usuario", permiso="grupos.invitar").exists())
+        self.assertTrue(PermisoDeRol.objects.filter(rol_id="admin_grupo", permiso="grupos.invitar").exists())
+        self.assertFalse(PermisoDeRol.objects.filter(rol_id="usuario", permiso="grupos.invitar").exists())
         self.assertTrue(PermisoDeRol.objects.filter(rol_id="admin_org", permiso="permisos.dar_excepciones").exists())

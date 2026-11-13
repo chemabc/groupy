@@ -353,3 +353,20 @@ sirve aquí y dónde se usa.
 - **Los botones del panel de Django** salen de la etiqueta `{% submit_row %}`. Se sustituyen
   redefiniendo el bloque `submit_buttons_bottom` de `admin/change_form.html` en nuestra plantilla de
   ficha.
+
+## 14. Audiencias: un número que dice quién ve cada cosa (13 de noviembre de 2026)
+
+- **La idea.** En lugar de guardar en cada proyecto o evento la lista de quién lo ve, cada cosa guarda
+  un solo número (`audiencia_id`). Por cada persona se calcula una vez qué audiencias ve, y las listas se
+  filtran con `audiencia_id__in=...`, que PostgreSQL resuelve muy rápido con un índice.
+- **Compartir filas iguales.** «Lo ven GRU Jarama y sus subgrupos» puede ser la audiencia de cien cosas.
+  Si cada una creara su propia fila, la lista de audiencias de cada persona crecería sin fin. La
+  «huella» («grupos:7») resume la composición, y es única: elegir lo mismo devuelve la misma fila
+  (`get_or_create`).
+- **«Sus subgrupos» con la tabla de cierre.** Una persona ve la audiencia de un grupo G si está en G o en
+  algún subgrupo de G. Eso es lo mismo que decir que G es uno de «sus grupos» de `grupos_de` (los suyos y
+  los que los contienen), así que basta con una consulta.
+- **Subconsultas dentro de una consulta.** `Q(id__in=GrupoDeAudiencia.objects.filter(...).values(...))`
+  no hace una consulta aparte: Django la mete dentro de la principal como `IN (SELECT ...)`.
+- **Una regla que se comprueba en un solo sitio.** La de las organizaciones vive en `audiencias`, no en
+  cada módulo que crea audiencias. Así ningún módulo nuevo puede olvidarla.
