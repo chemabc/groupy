@@ -1,0 +1,11 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Una solicitud (solicitudes/views.py, solicitud). Recibe «fila» (ver _filas) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p><a href="{% url 'solicitudes:pendientes' %}" class="text-sm text-marca hover:underline">← Solicitudes</a></p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <ul>{% include "solicitudes/tarjeta.html" with completa=True %}</ul>
+</div>
+{% endblock %}

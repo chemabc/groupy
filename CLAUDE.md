@@ -89,4 +89,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   papelera, «Limpiar las vistas», preferencias y número sin ver en el menú; servicio `trabajador` en
   docker), avisos de la administración (con niveles de color editables en «Configuración → Niveles de
   aviso») y conversaciones con la administración (buzón compartido, firma «Admin de GRU X (alias)»,
-  estado, mensajes nuevos cada 10 s). Siguiente: `solicitudes`. Recuerda `migrate --database=boveda`.
+  estado, mensajes nuevos cada 10 s) y `solicitudes` (tipos declarados en el contrato; primero, «Entrar
+  en un grupo»: sí de la administración y 2 apoyos, o el sí del superadmin; ajustes en «Configuración →
+  Solicitudes»). Siguiente: `moderacion`. Recuerda `migrate --database=boveda`.

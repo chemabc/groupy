@@ -1,0 +1,30 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Configuración → Solicitudes» (solicitudes/views.py, ajustes). Recibe «tarjetas» (la
+  plataforma y cada organización que ajusta quien mira, con cada tipo: apoyos, días y si está ajustado
+  ahí) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Cuántos apoyos necesita cada tipo de solicitud y cuántos días tiene. Solo cambia las solicitudes nuevas.</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% for tarjeta in tarjetas %}
+    <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <h2 class="mb-2 font-semibold">{{ tarjeta.nombre }}</h2>
+      <ul class="space-y-2">
+        {% for fila in tarjeta.filas %}
+          <li>
+            <form method="post" class="flex flex-wrap items-end gap-2 text-sm">
+              {% csrf_token %}<input type="hidden" name="tipo" value="{{ fila.tipo.codigo }}"><input type="hidden" name="organizacion" value="{{ tarjeta.organizacion|default:'' }}">
+              <span class="min-w-40 font-medium">{{ fila.tipo.nombre }}{% if not fila.propio %} <span class="text-xs font-normal text-slate-500">(heredado)</span>{% endif %}</span>
+              <label class="flex flex-col text-xs">Apoyos<input type="number" name="apoyos" min="0" value="{{ fila.apoyos }}" class="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"></label>
+              <label class="flex flex-col text-xs">Días<input type="number" name="dias" min="1" value="{{ fila.dias }}" class="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"></label>
+              <button type="submit" class="rounded bg-marca px-2 py-1 text-white">Guardar</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

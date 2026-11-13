@@ -16,6 +16,8 @@ urlpatterns = [
     path("cuenta/", include("usuarios.urls")),
     # Módulo «grupos»: Organizaciones y grupos (mis grupos, árbol, fichas, relaciones e invitaciones).
     path("organizaciones/", include("grupos.urls")),
+    # Módulo «solicitudes»: pedir con apoyos y responder.
+    path("solicitudes/", include("solicitudes.urls")),
     # Módulo «comunicaciones»: notificaciones y preferencias de aviso.
     path("comunicaciones/", include("comunicaciones.urls")),
     # Módulo «administracion»: pantallas del superadmin (personas de la bóveda, dominios y alias).

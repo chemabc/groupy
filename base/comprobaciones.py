@@ -36,6 +36,8 @@ def _comprobar_funciones():
     rutas = [escucha.receptor for lista in registro.escuchas.values() for escucha in lista]
     rutas += [fuente.funcion for fuente in registro.fuentes_de_calendario.values()]
     rutas += [aviso.preparar for aviso in registro.avisos.values()]
+    rutas += [tipo.resolver for tipo in registro.solicitudes.values()]
+    rutas += [tipo.comprobar for tipo in registro.solicitudes.values() if tipo.comprobar]
     rutas += [entrada.contador for entrada in _todas_las_entradas(registro.menu) if entrada.contador]
     for datos in registro.datos_de_ejemplo.values():
         rutas += [datos.crear, datos.borrar]

@@ -4,6 +4,7 @@ vistos, borrarlos y guardar las preferencias de cada persona. Las pantallas (com
 llaman a estas funciones.
 """
 
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -37,6 +38,8 @@ def repartir(aviso, **datos):
     tipo = registro.avisos[aviso]
     preparados = import_string(tipo.preparar)(**datos)
     destinatarios = {usuario for preparado in preparados for usuario in preparado.usuarios}
+    # El aviso se reparte unos segundos después: quien se haya dado de baja entretanto ya no existe.
+    existentes = set(get_user_model().objects.filter(pk__in=destinatarios).values_list("pk", flat=True))
     apagados = set(
         PreferenciaDeAviso.objects.filter(tipo=aviso, web=False, usuario_id__in=destinatarios).values_list("usuario_id", flat=True)
     )
@@ -44,7 +47,7 @@ def repartir(aviso, **datos):
     for preparado in preparados:
         for usuario in preparado.usuarios:
             # Cada persona recibe el aviso una sola vez, aunque salga en varios grupos de destinatarios.
-            if usuario in apagados or usuario in avisados:
+            if usuario in apagados or usuario in avisados or usuario not in existentes:
                 continue
             avisados.add(usuario)
             nuevas.append(Notificacion(usuario_id=usuario, tipo=aviso, origen=tipo.origen, texto=preparado.texto, enlace=preparado.enlace))

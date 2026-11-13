@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «grupos».
 """
 
-from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, Vista
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, TipoDeSolicitud, Vista
 
 
 class GruposConfig(ModuloConfig):
@@ -79,6 +79,16 @@ class GruposConfig(ModuloConfig):
         TipoDeAviso(
             "grupos.invitacion_rechazada", "Han rechazado una invitación de tu grupo", "grupos",
             "grupos.invitacion_rechazada", "grupos.avisos.invitacion_respondida",
+        ),
+    )
+    # Lo que se puede pedir a un grupo con apoyos (lo gestiona «solicitudes»; ver grupos/solicitudes.py).
+    # Entrar en un grupo: el sí de su administración y 2 apoyos de sus miembros en 15 días; o el sí del
+    # superadmin, que basta (13 de noviembre de 2026, a petición de la persona usuaria).
+    solicitudes = (
+        TipoDeSolicitud(
+            "grupos.entrar", "Entrar en un grupo", resolver="grupos.solicitudes.entrar", apoyos=2, dias=15,
+            aprobacion="grupos.admitir", basta_el_superadmin=True, solo_miembros=False,
+            comprobar="grupos.solicitudes.puede_pedir_entrar", generica=True,
         ),
     )
     permisos = (

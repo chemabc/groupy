@@ -27,6 +27,7 @@ APARTADOS_CON_CODIGO = {
     "grupos_de_etiquetas": "codigo",
     "limpiables": "codigo",
     "avisos": "codigo",
+    "solicitudes": "codigo",
 }
 
 

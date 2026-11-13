@@ -624,6 +624,29 @@ presiones y roces.
 solicitante, apoyos_necesarios, caduca_el, estado, objeto_creado como ancla, contadores) y `Apoyo`
 (solicitud, usuario, acepta o rechaza; único por persona y solicitud).
 
+**Cómo está hecho `solicitudes` (13 de noviembre de 2026, decisiones 1A, 2A y 3A de la persona
+usuaria).**
+- **Cada módulo declara sus tipos (1A)** en su contrato: `TipoDeSolicitud(código, nombre, resolver,
+  apoyos, días, aprobacion, basta_el_superadmin, solo_miembros, comprobar, generica)`. `solicitudes` lleva
+  apoyos, plazo y estado; al aceptarse llama a `resolver(solicitud)` del módulo, que crea lo pedido. Los
+  debates y las reuniones declararán los suyos.
+- **Primer tipo: «Entrar en un grupo» (2A, de `grupos`).** Resuelve la admisión que estaba pendiente:
+  hace falta el sí de la administración del grupo (permiso `grupos.admitir`: su admin o el de la
+  organización) **y** 2 apoyos de sus miembros, en 15 días. Además, **el sí del superadmin basta** por sí
+  solo, para los primeros usuarios (a petición de la persona usuaria). Si quien entra no tiene asamblea
+  base, ese grupo pasa a serlo. Se pide desde «Solicitudes → Mis solicitudes → Pedir algo», con los grupos
+  de sus organizaciones (o de todas, si aún no está en ninguno).
+- **Apoyos y plazos ajustables:** `AjusteDeSolicitud`, en «Configuración → Solicitudes»: el superadmin los
+  de toda la plataforma y el admin de cada organización (`solicitudes.ajustar`) los de la suya. Vale el de
+  la organización, si no el de la plataforma, si no el del contrato. Solo cambia las solicitudes nuevas.
+- **Sección «Solicitudes» (3A):** «Pendientes (N)», «Pasadas» y «Mis solicitudes». N cuenta las que
+  esperan algo de esa persona (responder, o dar el sí de la administración). El superadmin ve todas, con
+  su estado, sus apoyos («2 de 2», con los alias) y si tienen el sí de la administración.
+- **Caducar:** las pantallas caducan las vencidas al abrirse, y la orden `caducar_solicitudes` lo hace
+  para ejecutarla una vez al día.
+- **Avisos:** «necesita el sí de tu administración» (a los admins del grupo y de la organización),
+  «se ha aceptado tu solicitud» y «ha caducado tu solicitud».
+
 ---
 
 ## 7. Identidad y validación
@@ -1294,7 +1317,6 @@ llegarán con el chat (más adelante).
 
 ## 20. Pendiente de decidir
 
-- Admisión en grupos: cuántos votos hacen falta además del del admin_grupo, quién vota y en qué plazo.
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.
 - **Búsqueda extensa para los admins** (13 de noviembre de 2026, petición de la persona usuaria): el

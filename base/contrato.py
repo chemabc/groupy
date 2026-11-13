@@ -205,6 +205,42 @@ class TipoDeAviso:
 
 
 @dataclass(frozen=True)
+class TipoDeSolicitud:
+    """
+    Algo que se pide a un grupo y que necesita apoyos para hacerse (entrar en el grupo, abrir un debate,
+    convocar una reunión…). El módulo «solicitudes» gestiona los apoyos, el plazo y el estado; cuando se
+    alcanzan, llama a la función «resolver» del módulo que lo declara, que crea lo pedido. Ver
+    docs/diseno.md, apartado 6.
+    """
+
+    # Código único, empezando por la etiqueta del módulo. Ejemplo: «grupos.entrar».
+    codigo: str
+    # Nombre visible. Ejemplo: «Entrar en un grupo».
+    nombre: str
+    # Ruta de la función que crea lo pedido al aceptarse: recibe la solicitud y devuelve el ancla (tipo,
+    # id) de lo creado, o None. Ejemplo: «grupos.solicitudes.entrar».
+    resolver: str
+    # Apoyos de miembros del grupo que hacen falta, si nadie lo ha ajustado (en «Configuración →
+    # Solicitudes»). Quien solicita no cuenta.
+    apoyos: int = 2
+    # Días que tiene para conseguirlos antes de caducar, si nadie lo ha ajustado.
+    dias: int = 15
+    # Permiso que hace falta en el grupo para dar el sí de la administración; vacío si no hace falta.
+    # Ejemplo: «grupos.admitir» (el admin del grupo o el de la organización).
+    aprobacion: str = ""
+    # Si el sí del superadmin basta por sí solo, sin apoyos (para los primeros usuarios).
+    basta_el_superadmin: bool = False
+    # Si quien solicita debe ser miembro del grupo (False para «entrar en un grupo»).
+    solo_miembros: bool = True
+    # Ruta de una función que comprueba, al pedirla, que se puede pedir (recibe usuario y grupo y lanza
+    # ValidationError si no). Vacía: no hay más comprobaciones.
+    comprobar: str = ""
+    # Si se pide desde «Solicitudes → Nueva», solo con descripción y justificación. Los tipos que
+    # necesitan su propio formulario (un debate, una reunión) se piden desde su módulo.
+    generica: bool = False
+
+
+@dataclass(frozen=True)
 class AvisoPreparado:
     """
     Lo que devuelve la función «preparar» de un TipoDeAviso: a quién se avisa y qué se le dice. Cuidado:
@@ -364,6 +400,8 @@ class ModuloConfig(AppConfig):
     limpiables: tuple[Limpiable, ...] = ()
     # Los tipos de notificación que manda a las personas.
     avisos: tuple[TipoDeAviso, ...] = ()
+    # Lo que se puede pedir con apoyos a un grupo.
+    solicitudes: tuple[TipoDeSolicitud, ...] = ()
     # Solo el módulo que reparte las notificaciones («comunicaciones»): ruta de la función que recibe
     # cada aviso. El registro le añade una escucha asíncrona por cada TipoDeAviso de cualquier módulo.
     reparte_avisos: str = ""
