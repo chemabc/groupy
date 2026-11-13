@@ -84,6 +84,10 @@ npm run construir
 #     migrate: aplica las migraciones pendientes de todos los módulos
 python manage.py migrate
 
+# Lo mismo en la base de la bóveda (la identidad real), que va aparte
+#     --database=boveda: aplica las migraciones en esa base (solo crea las tablas de la bóveda)
+python manage.py migrate --database=boveda
+
 # Crea los datos de ejemplo de todos los módulos (solo funciona en desarrollo)
 #     ejemplos: orden del módulo «ejemplos»
 #     crear: crea los que falten; con «borrar» se quitan

@@ -14,6 +14,8 @@ urlpatterns = [
     path("trastienda/", admin.site.urls),
     # Módulo «usuarios»: entrar, salir y «Mi cuenta».
     path("cuenta/", include("usuarios.urls")),
+    # Módulo «administracion»: pantallas del superadmin (personas de la bóveda, dominios y alias).
+    path("usuarios/", include("administracion.urls")),
     # Módulo «mantenimiento»: documentación del proyecto y entrada a la trastienda.
     path("mantenimiento/", include("mantenimiento.urls")),
     # Módulo «base»: la portada y el escaparate de componentes.

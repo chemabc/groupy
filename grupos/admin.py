@@ -15,10 +15,12 @@ from django.apps import apps
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.db.models import Count, OuterRef, Subquery
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
 from base.trastienda import ConAyuda
+from boveda.servicios import dominios_de
 
 from .models import (
     AdminDeGrupo,
@@ -210,8 +212,8 @@ class OrganizacionEnLaTrastienda(ConAyuda, admin.ModelAdmin):
     )
     list_display = ["nombre", "numero_de_grupos", "creada_el"]
     search_fields = ["nombre"]
-    fields = ["nombre", "descripcion", "creada_el", "arbol_de_grupos", "admins_de_la_organizacion"]
-    readonly_fields = ["arbol_de_grupos", "admins_de_la_organizacion"]
+    fields = ["nombre", "descripcion", "creada_el", "arbol_de_grupos", "admins_de_la_organizacion", "dominios_de_correo"]
+    readonly_fields = ["arbol_de_grupos", "admins_de_la_organizacion", "dominios_de_correo"]
 
     # Añade el número de grupos a cada fila, en la misma consulta.
     def get_queryset(self, request):
@@ -229,6 +231,20 @@ class OrganizacionEnLaTrastienda(ConAyuda, admin.ModelAdmin):
             return "—"
         grupos = organizacion.grupos.en_orden_de_arbol().select_related("organizacion")
         return lineas_de_grupos(grupos)
+
+    # Campo de solo lectura: los dominios de correo permitidos para registrarse en ella. Se guardan en la
+    # bóveda (otra base de datos), así que aquí solo se muestran, con un enlace a donde se cambian.
+    @admin.display(description="dominios de correo permitidos")
+    def dominios_de_correo(self, organizacion):
+        if organizacion.pk is None:
+            return "—"
+        dominios = ", ".join(sorted(dominios_de(organizacion.pk))) or "cualquiera"
+        return format_html(
+            "{}<br><small>Se guardan en las tablas de la bóveda, no en las de las organizaciones. Se cambian en "
+            "<a href='{}' target='_blank'>Usuarios → Bóveda → Dominios permitidos</a>.</small>",
+            dominios,
+            reverse("administracion:dominios"),
+        )
 
     # Campo de solo lectura: quién la administra.
     @admin.display(description="admins")

@@ -1,0 +1,42 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de una persona de la bóveda (administracion/views.py, persona). Recibe «persona», «formulario»
+  (nombre, organización y correo), «aviso», «organizacion» (su nombre) y «pases». El nombre real solo se
+  ve aquí, nunca en las listas.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-4">
+  <p><a href="{% url 'administracion:personas' %}" class="text-sm text-marca hover:underline">← Personas</a></p>
+  {% if aviso %}<p class="rounded border border-green-300 bg-green-50 p-2 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200" role="status">{{ aviso }}</p>{% endif %}
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 text-lg font-semibold">{{ persona }}</h2>
+    <dl class="grid grid-cols-[10rem_1fr] gap-x-3 gap-y-1 text-sm">
+      <dt class="text-slate-500">Estado</dt><dd>{{ persona.get_estado_display }}{% if persona.metodo %} ({{ persona.get_metodo_display|lower }}){% endif %}</dd>
+      <dt class="text-slate-500">Organización</dt><dd>{{ organizacion|default:"—" }}</dd>
+      <dt class="text-slate-500">Registrada el</dt><dd>{{ persona.creada_el|date:"d/m/Y" }}</dd>
+      <dt class="text-slate-500">Validada el</dt><dd>{{ persona.validada_el|date:"d/m/Y"|default:"—" }}</dd>
+      <dt class="text-slate-500">Correo oficial</dt>
+      <dd>{% if persona.correo_oficial %}{{ persona.correo_oficial }}{% elif persona.huella_del_correo %}Borrado al validar (se guarda solo su huella){% else %}—{% endif %}</dd>
+      <dt class="text-slate-500">Pase</dt>
+      <dd>{% for pase in pases %}Emitido el {{ pase.emitido_el|date:"d/m/Y" }}{% if pase.provisional %} (marcado en el alta provisional){% endif %}{% empty %}No emitido{% endfor %}</dd>
+    </dl>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Datos reales</h3>
+    <form method="post">
+      {% csrf_token %}
+      {% if formulario.non_field_errors %}<p class="mb-2 text-sm text-red-700 dark:text-red-400">{{ formulario.non_field_errors|join:" " }}</p>{% endif %}
+      {{ formulario }}
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" name="accion" value="guardar" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+        {% if persona.estado == "pendiente" %}
+          <button type="submit" name="accion" value="validar" class="rounded border border-marca px-3 py-1.5 text-sm text-marca">Validar (alta por el superadmin)</button>
+        {% endif %}
+        <a href="{% url 'administracion:personas' %}" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

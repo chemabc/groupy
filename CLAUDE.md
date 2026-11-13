@@ -75,5 +75,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   También la sección «Desarrollo y mantenimiento» (módulo `mantenimiento`: documentación de docs/ y
   entrada a la trastienda) y `audiencias` (niveles de visibilidad, configuración por organización y regla
   dura entre organizaciones: nada sin invitación hecha y aceptada con privilegios) e importación masiva de
-  grupos y usuarios desde .ods/.csv con plantillas (Desarrollo y mantenimiento → Pruebas). Siguiente:
-  tablas de la `boveda`.
+  grupos y usuarios desde .ods/.csv con plantillas (Desarrollo y mantenimiento → Pruebas), tablas de la
+  `boveda` en su base (alta provisional, dominios por organización) y sección «Usuarios» del superadmin
+  (módulo `administracion`). Recuerda `migrate --database=boveda`. Siguiente: `etiquetas` y `tipologias`.

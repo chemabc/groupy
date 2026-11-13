@@ -1,0 +1,20 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Usuarios → Bóveda → Personas» (administracion/views.py, personas). Recibe «formulario» (alta
+  de una persona) y «tabla» (la lista, sin nombres reales).
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-4">
+  <details class="max-w-2xl rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" {% if formulario.errors %}open{% endif %}>
+    <summary class="cursor-pointer font-semibold">Dar de alta a una persona</summary>
+    <p class="my-2 text-sm text-slate-500">Queda pendiente. En su ficha puedes revisar los datos y validarla (alta por el superadmin). Su alias se crea aparte, en «Alias» o con «Pruebas → Importar usuarios».</p>
+    <form method="post">
+      {% csrf_token %}
+      {% if formulario.non_field_errors %}<p class="mb-2 text-sm text-red-700 dark:text-red-400">{{ formulario.non_field_errors|join:" " }}</p>{% endif %}
+      {{ formulario }}
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Dar de alta</button>
+    </form>
+  </details>
+  {% include "base/tabla.html" %}
+</div>
+{% endblock %}

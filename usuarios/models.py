@@ -126,6 +126,20 @@ class Usuario(AbstractBaseUser):
         default=True,
         help_text="Si puede iniciar sesión. Una cuenta desactivada se conserva, pero no puede entrar.",
     )
+    # Cómo se creó la cuenta.
+    ALTA_DIRECTA = "directa"
+    CON_PASE = "pase"
+    ORIGENES = [(ALTA_DIRECTA, "Alta directa (sin bóveda)"), (CON_PASE, "Con pase (persona validada en la bóveda)")]
+    origen = models.CharField(
+        "origen",
+        max_length=10,
+        choices=ORIGENES,
+        default=ALTA_DIRECTA,
+        help_text=(
+            "Cómo se creó: a mano o importada por el superadmin (alta directa), o con un pase de la bóveda "
+            "(registro real, fase 8). Nunca dice qué persona hay detrás."
+        ),
+    )
     activado_el = models.DateField(
         "activado el día",
         default=timezone.localdate,

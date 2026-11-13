@@ -1,0 +1,10 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Usuarios → Alias → Lista» (administracion/views.py, alias). Recibe «tabla».
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Las cuentas con seudónimo de la plataforma. Pulsa un alias para ver todos sus grupos, activarlo o desactivarlo y nombrarle superadmin. Para crear muchos de golpe: «Desarrollo y mantenimiento → Pruebas → Importar usuarios».</p>
+  {% include "base/tabla.html" %}
+</div>
+{% endblock %}

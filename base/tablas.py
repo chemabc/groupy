@@ -40,6 +40,7 @@ from functools import reduce
 from operator import and_, or_
 
 from django.db.models import Q
+from django.urls import reverse
 
 # Máximo de filas que se mandan enteras para filtrar en el navegador. El superadmin podrá bajarlo.
 LIMITE_EN_NAVEGADOR = 500
@@ -68,6 +69,9 @@ class Columna:
     ordenable: bool = True
     # Si lleva, bajo el título, un cuadro para filtrarla escribiendo un texto.
     filtrable: bool = True
+    # Nombre de la ruta de la ficha de cada fila («administracion:persona»). Si lo hay, el texto de la
+    # celda es un enlace a esa ficha, con la clave de la fila (pk) como parámetro.
+    enlace: str = ""
 
 
 @dataclass(frozen=True)
@@ -184,6 +188,8 @@ class Celda:
     texto: str
     # Valor con el que se ordena en el navegador (las fechas, en formato AAAA-MM-DD).
     valor: str
+    # Dirección a la que lleva la celda, si es un enlace (ver Columna.enlace).
+    enlace: str = ""
 
 
 @dataclass
@@ -299,6 +305,9 @@ class Tabla:
         pintadas = []
         for fila in self.filas:
             celdas = [celda_de(self.fuente.valor(fila, columna.campo)) for columna in self.columnas]
+            for celda, columna in zip(celdas, self.columnas):
+                if columna.enlace:
+                    celda.enlace = reverse(columna.enlace, args=[self.fuente.valor(fila, "pk")])
             pintadas.append(
                 FilaPintada(
                     celdas=celdas,

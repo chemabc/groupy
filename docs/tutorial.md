@@ -391,3 +391,22 @@ sirve aquí y dónde se usa.
 - **Subir ficheros con htmx.** Con `enctype="multipart/form-data"` en el formulario, htmx envía el
   fichero igual que el navegador. Para la descarga de la plantilla se usa `hx-boost="false"`, porque es
   un fichero, no una página.
+
+## 16. Dos bases de datos que no se hablan (13 de noviembre de 2026)
+
+- **El enrutador.** Django pregunta a `config/enrutador.py` en qué base lee, escribe y crea cada tabla:
+  las del módulo `boveda` van a la base «boveda»; las demás, a la de la plataforma. Así, en el código
+  basta con `Persona.objects.all()`: no hay que decir la base cada vez.
+- **`allow_relation`.** El enrutador también decide si dos filas pueden relacionarse con una clave
+  ajena. Entre la bóveda y la plataforma, nunca. Si alguien lo intentara, Django daría error.
+- **Migrar las dos bases.** `migrate` solo trabaja en una base cada vez. Con `--database=boveda` se
+  crean las tablas de la bóveda en su base; el enrutador hace que en ella solo se creen esas.
+- **Transacciones por base.** Una transacción es de una base: `transaction.atomic(using="boveda")`
+  protege los cambios en la bóveda.
+- **Huella con HMAC.** Un resumen normal (SHA-256) de un correo se podría adivinar probando correos. Con
+  HMAC, el resumen se mezcla con una clave secreta que no está en la base: sin la clave, la huella no
+  sirve para nada. Con la clave, el mismo correo da siempre la misma huella, y así se sabe si ya está
+  registrado sin guardarlo.
+- **Pruebas con dos bases.** Una prueba que usa la bóveda lo declara con `databases = {"default",
+  "boveda"}`; si no, Django no la deja tocar esa base. `comprobar_consultas` suma las consultas de las
+  dos bases.

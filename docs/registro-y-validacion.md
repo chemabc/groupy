@@ -29,7 +29,7 @@ siguientes. Hay tres formas de llegar a tener un alias, según la fase del proye
 | 2 | Superadmin | Le da a la persona, en mano o por un canal seguro, su alias y su contraseña | Justo después |
 | 3 | Persona | Entra con su alias y cambia la contraseña en «Mi cuenta → Contraseña» | La primera vez que entra |
 
-### B. Alta provisional en la bóveda *(fase 1, en preparación)*
+### B. Alta provisional en la bóveda *(fase 1, hecho: Usuarios → Bóveda)*
 
 Igual que A, y además:
 
@@ -313,7 +313,8 @@ guarda colgada del usuario en la plataforma. Nadie puede leerla sin la llave.
 | Pieza | Estado |
 |---|---|
 | Dos bases separadas, huellas, solo fechas, UUID, «Persona 3f2a9c1e» | Hecho (versión 1) |
-| Alta provisional por el superadmin en el panel | Hecho (versión 1) |
+| Alta provisional por el superadmin en el panel | Hecho (versión 1). En la versión 2, alta en la bóveda con validación «superadmin» y pase marcado como emitido (13 de noviembre de 2026) |
+| Dominios de correo permitidos por organización | Se guardan (versión 2); se usarán en el registro real |
 | Validación del centro por avales | Hecho (versión 1) |
 | Firma ciega, pase y activación del alias | Pendiente |
 | Sobre de identidad y registro de aperturas | Pendiente |

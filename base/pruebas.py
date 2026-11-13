@@ -10,12 +10,14 @@ Ayudas para las pruebas de cualquier módulo.
   número de consultas que lleva cada pantalla nueva (ver docs/diseno.md, apartado 3.6).
 """
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.db import connections
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 
 from .contrato import Capa, ModuloConfig
 from .registro import registro
@@ -107,13 +109,25 @@ class PruebaDePantalla(TestCase):
             f"{url} hace {consultas} consultas; el presupuesto es de {MAXIMO_DE_CONSULTAS} como mucho.",
         )
         self._visitar(url)
-        with self.assertNumQueries(consultas):
-            respuesta = self._visitar(url)
+        respuesta = self._medir(url, consultas)
         if crear_mas_datos is not None:
             crear_mas_datos()
             # Se mide igual: con más filas, las consultas deben ser las mismas.
-            with self.assertNumQueries(consultas):
-                respuesta = self._visitar(url)
+            respuesta = self._medir(url, consultas)
+        return respuesta
+
+    # Visita la pantalla y comprueba que hace exactamente «consultas» consultas, sumando las de todas las
+    # bases de datos que usa la prueba (la de la plataforma y, si la declara, la de la bóveda).
+    def _medir(self, url, consultas):
+        capturas = [CaptureQueriesContext(connections[alias]) for alias in sorted(self.databases)]
+        with ExitStack() as pila:
+            for captura in capturas:
+                pila.enter_context(captura)
+            respuesta = self._visitar(url)
+        hechas = [consulta["sql"] for captura in capturas for consulta in captura.captured_queries]
+        self.assertEqual(
+            len(hechas), consultas, f"{url} hace {len(hechas)} consultas y se esperaban {consultas}:\n" + "\n".join(hechas)
+        )
         return respuesta
 
     # Pide la pantalla y comprueba que responde bien (código 200). La usa comprobar_consultas.

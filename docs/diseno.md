@@ -117,6 +117,7 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 | Funcional | `comunicaciones` | Notificaciones, mensajes de admins y superadmin, conversaciones y chat anclable |
 | Funcional | `publico` | Portada y banco de recursos públicos por organización |
 | Funcional | `limpieza` | Archivado y borrado programados y configurables |
+| Funcional | `administracion` | Pantallas del superadmin que juntan varios módulos: «Usuarios» (personas de la bóveda, dominios permitidos y alias); más adelante, organizaciones y tipologías |
 | Funcional | `mantenimiento` | Sección «Desarrollo y mantenimiento» del superadmin: documentación de `docs/` convertida en páginas, entrada a la trastienda y, más adelante, la salud del sistema |
 
 **Regla de dependencias:** Base no depende de nada. Identidad depende de Base. Organización depende de
@@ -610,6 +611,39 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
 - **Rondas de revalidación** bajo demanda, con motivo público.
 - **Mientras no esté programado el alta real**, el superadmin crea los usuarios a mano (como en la
   versión 1).
+
+### 7.2 La bóveda, fase 1 (13 de noviembre de 2026)
+
+- **Base aparte:** las tablas de `boveda` van solo a la base «boveda» y las demás solo a la de la
+  plataforma (`config/enrutador.py`). El enrutador **prohíbe cualquier relación** entre tablas de las dos
+  bases. Las tablas de la bóveda no están en la trastienda (su historial guardaría horas exactas en la
+  plataforma).
+- **Tablas:** `Persona` (identificador al azar, nombre real, correo oficial mientras está pendiente,
+  huella del correo, número de la organización, estado, método y días), `PaseEmitido` (persona, ronda y
+  día; «provisional» si se marcó en el alta por el superadmin) y `DominioPermitido` (número de la
+  organización y dominio).
+- **Huellas:** HMAC-SHA256 con la clave `BOVEDA_CLAVE_HMAC`, en una variable de entorno, fuera de las
+  bases (2A). Sin mayúsculas ni espacios alrededor.
+- **Alta provisional (1A):** el superadmin da de alta a la persona (nombre, correo y organización) y
+  queda pendiente; en su ficha puede corregir los datos y **validarla** (método «superadmin»). Al
+  validarla: se borra el correo (queda su huella), y su pase se marca como emitido (ronda 0,
+  provisional). El alias se crea aparte, sin enlace.
+- **Nombre y correo (1A, 13 de noviembre de 2026):** el nombre real se ve y se edita en la ficha (nunca en
+  las listas: «Persona 3f2a9c1e»). El correo, solo mientras está pendiente; si hay que cambiarlo después,
+  se escribe uno nuevo y la persona vuelve a quedar pendiente, con nueva huella (su pase sigue emitido).
+  *Descartado:* guardar el correo siempre (una bóveda robada daría nombres y correos juntos).
+- **Dominios permitidos por organización (3A):** se guardan en la bóveda (con el número de la
+  organización: entre las dos bases no hay claves ajenas). Si una organización tiene dominios, el correo
+  debe ser de uno de ellos (ya en el alta provisional). Por usabilidad se ven también en la ficha de la
+  organización, con una nota de que se guardan en la bóveda. *(En las pantallas de organizaciones de la
+  aplicación, cuando existan, igual.)*
+- **Origen de cada alias (2):** «alta directa» (a mano o importado) o «con pase» (registro real). Nunca se
+  dice qué persona hay detrás.
+- **Pantallas (4):** sección **Usuarios** del superadmin: «Bóveda (personas reales)» (arriba: Personas ·
+  Dominios permitidos) y «Alias (usuarios de la app)» (arriba: Lista). En la ficha de cada alias se ven
+  todos sus grupos y se puede activar o desactivar la cuenta y **hacerle superadmin**. Nadie puede quitarse
+  el superadmin a sí mismo ni desactivarse.
+- **Permisos:** `boveda.ver` y `administracion.usuarios`, sin roles por defecto: solo el superadmin.
 
 ### 7.1 El módulo `usuarios` (12 de noviembre de 2026)
 

@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "eventos_sw.apps.EventosSwConfig",
     "ejemplos.apps.EjemplosConfig",
     # Capa de identidad
+    "boveda.apps.BovedaConfig",
     "usuarios.apps.UsuariosConfig",
     # Capa de organización
     "grupos.apps.GruposConfig",
@@ -69,6 +70,7 @@ INSTALLED_APPS = [
     "audiencias.apps.AudienciasConfig",
     # Capa funcional
     "mantenimiento.apps.MantenimientoConfig",
+    "administracion.apps.AdministracionConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,
@@ -170,6 +172,15 @@ DATABASES = {
         os.environ.get("BOVEDA_DATABASE_URL", "postgres://boveda:boveda@db:5432/boveda")
     ),
 }
+
+# Quién decide en qué base va cada tabla: las de la bóveda, en la suya; las demás, en la de la plataforma
+# (ver config/enrutador.py).
+DATABASE_ROUTERS = ["config.enrutador.EnrutadorDeLaBoveda"]
+
+# Clave secreta con la que la bóveda calcula las huellas (del correo, del DNI). Va fuera de las bases de
+# datos, en una variable de entorno: sin ella, una huella no sirve para nada. El valor de respaldo solo
+# vale para desarrollo.
+BOVEDA_CLAVE_HMAC = os.environ.get("BOVEDA_CLAVE_HMAC", "solo-para-desarrollo-cambiar-en-produccion")
 
 # Tipo de número que usan por defecto las claves primarias de las tablas.
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
