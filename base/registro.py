@@ -28,6 +28,7 @@ APARTADOS_CON_CODIGO = {
     "limpiables": "codigo",
     "avisos": "codigo",
     "solicitudes": "codigo",
+    "tareas_diarias": "codigo",
 }
 
 

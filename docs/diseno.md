@@ -1056,6 +1056,27 @@ Todos aparecen en el calendario.
   entidad: su asistencia, su ODD y su acta.
 - Las veces se crean con antelación, por ejemplo 3 meses vista (configurable), y se van añadiendo solas.
 - Cambiar la serie cambia las veces futuras que no se hayan tocado a mano.
+- **Cómo está hecho (13 de noviembre de 2026):**
+  - `Serie` comparte con `Evento` los datos comunes (una tabla abstracta, `DatosDeEvento`); su `inicio`
+    es el de la primera vez. Frecuencias: cada semana, cada dos semanas, cada mes el mismo día (los meses
+    sin ese día se saltan) y cada mes el mismo día de la semana («el segundo martes», «el último
+    viernes»). Opcionalmente, hasta un día. La hora es la de aquí (no cambia con el horario de verano).
+  - Se crea al convocar, eligiendo «¿Se repite?». Cada vez es un `Evento` con `serie`, `en_la_serie` (la
+    fecha que le tocaba) y `tocado`. Al crearla se avisa solo de la primera vez (no de cada una).
+  - Antelación 90 días (campo `antelacion`). La **tarea diaria** `eventos.generar_series` añade las
+    siguientes y termina las que llegan a su último día.
+  - Editar o cancelar una vez la marca como «cambiada a mano». Cambiar la serie copia los datos en las
+    próximas no tocadas; si cambia cuándo se repite, las que ya no encajan se borran (o se cancelan, con
+    aviso, si alguien había respondido) y se crean las nuevas. «Terminar la serie» cancela las próximas
+    no tocadas.
+  - Una **serie de reuniones** pide una sola solicitud con apoyos (tipo `eventos.serie_de_reuniones`,
+    2/5/10 como una reunión suelta); hasta tenerla no crea veces.
+  - Pantallas: «Eventos → Mis eventos → Series» (las que convoqué y las de los grupos que administro) y
+    la ficha de cada serie (regla, próximas veces, cambiar, terminar). Cada vez enlaza a su serie.
+  - **Tareas diarias** (nuevo apartado del contrato, `TareaDiaria`): las ejecuta el trabajador la primera
+    vuelta de cada día (marca en Redis con `cache.add`, para que no se ejecuten dos veces aunque haya dos
+    trabajadores); también `python manage.py tareas_diarias`. La primera de otro módulo:
+    `solicitudes.caducar`. Descartado por ahora cron o Celery beat (diseño, apartado 20).
 
 ### 10.3 Tipologías de evento iniciales
 

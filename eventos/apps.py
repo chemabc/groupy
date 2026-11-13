@@ -12,6 +12,7 @@ from base.contrato import (
     FuenteDeCalendario,
     ModuloConfig,
     Permiso,
+    TareaDiaria,
     TipoDeAviso,
     TipoDeSolicitud,
     Vista,
@@ -29,7 +30,7 @@ class EventosConfig(ModuloConfig):
     verbose_name = "Eventos"
     capa = Capa.FUNCIONAL
     descripcion = (
-        "Eventos de los grupos: reuniones (con solicitud de apoyos), acciones, recaudatorios y genéricos, con "
+        "Eventos de los grupos (sueltos o en series que se repiten): reuniones (con solicitud de apoyos), acciones, recaudatorios y genéricos, con "
         "los campos de su tipología, quién lo ve, modalidad y lugar, cartel, texto para las redes, «¿Vas a "
         "ir?» y cometidos."
     )
@@ -60,6 +61,15 @@ class EventosConfig(ModuloConfig):
             "eventos.reunion", "Convocar una reunión", resolver="eventos.servicios.convocar_reunion",
             apoyos_por_altura=(2, 5, 10), dias=7, basta_el_superadmin=True,
         ),
+        # Una serie de reuniones pide los apoyos una sola vez, para toda la serie.
+        TipoDeSolicitud(
+            "eventos.serie_de_reuniones", "Convocar una serie de reuniones", resolver="eventos.series.activar_serie",
+            apoyos_por_altura=(2, 5, 10), dias=7, basta_el_superadmin=True,
+        ),
+    )
+    # Cada día se crean las siguientes veces de las series (hasta su antelación, 90 días por defecto).
+    tareas_diarias = (
+        TareaDiaria("eventos.generar_series", "Crea las siguientes veces de las series de eventos y termina las que han llegado a su final.", "eventos.series.generar_todas"),
     )
     # En el calendario común: cada evento con el color de su tipo; quien lo gestiona puede arrastrarlo.
     fuentes_de_calendario = (
@@ -73,7 +83,7 @@ class EventosConfig(ModuloConfig):
             icono="✷",
             color="#e11d78",
             orden=120,
-            otras_rutas=("eventos:evento", "eventos:editar", "eventos:cartel"),
+            otras_rutas=("eventos:evento", "eventos:editar", "eventos:cartel", "eventos:serie"),
             subsecciones=(
                 EntradaDeMenu(
                     codigo="eventos.lista", nombre="Próximos", url="eventos:proximos", icono="➤", color="#0284d9",
@@ -81,7 +91,7 @@ class EventosConfig(ModuloConfig):
                 ),
                 EntradaDeMenu(
                     codigo="eventos.mios", nombre="Mis eventos", url="eventos:mios", icono="★", color="#166534",
-                    vistas=(Vista("Mis eventos", "eventos:mios"), Vista("Convocar", "eventos:convocar")),
+                    vistas=(Vista("Mis eventos", "eventos:mios"), Vista("Series", "eventos:series"), Vista("Convocar", "eventos:convocar")),
                 ),
             ),
         ),
@@ -110,7 +120,9 @@ class EventosConfig(ModuloConfig):
             texto=(
                 "Los que has convocado y aquellos a los que has dicho que vas o quizá. Con «Convocar» creas uno. "
                 "Una reunión necesita apoyos: queda pendiente (solo la ves tú) hasta que la apoyan 2 personas de "
-                "tu grupo (5 si es para el grupo padre, 10 para el abuelo); entonces se convoca sola."
+                "tu grupo (5 si es para el grupo padre, 10 para el abuelo); entonces se convoca sola. Al convocar "
+                "puedes hacer que se repita (cada semana, cada mes…): en «Series» ves y cambias las tuyas. Cada vez "
+                "es un evento propio; si cambias una a mano, los cambios de la serie ya no le afectan."
             ),
         ),
     )

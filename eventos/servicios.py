@@ -112,7 +112,8 @@ def puede_gestionar(usuario, evento):
 
 
 # Cambia los datos de un evento. La visibilidad de una reunión ya convocada no cambia (se pidieron apoyos
-# para esa). Devuelve el evento.
+# para esa). Si es una vez de una serie, queda «cambiada a mano»: los cambios de la serie ya no le
+# afectan. Devuelve el evento.
 @transaction.atomic
 def editar(usuario, evento, datos, visibilidad=None, campos=None):
     if not puede_gestionar(usuario, evento):
@@ -121,6 +122,8 @@ def editar(usuario, evento, datos, visibilidad=None, campos=None):
         setattr(evento, campo, valor)
     if campos is not None:
         evento.campos = campos
+    if evento.serie_id:
+        evento.tocado = True
     if visibilidad and visibilidad != evento.visibilidad and evento.estado == Evento.CONVOCADO and not es_reunion(evento.tipologia):
         evento.audiencia = audiencia_de(visibilidad, evento.grupo, personas=[evento.convocante] if evento.convocante else [])
         evento.visibilidad = visibilidad
@@ -129,13 +132,15 @@ def editar(usuario, evento, datos, visibilidad=None, campos=None):
     return evento
 
 
-# Cancela un evento y avisa a quienes iban (o dudaban).
+# Cancela un evento y avisa a quienes iban (o dudaban). Si es una vez de una serie, solo se cancela esa
+# (queda «cambiada a mano»: la serie no la vuelve a convocar).
 @transaction.atomic
 def cancelar(usuario, evento):
     if not puede_gestionar(usuario, evento):
         raise ValidationError("Solo quien lo convocó o la administración del grupo pueden cancelarlo.")
     evento.estado = Evento.CANCELADO
-    evento.save(update_fields=["estado"])
+    evento.tocado = bool(evento.serie_id)
+    evento.save(update_fields=["estado", "tocado"])
     emitir("eventos.cancelado", evento_id=evento.pk)
 
 

@@ -2,7 +2,8 @@
 Orden «python manage.py procesar_bandeja»: el trabajador que entrega los avisos asíncronos.
 
 Se deja funcionando en un proceso aparte. Mira la bandeja de salida, ejecuta los avisos pendientes y,
-cuando no queda ninguno, espera un poco y vuelve a mirar. Se para con Ctrl+C.
+cuando no queda ninguno, espera un poco y vuelve a mirar. Se para con Ctrl+C. Además, la primera vuelta
+de cada día ejecuta las tareas diarias de los módulos (base/tareas.py).
 
 Es provisional: cuando se decida entre Celery y RQ (docs/diseno.md, apartado 20), cambiará quién llama
 a procesar_bandeja, pero la bandeja seguirá igual.
@@ -12,6 +13,7 @@ import time
 
 from django.core.management.base import BaseCommand
 
+from base.tareas import ejecutar_las_de_hoy
 from eventos_sw.servicios import procesar_bandeja
 
 
@@ -36,11 +38,14 @@ class Command(BaseCommand):
             help="Segundos de espera cuando no hay nada pendiente (1 por defecto).",
         )
 
-    # Lo que hace la orden: procesar tandas mientras haya avisos y, si no hay, esperar y volver a mirar.
+    # Lo que hace la orden: en cada vuelta, las tareas diarias (si hoy aún no se han hecho) y una tanda de
+    # avisos; si no hay avisos, esperar y volver a mirar.
     def handle(self, *args, una_vez, espera, **opciones):
         self.stdout.write("Procesando la bandeja de eventos_sw. Ctrl+C para parar.")
         try:
             while True:
+                for codigo, resultado in ejecutar_las_de_hoy() or ():
+                    self.stdout.write(f"Tarea diaria {codigo}: {resultado}")
                 procesados = procesar_bandeja()
                 if procesados:
                     self.stdout.write(f"{procesados} avisos procesados.")

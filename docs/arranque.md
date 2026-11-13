@@ -119,6 +119,16 @@ se puede lanzar a mano en otro terminal:
 python manage.py procesar_bandeja
 ```
 
+El trabajador también hace, la primera vez que da una vuelta cada día, las **tareas diarias** de los
+módulos (caducar solicitudes vencidas, crear las siguientes veces de las series de eventos…). Para
+lanzarlas a mano en cualquier momento:
+
+```bash
+# Ejecuta ahora todas las tareas diarias y dice qué ha hecho cada una
+#     tareas_diarias: orden del módulo base
+python manage.py tareas_diarias
+```
+
 ## 3. Seguir con Claude
 
 Abre Claude Code en el contenedor nuevo y pídele: «Lee CLAUDE.md y docs/diseno.md y empecemos la

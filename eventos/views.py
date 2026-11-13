@@ -8,7 +8,7 @@ from datetime import timedelta
 from urllib.parse import quote
 
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import Min, Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -21,9 +21,10 @@ from solicitudes.models import Solicitud
 from tipologias.models import Tipologia
 from tipologias.servicios import a_json, arbol, campos_de, formulario_de
 
+from . import series as servicios_de_series
 from . import servicios
-from .formularios import FormularioDeEvento
-from .models import Asistencia, Evento
+from .formularios import FormularioDeEvento, FormularioDeSerie
+from .models import Asistencia, Evento, Serie
 
 # Cuántos eventos se muestran como mucho en cada lista.
 MAXIMO = 100
@@ -87,14 +88,19 @@ def convocar(request):
     if tipologia is not None:
         reunion = servicios.es_reunion(tipologia)
         datos = request.POST if request.method == "POST" else None
-        formulario = FormularioDeEvento(datos, request.FILES or None, visibilidades=opciones(grupo), reunion=reunion)
+        formulario = FormularioDeEvento(datos, request.FILES or None, visibilidades=opciones(grupo), reunion=reunion, con_repeticion=True)
         propios = _propios(tipologia, datos)
         if request.method == "POST" and formulario.is_valid() and propios.is_valid():
+            limpios = formulario.cleaned_data
+            comunes = {
+                "visibilidad": limpios["visibilidad"], "campos": a_json(propios.cleaned_data), "justificacion": limpios.get("justificacion", ""),
+            }
             try:
-                evento = servicios.convocar(
-                    usuario, grupo, tipologia, formulario.datos_del_evento(), formulario.cleaned_data["visibilidad"],
-                    campos=a_json(propios.cleaned_data), justificacion=formulario.cleaned_data.get("justificacion", ""),
-                )
+                if limpios["repetir"]:
+                    datos_de_serie = {**formulario.datos_del_evento(), "frecuencia": limpios["repetir"], "hasta": limpios["repetir_hasta"]}
+                    serie = servicios_de_series.crear_serie(usuario, grupo, tipologia, datos_de_serie, **comunes)
+                    return redirect("eventos:serie", serie.pk)
+                evento = servicios.convocar(usuario, grupo, tipologia, formulario.datos_del_evento(), **comunes)
             except ValidationError as error:
                 formulario.add_error(None, error)
             else:
@@ -155,7 +161,7 @@ def editar(request, pk):
 #     «persona»), o cancelar.
 def evento(request, pk):
     usuario = request.user
-    evento = get_object_or_404(Evento.objects.select_related("grupo__organizacion", "tipologia", "audiencia", "convocante", "lugar"), pk=pk)
+    evento = get_object_or_404(Evento.objects.select_related("grupo__organizacion", "tipologia", "audiencia", "convocante", "lugar", "serie"), pk=pk)
     if not servicios.ve(usuario, evento):
         raise SinPermiso("Este evento no es para ti: solo lo ven las personas a las que llega.")
     accion = request.POST.get("accion") if request.method == "POST" else None
@@ -192,6 +198,7 @@ def evento(request, pk):
         "gestiona": servicios.puede_gestionar(usuario, evento),
         "compartir": _enlaces_para_compartir(request, evento),
         "solicitud": _solicitud_pendiente(evento),
+        "serie": servicios_de_series.describir(evento.serie) if evento.serie else "",
     }
     return render(request, "eventos/evento.html", contexto)
 
@@ -226,6 +233,73 @@ def _solicitud_pendiente(evento):
     if evento.estado != Evento.PENDIENTE:
         return None
     return Solicitud.objects.filter(tipo="eventos.reunion", datos__evento_id=evento.pk).order_by("-pk").first()
+
+
+# ── Series ───────────────────────────────────────────────────────────────────────────────────────────
+
+
+# Pantalla «Series»: las series que la persona puede gestionar (las que ha convocado y las de los grupos
+# que administra; todas, si es superadmin), con cuándo se repiten y su próxima vez. Unas 4 consultas.
+def series(request):
+    usuario = request.user
+    consulta = Serie.objects.select_related("grupo__organizacion", "tipologia").order_by("estado", "titulo")
+    if not usuario.is_superuser:
+        administra = [grupo for grupo, codigos in permisos_de(usuario).grupos.items() if "grupos.editar_grupo" in codigos]
+        consulta = consulta.filter(Q(convocante=usuario) | Q(grupo_id__in=administra))
+    lista = list(consulta[:MAXIMO])
+    proximas = dict(
+        Evento.objects.filter(serie__in=lista, inicio__gte=timezone.now()).exclude(estado=Evento.CANCELADO)
+        .values("serie_id").annotate(primera=Min("inicio")).values_list("serie_id", "primera")
+    )
+    filas = [{"serie": serie, "regla": servicios_de_series.describir(serie), "proxima": proximas.get(serie.pk)} for serie in lista]
+    return render(request, "eventos/series.html", {"filas": filas})
+
+
+# Ficha de una serie: cuándo se repite, sus próximas veces (marcando las cambiadas a mano) y, para quien
+# la gestiona, cambiarla (también la regla) o terminarla.
+#   - POST «accion»: «guardar» (con los datos del formulario) o «terminar».
+def serie(request, pk):
+    usuario = request.user
+    serie = get_object_or_404(Serie.objects.select_related("grupo__organizacion", "tipologia", "convocante"), pk=pk)
+    if not servicios_de_series.ve(usuario, serie):
+        raise SinPermiso("Esta serie no es para ti: solo la ven las personas a las que llega.")
+    gestiona = servicios_de_series.puede_gestionar(usuario, serie)
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    if accion and not gestiona:
+        raise SinPermiso("Solo quien la convocó o la administración del grupo pueden cambiarla.")
+    formulario = propios = None
+    if gestiona and serie.estado != Serie.TERMINADA:
+        reunion = servicios.es_reunion(serie.tipologia)
+        datos = request.POST if accion == "guardar" else None
+        formulario = FormularioDeSerie(
+            datos, request.FILES or None, instance=serie, visibilidades=opciones(serie.grupo), reunion=False,
+            initial={"visibilidad": serie.visibilidad},
+        )
+        if reunion:
+            formulario.fields["visibilidad"].disabled = True
+            formulario.fields["visibilidad"].help_text = "La de una serie de reuniones no se cambia: se pidieron apoyos para esa."
+        propios = _propios(serie.tipologia, datos, serie.campos)
+    if accion == "terminar":
+        servicios_de_series.terminar_serie(usuario, serie)
+        return redirect("eventos:serie", serie.pk)
+    if accion == "guardar" and formulario.is_valid() and propios.is_valid():
+        try:
+            servicios_de_series.editar_serie(
+                usuario, serie, formulario.datos_del_evento(), visibilidad=formulario.cleaned_data["visibilidad"], campos=a_json(propios.cleaned_data)
+            )
+        except ValidationError as error_de_servicio:
+            formulario.add_error(None, error_de_servicio)
+        else:
+            return redirect("eventos:serie", serie.pk)
+    veces = list(serie.veces.filter(inicio__gte=timezone.now() - timedelta(hours=3)).order_by("inicio")[:30])
+    solicitud = None
+    if serie.estado == Serie.PENDIENTE:
+        solicitud = Solicitud.objects.filter(tipo="eventos.serie_de_reuniones", datos__serie_id=serie.pk).order_by("-pk").first()
+    contexto = {
+        "serie": serie, "regla": servicios_de_series.describir(serie), "veces": veces, "gestiona": gestiona,
+        "formulario": formulario, "propios": propios, "abrir": accion == "guardar", "solicitud": solicitud,
+    }
+    return render(request, "eventos/serie.html", contexto)
 
 
 # El cartel de un evento: se entrega solo a quien puede ver el evento (no hay dirección pública).

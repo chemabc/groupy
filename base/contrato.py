@@ -294,6 +294,22 @@ class AvisoPreparado:
 
 
 @dataclass(frozen=True)
+class TareaDiaria:
+    """
+    Algo que un módulo necesita hacer una vez al día sin que nadie lo pida (caducar solicitudes vencidas,
+    crear las siguientes veces de las series de eventos…). El trabajador (la orden procesar_bandeja) las
+    ejecuta todas la primera vez que da una vuelta cada día (ver base/tareas.py).
+    """
+
+    # Código único, empezando por la etiqueta del módulo. Ejemplo: «eventos.generar_series».
+    codigo: str
+    # Qué hace, en lenguaje llano.
+    descripcion: str
+    # Ruta de la función, sin parámetros. Lo que devuelva (por ejemplo, cuántas cosas ha hecho) se apunta.
+    funcion: str
+
+
+@dataclass(frozen=True)
 class GrupoDeEtiquetas:
     """
     Conjunto de etiquetas propio de un módulo (por ejemplo, las de los debates), dentro de la base única
@@ -440,6 +456,8 @@ class ModuloConfig(AppConfig):
     avisos: tuple[TipoDeAviso, ...] = ()
     # Lo que se puede pedir con apoyos a un grupo.
     solicitudes: tuple[TipoDeSolicitud, ...] = ()
+    # Lo que hace una vez al día (el trabajador lo ejecuta solo).
+    tareas_diarias: tuple[TareaDiaria, ...] = ()
     # Solo el módulo que reparte las notificaciones («comunicaciones»): ruta de la función que recibe
     # cada aviso. El registro le añade una escucha asíncrona por cada TipoDeAviso de cualquier módulo.
     reparte_avisos: str = ""

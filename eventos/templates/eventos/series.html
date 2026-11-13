@@ -1,0 +1,22 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Eventos → Mis eventos → Series» (eventos/views.py, series). Recibe «filas»: cada serie con su
+  regla («Cada semana, los martes a las 18:00») y su próxima vez (o nada).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Las series que has convocado y las de los grupos que administras. Para crear una, convoca un evento y elige cada cuánto se repite.</p>
+  <ul class="space-y-2">
+    {% for fila in filas %}
+      <li class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 {% if fila.serie.estado == 'terminada' %}opacity-60{% endif %}">
+        <a href="{% url 'eventos:serie' fila.serie.pk %}" class="font-medium hover:text-marca hover:underline">{{ fila.serie.titulo }}</a>
+        {% if fila.serie.estado == "pendiente" %}<span class="ml-1 rounded bg-amber-100 px-1.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-300">pendiente de apoyos</span>{% endif %}
+        {% if fila.serie.estado == "terminada" %}<span class="ml-1 rounded bg-slate-100 px-1.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">terminada</span>{% endif %}
+        <p class="text-xs text-slate-500">{{ fila.serie.tipologia.nombre }} · {{ fila.regla }} · {{ fila.serie.grupo.nombre }} ({{ fila.serie.grupo.organizacion.nombre }}){% if fila.proxima %} · próxima: {{ fila.proxima|date:"l d/m/Y" }}{% endif %}</p>
+      </li>
+    {% empty %}
+      <li class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">No tienes series. Al convocar un evento, elige «¿Se repite?».</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

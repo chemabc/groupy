@@ -4,7 +4,7 @@
   de su tipo), recuento ({si, no, no_se}), mi_respuesta, respuestas (pares código, nombre), quien_va (las
   asistencias con alias, solo para quien convoca o tiene un cometido; si no, nada), cometidos (cada uno con
   quién lo tiene y si quien mira está), gestiona, compartir (pares red, enlace) y solicitud (la de apoyos,
-  si la reunión está pendiente).
+  si la reunión está pendiente) y serie (cuándo se repite, si es una vez de una serie; si no, vacío).
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-4xl space-y-4">
@@ -14,6 +14,9 @@
     <p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Pendiente de apoyos: solo la ves tú hasta que se convoque.{% if solicitud %} <a href="{% url 'solicitudes:solicitud' solicitud.pk %}" class="underline">Ver la solicitud ({{ solicitud.apoyos }} de {{ solicitud.apoyos_necesarios }} apoyos)</a>{% endif %}</p>
   {% elif evento.estado == "cancelado" %}
     <p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300">Este evento está cancelado.</p>
+  {% endif %}
+  {% if serie %}
+    <p class="rounded border border-sky-300 bg-sky-50 p-2 text-sm text-sky-900 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200">↻ Es una vez de la serie <a href="{% url 'eventos:serie' evento.serie_id %}" class="underline">«{{ evento.serie.titulo }}»</a>: {{ serie|lower }}.{% if evento.tocado %} Esta vez se ha cambiado a mano: los cambios de la serie ya no le afectan.{% endif %}</p>
   {% endif %}
   <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
     <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">

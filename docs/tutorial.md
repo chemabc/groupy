@@ -535,3 +535,19 @@ sirve aquí y dónde se usa.
 - **Una vista sin sesión.** Los programas de calendario no inician sesión, así que la vista del .ics lleva
   `@login_not_required` y se protege con una clave secreta larga en la dirección. Por eso se puede
   cambiar: la anterior deja de funcionar al momento.
+
+## 24. Series: tablas abstractas, la hora de aquí y «solo una vez al día» (13 de noviembre de 2026)
+
+- **Una tabla abstracta.** `Evento` y `Serie` tienen casi los mismos campos. En lugar de copiarlos, se
+  escriben una vez en `DatosDeEvento` con `class Meta: abstract = True`: esa tabla no existe en la base de
+  datos, solo «presta» sus campos a las que heredan de ella. Así el formulario de la serie es el del
+  evento con dos campos más (`FormularioDeSerie` hereda de `FormularioDeEvento`).
+- **La hora de aquí.** «Todos los lunes a las 18:00» no es «cada 168 horas»: el último domingo de marzo el
+  reloj se adelanta una hora. Por eso las fechas se calculan con el día y la hora de aquí (sin zona) y
+  después se les pone la zona (`timezone.make_aware`), y no sumando horas a un momento ya con zona.
+- **Cada vez es un evento propio.** Así cada una tiene su «¿Vas a ir?» y sus cometidos sin nada especial.
+  La serie solo recuerda qué fecha le tocaba a cada vez (`en_la_serie`) y si alguien la cambió a mano
+  (`tocado`): esas ya no se tocan al cambiar la serie.
+- **Solo una vez al día, aunque haya dos trabajadores.** `cache.add(clave, valor)` solo guarda si la clave
+  no existía, y en Redis eso es atómico: si dos procesos lo intentan a la vez, solo uno gana. Con una clave
+  por día («tareas_diarias:2026-11-13») basta para que las tareas diarias se ejecuten una sola vez.

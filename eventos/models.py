@@ -2,6 +2,8 @@
 Tablas del módulo «eventos» (ver docs/diseno.md, apartado 10): actividades con fecha (reuniones,
 acciones, recaudatorios…) que convoca un grupo.
 
+- DatosDeEvento: los campos comunes de Evento y Serie (tabla abstracta).
+- Serie: un evento que se repite; crea cada vez como un Evento propio.
 - Evento: los datos comunes (grupo, tipología, quién lo ve, modalidad y lugar, fecha y duración, coste,
   cartel y texto para las redes) y los campos propios de su tipología (en JSON).
 - Asistencia: la respuesta de cada persona a «¿Vas a ir?». Todos los que ven el evento ven cuántas
@@ -23,17 +25,12 @@ def validar_tamano(fichero):
         raise ValidationError(f"La imagen pesa demasiado: como mucho {settings.TAMANO_MAXIMO_DE_IMAGEN // (1024 * 1024)} MB.")
 
 
-class Evento(models.Model):
+class DatosDeEvento(models.Model):
     """
-    Actividad con fecha que convoca un grupo. Su tipología (Reunión, Acción, Recaudatorio, Genérico o un
-    subtipo) añade campos propios. Una reunión necesita una solicitud con apoyos: mientras no los tiene,
-    queda «pendiente de apoyos» y solo la ve quien la convoca.
+    Los datos comunes de un evento, que comparten el evento y la serie de la que sale (la serie guarda
+    los datos que copia en cada vez). Es una tabla «abstracta»: no existe en la base de datos, solo
+    reparte sus campos a Evento y a Serie.
     """
-
-    PENDIENTE = "pendiente"
-    CONVOCADO = "convocado"
-    CANCELADO = "cancelado"
-    ESTADOS = [(PENDIENTE, "Pendiente de apoyos"), (CONVOCADO, "Convocado"), (CANCELADO, "Cancelado")]
 
     PRESENCIAL = "presencial"
     EN_LINEA = "en_linea"
@@ -68,7 +65,7 @@ class Evento(models.Model):
     )
     direccion = models.CharField("dirección", max_length=250, blank=True, help_text="Dónde, si es presencial (o detalles: «aula 3»).")
     url = models.URLField("enlace", max_length=500, blank=True, help_text="Si es en línea, el enlace a la videollamada.")
-    inicio = models.DateTimeField("empieza", help_text="Día y hora.")
+    inicio = models.DateTimeField("empieza", help_text="Día y hora (en una serie, los de la primera vez).")
     duracion = models.PositiveIntegerField("duración (minutos)", default=90, help_text="Cuánto dura, en minutos.")
     coste = models.CharField("coste", max_length=20, choices=COSTES, default=GRATIS, help_text="Gratis, con donaciones o con entrada.")
     coste_detalle = models.CharField("detalle del coste", max_length=200, blank=True, help_text="Precio, a quién va el dinero… Opcional.")
@@ -80,14 +77,10 @@ class Evento(models.Model):
         "texto para las redes", blank=True, help_text="Lo que se publicará al compartirlo (Telegram, WhatsApp, Mastodon…). Hay botón para copiarlo."
     )
     campos = models.JSONField("campos de su tipo", default=dict, blank=True, help_text="Los datos que pide su tipología (por ejemplo, «qué llevar»).")
-    estado = models.CharField("estado", max_length=20, choices=ESTADOS, default=CONVOCADO, help_text="Pendiente de apoyos (reuniones), convocado o cancelado.")
     creado = models.DateTimeField("creado", auto_now_add=True, help_text="Cuándo se creó.")
 
     class Meta:
-        verbose_name = "evento"
-        verbose_name_plural = "eventos"
-        ordering = ["inicio", "pk"]
-        indexes = [models.Index(fields=["inicio"], name="evento_por_fecha")]
+        abstract = True
 
     # Texto con el que se muestra: su título.
     def __str__(self):
@@ -97,6 +90,75 @@ class Evento(models.Model):
     @property
     def fin(self):
         return self.inicio + timedelta(minutes=self.duracion)
+
+
+class Serie(DatosDeEvento):
+    """
+    Un evento que se repite («todos los lunes a las 18:00»). Cada vez es un evento propio, con su
+    asistencia y sus cometidos, que se crea con antelación (90 días vista, configurable) y se van
+    añadiendo solos cada día. Cambiar la serie cambia las veces futuras que no se hayan tocado a mano.
+    Una serie de reuniones necesita una sola solicitud con apoyos para toda la serie.
+    """
+
+    PENDIENTE = "pendiente"
+    ACTIVA = "activa"
+    TERMINADA = "terminada"
+    ESTADOS = [(PENDIENTE, "Pendiente de apoyos"), (ACTIVA, "Activa"), (TERMINADA, "Terminada")]
+
+    SEMANAL = "semanal"
+    QUINCENAL = "quincenal"
+    MENSUAL_DIA = "mensual_dia"
+    MENSUAL_SEMANA = "mensual_semana"
+    FRECUENCIAS = [
+        (SEMANAL, "Cada semana"),
+        (QUINCENAL, "Cada dos semanas"),
+        (MENSUAL_DIA, "Cada mes, el mismo día (el 5, el 20…)"),
+        (MENSUAL_SEMANA, "Cada mes, el mismo día de la semana (el primer lunes, el último viernes…)"),
+    ]
+
+    frecuencia = models.CharField("se repite", max_length=20, choices=FRECUENCIAS, help_text="Cada cuánto se repite, a partir de la primera vez.")
+    hasta = models.DateField("hasta", null=True, blank=True, help_text="Último día en que puede haber una vez. Vacío: sin final.")
+    antelacion = models.PositiveIntegerField(
+        "antelación (días)", default=90, help_text="Con cuántos días de antelación se crea cada vez (para que se pueda ver y apuntarse)."
+    )
+    estado = models.CharField("estado", max_length=20, choices=ESTADOS, default=ACTIVA, help_text="Pendiente de apoyos (reuniones), activa o terminada.")
+
+    class Meta:
+        verbose_name = "serie de eventos"
+        verbose_name_plural = "series de eventos"
+        ordering = ["inicio", "pk"]
+
+
+class Evento(DatosDeEvento):
+    """
+    Actividad con fecha que convoca un grupo. Su tipología (Reunión, Acción, Recaudatorio, Genérico o un
+    subtipo) añade campos propios. Una reunión necesita una solicitud con apoyos: mientras no los tiene,
+    queda «pendiente de apoyos» y solo la ve quien la convoca. Puede ser una de las veces de una serie.
+    """
+
+    PENDIENTE = "pendiente"
+    CONVOCADO = "convocado"
+    CANCELADO = "cancelado"
+    ESTADOS = [(PENDIENTE, "Pendiente de apoyos"), (CONVOCADO, "Convocado"), (CANCELADO, "Cancelado")]
+
+    estado = models.CharField("estado", max_length=20, choices=ESTADOS, default=CONVOCADO, help_text="Pendiente de apoyos (reuniones), convocado o cancelado.")
+    serie = models.ForeignKey(
+        Serie, on_delete=models.SET_NULL, null=True, blank=True, related_name="veces", verbose_name="serie",
+        help_text="La serie de la que es una vez, si se repite.",
+    )
+    en_la_serie = models.DateTimeField(
+        "fecha en la serie", null=True, blank=True, help_text="Cuándo le tocaba según la serie (aunque luego se haya movido a mano)."
+    )
+    tocado = models.BooleanField(
+        "cambiado a mano", default=False, help_text="Si esta vez se ha cambiado a mano: entonces los cambios de la serie ya no le afectan."
+    )
+
+    class Meta:
+        verbose_name = "evento"
+        verbose_name_plural = "eventos"
+        ordering = ["inicio", "pk"]
+        indexes = [models.Index(fields=["inicio"], name="evento_por_fecha")]
+        constraints = [models.UniqueConstraint(fields=["serie", "en_la_serie"], name="una_vez_por_fecha_de_serie")]
 
 
 class Asistencia(models.Model):

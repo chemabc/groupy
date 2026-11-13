@@ -1,7 +1,7 @@
 """
 Orden «python manage.py caducar_solicitudes»: cierra como caducadas las solicitudes pendientes cuya fecha
 ya ha pasado, y avisa a quien las pidió. Las pantallas de solicitudes ya lo hacen al abrirse; esta orden
-es para ejecutarla una vez al día (con cron o con el trabajador de colas, cuando se elija).
+es para lanzarlo a mano: el trabajador ya lo hace una vez al día (TareaDiaria «solicitudes.caducar»).
 """
 
 from django.core.management.base import BaseCommand

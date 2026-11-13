@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «solicitudes».
 """
 
-from base.contrato import Ayuda, Capa, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, Vista
+from base.contrato import Ayuda, Capa, Emision, EntradaDeMenu, ModuloConfig, Permiso, TareaDiaria, TipoDeAviso, Vista
 
 
 class SolicitudesConfig(ModuloConfig):
@@ -24,6 +24,8 @@ class SolicitudesConfig(ModuloConfig):
         Emision("solicitudes.aceptada", "Una solicitud ha conseguido lo necesario y se ha hecho. Datos: solicitud_id."),
         Emision("solicitudes.caducada", "Una solicitud ha llegado a su fecha sin lo necesario. Datos: solicitud_id."),
     )
+    # Una vez al día, el trabajador cierra las solicitudes cuyo plazo ha pasado.
+    tareas_diarias = (TareaDiaria("solicitudes.caducar", "Cierra como caducadas las solicitudes pendientes vencidas.", "solicitudes.servicios.caducar_vencidas"),)
     avisos = (
         TipoDeAviso(
             "solicitudes.necesita_tu_si", "Una solicitud necesita el sí de tu administración", "solicitudes",

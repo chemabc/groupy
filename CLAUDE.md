@@ -95,8 +95,10 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   lugar privado de cada persona, recuentos desde 5 y «Configuración → Lugares»). `moderacion` se deja para
   cuando haya contenido. Y `talentos` (catálogo común, mis talentos compartidos por grupo, recuentos sin
   nombres, peticiones con «Lo ofrezco» y «Tengo dudas»). Fase 2 cerrada (salvo `moderacion`).
-- **Fase 3 en curso.** Hecho: `eventos` (convocar con el selector de visibilidad y los campos de la
+- 13 de noviembre de 2026: **fase 3 terminada.** Hecho: `eventos` (convocar con el selector de visibilidad y los campos de la
   tipología; reuniones con solicitud de apoyos 2/5/10; cartel privado; «¿Vas a ir?» con alias solo para
   quien convoca y los cometidos; cometidos; compartir; cancelar) y `calendario` (FullCalendar con las
   fuentes de cada módulo, filtros por tipo, arrastrar lo propio, recordatorios y suscripción .ics con
-  clave secreta). Siguiente: series periódicas. Recuerda `migrate --database=boveda`.
+  clave secreta) y series de eventos (cada semana, cada mes…; cada vez es un evento propio creado a 90
+  días vista; las cambiadas a mano no se tocan; series de reuniones con una sola solicitud) con tareas
+  diarias en el trabajador (`TareaDiaria`). Recuerda `migrate --database=boveda`.

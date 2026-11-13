@@ -38,6 +38,7 @@ def _comprobar_funciones():
     rutas += [fuente.mover for fuente in registro.fuentes_de_calendario.values() if fuente.mover]
     rutas += [aviso.preparar for aviso in registro.avisos.values()]
     rutas += [tipo.resolver for tipo in registro.solicitudes.values()]
+    rutas += [tarea.funcion for tarea in registro.tareas_diarias.values()]
     rutas += [tipo.comprobar for tipo in registro.solicitudes.values() if tipo.comprobar]
     rutas += [entrada.contador for entrada in _todas_las_entradas(registro.menu) if entrada.contador]
     for datos in registro.datos_de_ejemplo.values():

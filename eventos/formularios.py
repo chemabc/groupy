@@ -6,7 +6,7 @@ from django import forms
 
 from lugares.models import Lugar
 
-from .models import Evento
+from .models import Evento, Serie
 
 
 class FormularioDeEvento(forms.ModelForm):
@@ -31,11 +31,22 @@ class FormularioDeEvento(forms.ModelForm):
             "cartel": forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
         }
 
-    # Prepara el desplegable de visibilidad y el de lugares, y quita la justificación si no es reunión.
+    # Prepara el desplegable de visibilidad y el de lugares, y quita la justificación si no es reunión. Al
+    # convocar, añade «¿Se repite?» y «Hasta» (para crear una serie).
     #   - visibilidades: (clave, explicación) del selector de audiencias.
     #   - reunion: si el evento es una reunión.
-    def __init__(self, *args, visibilidades, reunion, **kwargs):
+    #   - con_repeticion: si se ofrece repetirlo.
+    def __init__(self, *args, visibilidades, reunion, con_repeticion=False, **kwargs):
         super().__init__(*args, **kwargs)
+        if con_repeticion:
+            self.fields["repetir"] = forms.ChoiceField(
+                label="¿Se repite?", required=False, choices=[("", "No, es una sola vez")] + Serie.FRECUENCIAS,
+                help_text="Si se repite, cada vez será un evento propio (con su «¿Vas a ir?»), creado con 90 días de antelación.",
+            )
+            self.fields["repetir_hasta"] = forms.DateField(
+                label="Hasta", required=False, widget=forms.DateInput(attrs={"type": "date"}),
+                help_text="Último día en que puede haber una vez. Vacío: sin final (se puede terminar cuando se quiera).",
+            )
         self.fields["visibilidad"].choices = visibilidades
         self.fields["lugar"].queryset = Lugar.objects.filter(activo=True)
         self.fields["inicio"].input_formats = ["%Y-%m-%dT%H:%M"]
@@ -54,3 +65,12 @@ class FormularioDeEvento(forms.ModelForm):
     # Los datos del evento, sin la visibilidad ni la justificación (que no son campos del modelo).
     def datos_del_evento(self):
         return {campo: self.cleaned_data[campo] for campo in self.Meta.fields}
+
+
+class FormularioDeSerie(FormularioDeEvento):
+    """Datos de una serie: los mismos que los de un evento (los de la primera vez), cada cuánto y hasta cuándo."""
+
+    class Meta(FormularioDeEvento.Meta):
+        model = Serie
+        fields = FormularioDeEvento.Meta.fields + ["frecuencia", "hasta"]
+        widgets = {**FormularioDeEvento.Meta.widgets, "hasta": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}

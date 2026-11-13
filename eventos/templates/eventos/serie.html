@@ -1,0 +1,55 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de una serie de eventos (eventos/views.py, serie). Recibe «serie», «regla» (cuándo se repite, en
+  una frase), «veces» (las próximas, con «tocado» si se cambiaron a mano), «gestiona», «formulario» y
+  «propios» (para cambiarla; None si no se puede), «abrir» (formulario desplegado tras un error) y
+  «solicitud» (la de apoyos, si es una serie de reuniones pendiente).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <p><a href="{% url 'eventos:series' %}" class="text-sm text-marca hover:underline">← Series</a></p>
+  {% if serie.estado == "pendiente" %}
+    <p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Pendiente de apoyos: cuando los tenga se crearán sus veces.{% if solicitud %} <a href="{% url 'solicitudes:solicitud' solicitud.pk %}" class="underline">Ver la solicitud ({{ solicitud.apoyos }} de {{ solicitud.apoyos_necesarios }} apoyos)</a>{% endif %}</p>
+  {% elif serie.estado == "terminada" %}
+    <p class="rounded border border-slate-300 bg-slate-50 p-2 text-sm dark:border-slate-700 dark:bg-slate-900">Esta serie ha terminado: ya no se crean más veces.</p>
+  {% endif %}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <p class="text-xs text-slate-500">Serie · {{ serie.tipologia.nombre }} · convoca {{ serie.grupo.nombre }} ({{ serie.grupo.organizacion.nombre }}){% if serie.convocante %} · {{ serie.convocante }}{% endif %}</p>
+    <h2 class="text-xl font-semibold">{{ serie.titulo }}</h2>
+    <p class="mt-1 text-sm">↻ {{ regla }} ({{ serie.duracion }} min). Cada vez se crea {{ serie.antelacion }} días antes.</p>
+    {% if serie.descripcion %}<p class="mt-2 whitespace-pre-line text-sm">{{ serie.descripcion }}</p>{% endif %}
+  </section>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Próximas veces</h3>
+    <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+      {% for vez in veces %}
+        <li class="flex flex-wrap items-center gap-2 py-1.5 {% if vez.estado == 'cancelado' %}opacity-60{% endif %}">
+          <a href="{% url 'eventos:evento' vez.pk %}" class="hover:text-marca hover:underline">{{ vez.inicio|date:"l d/m/Y, H:i" }}</a>
+          {% if vez.titulo != serie.titulo %}<span class="text-slate-500">— {{ vez.titulo }}</span>{% endif %}
+          {% if vez.estado == "cancelado" %}<span class="rounded bg-red-100 px-1.5 text-xs text-red-800 dark:bg-red-950 dark:text-red-300">cancelada</span>{% endif %}
+          {% if vez.tocado %}<span class="rounded bg-sky-100 px-1.5 text-xs text-sky-800 dark:bg-sky-950 dark:text-sky-300" title="Los cambios de la serie no le afectan">cambiada a mano</span>{% endif %}
+        </li>
+      {% empty %}
+        <li class="py-1.5 text-slate-500">No hay veces próximas.</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% if formulario %}
+    <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-semibold">Cambiar la serie</summary>
+      <p class="mt-2 text-xs text-slate-500">Los cambios valen para las próximas veces que no se hayan cambiado a mano. Si cambias cuándo se repite, las veces que ya no encajan se quitan (si alguien había respondido, se cancelan y se le avisa).</p>
+      <form method="post" enctype="multipart/form-data" class="mt-2">
+        {% csrf_token %}<input type="hidden" name="accion" value="guardar">
+        {{ formulario }}
+        {% if propios.fields %}<fieldset class="mt-2 border-t border-slate-200 pt-3 dark:border-slate-800"><legend class="mb-2 text-sm font-semibold">Datos de «{{ serie.tipologia.nombre }}»</legend>{{ propios }}</fieldset>{% endif %}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+      </form>
+    </details>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" name="accion" value="terminar" onclick="return confirm('¿Terminar la serie? Las próximas veces se cancelarán (salvo las cambiadas a mano).')"
+              class="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-300">Terminar la serie</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}
