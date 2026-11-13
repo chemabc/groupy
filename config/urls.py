@@ -22,6 +22,8 @@ urlpatterns = [
     path("proyectos/", include("proyectos.urls")),
     # Módulo «calendario»: el calendario común, recordatorios y suscripción .ics.
     path("calendario/", include("calendario.urls")),
+    # Módulo «limpieza»: el archivo, el registro de borrados y los plazos.
+    path("limpieza/", include("limpieza.urls")),
     # Módulo «lugares»: mi lugar, mapa, lista, propuestas e importación.
     path("lugares/", include("lugares.urls")),
     # Módulo «talentos»: mis talentos, peticiones, recuentos y catálogo.

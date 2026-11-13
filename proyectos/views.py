@@ -32,16 +32,18 @@ MAXIMO = 300
 
 
 # Pantalla «Proyectos de mis grupos»: los proyectos de grupo que se ven, en árbol (cada uno con sus
-# subproyectos debajo). Los finalizados, al final de su rama y atenuados. Unas 3 consultas.
+# subproyectos debajo). Los finalizados, al final de su rama y atenuados; los archivados (con todo su
+# árbol), no: están en «Archivo». Unas 3 consultas.
 def proyectos(request):
-    lista = list(servicios.visibles(request.user).filter(personal=False).select_related("grupo__organizacion", "tipologia")[:MAXIMO])
+    lista = list(servicios.visibles(request.user).filter(personal=False, raiz__archivado__isnull=True).select_related("grupo__organizacion", "tipologia")[:MAXIMO])
     return render(request, "proyectos/lista.html", {"ramas": servicios.en_arbol(lista), "personal": False})
 
 
-# Pantalla «Personales»: mis proyectos personales (en árbol) y mis tareas personales sueltas.
+# Pantalla «Personales»: mis proyectos personales (en árbol) y mis tareas personales sueltas, sin lo
+# archivado.
 def personales(request):
-    lista = list(Proyecto.objects.filter(personal=True, creador=request.user).select_related("tipologia")[:MAXIMO])
-    tareas = list(Tarea.objects.filter(personal=True, proyecto__isnull=True, creador=request.user).order_by("estado", "limite", "pk")[:MAXIMO])
+    lista = list(Proyecto.objects.filter(personal=True, creador=request.user, raiz__archivado__isnull=True).select_related("tipologia")[:MAXIMO])
+    tareas = list(Tarea.objects.filter(personal=True, proyecto__isnull=True, creador=request.user, archivado__isnull=True).order_by("estado", "limite", "pk")[:MAXIMO])
     return render(request, "proyectos/lista.html", {"ramas": servicios.en_arbol(lista), "personal": True, "tareas": tareas})
 
 
@@ -156,6 +158,8 @@ def proyecto(request, pk):
     de_cometidos = [] if proyecto.personal else servicios.cometidos(proyecto)
     contexto = {
         "proyecto": proyecto,
+        # Un proyecto se archiva con todo su árbol: lo dice su proyecto principal.
+        "archivado": entero[proyecto.raiz_id].archivado if proyecto.raiz_id in entero else None,
         "camino": camino,
         "subproyectos": subproyectos,
         "tareas": tareas,
@@ -242,9 +246,10 @@ def kanban(request, pk):
 
 
 # Mis tareas: de las que soy responsable o colaboro (sin las personales sueltas, que están en
-# «Personales»). Sin ejecutar.
+# «Personales»), sin las archivadas ni las de proyectos archivados. Sin ejecutar.
 def _mias(usuario):
-    return Tarea.objects.filter(Q(responsable=usuario) | Q(colaboradores=usuario)).distinct().select_related("proyecto", "grupo", "responsable")
+    sin_archivar = Q(archivado__isnull=True, proyecto__raiz__archivado__isnull=True)
+    return Tarea.objects.filter(sin_archivar, Q(responsable=usuario) | Q(colaboradores=usuario)).distinct().select_related("proyecto", "grupo", "responsable")
 
 
 # Pantalla «Mis tareas»: las pendientes primero, por fecha límite. Unas 3 consultas.

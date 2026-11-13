@@ -1,0 +1,15 @@
+{% comment %}
+  Un tipo de elemento en «Configuración → Limpieza» (limpieza/plazos.html): sus plazos en un formulario.
+  Recibe «plazo» (un PlazoEfectivo) y «archivo» (si se archiva antes de borrar: entonces hay dos plazos).
+{% endcomment %}
+<form method="post" class="flex flex-wrap items-end gap-2 text-sm">
+  {% csrf_token %}<input type="hidden" name="tipo" value="{{ plazo.limpiable.codigo }}">
+  <span class="min-w-48 flex-1 font-medium">{{ plazo.limpiable.nombre }}{% if not plazo.cambiado %} <span class="text-xs font-normal text-slate-500">(de partida)</span>{% endif %}</span>
+  <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="activo" {% if plazo.activo %}checked{% endif %}> Activo</label>
+  {% if archivo %}
+    <label class="flex flex-col text-xs">Días hasta archivar<input type="number" name="archivar_a" min="1" value="{{ plazo.archivar_a }}" class="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"></label>
+  {% endif %}
+  <label class="flex flex-col text-xs">Días hasta borrar<input type="number" name="borrar_a" min="1" value="{{ plazo.borrar_a }}" class="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"></label>
+  <button type="submit" class="rounded bg-marca px-2 py-1 text-white">Guardar</button>
+  {% if plazo.cambiado %}<button type="submit" name="partida" value="1" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-700">De partida ({% if archivo %}{{ plazo.limpiable.archivar_a }} / {% endif %}{{ plazo.limpiable.borrar_a }})</button>{% endif %}
+</form>

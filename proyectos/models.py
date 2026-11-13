@@ -7,12 +7,14 @@ Tablas del módulo «proyectos» (ver docs/diseno.md, apartado 14):
 - Tarea: algo concreto con una persona responsable (y colaboradoras), dentro de un proyecto, suelta en
   un grupo o personal. Sus estados son las columnas del kanban.
 
-Los recursos y las dependencias llegarán en la siguiente pieza.
+Los dos guardan cuándo terminaron (para el módulo «limpieza», que archiva lo terminado pasado un plazo y,
+más tarde, lo borra) y cuándo se archivaron. Los recursos y las dependencias llegarán en la siguiente pieza.
 """
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Proyecto(models.Model):
@@ -69,6 +71,13 @@ class Proyecto(models.Model):
     )
     visibilidad = models.CharField("visibilidad elegida", max_length=30, default="privado", help_text="La opción elegida: «privado», «grupo:0»…")
     creado = models.DateTimeField("creado", auto_now_add=True, help_text="Cuándo se creó.")
+    terminado = models.DateTimeField(
+        "finalizado el", null=True, blank=True, help_text="Cuándo pasó a «Finalizado». Vacío si no lo está. Desde aquí cuenta el plazo para archivarlo."
+    )
+    archivado = models.DateTimeField(
+        "archivado el", null=True, blank=True,
+        help_text="Cuándo lo archivó la limpieza (sale de las listas, con sus subproyectos y tareas). Vacío: no archivado.",
+    )
 
     class Meta:
         verbose_name = "proyecto"
@@ -84,6 +93,14 @@ class Proyecto(models.Model):
         super().clean()
         if self.inicio and self.limite and self.limite < self.inicio:
             raise ValidationError({"limite": "La fecha límite no puede ser anterior al inicio."})
+
+    # Al guardar, apunta cuándo terminó (si acaba de pasar a «Finalizado»). Si se reabre, deja de estar
+    # terminado y sale del archivo (vuelve a las listas).
+    def save(self, *args, **kwargs):
+        apuntar_fin(self, self.estado == self.FINALIZADO)
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = {*kwargs["update_fields"], "terminado", "archivado"}
+        super().save(*args, **kwargs)
 
 
 class Tarea(models.Model):
@@ -128,6 +145,13 @@ class Tarea(models.Model):
     visibilidad = models.CharField("visibilidad elegida", max_length=30, default="privado", help_text="La opción elegida (en las sueltas).")
     creada = models.DateTimeField("creada", auto_now_add=True, help_text="Cuándo se creó.")
     actualizada = models.DateTimeField("actualizada", auto_now=True, help_text="Cuándo cambió por última vez.")
+    terminado = models.DateTimeField(
+        "hecha el", null=True, blank=True, help_text="Cuándo pasó a «Hecha». Vacío si no lo está. Desde aquí cuenta el plazo para archivarla."
+    )
+    archivado = models.DateTimeField(
+        "archivada el", null=True, blank=True,
+        help_text="Cuándo la archivó la limpieza (solo las sueltas y personales; las de un proyecto siguen al proyecto). Vacío: no archivada.",
+    )
 
     class Meta:
         verbose_name = "tarea"
@@ -137,3 +161,23 @@ class Tarea(models.Model):
     # Texto con el que se muestra: su título.
     def __str__(self):
         return self.titulo
+
+    # Al guardar, apunta cuándo terminó (si acaba de pasar a «Hecha»). Si se reabre, deja de estar
+    # terminada y sale del archivo.
+    def save(self, *args, **kwargs):
+        apuntar_fin(self, self.estado == self.HECHA)
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = {*kwargs["update_fields"], "terminado", "archivado"}
+        super().save(*args, **kwargs)
+
+
+# Pone al día «terminado» y «archivado» de un proyecto o una tarea antes de guardarlo: si está terminado y
+# no tenía fecha, la de ahora; si no lo está, vacías las dos. La llaman los save() de Proyecto y Tarea.
+#   - objeto: el proyecto o la tarea.
+#   - acabado: si su estado es el de terminado («Finalizado» o «Hecha»).
+def apuntar_fin(objeto, acabado):
+    if acabado:
+        objeto.terminado = objeto.terminado or timezone.now()
+    else:
+        objeto.terminado = None
+        objeto.archivado = None

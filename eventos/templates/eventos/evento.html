@@ -8,6 +8,7 @@
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-4xl space-y-4">
+  {% include "base/_archivado.html" with fecha=evento.archivado %}
   <p><a href="{% url 'eventos:proximos' %}" class="text-sm text-marca hover:underline">← Eventos</a></p>
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
   {% if evento.estado == "pendiente" %}

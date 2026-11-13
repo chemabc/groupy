@@ -10,6 +10,7 @@ from base.contrato import (
     Emision,
     EntradaDeMenu,
     FuenteDeCalendario,
+    Limpiable,
     ModuloConfig,
     Permiso,
     TareaDiaria,
@@ -72,6 +73,9 @@ class EventosConfig(ModuloConfig):
         TareaDiaria("eventos.generar_series", "Crea las siguientes veces de las series de eventos y termina las que han llegado a su final.", "eventos.series.generar_todas"),
     )
     # En el calendario común: cada evento con el color de su tipo; quien lo gestiona puede arrastrarlo.
+    limpiables = (
+        Limpiable("eventos.evento", "eventos.Evento", "Eventos pasados", terminados="eventos.limpieza.eventos", ficha="eventos:evento"),
+    )
     fuentes_de_calendario = (
         FuenteDeCalendario("eventos.eventos", "Eventos", "eventos.calendario.fechas", color="#e11d78", mover="eventos.calendario.mover"),
     )

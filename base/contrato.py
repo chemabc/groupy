@@ -333,10 +333,26 @@ class Limpiable:
 
     # Código único, empezando por la etiqueta del módulo. Ejemplo: «proyectos.tarea».
     codigo: str
-    # Modelo de Django, como «app.Modelo».
+    # Modelo de Django, como «app.Modelo». Si se archiva, debe tener los campos «titulo», «audiencia»
+    # (quién lo ve; a esas personas se les avisa) y «archivado» (fecha y hora, vacía hasta que se archiva;
+    # la rellena «limpieza» y el módulo saca de sus listas lo que la tiene).
     modelo: str
     # Nombre visible en la configuración de la limpieza.
     nombre: str
+    # Si se archiva: ruta de la función que recibe un momento y devuelve la consulta (QuerySet del
+    # modelo) de lo que está sin archivar y terminó antes de ese momento. Lo que va dentro de un proyecto
+    # no entra: sigue al proyecto. Ejemplo: «proyectos.limpieza.proyectos».
+    terminados: str = ""
+    # Si se archiva: nombre de la dirección web de su ficha, que recibe el id. Ejemplo: «proyectos:proyecto».
+    ficha: str = ""
+    # Si se borra sin archivar antes (sin avisos ni «Conservar», como las notificaciones): ruta de la
+    # función que recibe un momento, borra lo que terminó antes y devuelve cuántos ha borrado.
+    borrar: str = ""
+    # Días de partida tras terminar hasta archivarlo (el superadmin los cambia en «Configuración →
+    # Limpieza»). No se usa si se borra sin archivar.
+    archivar_a: int = 30
+    # Días de partida tras archivarlo hasta borrarlo (o, si se borra sin archivar, tras terminar).
+    borrar_a: int = 365
 
 
 @dataclass(frozen=True)

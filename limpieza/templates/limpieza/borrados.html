@@ -1,0 +1,25 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Archivo → Borrados» (limpieza/views.py, borrados). Recibe «filas»: cada una con «borrado» (la
+  fila del registro, con quién lo podó) y el nombre de su «tipo».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Lo que la limpieza ha borrado de lo que veías, para que quede memoria de qué había y cuándo se fue.</p>
+  <ul class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+    {% for fila in filas %}
+      {% with borrado=fila.borrado %}
+      <li class="p-3">
+        <p class="font-medium">{{ borrado.titulo }}</p>
+        <p class="text-xs text-slate-500">
+          {{ fila.tipo }} · archivado el {{ borrado.archivado_el|date:"d/m/Y" }} · borrado el {{ borrado.borrado_el|date:"d/m/Y" }} ·
+          {% if borrado.motivo == "a_mano" %}a mano, por {{ borrado.quien.alias|default:"el superadmin" }}{% else %}pasó el plazo{% endif %}
+        </p>
+      </li>
+      {% endwith %}
+    {% empty %}
+      <li class="p-4 text-sm text-slate-500">Todavía no se ha borrado nada.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

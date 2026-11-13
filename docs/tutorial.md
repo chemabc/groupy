@@ -563,3 +563,18 @@ sirve aquí y dónde se usa.
 - **Arrastrar en Playwright.** SortableJS con `forceFallback` sigue el ratón «a mano», y `drag_to` salta
   de golpe al destino: no se entera. En la prueba se mueve el ratón en 20 pasos (`arrastrar()` de
   `proyectos/tests/test_navegador.py`).
+
+## 26. Limpiar sin que un módulo conozca a los demás (13 de noviembre de 2026)
+
+- **El módulo dice qué está terminado; la limpieza decide cuándo.** Cada módulo declara sus `Limpiable`
+  con una función `terminados(antes)` que devuelve una consulta (un QuerySet sin ejecutar). `limpieza` la
+  llama con «ahora menos los días del plazo», le pide `pk`, `titulo` y `audiencia_id` con `values_list` y
+  le pone la fecha con un `update`: dos consultas por tipo, sin importar ningún módulo funcional.
+- **Dos copias pequeñas en lugar de preguntar.** La tabla `Archivado` guarda el título, el enlace y la
+  audiencia de lo archivado. Así el archivo se lista con una consulta (filtrada con `filtrar_visibles`,
+  como todo) aunque mezcle proyectos, eventos y recordatorios.
+- **Guardar a la vez lo que va junto.** Proyecto y Tarea apuntan cuándo terminaron en su `save()`: así da
+  igual desde dónde cambie el estado (el formulario, el kanban, el calendario). Si el `save()` recibe
+  `update_fields`, hay que añadirle esos campos, o no se guardarían.
+- **Pruebas con el reloj en la mano.** `limpiar(ahora)` recibe el momento: las pruebas «viajan» 16 días al
+  futuro sin esperar ni trucar el reloj del sistema.

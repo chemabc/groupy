@@ -152,6 +152,10 @@ class Evento(DatosDeEvento):
     tocado = models.BooleanField(
         "cambiado a mano", default=False, help_text="Si esta vez se ha cambiado a mano: entonces los cambios de la serie ya no le afectan."
     )
+    archivado = models.DateTimeField(
+        "archivado el", null=True, blank=True,
+        help_text="Cuándo lo archivó la limpieza, pasado un tiempo desde que terminó: sale de las listas, pero sigue en el calendario y en su enlace. Vacío: no archivado.",
+    )
 
     class Meta:
         verbose_name = "evento"

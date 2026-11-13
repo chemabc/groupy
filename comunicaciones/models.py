@@ -112,8 +112,8 @@ class AvisoDeAdministracion(Administracion):
 class Notificacion(models.Model):
     """
     Notificación: un aviso para una persona. Se ve en su bandeja hasta que la borra. Las vistas se pueden
-    limpiar todas de una vez; más adelante, el módulo «limpieza» borrará las vistas a los 90 días y las no
-    vistas a los 365 (lo podrá cambiar el superadmin).
+    limpiar todas de una vez; el módulo «limpieza» borra las vistas a los 90 días y las no
+    vistas a los 365 (el superadmin puede cambiarlo; ver comunicaciones/limpieza.py).
     """
 
     usuario = models.ForeignKey(

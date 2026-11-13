@@ -1,0 +1,48 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Archivo → Archivados» (limpieza/views.py, archivados). Recibe «filas» (cada una con
+  «archivado», el nombre de su «tipo» y «se_borra_el», o None si no se borrará solo), «tipos» (código y
+  nombre, para filtrar), el «tipo» elegido, «pronto» (solo lo que se borrará pronto) y «superadmin».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Lo terminado hace tiempo sale de las listas y se archiva aquí. Pasado el plazo se borra, con un aviso quince días antes. Si algo merece quedarse, pulsa «Conservar».</p>
+  <nav class="flex flex-wrap gap-1 text-sm" aria-label="Filtrar el archivo">
+    <a href="{% url 'limpieza:archivados' %}" class="rounded-full border px-2 py-0.5 {% if not tipo and not pronto %}border-marca bg-marca text-white{% else %}border-slate-300 dark:border-slate-700{% endif %}">Todo</a>
+    <a href="{% url 'limpieza:archivados' %}?pronto=1" class="rounded-full border px-2 py-0.5 {% if pronto %}border-marca bg-marca text-white{% else %}border-slate-300 dark:border-slate-700{% endif %}">Se borra pronto</a>
+    {% for codigo, nombre in tipos %}
+      <a href="{% url 'limpieza:archivados' %}?tipo={{ codigo }}" class="rounded-full border px-2 py-0.5 {% if tipo == codigo %}border-marca bg-marca text-white{% else %}border-slate-300 dark:border-slate-700{% endif %}">{{ nombre }}</a>
+    {% endfor %}
+  </nav>
+  <ul class="space-y-2">
+    {% for fila in filas %}
+      {% with archivado=fila.archivado %}
+      <li class="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        <div class="min-w-0 flex-1">
+          <a href="{{ archivado.enlace }}" class="font-medium hover:text-marca hover:underline">{{ archivado.titulo }}</a>
+          <p class="text-xs text-slate-500">
+            {{ fila.tipo }} · archivado el {{ archivado.archivado_el|date:"d/m/Y" }} ·
+            {% if archivado.conservado_el %}<span class="text-emerald-700 dark:text-emerald-400">conservado por {{ archivado.conservado_por.alias|default:"alguien que ya no está" }} el {{ archivado.conservado_el|date:"d/m/Y" }}</span>
+            {% elif fila.se_borra_el %}<span class="{% if archivado.avisado_el %}text-red-700 dark:text-red-400{% endif %}">se borrará hacia el {{ fila.se_borra_el|date:"d/m/Y" }}</span>
+            {% else %}no se borra (la limpieza de este tipo está parada){% endif %}
+          </p>
+        </div>
+        <form method="post" action="{% url 'limpieza:archivado' archivado.pk %}" class="flex gap-1 text-sm">
+          {% csrf_token %}<input type="hidden" name="volver" value="{{ request.get_full_path }}">
+          {% if not archivado.conservado_el %}
+            <button type="submit" name="accion" value="conservar" class="rounded border border-emerald-600 px-2 py-1 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950">Conservar</button>
+          {% elif superadmin %}
+            <button type="submit" name="accion" value="dejar" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-700">Dejar de conservar</button>
+          {% endif %}
+          {% if superadmin %}
+            <button type="submit" name="accion" value="podar" class="rounded border border-red-600 px-2 py-1 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950" onclick="return confirm('¿Borrar ya «{{ archivado.titulo|escapejs }}»? No se puede deshacer.')">Borrar ya</button>
+          {% endif %}
+        </form>
+      </li>
+      {% endwith %}
+    {% empty %}
+      <li class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">No hay nada archivado{% if tipo or pronto %} con este filtro{% endif %}.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

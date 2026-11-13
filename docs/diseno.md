@@ -1322,6 +1322,38 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - **Protección de la memoria colectiva:** las actas aprobadas y las decisiones solo se borran con un
   **aviso previo al grupo** y un **plazo para descargarlas**. Cada borrado queda en un **registro visible**.
 
+**Cómo está hecha (13 de noviembre de 2026, decisiones 1A, 2A y 3A de la persona usuaria).**
+- **Cada módulo dice qué es «terminado» (1A).** `Limpiable(codigo, modelo, nombre, terminados, ficha,
+  archivar_a, borrar_a)`: `terminados(antes)` devuelve la consulta de lo que está sin archivar y terminó
+  antes de ese momento. El modelo lleva `titulo`, `audiencia` y `archivado` (lo comprueba `manage.py
+  check`). Archivar es poner la fecha en `archivado`: el módulo lo saca de sus listas, pero la ficha
+  sigue abriéndose por su enlace (con un aviso «Archivado el…») y todo se ve en **«Archivo →
+  Archivados»**, filtrable por tipo y por «Se borra pronto». *Descartado (1B):* ocultar sin pestaña.
+- **Qué cuenta como terminado:** proyectos principales finalizados (los subproyectos y sus tareas siguen
+  al principal: se archivan y se borran con él), tareas hechas sueltas y personales, eventos convocados o
+  cancelados ya pasados (no los pendientes de apoyos, que caducan con su solicitud) y recordatorios
+  pasados. Proyecto y Tarea guardan `terminado` (cuándo se finalizó o se hizo); si se reabren, pierden
+  esa fecha y la de archivo, y la limpieza los quita del archivo. Los eventos y recordatorios archivados
+  **siguen en el calendario** (es historia, no una lista).
+- **Plazos de partida (2A):** archivar a los 30 días de terminar y borrar a los 365 de archivar. El
+  superadmin los cambia o para un tipo en **«Configuración → Limpieza»** (`Plazo`; sin fila, los de
+  partida del contrato). Como de momento solo hay proyectos con lo suyo dentro, «lo asociado a un proyecto»
+  no tiene plazos propios: sigue al proyecto.
+- **Antes de borrar (3A):** 15 días antes se avisa a quienes lo ven (notificación «Se va a borrar algo
+  archivado que veo», una por persona con cuántos elementos), que pueden pulsar **«Conservar»**: sigue
+  archivado, pero no se borra solo. Nunca se borra nada sin ese aviso con 15 días de margen, aunque se
+  acorten los plazos. Al archivar también se avisa. *Descartado (3B):* avisar sin poder conservar.
+- **Quién:** «Conservar», quien lo ve (proteger es inofensivo); «Dejar de conservar» y **«Borrar ya»**
+  (podar a mano), solo el superadmin. Lo personal solo lo ve su dueña, también en el archivo.
+- **Registro de borrados** (`Borrado`: tipo, título, quién lo veía, cuándo se archivó y se borró, y si fue
+  por el plazo o a mano). Se ve en «Archivo → Borrados» con la audiencia que tenía. Nunca se borra.
+- **Sin archivo:** las notificaciones vistas se borran a los 90 días de verlas y las no vistas a los 365
+  de llegar (`Limpiable` con `borrar`: lo borra su módulo, que pone al día el número sin ver).
+- **Cuándo:** tarea diaria `limpieza.limpiar` del trabajador, en lotes de 2000 por tipo y vuelta.
+- *(Pendiente: las actas y las decisiones llegarán en la fase 5; las decisiones no declaran `Limpiable`,
+  y las actas aprobadas tendrán su plazo de descarga al diseñarlas. Las series terminadas de eventos aún
+  no se limpian.)*
+
 ---
 
 ## 15. Información pública

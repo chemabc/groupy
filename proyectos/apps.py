@@ -11,6 +11,7 @@ from base.contrato import (
     Emision,
     EntradaDeMenu,
     FuenteDeCalendario,
+    Limpiable,
     ModuloConfig,
     Permiso,
     TipoDeAviso,
@@ -46,6 +47,16 @@ class ProyectosConfig(ModuloConfig):
     emite = (Emision("proyectos.tarea_asignada", "Se ha encargado una tarea a alguien. Datos: tarea_id."),)
     avisos = (
         TipoDeAviso("proyectos.tarea_asignada", "Me encargan una tarea", "proyectos", "proyectos.tarea_asignada", "proyectos.avisos.tarea_asignada"),
+    )
+    limpiables = (
+        Limpiable(
+            "proyectos.proyecto", "proyectos.Proyecto", "Proyectos finalizados (con sus subproyectos y tareas)",
+            terminados="proyectos.limpieza.proyectos", ficha="proyectos:proyecto",
+        ),
+        Limpiable(
+            "proyectos.tarea", "proyectos.Tarea", "Tareas hechas (sueltas y personales)",
+            terminados="proyectos.limpieza.tareas", ficha="proyectos:tarea",
+        ),
     )
     fuentes_de_calendario = (
         FuenteDeCalendario("proyectos.proyectos", "Proyectos", "proyectos.calendario.proyectos", color="#4338ca", mover="proyectos.calendario.mover_proyecto"),

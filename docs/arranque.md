@@ -120,7 +120,7 @@ python manage.py procesar_bandeja
 ```
 
 El trabajador también hace, la primera vez que da una vuelta cada día, las **tareas diarias** de los
-módulos (caducar solicitudes vencidas, crear las siguientes veces de las series de eventos…). Para
+módulos (caducar solicitudes vencidas, crear las siguientes veces de las series de eventos, la limpieza…). Para
 lanzarlas a mano en cualquier momento:
 
 ```bash

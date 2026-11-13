@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «calendario».
 """
 
-from base.contrato import Ayuda, Capa, EntradaDeMenu, FuenteDeCalendario, ModuloConfig, Permiso, Vista
+from base.contrato import Ayuda, Capa, EntradaDeMenu, FuenteDeCalendario, Limpiable, ModuloConfig, Permiso, Vista
 
 
 class CalendarioConfig(ModuloConfig):
@@ -24,6 +24,12 @@ class CalendarioConfig(ModuloConfig):
         Permiso(
             "calendario.ampliar_recordatorios", "Hacer visibles los recordatorios del grupo a los grupos padre y abuelo",
             roles=("admin_grupo", "admin_org"),
+        ),
+    )
+    limpiables = (
+        Limpiable(
+            "calendario.recordatorio", "calendario.Recordatorio", "Recordatorios pasados",
+            terminados="calendario.limpieza.recordatorios", ficha="calendario:recordatorio",
         ),
     )
     fuentes_de_calendario = (

@@ -181,6 +181,27 @@ class PruebasDeTareas(PruebaDeProyectos):
         self.assertEqual(self.client.post("/calendario/mover/", mover).json(), {"ok": True})
         self.assertEqual(Tarea.objects.get().limite, date(2030, 3, 12))
 
+    # Para la limpieza: al pasar a «Hecha» (arrastrando) o a «Finalizado» se apunta cuándo terminó; al
+    # reabrir, se borra esa fecha y la de archivo. Lo archivado sale de «Mis tareas» y de «Personales».
+    def test_fecha_de_fin_y_archivo(self):
+        suelta = crear_tarea(self.nutria, {"titulo": "Limpiar el local", "responsable": self.nutria}, grupo=self.henares, visibilidad="grupo:0")
+        mover = lambda estado: self.client.post("/proyectos/tareas/mover/", json.dumps({"tarea": suelta.pk, "estado": estado, "orden": [suelta.pk]}), content_type="application/json")  # noqa: E731
+        mover("hecha")
+        suelta.refresh_from_db()
+        self.assertIsNotNone(suelta.terminado)
+        Tarea.objects.filter(pk=suelta.pk).update(archivado=suelta.terminado)
+        self.assertNotContains(self.client.get("/proyectos/tareas/"), "Limpiar el local")
+        mover("en_curso")
+        suelta.refresh_from_db()
+        self.assertEqual((suelta.terminado, suelta.archivado), (None, None))
+        self.assertContains(self.client.get("/proyectos/tareas/"), "Limpiar el local")
+        mio = crear_proyecto(self.nutria, self.generico, {"titulo": "Mi huerto"}, personal=True)
+        self.client.post(f"/proyectos/{mio.pk}/", {"accion": "estado", "estado": Proyecto.FINALIZADO})
+        mio.refresh_from_db()
+        self.assertIsNotNone(mio.terminado)
+        Proyecto.objects.filter(pk=mio.pk).update(archivado=mio.terminado)
+        self.assertNotContains(self.client.get("/proyectos/personales/"), "Mi huerto")
+
     # Tareas sueltas de un grupo y personales.
     def test_sueltas_y_personales(self):
         suelta = crear_tarea(self.nutria, {"titulo": "Limpiar el local", "responsable": self.nutria}, grupo=self.henares, visibilidad="grupo:0")

@@ -104,5 +104,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   diarias en el trabajador (`TareaDiaria`).
 - **Fase 4 en curso.** Hecho: `proyectos`, primera pieza (proyectos de grupo y personales con
   subproyectos a cualquier profundidad, cometidos, tareas en proyecto, sueltas o personales, kanban con
-  SortableJS, fechas límite en el calendario). Siguiente: `limpieza`; después recursos y dependencias.
+  SortableJS, fechas límite en el calendario) y `limpieza` (tarea diaria: archiva lo terminado a los 30 días,
+  avisa 15 días antes de borrar a los 365, «Conservar», poda del superadmin, registro de borrados,
+  notificaciones viejas fuera; plazos en «Configuración → Limpieza»). Siguiente: recursos y dependencias.
   Recuerda `migrate --database=boveda`.

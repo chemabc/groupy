@@ -33,9 +33,10 @@ MAXIMO = 100
 # ── Listas ───────────────────────────────────────────────────────────────────────────────────────────
 
 
-# Consulta base de las listas: con grupo, organización y tipología cargados.
+# Consulta base de las listas: sin lo archivado (está en «Archivo») y con grupo, organización y
+# tipología cargados.
 def _base(usuario):
-    return servicios.visibles(usuario).select_related("grupo__organizacion", "tipologia")
+    return servicios.visibles(usuario).filter(archivado__isnull=True).select_related("grupo__organizacion", "tipologia")
 
 
 # Pantalla «Próximos»: los eventos que se ven, desde los que están en curso (empezaron hace menos de 3

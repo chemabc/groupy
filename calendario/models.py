@@ -44,6 +44,10 @@ class Recordatorio(models.Model):
     )
     visibilidad = models.CharField("visibilidad elegida", max_length=30, default="privado", help_text="La opción elegida: «privado», «grupo:0»…")
     creado = models.DateTimeField("creado", auto_now_add=True, help_text="Cuándo se apuntó.")
+    archivado = models.DateTimeField(
+        "archivado el", null=True, blank=True,
+        help_text="Cuándo lo archivó la limpieza, pasado un tiempo desde su fecha: sale de la lista, pero sigue en el calendario. Vacío: no archivado.",
+    )
 
     class Meta:
         verbose_name = "recordatorio"

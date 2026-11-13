@@ -3,10 +3,11 @@
   Ficha de un proyecto (proyectos/views.py, proyecto). Recibe: proyecto, camino (sus antecesores, cada uno
   con si se ve), subproyectos (en árbol), tareas, gestiona, error, estados (pares código, nombre), campos
   (pares nombre, valor de su tipo), cometidos (cada uno con quién lo tiene y si quien mira está) y
-  coordinacion (el código del cometido de coordinación).
+  coordinacion (el código del cometido de coordinación) y archivado (cuándo se archivó su árbol, o nada).
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-5xl space-y-4">
+  {% include "base/_archivado.html" with fecha=archivado %}
   <nav aria-label="Lugar en el árbol" class="text-sm">
     <a href="{% if proyecto.personal %}{% url 'proyectos:personales' %}{% else %}{% url 'proyectos:proyectos' %}{% endif %}" class="text-marca hover:underline">Proyectos</a>
     {% for antecesor, se_ve in camino %} › {% if se_ve %}<a href="{% url 'proyectos:proyecto' antecesor.pk %}" class="text-marca hover:underline">{{ antecesor.titulo }}</a>{% else %}<span class="text-slate-400">(un proyecto que no puedes ver)</span>{% endif %}{% endfor %}

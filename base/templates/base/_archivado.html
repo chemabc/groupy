@@ -1,0 +1,10 @@
+{% comment %}
+  Aviso de que algo está archivado (lo pone el módulo «limpieza» pasado un tiempo desde que terminó). Lo
+  incluyen las fichas de proyectos, tareas, eventos y recordatorios. Recibe «fecha»: cuándo se archivó
+  (si está vacía, no pinta nada).
+{% endcomment %}
+{% if fecha %}
+  <p class="rounded border border-stone-300 bg-stone-50 p-2 text-sm text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300" role="status">
+    Archivado el {{ fecha|date:"d/m/Y" }}: ya no sale en las listas y se borrará pasado un tiempo. Puedes conservarlo en <a href="{% url 'limpieza:archivados' %}" class="text-marca hover:underline">Archivo</a>.
+  </p>
+{% endif %}

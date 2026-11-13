@@ -26,6 +26,7 @@ def comprobar_contrato(app_configs=None, **kwargs):
     errores += _comprobar_modelos()
     errores += _comprobar_direcciones()
     errores += _comprobar_iconos()
+    errores += _comprobar_limpiables()
     return errores
 
 
@@ -39,6 +40,7 @@ def _comprobar_funciones():
     rutas += [aviso.preparar for aviso in registro.avisos.values()]
     rutas += [tipo.resolver for tipo in registro.solicitudes.values()]
     rutas += [tarea.funcion for tarea in registro.tareas_diarias.values()]
+    rutas += [ruta for limpiable in registro.limpiables.values() for ruta in (limpiable.terminados, limpiable.borrar) if ruta]
     rutas += [tipo.comprobar for tipo in registro.solicitudes.values() if tipo.comprobar]
     rutas += [entrada.contador for entrada in _todas_las_entradas(registro.menu) if entrada.contador]
     for datos in registro.datos_de_ejemplo.values():
@@ -62,6 +64,28 @@ def _comprobar_modelos():
             apps.get_model(modelo)
         except (LookupError, ValueError):
             errores.append(checks.Error(f"No existe el modelo «{modelo}».", id="base.E003"))
+    return errores
+
+
+# Comprueba cada tipo limpiable: o se archiva (con «terminados» y «ficha», y el modelo tiene los campos
+# «titulo», «audiencia» y «archivado») o se borra sin archivar (con «borrar»), pero no las dos cosas.
+def _comprobar_limpiables():
+    errores = []
+    for limpiable in registro.limpiables.values():
+        if bool(limpiable.terminados) == bool(limpiable.borrar):
+            errores.append(checks.Error(f"«{limpiable.codigo}» debe decir «terminados» (si se archiva) o «borrar» (si no), y solo uno.", id="base.E006"))
+            continue
+        if not limpiable.terminados:
+            continue
+        if not limpiable.ficha:
+            errores.append(checks.Error(f"«{limpiable.codigo}» se archiva y no dice la dirección de su ficha.", id="base.E006"))
+        try:
+            campos = {campo.name for campo in apps.get_model(limpiable.modelo)._meta.get_fields()}
+        except (LookupError, ValueError):
+            continue  # Ya lo avisa _comprobar_modelos.
+        faltan = {"titulo", "audiencia", "archivado"} - campos
+        if faltan:
+            errores.append(checks.Error(f"Al modelo de «{limpiable.codigo}» le faltan los campos {', '.join(sorted(faltan))}.", id="base.E006"))
     return errores
 
 

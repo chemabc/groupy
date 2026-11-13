@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     "eventos.apps.EventosConfig",
     "proyectos.apps.ProyectosConfig",
     "calendario.apps.CalendarioConfig",
+    "limpieza.apps.LimpiezaConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,

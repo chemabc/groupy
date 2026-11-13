@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «comunicaciones».
 """
 
-from base.contrato import Ayuda, Capa, EntradaDeMenu, ModuloConfig, Permiso, Vista
+from base.contrato import Ayuda, Capa, EntradaDeMenu, Limpiable, ModuloConfig, Permiso, Vista
 
 
 class ComunicacionesConfig(ModuloConfig):
@@ -31,6 +31,17 @@ class ComunicacionesConfig(ModuloConfig):
     )
     # El registro conecta esta función a cada tipo de aviso de cualquier módulo (ver base/registro.py).
     reparte_avisos = "comunicaciones.servicios.repartir"
+    # Las notificaciones viejas se borran sin archivar ni avisar (ver comunicaciones/limpieza.py).
+    limpiables = (
+        Limpiable(
+            "comunicaciones.notificacion_vista", "comunicaciones.Notificacion", "Notificaciones vistas (días desde que se vieron)",
+            borrar="comunicaciones.limpieza.borrar_vistas", borrar_a=90,
+        ),
+        Limpiable(
+            "comunicaciones.notificacion_sin_ver", "comunicaciones.Notificacion", "Notificaciones sin ver (días desde que llegaron)",
+            borrar="comunicaciones.limpieza.borrar_sin_ver", borrar_a=365,
+        ),
+    )
     menu = (
         EntradaDeMenu(
             codigo="comunicaciones.comunicaciones",

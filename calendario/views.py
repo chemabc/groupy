@@ -122,7 +122,7 @@ def mover(request):
 def recordatorios(request):
     desde = timezone.now() - timedelta(days=1)
     lista = list(
-        servicios.recordatorios_visibles(request.user).filter(inicio__gte=desde).select_related("grupo__organizacion", "autor").order_by("inicio")[:MAXIMO]
+        servicios.recordatorios_visibles(request.user).filter(inicio__gte=desde, archivado__isnull=True).select_related("grupo__organizacion", "autor").order_by("inicio")[:MAXIMO]
     )
     return render(request, "calendario/recordatorios.html", {"recordatorios": lista})
 
