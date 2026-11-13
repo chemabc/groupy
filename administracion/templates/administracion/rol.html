@@ -1,0 +1,54 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de un rol (administracion/views.py, rol). Recibe: rol, datos (formulario de nombre y
+  descripción), modulos (cada módulo con sus permisos: código, descripción y si el rol lo tiene),
+  personas (cuántas lo tienen, o nada si es de organización), error, aviso y abrir.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <p><a href="{% url 'administracion:roles' %}" class="text-sm text-marca hover:underline">← Roles</a></p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% if aviso %}<p class="rounded border border-emerald-300 bg-emerald-50 p-2 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" role="status">{{ aviso }}</p>{% endif %}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="text-lg font-semibold">{{ rol.nombre }} <span class="text-sm font-normal text-slate-500">· {{ rol.codigo }} · {{ rol.get_nivel_display|lower }}{% if rol.del_sistema %} · del sistema{% endif %}</span></h2>
+    {% if rol.descripcion %}<p class="mt-1 text-sm">{{ rol.descripcion }}</p>{% endif %}
+    {% if personas is not None %}<p class="mt-1 text-sm text-slate-500">Lo tienen {{ personas }} persona{{ personas|pluralize }}.</p>{% endif %}
+    <details class="mt-2" {% if abrir == "datos" %}open{% endif %}>
+      <summary class="cursor-pointer text-sm text-marca">Cambiar nombre o descripción</summary>
+      <form method="post" class="mt-2 max-w-xl">
+        {% csrf_token %}<input type="hidden" name="accion" value="datos">
+        {{ datos }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+      </form>
+    </details>
+  </section>
+
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}<input type="hidden" name="accion" value="permisos">
+    <h3 class="mb-1 font-semibold">Permisos</h3>
+    <p class="mb-3 text-xs text-slate-500">Marca lo que puede hacer quien tiene este rol. Al guardar, vale al momento para todo el mundo.</p>
+    <div class="space-y-4">
+      {% for modulo in modulos %}
+        <fieldset>
+          <legend class="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">{{ modulo.nombre }}</legend>
+          {% for permiso in modulo.permisos %}
+            <label class="flex items-start gap-2 py-0.5 text-sm">
+              <input type="checkbox" name="permisos" value="{{ permiso.codigo }}" {% if permiso.marcado %}checked{% endif %} class="mt-0.5">
+              <span>{{ permiso.descripcion }} <code class="text-xs text-slate-400">{{ permiso.codigo }}</code></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
+    </div>
+    <button type="submit" class="mt-3 rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar los permisos</button>
+  </form>
+
+  {% if not rol.del_sistema %}
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="accion" value="borrar">
+      <button type="submit" class="rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 dark:border-red-800 dark:text-red-300"
+              onclick="return confirm('¿Borrar el rol «{{ rol.nombre|escapejs }}»?')">Borrar el rol</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

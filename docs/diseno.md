@@ -258,6 +258,22 @@ dentro de una ficha**):
   tienen estos roles: … Puedes pedírselo a: Lince (admin de GRU Henares), Zorro (admin de ORG Tajo), el
   superadmin.». Se muestra en la pantalla 403, dentro de la zona central (htmx la pinta gracias al
   ajuste `responseHandling`).
+- **Pantallas «Usuarios → Roles y permisos» (13 de noviembre de 2026).** Subsección de «Usuarios», a
+  petición de la persona usuaria («al fin y al cabo son roles de usuarios»). *Descartado:* una sección
+  propia (apartado 5.1) y una subsección de «Configuración». Permiso `administracion.roles`, de entrada
+  solo del superadmin. Tres vistas arriba:
+  - **Roles:** lista con dónde vale cada uno, cuántos permisos tiene y cuántas personas lo tienen, y
+    alta de roles personalizados (de grupo, sin permisos al nacer). En la ficha de cada rol, sus permisos
+    como casillas agrupadas por módulo; guardar vale al momento para todo el mundo (se sube la versión
+    de la caché). Un rol personalizado se borra solo si nadie lo tiene; los del sistema, nunca.
+  - **Excepciones:** lista de todas, alta (alias, grupo, permiso, dar o quitar y motivo; si ya había
+    una para lo mismo, se sustituye) y baja.
+  - **Explicar un permiso:** persona, grupo y permiso → los pasos en lenguaje llano
+    (`explicar_permiso`). Una prueba recorre personas, grupos y todos los permisos (con rol
+    personalizado y excepciones de los dos tipos) y comprueba que decide igual que `puede()`.
+  - *(Pendiente: que el admin de la organización dé excepciones en sus grupos, con
+    `permisos.dar_excepciones`, desde la ficha del grupo; y los cometidos, cuando algún módulo los
+    declare.)*
 - `grupos` ya usa `exigir` para invitar (`grupos.invitar`, por defecto cualquier miembro) y para
   responder a una invitación (`grupos.responder_invitacion`, por defecto el admin del grupo).
 

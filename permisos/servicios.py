@@ -27,7 +27,7 @@ from django.db import transaction
 from base.registro import registro
 from grupos.models import AdminDeOrganizacion, Contencion, Grupo, Pertenencia
 
-from .models import Cometido, PermisoConocido, PermisoDeRol, Rol
+from .models import Cometido, ExcepcionDePermiso, PermisoConocido, PermisoDeRol, Rol
 
 # Clave de la caché con el número de versión de todos los cálculos. Subirlo invalida a la vez el de
 # todo el mundo (por ejemplo, cuando el superadmin cambia los permisos de un rol).
@@ -290,6 +290,130 @@ def quitar_cometido(usuario, codigo, ancla_tipo, ancla_id):
 #   - grupo: el grupo.
 def cometidos_en_grupo(grupo):
     return Cometido.objects.filter(grupo__ascendencia__antecesor=grupo).select_related("usuario", "grupo")
+
+
+# ── Roles y excepciones (pantalla «Usuarios → Roles y permisos») ─────────────────────────────────────
+
+
+# Crea un rol personalizado de grupo (por ejemplo, «Tesorería»), sin permisos. Devuelve el rol.
+#   - codigo: nombre interno, en minúsculas y sin tildes («tesoreria»).
+#   - nombre: nombre visible.
+#   - descripcion: para qué sirve.
+@transaction.atomic
+def crear_rol(codigo, nombre, descripcion=""):
+    if Rol.objects.filter(codigo=codigo).exists():
+        raise ValidationError({"codigo": f"Ya existe un rol con el código «{codigo}»."})
+    rol = Rol(codigo=codigo, nombre=nombre, descripcion=descripcion, nivel=Rol.GRUPO)
+    rol.full_clean()
+    rol.save()
+    return rol
+
+
+# Deja a un rol exactamente con los permisos indicados: añade los que faltan y quita los demás. Las
+# señales (permisos/senales.py) invalidan el cálculo de todo el mundo. Devuelve (añadidos, quitados).
+#   - rol: el rol.
+#   - codigos: los códigos de los permisos que debe tener (todos declarados en algún contrato).
+@transaction.atomic
+def poner_permisos_de_rol(rol, codigos):
+    desconocidos = set(codigos) - set(registro.permisos)
+    if desconocidos:
+        raise ValidationError(f"Ningún módulo declara estos permisos: {', '.join(sorted(desconocidos))}.")
+    actuales = set(rol.permisos.values_list("permiso", flat=True))
+    nuevos, sobran = set(codigos) - actuales, actuales - set(codigos)
+    PermisoDeRol.objects.bulk_create([PermisoDeRol(rol=rol, permiso=codigo) for codigo in sorted(nuevos)])
+    rol.permisos.filter(permiso__in=sobran).delete()
+    # bulk_create y delete en bloque no lanzan las señales de cada fila: se invalida a mano.
+    invalidar_todos()
+    return sorted(nuevos), sorted(sobran)
+
+
+# Borra un rol personalizado. Los del sistema no se pueden borrar, ni uno que alguien tenga todavía.
+#   - rol: el rol.
+@transaction.atomic
+def borrar_rol(rol):
+    if rol.del_sistema:
+        raise ValidationError(f"«{rol}» es un rol del sistema: no se puede borrar.")
+    personas = Pertenencia.objects.filter(rol=rol.codigo).count()
+    if personas:
+        raise ValidationError(
+            f"{personas} persona{'s tienen' if personas != 1 else ' tiene'} el rol «{rol}»: cámbiales antes el rol en la ficha de su grupo."
+        )
+    rol.delete()
+
+
+# Da o quita un permiso suelto a una persona en un grupo (excepción individual). Si ya había una
+# excepción para ese permiso, persona y grupo, la sustituye. Devuelve la excepción.
+#   - usuario: a quién.
+#   - grupo: en qué grupo.
+#   - permiso: código del permiso.
+#   - concede: True para dar, False para quitar.
+#   - motivo: por qué (queda a la vista del grupo).
+@transaction.atomic
+def poner_excepcion(usuario, grupo, permiso, concede, motivo):
+    if permiso not in registro.permisos:
+        raise ValidationError(f"Ningún módulo declara el permiso «{permiso}».")
+    excepcion, _nueva = ExcepcionDePermiso.objects.update_or_create(
+        usuario=usuario, grupo=grupo, permiso=permiso, defaults={"concede": concede, "motivo": motivo}
+    )
+    return excepcion
+
+
+@dataclass(frozen=True)
+class Explicacion:
+    """
+    El razonamiento de si una persona tiene un permiso en un grupo, paso a paso, para la pantalla de
+    soporte «Explicar un permiso». Debe decidir siempre igual que puede() (hay una prueba que lo comprueba).
+    """
+
+    # Si lo tiene.
+    tiene: bool
+    # Pasos, en lenguaje llano, en el orden en que se aplican las reglas.
+    pasos: tuple
+
+
+# Explica paso a paso si una persona tiene un permiso en un grupo, siguiendo las mismas reglas que
+# _calcular() (ver el principio del fichero). Mira la base de datos directamente, sin la caché: es
+# para soporte, no para las pantallas normales.
+#   - usuario: de quién.
+#   - permiso: código del permiso.
+#   - grupo: el grupo (con su organización).
+def explicar_permiso(usuario, permiso, grupo):
+    if permiso not in registro.permisos:
+        raise PermisoNoDeclarado(f"Ningún módulo declara el permiso «{permiso}».")
+    if usuario.is_superuser:
+        return Explicacion(True, ("Es superadmin: puede hacerlo todo, sin mirar nada más.",))
+    roles = permisos_de_los_roles()
+    nombres = dict(Rol.objects.values_list("codigo", "nombre"))
+    pasos, tiene = [], False
+
+    # Función interna: dice si un rol tiene el permiso, en palabras.
+    def con_o_sin(rol):
+        return "que lo tiene" if permiso in roles.get(rol, ()) else "que no lo tiene"
+
+    directas = list(Pertenencia.objects.filter(usuario=usuario).select_related("grupo"))
+    en_el_grupo = next((p for p in directas if p.grupo_id == grupo.pk), None)
+    rama = set(Contencion.objects.filter(antecesor=grupo).values_list("descendiente_id", flat=True))
+    debajo = [p for p in directas if p.grupo_id in rama]
+    if debajo:
+        lugares = ", ".join(f"«{p.grupo}»" for p in debajo)
+        pasos.append(f"Es miembro de «{grupo}» (está en {lugares}): tiene el rol «{nombres['usuario']}», {con_o_sin('usuario')}.")
+        tiene = permiso in roles.get("usuario", ())
+    else:
+        pasos.append(f"No está en «{grupo}» ni en ninguno de sus subgrupos: no tiene ahí el rol «{nombres['usuario']}».")
+    if en_el_grupo is not None and en_el_grupo.rol != Pertenencia.USUARIO:
+        rol = en_el_grupo.rol
+        pasos.append(f"En «{grupo}» tiene además el rol «{nombres.get(rol, rol)}» (solo vale en ese grupo), {con_o_sin(rol)}.")
+        tiene = tiene or permiso in roles.get(rol, ())
+    if AdminDeOrganizacion.objects.filter(usuario=usuario, organizacion_id=grupo.organizacion_id).exists():
+        pasos.append(f"Es admin de «{grupo.organizacion}»: tiene el rol «{nombres['admin_org']}» en todos sus grupos, {con_o_sin('admin_org')}.")
+        tiene = tiene or permiso in roles.get("admin_org", ())
+    excepcion = ExcepcionDePermiso.objects.filter(usuario=usuario, grupo=grupo, permiso=permiso).first()
+    if excepcion is not None:
+        verbo = "se le da" if excepcion.concede else "se le quita (quitar gana a cualquier rol)"
+        pasos.append(f"Tiene una excepción en «{grupo}»: {verbo}. Motivo: {excepcion.motivo}")
+        tiene = excepcion.concede
+    pasos.append("Resultado: lo tiene." if tiene else "Resultado: no lo tiene.")
+    return Explicacion(tiene, tuple(pasos))
 
 
 # ── Permisos por defecto ─────────────────────────────────────────────────────────────────────────────

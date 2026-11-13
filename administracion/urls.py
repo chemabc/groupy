@@ -16,4 +16,9 @@ urlpatterns = [
     # Alias: lista y ficha.
     path("alias/", views.alias, name="alias"),
     path("alias/<int:pk>/", views.alias_ficha, name="alias_ficha"),
+    # Roles y permisos: roles (lista y ficha), excepciones individuales y explicar un permiso.
+    path("roles/", views.roles, name="roles"),
+    path("roles/excepciones/", views.excepciones, name="excepciones"),
+    path("roles/explicar/", views.explicar, name="explicar"),
+    path("roles/rol/<str:codigo>/", views.rol, name="rol"),
 ]

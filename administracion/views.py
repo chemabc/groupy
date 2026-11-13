@@ -7,7 +7,8 @@ pantallas juntan los datos de las dos, pero nunca guardan nada que las una.
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db.models import Exists, OuterRef, Subquery
+from django.db.models import Count, Exists, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 
 from base.tablas import Columna, Filtro, FuenteDeLista, Tabla
@@ -15,9 +16,22 @@ from boveda.models import PaseEmitido, Persona
 from boveda.servicios import cambiar_datos, dominios_por_organizacion, poner_dominios, registrar_persona, validar_por_superadmin
 from grupos.models import Grupo, Organizacion, Pertenencia, camino
 from grupos.servicios import grupos_de
+from base.registro import registro
 from permisos.decoradores import requiere_permiso
+from permisos.models import ExcepcionDePermiso, Rol
+from permisos.servicios import borrar_rol, crear_rol, explicar_permiso, poner_excepcion, poner_permisos_de_rol
 
-from .formularios import FormularioDeAlta, FormularioDeDominios, FormularioDePersona, organizaciones
+from .formularios import (
+    FormularioDeAlta,
+    FormularioDeDatosDeRol,
+    FormularioDeDominios,
+    FormularioDeExcepcion,
+    FormularioDePersona,
+    FormularioDePersonaGrupoYPermiso,
+    FormularioDeRol,
+    organizaciones,
+    permisos_por_modulo,
+)
 
 
 # Nombres de las organizaciones por su número: {número: nombre}. Una consulta.
@@ -221,3 +235,123 @@ def alias_ficha(request, pk):
         for grupo in Grupo.objects.en_orden_de_arbol().select_related("organizacion").filter(pk__in=grupos_de(usuario))
     ]
     return render(request, "administracion/alias_ficha.html", {"usuario": usuario, "grupos": grupos, "error": error})
+
+
+# ── Roles y permisos ─────────────────────────────────────────────────────────────────────────────────
+
+
+# Grupos para los desplegables: lista de (id, «ORG › camino»), en orden de árbol. Una consulta.
+def _grupos_para_elegir():
+    return [
+        (grupo.pk, f"{grupo.organizacion.nombre} › {grupo.camino}")
+        for grupo in Grupo.objects.en_orden_de_arbol().select_related("organizacion")
+    ]
+
+
+# Pantalla «Roles y permisos → Roles»: los roles con su número de permisos y de personas que los
+# tienen, y el formulario para crear uno. Cuesta 3 consultas.
+#   - POST: los datos de FormularioDeRol.
+@requiere_permiso("administracion.roles")
+def roles(request):
+    formulario = FormularioDeRol(request.POST or None)
+    if request.method == "POST" and formulario.is_valid():
+        try:
+            rol = crear_rol(**formulario.cleaned_data)
+        except ValidationError as error:
+            _errores_al_formulario(formulario, error)
+        else:
+            return redirect("administracion:rol", rol.codigo)
+    personas = (
+        Pertenencia.objects.filter(rol=OuterRef("codigo")).order_by().values("rol").annotate(n=Count("pk")).values("n")
+    )
+    lista = Rol.objects.annotate(
+        numero_de_permisos=Count("permisos"), personas=Coalesce(Subquery(personas, output_field=IntegerField()), 0)
+    )
+    return render(request, "administracion/roles.html", {"roles": lista, "formulario": formulario})
+
+
+# Pantalla de la ficha de un rol: sus datos y sus permisos, como casillas agrupadas por módulo. Un rol
+# personalizado que nadie tiene se puede borrar. Cuesta unas 4 consultas.
+#   - codigo: el código del rol.
+#   - POST «accion»: datos, permisos (con la lista «permisos») o borrar.
+@requiere_permiso("administracion.roles")
+def rol(request, codigo):
+    rol = get_object_or_404(Rol, codigo=codigo)
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    datos = FormularioDeDatosDeRol(
+        request.POST if accion == "datos" else None, initial={"nombre": rol.nombre, "descripcion": rol.descripcion}
+    )
+    error, aviso = "", ""
+    try:
+        if accion == "datos" and datos.is_valid():
+            rol.nombre, rol.descripcion = datos.cleaned_data["nombre"], datos.cleaned_data["descripcion"]
+            rol.full_clean()
+            rol.save()
+            return redirect("administracion:rol", rol.codigo)
+        if accion == "permisos":
+            anadidos, quitados = poner_permisos_de_rol(rol, request.POST.getlist("permisos"))
+            aviso = f"Guardado: {len(anadidos)} permiso(s) añadido(s) y {len(quitados)} quitado(s). Vale ya para todo el mundo."
+        if accion == "borrar":
+            borrar_rol(rol)
+            return redirect("administracion:roles")
+    except ValidationError as excepcion:
+        error = " ".join(excepcion.messages)
+    tiene = set(rol.permisos.values_list("permiso", flat=True))
+    modulos = [
+        {"nombre": modulo, "permisos": [{"codigo": c, "descripcion": registro.permisos[c].descripcion, "marcado": c in tiene} for c, _texto in lista]}
+        for modulo, lista in permisos_por_modulo()
+    ]
+    contexto = {
+        "rol": rol,
+        "datos": datos,
+        "modulos": modulos,
+        "personas": Pertenencia.objects.filter(rol=rol.codigo).count() if rol.nivel == Rol.GRUPO else None,
+        "error": error,
+        "aviso": aviso,
+        "abrir": accion,
+    }
+    return render(request, "administracion/rol.html", contexto)
+
+
+# Pantalla «Roles y permisos → Excepciones»: todas las excepciones individuales y el formulario para dar
+# o quitar un permiso suelto. Cuesta 4 consultas.
+#   - POST «accion»: crear (datos de FormularioDeExcepcion) o borrar (excepcion).
+@requiere_permiso("administracion.roles")
+def excepciones(request):
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    grupos = _grupos_para_elegir()
+    formulario = FormularioDeExcepcion(request.POST if accion == "crear" else None, grupos=grupos)
+    if accion == "crear" and formulario.is_valid():
+        datos = formulario.cleaned_data
+        try:
+            poner_excepcion(datos["usuario"], Grupo.objects.get(pk=datos["grupo"]), datos["permiso"], datos["concede"], datos["motivo"])
+        except ValidationError as error:
+            _errores_al_formulario(formulario, error)
+        else:
+            return redirect("administracion:excepciones")
+    if accion == "borrar":
+        ExcepcionDePermiso.objects.filter(pk=request.POST.get("excepcion")).delete()
+        return redirect("administracion:excepciones")
+    lista = (
+        ExcepcionDePermiso.objects.select_related("usuario", "grupo__organizacion")
+        .annotate(camino=camino("grupo"))
+        .order_by("usuario__alias", "camino", "permiso")
+    )
+    filas = [
+        {"excepcion": excepcion, "permiso": registro.permisos.get(excepcion.permiso)}
+        for excepcion in lista
+    ]
+    return render(request, "administracion/excepciones.html", {"filas": filas, "formulario": formulario, "abrir": accion})
+
+
+# Pantalla «Roles y permisos → Explicar un permiso»: se elige persona, grupo y permiso (por la
+# dirección, con GET) y se muestra el razonamiento paso a paso (permisos.servicios.explicar_permiso).
+@requiere_permiso("administracion.roles")
+def explicar(request):
+    formulario = FormularioDePersonaGrupoYPermiso(request.GET or None, grupos=_grupos_para_elegir())
+    explicacion = None
+    if formulario.is_bound and formulario.is_valid():
+        datos = formulario.cleaned_data
+        grupo = Grupo.objects.select_related("organizacion").get(pk=datos["grupo"])
+        explicacion = explicar_permiso(datos["usuario"], datos["permiso"], grupo)
+    return render(request, "administracion/explicar.html", {"formulario": formulario, "explicacion": explicacion})
