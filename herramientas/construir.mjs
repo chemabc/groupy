@@ -1,7 +1,8 @@
 // Prepara las librerías de JavaScript de la interfaz para que las sirva el propio servidor (sin CDN).
 //
 // Lo ejecutan las órdenes «npm run construir» y «npm run vigilar» (definidas en package.json), antes de
-// compilar el CSS con Tailwind. Copia htmx, Alpine, SortableJS, Leaflet (mapas) y FullCalendar (calendario) desde node_modules (donde las deja «npm install»)
+// compilar el CSS con Tailwind. Copia htmx, Alpine, SortableJS, Leaflet (mapas), FullCalendar (calendario) y Mermaid con
+// svg-pan-zoom (diagramas de las guías de desarrollo) desde node_modules (donde las deja «npm install»)
 // a static/generado/, la carpeta que Django sirve como ficheros estáticos. Esa carpeta no se guarda en
 // Git: se regenera al crear el contenedor.
 
@@ -29,6 +30,10 @@ const ficheros = [
   // y la posibilidad de arrastrar. Trae sus estilos dentro. Y sus textos en castellano.
   ["node_modules/fullcalendar/index.global.min.js", "fullcalendar/index.global.min.js"],
   ["node_modules/@fullcalendar/core/locales/es.global.min.js", "fullcalendar/es.global.min.js"],
+  // Mermaid (licencia MIT): dibuja diagramas a partir de texto (los bloques «mermaid» de las guías de
+  // desarrollo). Y svg-pan-zoom (BSD-2-Clause), para acercar, alejar y mover esos diagramas.
+  ["node_modules/mermaid/dist/mermaid.min.js", "diagramas/mermaid.min.js"],
+  ["node_modules/svg-pan-zoom/dist/svg-pan-zoom.min.js", "diagramas/svg-pan-zoom.min.js"],
 ];
 
 // Carpetas que se copian enteras: las imágenes de las chinchetas de Leaflet (su CSS las busca en
@@ -38,6 +43,7 @@ const carpetas = [["node_modules/leaflet/dist/images", "leaflet/images"]];
 // Crea las carpetas de destino si no existen («recursive» crea también las carpetas intermedias).
 mkdirSync(`${destino}/leaflet`, { recursive: true });
 mkdirSync(`${destino}/fullcalendar`, { recursive: true });
+mkdirSync(`${destino}/diagramas`, { recursive: true });
 
 // Copia cada fichero y lo anuncia en la terminal.
 for (const [origen, nombre] of ficheros) {

@@ -160,6 +160,32 @@
     @apply my-8 border-slate-200 dark:border-slate-700;
   }
 
+  /* Diagramas de los documentos (isla «diagramas» de interfaz.js): una caja de fondo claro (también en el
+     tema oscuro, para que se lean los colores de Mermaid), que se puede alargar desde la esquina, con
+     los botones de zoom arriba a la derecha. A pantalla completa ocupa todo. */
+  .documento .diagrama {
+    @apply relative my-4 h-[34rem] resize-y overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700;
+  }
+  .documento .diagrama:fullscreen {
+    @apply h-screen resize-none rounded-none;
+  }
+  .documento .lienzo-del-diagrama {
+    @apply h-full w-full cursor-grab;
+  }
+  .documento .botones-del-diagrama {
+    @apply absolute top-2 right-2 z-10 flex gap-1;
+  }
+  .documento .botones-del-diagrama button {
+    @apply h-8 w-8 rounded border border-slate-300 bg-white text-base text-slate-700 shadow-sm hover:bg-slate-100;
+  }
+  /* Casillas de las listas de comprobaciones («- [ ]» en el Markdown). */
+  .documento li.tarea {
+    @apply list-none;
+  }
+  .documento li.tarea input {
+    @apply mr-2 -ml-5 align-middle;
+  }
+
   /* Índice de un documento: la lista de títulos que genera Markdown, con sangría por nivel. */
   .indice-de-documento ul {
     @apply space-y-1;

@@ -13,6 +13,7 @@ comunicaciones e información pública. Rehecha desde cero con lo aprendido en l
   validación.
 - `docs/tutorial.md`: lo que se explica para aprender, paso a paso.
 - `docs/arranque.md`: cómo arrancar y probar.
+- `docs/comprobaciones.md` y `docs/arquitectura.md`: las **guías de desarrollo** (ver abajo).
 
 No se usa Google Drive. Al tomar una decisión nueva, añádela a `docs/diseno.md` (con la fecha, el motivo
 y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutorial.md`.
@@ -28,6 +29,26 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   las filas (`PruebaDePantalla.comprobar_consultas`, en `base/pruebas.py`), y se mide con datos de ejemplo.
 - Lo que lleva JavaScript propio (Alpine, htmx) se prueba también en un navegador de verdad
   (Playwright, `base/tests/test_navegador.py`) antes de darlo por bueno.
+
+## Guías de desarrollo (mantenerlas al día en cada pieza)
+
+Se ven en «Desarrollo y mantenimiento → Guías de desarrollo»: en desarrollo, cualquier persona con
+sesión; en producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`).
+
+- **`docs/comprobaciones.md`** («Comprobaciones pendientes»): al terminar cada pieza, añade su sección al
+  final, con casillas `- [ ]`, diciendo dónde entrar (menú, con qué usuario de ejemplo) y en qué fijarse.
+  Si la pieza necesita algo especial (migrar, `npm install`, `npm run construir`, rehacer los ejemplos,
+  reiniciar el trabajador, una orden nueva…), ponlo en «0. Antes de empezar»: **primero cómo comprobar si
+  ya está hecho** y después cómo ejecutarlo. Cuando la persona usuaria diga que ha comprobado piezas,
+  quítalas de la guía (siguen en git).
+- **`docs/arquitectura.md`** («Arquitectura»): al añadir o cambiar un módulo, un componente, una librería
+  o un servicio, ponlo al día en la vista global, en su propio diagrama y en los de los módulos con los
+  que se relaciona. Cada caja lleva su etiqueta ([Núcleo de Django], [Contrib de Django], [Librería
+  Python], [Librería JS], [Servicio], [Servicio externo], [Herramienta], [Configuración], [Módulo · capa],
+  [Componente], [Isla JS]) y cada flecha su tipo (`-->` importa, `-.->` contrato, `==>` eventos_sw).
+  Las relaciones se sacan del código (imports y contratos), no de memoria.
+- Los diagramas son bloques `mermaid`; la prueba `mantenimiento/tests/test_navegador.py` comprueba que
+  todos se dibujan sin errores.
 
 ## Normas de código
 
@@ -110,4 +131,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   círculos) y recursos de cada proyecto (con «Pedir al grupo» como petición de talentos), etiquetas de los proyectos de
   grupo (filtran la lista) y tareas modelo de cada tipología de proyecto (se crean al crear el proyecto).
   **Fase 4 cerrada** (la documentación por bloques irá con `documentos`; el chat, con el tiempo real).
+- 13 de noviembre de 2026: **guías de desarrollo** («Comprobaciones pendientes» y «Arquitectura», con
+  diagramas Mermaid ampliables) en «Desarrollo y mantenimiento». Siguiente: fase 5 (`documentos` y
+  `decisiones`), pendiente de las preguntas de [A-30].
   Recuerda `migrate --database=boveda`.

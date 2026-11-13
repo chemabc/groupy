@@ -17,8 +17,9 @@ from base.registro import registro
 from ejemplos.servicios import borrar_todos, crear_todos, modulos_con_ejemplos
 from grupos.models import Grupo, Organizacion
 from permisos.decoradores import requiere_permiso
+from permisos.servicios import SinPermiso, explicar_falta, puede
 
-from .documentos import documento
+from .documentos import documento, guias_abiertas
 from .importacion import (
     COLUMNAS_DE_GRUPOS,
     COLUMNAS_DE_USUARIOS,
@@ -41,6 +42,15 @@ def documentacion(request, nombre):
     if convertido is None:
         raise Http404("No existe ese documento.")
     return render(request, "mantenimiento/documentacion.html", {"documento": convertido})
+
+
+# Pantalla «Guías de desarrollo»: una guía (comprobaciones pendientes, arquitectura) con su índice, sus
+# casillas y sus diagramas. En desarrollo la ve cualquiera con sesión; si no, hace falta «mantenimiento.ver».
+#   - nombre: la guía («comprobaciones», «arquitectura»), que pone la dirección.
+def guia(request, nombre):
+    if not (guias_abiertas(request.user) or puede(request.user, "mantenimiento.ver")):
+        raise SinPermiso(explicar_falta("mantenimiento.ver"))
+    return render(request, "mantenimiento/documentacion.html", {"documento": documento(nombre)})
 
 
 # Pantalla «Trastienda»: explica qué es y lleva a ella con un botón.

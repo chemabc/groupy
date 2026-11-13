@@ -464,6 +464,149 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 
+  // Isla de los documentos de «Desarrollo y mantenimiento» (Markdown convertido en HTML). Se usa así:
+  //   <article x-data="documento" data-estaticos="/static/generado/diagramas/"> …documento… </article>
+  // Hace dos cosas:
+  //   - Casillas: las de las listas de comprobaciones («- [ ]» en el Markdown) se pueden marcar, y cada
+  //     navegador recuerda las suyas (localStorage, por página). Arriba de la primera, «N de M hechas».
+  //   - Diagramas: cambia los bloques de código «mermaid» (```mermaid en el Markdown) por su dibujo, en una
+  //     caja con botones para acercar, alejar, ajustar y verlo a pantalla completa; se mueve arrastrándolo
+  //     y se acerca con doble clic. Mermaid solo se carga si hay diagramas, y cada uno se dibuja cuando
+  //     está a punto de verse al bajar por la página (dibujarlos todos de golpe tarda mucho).
+  Alpine.data("documento", () => ({
+    // Los diagramas ya dibujados (de svg-pan-zoom), para quitarlos al salir de la página.
+    dibujos: [],
+    // Para dejar de vigilar los bloques al salir de la página (una función; el vigilante en sí no se
+    // guarda aquí, porque Alpine lo envolvería y dejaría de funcionar).
+    dejarDeVigilar: null,
+
+    // Al arrancar: prepara las casillas y, si hay bloques «mermaid», carga las dos librerías y vigila los
+    // bloques para dibujar cada uno cuando quede a menos de una pantalla de la vista.
+    async init() {
+      this.casillas();
+      const bloques = [...this.$root.querySelectorAll("pre > code.language-mermaid")];
+      if (!bloques.length) return;
+      const base = this.$root.dataset.estaticos;
+      await cargarUnaVez(base + "mermaid.min.js");
+      await cargarUnaVez(base + "svg-pan-zoom.min.js");
+      // securityLevel «strict»: el texto de los diagramas no puede llevar HTML ni enlaces con código.
+      window.mermaid.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "strict", flowchart: { curve: "basis" } });
+      // Cola de dibujos: Mermaid dibuja uno detrás de otro (dos a la vez se estorban).
+      let cola = Promise.resolve();
+      const vigilante = new IntersectionObserver((entradas) => {
+        for (const entrada of entradas) {
+          if (!entrada.isIntersecting) continue;
+          vigilante.unobserve(entrada.target);
+          const codigo = entrada.target.querySelector("code");
+          const numero = bloques.indexOf(codigo);
+          cola = cola.then(() => this.dibujar(codigo, numero));
+        }
+      }, {
+        // La página no se desplaza entera sino su parte central (#desplazable, en base/pagina.html): se
+        // vigila contra ella, una pantalla por arriba y por abajo.
+        root: document.getElementById("desplazable"),
+        rootMargin: "100% 0px",
+      });
+      for (const codigo of bloques) vigilante.observe(codigo.parentElement);
+      this.dejarDeVigilar = () => vigilante.disconnect();
+    },
+
+    // Activa las casillas: recupera las marcadas de esta página, guarda cada cambio y pone al día el
+    // recuento. Si el navegador no deja guardar (modo privado), funcionan igual, sin recordarse.
+    casillas() {
+      const todas = [...this.$root.querySelectorAll("input[data-casilla]")];
+      if (!todas.length) return;
+      const clave = `casillas:${window.location.pathname}`;
+      let marcadas = [];
+      try {
+        marcadas = JSON.parse(localStorage.getItem(clave) || "[]");
+      } catch {
+        marcadas = [];
+      }
+      const recuento = document.createElement("p");
+      recuento.className = "recuento-de-casillas text-sm font-medium text-marca";
+      todas[0].closest("ul, ol").before(recuento);
+      const contar = () => {
+        recuento.textContent = `${todas.filter((casilla) => casilla.checked).length} de ${todas.length} comprobaciones hechas (se recuerdan en este navegador).`;
+      };
+      todas.forEach((casilla, numero) => {
+        casilla.disabled = false;
+        casilla.checked = marcadas.includes(numero);
+        casilla.addEventListener("change", () => {
+          const ahora = todas.flatMap((otra, posicion) => (otra.checked ? [posicion] : []));
+          try {
+            localStorage.setItem(clave, JSON.stringify(ahora));
+          } catch {
+            // Sin almacenamiento: no se recuerda, pero la casilla cambia igual.
+          }
+          contar();
+        });
+      });
+      contar();
+    },
+
+    // Dibuja un bloque: pide el SVG a Mermaid, lo mete en una caja con sus botones en lugar del bloque de
+    // código y le da zoom. Si el texto del diagrama tiene un error, deja el código y avisa debajo.
+    //   - codigo: el elemento <code> con el texto del diagrama.
+    //   - numero: su posición en el documento (para darle un id único).
+    async dibujar(codigo, numero) {
+      let svg;
+      try {
+        ({ svg } = await window.mermaid.render(`diagrama-${numero}-${Date.now()}`, codigo.textContent));
+      } catch (error) {
+        const aviso = document.createElement("p");
+        aviso.className = "text-sm text-red-700";
+        aviso.textContent = `Este diagrama tiene un error: ${error.message}`;
+        codigo.parentElement.after(aviso);
+        return;
+      }
+      const caja = document.createElement("div");
+      caja.className = "diagrama";
+      const botones = document.createElement("div");
+      botones.className = "botones-del-diagrama";
+      const lienzo = document.createElement("div");
+      lienzo.className = "lienzo-del-diagrama";
+      lienzo.innerHTML = svg;
+      caja.append(botones, lienzo);
+      codigo.parentElement.replaceWith(caja);
+      const dibujo = lienzo.querySelector("svg");
+      dibujo.removeAttribute("style");
+      dibujo.setAttribute("width", "100%");
+      dibujo.setAttribute("height", "100%");
+      const zoom = window.svgPanZoom(dibujo, {
+        zoomEnabled: true, mouseWheelZoomEnabled: false, dblClickZoomEnabled: true, fit: true, center: true, minZoom: 0.2, maxZoom: 30,
+        // Cuánto acerca cada pulsación de «+» o cada doble clic (0,6: un 60 % más).
+        zoomScaleSensitivity: 0.6,
+      });
+      this.dibujos.push(zoom);
+      // Un botón con su texto, su explicación y lo que hace al pulsarlo.
+      const boton = (texto, titulo, accion) => {
+        const elemento = document.createElement("button");
+        elemento.type = "button";
+        elemento.textContent = texto;
+        elemento.title = titulo;
+        elemento.setAttribute("aria-label", titulo);
+        elemento.addEventListener("click", accion);
+        botones.appendChild(elemento);
+      };
+      boton("+", "Acercar", () => zoom.zoomIn());
+      boton("−", "Alejar", () => zoom.zoomOut());
+      boton("⤢", "Ajustar a la caja", () => { zoom.resize(); zoom.fit(); zoom.center(); });
+      boton("⛶", "Pantalla completa", async () => {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await caja.requestFullscreen();
+        zoom.resize(); zoom.fit(); zoom.center();
+      });
+    },
+
+    // Al salir de la página (htmx cambia la zona central): deja de vigilar y suelta los diagramas.
+    destroy() {
+      if (this.dejarDeVigilar) this.dejarDeVigilar();
+      for (const zoom of this.dibujos) zoom.destroy();
+      this.dibujos = [];
+    },
+  }));
+
   // Isla de calendario (FullCalendar), para la pantalla «Calendario» (calendario/templates). Se usa así:
   //   <div x-data="calendario" data-estaticos="/static/generado/fullcalendar/" data-datos="/calendario/datos/"
   //        data-mover="/calendario/mover/" data-nuevo="/calendario/recordatorios/nuevo/">
@@ -592,7 +735,7 @@ document.addEventListener("alpine:init", () => {
 const ficherosCargados = {};
 
 // Carga un script o una hoja de estilos (por su terminación) y devuelve una promesa que se cumple cuando
-// está listo. Si ya se pidió antes, devuelve la misma promesa. La usan los componentes «mapa» y «calendario».
+// está listo. Si ya se pidió antes, devuelve la misma promesa. La usan los componentes «mapa», «calendario» y «documento».
 //   - direccion: la dirección del fichero.
 function cargarUnaVez(direccion) {
   if (!ficherosCargados[direccion]) {

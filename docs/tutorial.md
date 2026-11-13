@@ -605,3 +605,21 @@ sirve aquí y dónde se usa.
   más fácil de leer que una nueva.
 - **Las tareas modelo se apoyan en las dependencias.** «Espera a la anterior» no necesita nada propio:
   al crear las tareas se pasa `espera_a=[la anterior]` y la regla de bloqueo hace el resto.
+
+## 29. Diagramas que viven en el texto (13 de noviembre de 2026)
+
+- **Mermaid** dibuja un diagrama a partir de unas líneas de texto (`A --> B`). Al estar dentro del
+  Markdown, el diagrama se cambia como cualquier otro texto y queda en git con su historia: no hay un
+  dibujo aparte que se quede viejo.
+- **El servidor no dibuja nada.** Python-Markdown deja cada bloque como `<pre><code class="language-mermaid">`
+  y la isla «documento» (Alpine) los busca, carga Mermaid solo si hay alguno (`cargarUnaVez`) y cambia cada
+  bloque por su SVG. Con `securityLevel: "strict"` el texto no puede meter HTML ni código.
+- **Dibujar solo lo que se va a ver.** Un `IntersectionObserver` avisa cuando un bloque se acerca a la
+  vista y solo entonces se dibuja, uno detrás de otro (una promesa en cola). Ojo: en esta aplicación no
+  se desplaza la ventana sino `#desplazable`, así que hay que dárselo como `root`; si no, el vigilante
+  nunca ve entrar nada. Y no se guarda el vigilante en el estado de Alpine: lo envolvería en un proxy.
+- **Acercar y mover** un SVG lo hace svg-pan-zoom: envuelve el dibujo en un grupo y le cambia la
+  transformación (`transform="matrix(…)"`). La prueba en el navegador comprueba justo eso.
+- **Ver una entrada del menú sin el permiso.** `EntradaDeMenu.tambien_si` apunta a una función que
+  recibe el usuario: si dice que sí, la entrada se ve aunque falte el permiso. Así las guías se abren a
+  todo el mundo en desarrollo sin tocar los permisos de nadie.

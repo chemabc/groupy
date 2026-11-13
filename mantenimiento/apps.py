@@ -4,14 +4,18 @@ Configuración y contrato del módulo «mantenimiento».
 
 from base.contrato import Ayuda, Capa, EntradaDeMenu, ModuloConfig, Permiso, Vista
 
-from .documentos import DOCUMENTOS, nombre_de_ruta
+from .documentos import DOCUMENTOS, GUIAS, nombre_de_ruta
+
+# Función que abre las guías de desarrollo a todo el mundo mientras se desarrolla (ver documentos.py).
+GUIAS_ABIERTAS = "mantenimiento.documentos.guias_abiertas"
 
 
 class MantenimientoConfig(ModuloConfig):
     """
     Contrato del módulo «mantenimiento». Aporta la sección «Desarrollo y mantenimiento» del menú, que
-    solo ve quien tiene el permiso «mantenimiento.ver» (de entrada, solo el superadmin), con tres
-    subsecciones: la documentación del proyecto, las herramientas de pruebas (importar grupos y
+    ve quien tiene el permiso «mantenimiento.ver» (de entrada, solo el superadmin), con cuatro
+    subsecciones: las guías de desarrollo (comprobaciones pendientes y arquitectura, que en desarrollo ve
+    todo el mundo), la documentación del proyecto, las herramientas de pruebas (importar grupos y
     usuarios) y la entrada a la trastienda.
     """
 
@@ -31,14 +35,26 @@ class MantenimientoConfig(ModuloConfig):
         EntradaDeMenu(
             codigo="mantenimiento.desarrollo",
             nombre="Desarrollo y mantenimiento",
-            url=f"mantenimiento:{nombre_de_ruta(DOCUMENTOS[0][0])}",
+            url=f"mantenimiento:{nombre_de_ruta(GUIAS[0][0])}",
             icono="⚒",
             color="#ea580c",
             orden=950,
             permiso="mantenimiento.ver",
+            tambien_si=GUIAS_ABIERTAS,
             subsecciones=(
                 EntradaDeMenu(
+                    codigo="mantenimiento.guias",
+                    nombre="Guías de desarrollo",
+                    url=f"mantenimiento:{nombre_de_ruta(GUIAS[0][0])}",
+                    icono="⌬",
+                    color="#7e22ce",
+                    permiso="mantenimiento.ver",
+                    tambien_si=GUIAS_ABIERTAS,
+                    vistas=tuple(Vista(titulo, f"mantenimiento:{nombre_de_ruta(clave)}") for clave, _fichero, titulo in GUIAS),
+                ),
+                EntradaDeMenu(
                     codigo="mantenimiento.documentacion",
+                    permiso="mantenimiento.ver",
                     nombre="Ayuda y documentación",
                     url=f"mantenimiento:{nombre_de_ruta(DOCUMENTOS[0][0])}",
                     # Arriba, una pestaña por documento.
@@ -48,6 +64,7 @@ class MantenimientoConfig(ModuloConfig):
                 ),
                 EntradaDeMenu(
                     codigo="mantenimiento.pruebas",
+                    permiso="mantenimiento.ver",
                     nombre="Pruebas",
                     url="mantenimiento:importar_grupos",
                     icono="⚗",
@@ -60,6 +77,7 @@ class MantenimientoConfig(ModuloConfig):
                 ),
                 EntradaDeMenu(
                     codigo="mantenimiento.trastienda",
+                    permiso="mantenimiento.ver",
                     nombre="Trastienda",
                     url="mantenimiento:trastienda",
                     icono="⚠",
@@ -70,6 +88,18 @@ class MantenimientoConfig(ModuloConfig):
         ),
     )
     ayuda = (
+        Ayuda(
+            seccion="mantenimiento.guias",
+            titulo="Guías de desarrollo",
+            texto=(
+                "«Comprobaciones pendientes»: lo construido en cada pieza, paso a paso, con qué mirar en cada "
+                "pantalla. Marca las casillas según lo compruebes (se recuerdan en tu navegador).\n\n"
+                "«Arquitectura»: diagramas de todo el programa (Django, librerías, servicios, capas y módulos) y, "
+                "después, de cada módulo con los que se relaciona. Acerca y aleja con los botones o con doble "
+                "clic, y arrastra para moverte.\n\n"
+                "Mientras se desarrolla las ve todo el mundo; en producción, solo el superadmin."
+            ),
+        ),
         Ayuda(
             seccion="mantenimiento.documentacion",
             titulo="Ayuda y documentación",

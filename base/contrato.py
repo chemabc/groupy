@@ -404,6 +404,9 @@ class EntradaDeMenu:
     orden: int = 100
     # Permiso que hace falta para verla. Vacío: la ve cualquier persona que haya iniciado sesión.
     permiso: str = ""
+    # Ruta de una función que recibe el usuario y dice si puede verla aunque no tenga el permiso (por
+    # ejemplo, las guías de desarrollo, abiertas a todo el mundo solo en desarrollo). Vacío: solo el permiso.
+    tambien_si: str = ""
     # Vistas de la sección, para el menú superior.
     vistas: tuple[Vista, ...] = ()
     # Subsecciones que cuelgan de ella en el menú izquierdo.

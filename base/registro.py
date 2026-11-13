@@ -13,6 +13,8 @@ módulo que escucha un eventos_sw que nadie emite…). No los lanza: las comprob
 from dataclasses import replace
 from pathlib import Path
 
+from django.utils.module_loading import import_string
+
 from .contrato import ORIGENES_DE_AVISO, ROLES_DEL_SISTEMA, Capa, Escucha, Modo, ModuloConfig
 
 # Apartados del contrato que son listas de fichas con un código único, y el nombre del campo que hace de
@@ -258,12 +260,14 @@ def registrar_comprobador_de_permisos(funcion):
     _comprobador_de_permisos = funcion
 
 
-# Dice si una persona puede ver una entrada del menú: si no pide permiso, sí; si lo pide, pregunta a la
-# función registrada. La usa base/contexto.py al preparar el menú.
+# Dice si una persona puede ver una entrada del menú: si no pide permiso, sí; si su función «tambien_si»
+# dice que sí, también; si no, pregunta a la función registrada si tiene el permiso. La usa base/contexto.py al preparar el menú.
 #   - usuario: quien mira.
 #   - entrada: la EntradaDeMenu.
 def puede_ver_entrada(usuario, entrada):
     if not entrada.permiso:
+        return True
+    if entrada.tambien_si and import_string(entrada.tambien_si)(usuario):
         return True
     return _comprobador_de_permisos is not None and _comprobador_de_permisos(usuario, entrada.permiso)
 

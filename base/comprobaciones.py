@@ -43,6 +43,7 @@ def _comprobar_funciones():
     rutas += [ruta for limpiable in registro.limpiables.values() for ruta in (limpiable.terminados, limpiable.borrar) if ruta]
     rutas += [tipo.comprobar for tipo in registro.solicitudes.values() if tipo.comprobar]
     rutas += [entrada.contador for entrada in _todas_las_entradas(registro.menu) if entrada.contador]
+    rutas += [entrada.tambien_si for entrada in _todas_las_entradas(registro.menu) if entrada.tambien_si]
     for datos in registro.datos_de_ejemplo.values():
         rutas += [datos.crear, datos.borrar]
     errores = []

@@ -863,6 +863,26 @@ usa `permisos`), con el permiso `mantenimiento.ver`, que de entrada solo tiene e
 - **Organización en tres niveles** (13 de noviembre de 2026): subsecciones «Ayuda y documentación»
   (arriba, una pestaña por documento), «Pruebas» (arriba, «Importar grupos» e «Importar usuarios») y
   «Trastienda».
+- **Guías de desarrollo** (13 de noviembre de 2026, a petición de la persona usuaria): una cuarta
+  subsección, la primera, con dos pestañas, ambas en Markdown dentro de `docs/`:
+  - «Comprobaciones pendientes» (`docs/comprobaciones.md`): lo construido, pieza a pieza, con qué mirar
+    en cada pantalla, y antes un apartado «Antes de empezar» en el que cada paso dice primero cómo saber
+    si ya está hecho y, si no, qué ejecutar. Las listas `- [ ]` se pintan con casillas que se pueden
+    marcar y que recuerda cada navegador (localStorage), con un recuento arriba.
+  - «Arquitectura» (`docs/arquitectura.md`): diagramas de todo el programa (Django, librerías, servicios,
+    capas y módulos, cada caja con su etiqueta: núcleo, contrib, librería, servicio, módulo, componente,
+    isla…) y después uno por módulo y por componente con sus relaciones (importa, contrato, eventos_sw).
+  - **Diagramas:** bloques `mermaid` del Markdown que dibuja la isla «documento» con Mermaid 11.17.2 (MIT)
+    y svg-pan-zoom 3.6.2 (BSD-2-Clause), servidos por nosotros y cargados solo si hay diagramas; cada diagrama se dibuja al acercarse a la vista
+    (dibujar los 30 y pico de golpe tardaba decenas de segundos). Botones
+    para acercar, alejar, ajustar y pantalla completa, arrastrar y doble clic. *Descartado:* Mermaid 12 (la
+    versión mayor más reciente) y dibujar los diagramas a mano en SVG (no se mantendrían al día).
+  - **Quién las ve:** en desarrollo, cualquier persona con sesión; en producción, solo quien tiene
+    `mantenimiento.ver` (el superadmin). Lo decide `GUIAS_DE_DESARROLLO_PARA_TODOS` (de entrada, igual que
+    `DEBUG`; variable de entorno `DJANGO_GUIAS_PARA_TODOS`). Para ello `EntradaDeMenu` tiene un campo nuevo,
+    `tambien_si`: una función que deja ver la entrada aunque falte el permiso. Las demás subsecciones de
+    «Desarrollo y mantenimiento» siguen pidiendo `mantenimiento.ver`.
+  - Se mantienen al día con cada pieza (ver CLAUDE.md, «Guías de desarrollo»).
 
 **Importación masiva de grupos y usuarios (13 de noviembre de 2026, a petición de la persona usuaria).**
 En «Desarrollo y mantenimiento → Pruebas». Solo para el superadmin.

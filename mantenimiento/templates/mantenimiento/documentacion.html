@@ -1,7 +1,9 @@
 {% extends interfaz.plantilla %}
+{% load static %}
 {% comment %}
-  Pantalla «Desarrollo y mantenimiento → Ayuda y documentación». Cada documento es una pestaña del menú
-  superior. Recibe «documento»: el documento convertido (html e indice), de mantenimiento/documentos.py.
+  Pantallas «Desarrollo y mantenimiento → Ayuda y documentación» y «→ Guías de desarrollo». Cada documento
+  es una pestaña del menú superior. La isla «documento» (interfaz.js) activa sus casillas y dibuja sus
+  diagramas. Recibe «documento»: el documento convertido (html e indice), de mantenimiento/documentos.py.
   Los estilos del texto (títulos, tablas, código…) son la clase «documento» de base/estilos/entrada.css.
 {% endcomment %}
 {% block contenido %}
@@ -18,7 +20,7 @@
     </div>
   </aside>
 
-  <article class="documento max-w-4xl rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+  <article x-data="documento" data-estaticos="{% static 'generado/diagramas/' %}" class="documento max-w-4xl rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
     {{ documento.html }}
   </article>
 </div>
