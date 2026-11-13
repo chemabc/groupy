@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "grupos.apps.GruposConfig",
     "permisos.apps.PermisosConfig",
     "audiencias.apps.AudienciasConfig",
+    "etiquetas.apps.EtiquetasConfig",
     # Capa funcional
     "mantenimiento.apps.MantenimientoConfig",
     "administracion.apps.AdministracionConfig",

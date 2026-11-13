@@ -19,6 +19,7 @@ SECCIONES = [
     ("Admins (de organización y de grupo)", ["grupos.AdminDeOrganizacion", "grupos.AdminDeGrupo"]),
     ("Roles y permisos", ["permisos.Rol", "permisos.ExcepcionDePermiso", "permisos.Cometido"]),
     ("Visibilidad", ["audiencias.ConfiguracionDeVisibilidad", "audiencias.Audiencia"]),
+    ("Clasificación", ["etiquetas.Etiqueta"]),
     ("Funcionamiento interno", ["eventos_sw.AvisoPendiente"]),
 ]
 

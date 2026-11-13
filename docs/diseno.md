@@ -96,7 +96,6 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 | Base | `base` | Contrato de módulo y registro de módulos, diseño de la interfaz, tabla filtrable, botón «copiar» de los campos |
 | Base | `eventos_sw` | Avisos internos: síncronos (misma transacción) y asíncronos (bandeja de salida + trabajador) |
 | Base | `anclas` | Referencias «tipo + id» y huecos en las fichas para colgar cosas de otros módulos |
-| Base | `etiquetas` | Base única de etiquetas normalizadas, grupos de etiquetas por módulo, palabras relacionadas, selector con sugerencias |
 | Base | `tipologias` | Árbol de tipologías de proyectos y de eventos, con campos personalizados (plantillas del superadmin) |
 | Base | `ejemplos` | Datos de ejemplo reversibles por módulo |
 | Identidad | `boveda` | Identidad real, validación, pases con firma ciega, rondas de revalidación |
@@ -104,6 +103,7 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 | Organización | `lugares` | Lista de lugares con mapa; importación desde Excel; propuestas de lugares nuevos; validación del lugar de cada usuario |
 | Organización | `grupos` | Organizaciones, grupos, relaciones, tabla de cierre, pertenencias y admisiones |
 | Organización | `permisos` | Roles, cometidos, permisos declarados por cada módulo, permisos precalculados, registro de acciones de los admin |
+| Organización | `etiquetas` | Etiquetas de una a tres palabras, de cada organización y comunes, con palabras relacionadas; sugerencias y fusión. *(Movido de Base a Organización el 13 de noviembre de 2026, porque cada organización tiene las suyas.)* El selector, genérico, está en `base` |
 | Organización | `audiencias` | «Quién puede ver esto», calculado una vez por persona |
 | Organización | `solicitudes` | Solicitudes con apoyos |
 | Organización | `moderacion` | Avisos, denuncias y ocultaciones provisionales |
@@ -612,6 +612,27 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
 - **Mientras no esté programado el alta real**, el superadmin crea los usuarios a mano (como en la
   versión 1).
 
+### 7.3 Etiquetas (13 de noviembre de 2026)
+
+- **Qué son:** palabras sueltas o grupos de dos o tres palabras para encontrar información útil
+  («huelga», «local nuevo»), con **palabras relacionadas** (sinónimos): buscar cualquiera de ellas
+  encuentra lo etiquetado. Se comparan sin mayúsculas ni tildes.
+- **Quién las crea (1A):** cualquiera, al usarlas. El selector propone las que ya existen mientras se
+  escribe (también por sus relacionadas), para no duplicar. El admin de la organización
+  (`etiquetas.ordenar`) y el superadmin pueden **fusionar** repetidas (las otras pasan a ser relacionadas
+  de la que se queda), renombrar y poner relacionadas. De momento, en la trastienda («Clasificación»).
+- **De cada organización (2A):** las de una organización no se sugieren ni se usan en otra (una etiqueta
+  ya cuenta algo). El superadmin crea **etiquetas comunes** (sin organización), que sirven en todas. Si
+  existe una común igual, se usa la común. *Descartado:* una sola base común para todas (como decía el
+  diseño), por privacidad.
+- **Tablas:** `Etiqueta` (organización o común, nombre, relacionadas, con sus formas normalizadas) y
+  `EtiquetaDe` (etiqueta + ancla de lo etiquetado). Servicios: `sugerir`, `obtener_o_crear`, `etiquetar`,
+  `etiquetas_de`, `buscar` (también por relacionadas) y `fusionar`.
+- **Selector:** genérico en `base` (`SelectorDePalabras` y `CampoDePalabras`): pastillas con ×,
+  sugerencias pedidas al servidor mientras se escribe, Intro o coma para añadir, borrar para quitar la
+  última. `etiquetas.formularios.CampoDeEtiquetas` lo usa con las sugerencias de la organización y las
+  reglas de las etiquetas.
+
 ### 7.2 La bóveda, fase 1 (13 de noviembre de 2026)
 
 - **Base aparte:** las tablas de `boveda` van solo a la base «boveda» y las demás solo a la de la
@@ -1035,6 +1056,11 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - Nunca se muestran alias.
 - El superadmin y todos los admin tienen una **lista de lo publicado** en su ámbito, para ocultarlo
   rápido si hace falta.
+- **Repositorio público** (13 de noviembre de 2026, idea de la persona usuaria): la parte pública tendrá
+  un menú propio de **repositorio de materiales** (textos, carteles, PDF, fotos…; al principio, seguramente
+  solo textos y enlaces a los demás materiales). Se ve como una **lista o tabla filtrable** (por palabras y
+  por tipo en cada columna, con la tabla filtrable común), **ordenada de más reciente a más antiguo**.
+  *(por diseñar al llegar a `publico`, fase 8)*
 
 ---
 
@@ -1103,6 +1129,14 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - Admisión en grupos: cuántos votos hacen falta además del del admin_grupo, quién vota y en qué plazo.
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.
+- **Búsqueda extensa para los admins** (13 de noviembre de 2026, petición de la persona usuaria): el
+  superadmin y el admin de cada organización deben poder buscar en **todo el material generado por sus
+  grupos y subgrupos** (proyectos, actas, debates, documentos…), por palabras y etiquetas, para encontrar
+  material perdido y retomarlo. Idea: cada módulo declara en su contrato una «fuente de búsqueda» (como las
+  fuentes del calendario) y un buscador común las recorre, respetando las audiencias (lo personal no
+  entra). *(por diseñar cuando haya módulos con material)*
+- Tipologías: si un subtipo hereda los campos de su tipo (de momento sí, revisable con el uso) y dónde
+  se editan.
 - Trabajador de colas: Celery o RQ.
 - Qué mensajes de Telegram entran a un chat o a un debate.
 - Detección de comportamientos sospechosos (señales sin mirar identidades).

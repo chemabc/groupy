@@ -38,7 +38,7 @@ class PruebasDeLaTrastienda(PruebaDePantalla):
         secciones = [seccion["name"] for seccion in respuesta.context["app_list"]]
         self.assertEqual(
             secciones,
-            ["Usuarios", "Organizaciones y grupos", "Admins (de organización y de grupo)", "Roles y permisos", "Visibilidad", "Funcionamiento interno"],
+            ["Usuarios", "Organizaciones y grupos", "Admins (de organización y de grupo)", "Roles y permisos", "Visibilidad", "Clasificación", "Funcionamiento interno"],
         )
         self.assertEqual([tabla["object_name"] for tabla in respuesta.context["app_list"][0]["models"]], ["Usuario", "Pertenencia"])
         self.assertContains(respuesta, "Trastienda técnica: solo para emergencias")

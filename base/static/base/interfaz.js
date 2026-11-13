@@ -228,6 +228,64 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 
+  // Componente del selector de varias palabras (etiquetas…) con sugerencias: base/formularios.py,
+  // SelectorDePalabras, y su plantilla base/templates/base/selector_de_palabras.html. Guarda las palabras
+  // elegidas, pide sugerencias al servidor mientras se escribe y no deja repetir ninguna (sin contar
+  // mayúsculas ni tildes). Cada palabra se envía en un campo oculto que pinta la plantilla.
+  Alpine.data("selectorDePalabras", () => ({
+    palabras: [],
+    texto: "",
+    sugerencias: [],
+    nombre: "",
+
+    // Al arrancar: las palabras que ya tenía el campo y el nombre de los campos ocultos.
+    init() {
+      this.palabras = JSON.parse(this.$root.dataset.valores || "[]");
+      this.nombre = this.$root.dataset.nombre;
+    },
+
+    // Dice si una palabra ya está elegida.
+    tiene(palabra) {
+      return this.palabras.some((elegida) => normalizar(elegida) === normalizar(palabra));
+    },
+
+    // Pide al servidor las sugerencias para lo escrito y quita las ya elegidas. Si falla, no sugiere nada.
+    async buscar() {
+      const texto = this.texto.trim();
+      const direccion = this.$root.dataset.url;
+      if (!texto || !direccion) {
+        this.sugerencias = [];
+        return;
+      }
+      try {
+        const separador = direccion.includes("?") ? "&" : "?";
+        const respuesta = await fetch(`${direccion}${separador}q=${encodeURIComponent(texto)}`);
+        const datos = await respuesta.json();
+        this.sugerencias = datos.sugerencias.filter((sugerencia) => !this.tiene(sugerencia.nombre));
+      } catch {
+        this.sugerencias = [];
+      }
+    },
+
+    // Añade una palabra (la escrita o una sugerencia), limpia de comas y espacios de más, si no está ya.
+    anadir(palabra) {
+      const limpia = palabra.replace(/,/g, " ").trim().replace(/\s+/g, " ");
+      if (limpia && !this.tiene(limpia)) this.palabras.push(limpia);
+      this.texto = "";
+      this.sugerencias = [];
+    },
+
+    // Quita la palabra de esa posición (la × de su pastilla).
+    quitar(indice) {
+      this.palabras.splice(indice, 1);
+    },
+
+    // Con el cuadro vacío, la tecla de borrar quita la última palabra.
+    borrarUltima() {
+      if (!this.texto && this.palabras.length) this.palabras.pop();
+    },
+  }));
+
   // Componente del botón «copiar» que acompaña a cada campo de formulario (base/templates/base/campo.html).
   // Copia el valor del campo (en un desplegable, el texto de la opción elegida) para pegarlo en otro sitio,
   // y durante un momento muestra ✓.

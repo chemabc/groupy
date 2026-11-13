@@ -10,7 +10,9 @@ import random
 from functools import cache
 
 from django import forms
+from django.urls import reverse_lazy
 
+from .formularios import CampoDePalabras, SelectorDePalabras
 from .tablas import Columna, Filtro, FuenteDeLista, Tabla
 
 # Piezas con las que se inventan las filas. Llevan tildes a propósito, para probar la búsqueda.
@@ -97,6 +99,15 @@ class FormularioDeDemostracion(forms.Form):
         choices=TIPOLOGIAS,
         initial="reunion",
         help_text="Tipo de actividad. Decide qué datos extra se piden.",
+    )
+    etiquetas = CampoDePalabras(
+        label="Etiquetas",
+        required=False,
+        initial=["acogida"],
+        # Sugiere las etiquetas comunes (sin organización). En los módulos de verdad, la dirección lleva la
+        # organización: «?organizacion=3».
+        widget=SelectorDePalabras(url_de_sugerencias=reverse_lazy("etiquetas:sugerencias")),
+        help_text="Palabras para encontrar la actividad. Escribe y pulsa Intro, o elige una sugerencia.",
     )
     publica = forms.BooleanField(
         label="Pública",

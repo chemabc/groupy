@@ -1,0 +1,34 @@
+{% comment %}
+  Cuadro de varias palabras con sugerencias (base/formularios.py, SelectorDePalabras), movido por el
+  componente «selectorDePalabras» de interfaz.js. Las palabras elegidas se ven como pastillas con una ×
+  y se envían en campos ocultos con el nombre del campo. Recibe «widget» (name, attrs, valores_json y url).
+{% endcomment %}
+<div x-data="selectorDePalabras" data-nombre="{{ widget.name }}" data-url="{{ widget.url }}" data-valores="{{ widget.valores_json }}"
+     class="relative" @click.outside="sugerencias = []">
+  <div class="flex flex-wrap items-center gap-1 rounded border border-slate-300 bg-white px-1 py-1 dark:border-slate-700 dark:bg-slate-900">
+    <template x-for="(palabra, indice) in palabras" :key="palabra">
+      <span class="inline-flex items-center gap-1 rounded-full bg-marca/10 py-0.5 pr-1 pl-2 text-sm text-marca">
+        <span x-text="palabra"></span>
+        <button type="button" class="rounded-full px-1 hover:bg-marca/20" :aria-label="'Quitar ' + palabra" @click="quitar(indice)">×</button>
+        <input type="hidden" :name="nombre" :value="palabra">
+      </span>
+    </template>
+    <input type="text" id="{{ widget.attrs.id }}" x-model="texto" autocomplete="off"
+           placeholder="Escribe y pulsa Intro…" aria-describedby="{{ widget.attrs.id }}_helptext"
+           @input.debounce.250ms="buscar()" @keydown.enter.prevent="anadir(texto)" @keydown.comma.prevent="anadir(texto)"
+           @keydown.backspace="borrarUltima()" @keydown.escape="sugerencias = []"
+           class="min-w-32 flex-1 border-0 bg-transparent px-1 py-0.5 text-sm shadow-none focus:outline-none">
+  </div>
+  <ul x-show="sugerencias.length" x-cloak role="listbox"
+      class="absolute z-20 mt-1 w-full overflow-hidden rounded border border-slate-200 bg-white text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
+    <template x-for="sugerencia in sugerencias" :key="sugerencia.nombre">
+      <li>
+        <button type="button" role="option" class="flex w-full items-center justify-between px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-800"
+                @click="anadir(sugerencia.nombre)">
+          <span x-text="sugerencia.nombre"></span>
+          <span x-show="sugerencia.comun" class="text-xs text-slate-500">común</span>
+        </button>
+      </li>
+    </template>
+  </ul>
+</div>

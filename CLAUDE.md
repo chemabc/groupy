@@ -42,9 +42,9 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 
 ## Arquitectura (detalle en docs/diseno.md, apartado 3)
 
-- Django 5.2, monolito modular por capas: Base (`base`, `eventos_sw`, `anclas`, `etiquetas`,
-  `tipologias`, `ejemplos`) → Identidad (`boveda`, `usuarios`) → Organización (`lugares`, `grupos`,
-  `permisos`, `audiencias`, `solicitudes`, `moderacion`) → Funcional (`eventos`, `proyectos`, `debates`,
+- Django 5.2, monolito modular por capas: Base (`base`, `eventos_sw`, `anclas`, `tipologias`,
+  `ejemplos`) → Identidad (`boveda`, `usuarios`) → Organización (`lugares`, `grupos`, `permisos`,
+  `audiencias`, `etiquetas`, `solicitudes`, `moderacion`) → Funcional (`eventos`, `proyectos`, `debates`,
   `consultas`, `documentos`, `decisiones`, `calendario`, `comunicaciones`, `publico`, `limpieza`,
   `mantenimiento`). **Un módulo funcional nunca importa otro**: se relacionan con anclas y
   eventos_sw.
@@ -77,4 +77,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   dura entre organizaciones: nada sin invitación hecha y aceptada con privilegios) e importación masiva de
   grupos y usuarios desde .ods/.csv con plantillas (Desarrollo y mantenimiento → Pruebas), tablas de la
   `boveda` en su base (alta provisional, dominios por organización) y sección «Usuarios» del superadmin
-  (módulo `administracion`). Recuerda `migrate --database=boveda`. Siguiente: `etiquetas` y `tipologias`.
+  (módulo `administracion`), y `etiquetas` (de cada organización y comunes, con relacionadas, selector con
+  sugerencias en `base`). Recuerda `migrate --database=boveda`. Siguiente: `tipologias` (pendiente de
+  decidir dónde se editan; ver [A-24]).

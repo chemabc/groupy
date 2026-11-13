@@ -97,7 +97,7 @@ class PruebasComoSuperadmin(PruebaDePantalla):
     @override_settings(DEBUG=True)
     def test_datos_de_ejemplo(self):
         respuesta = self.client.post("/mantenimiento/pruebas/ejemplos/", {"accion": "crear"})
-        self.assertContains(respuesta, "Creados los datos de ejemplo de: Usuarios, Organizaciones y grupos.")
+        self.assertContains(respuesta, "Creados los datos de ejemplo de: Usuarios, Organizaciones y grupos, Etiquetas.")
         self.assertTrue(Organizacion.objects.filter(nombre="ORG Tajo").exists())
         respuesta = self.client.post("/mantenimiento/pruebas/ejemplos/", {"accion": "borrar"})
         self.assertContains(respuesta, "Borrados")

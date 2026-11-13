@@ -410,3 +410,20 @@ sirve aquí y dónde se usa.
 - **Pruebas con dos bases.** Una prueba que usa la bóveda lo declara con `databases = {"default",
   "boveda"}`; si no, Django no la deja tocar esa base. `comprobar_consultas` suma las consultas de las
   dos bases.
+
+## 17. Un selector con sugerencias: Alpine pide, Django responde en JSON (13 de noviembre de 2026)
+
+- **Por qué JSON y no htmx.** htmx sustituye trozos de HTML; aquí el componente (Alpine) necesita los
+  datos para decidir qué mostrar (quitar las ya elegidas, marcar las comunes). La vista devuelve
+  `JsonResponse({"sugerencias": [...]})` y el componente las pinta con `x-for`.
+- **`fetch` y `async`/`await`.** `await fetch(direccion)` espera la respuesta sin congelar la página;
+  `@input.debounce.250ms` hace que solo se pregunte cuando se deja de escribir un momento.
+- **Campos ocultos generados.** Cada palabra elegida pinta un `<input type="hidden" name="etiquetas">`.
+  Al enviar el formulario llegan varios valores con el mismo nombre, y el campo los lee con
+  `request.POST.getlist("etiquetas")` (`value_from_datadict`).
+- **Un componente genérico en la capa de abajo.** El selector (`base`) no sabe nada de etiquetas: solo
+  recibe la dirección de las sugerencias. Así lo puede usar cualquier módulo para cualquier lista de
+  palabras.
+- **Nadie ve lo de otra organización.** La vista de sugerencias solo usa la organización que le piden si
+  quien escribe está en ella; si no, solo devuelve las comunes. La regla está en el servidor, no en el
+  navegador, porque la dirección la puede escribir cualquiera.
