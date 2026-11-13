@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "administracion.apps.AdministracionConfig",
     "comunicaciones.apps.ComunicacionesConfig",
     "eventos.apps.EventosConfig",
+    "proyectos.apps.ProyectosConfig",
     "calendario.apps.CalendarioConfig",
 ]
 

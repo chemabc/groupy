@@ -412,6 +412,56 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 
+  // Isla de kanban (SortableJS), para los tableros de tareas (proyectos/templates/proyectos/kanban.html).
+  // Se usa así:
+  //   <div x-data="kanban" data-url="/proyectos/tareas/mover/">
+  //     <ul class="columna" data-estado="pendiente"> <li data-id="5" class="movible">…</li> … </ul> …
+  //   </div>
+  // Cada columna es una lista ordenable; las tarjetas con la clase «movible» se arrastran entre columnas.
+  // Al soltar una, manda al servidor su columna nueva y el orden de esa columna. Si el servidor no lo
+  // acepta, lo explica y vuelve a cargar la página para no dejar a la vista algo que no se ha guardado.
+  Alpine.data("kanban", () => ({
+    // Mensaje de error (vacío si no hay).
+    mensaje: "",
+
+    // Al arrancar: hace ordenable cada columna, todas en el mismo grupo para pasar de una a otra.
+    init() {
+      if (typeof Sortable === "undefined") return;
+      for (const columna of this.$root.querySelectorAll(".columna")) {
+        Sortable.create(columna, {
+          group: "kanban",
+          draggable: ".movible",
+          animation: 150,
+          forceFallback: true,
+          onEnd: (evento) => this.guardar(evento.item, evento.to),
+        });
+      }
+    },
+
+    // Guarda dónde ha quedado una tarjeta.
+    //   - tarjeta: el elemento movido (con data-id).
+    //   - columna: la lista donde ha caído (con data-estado).
+    async guardar(tarjeta, columna) {
+      const orden = [...columna.querySelectorAll("[data-id]")].map((elemento) => Number(elemento.dataset.id));
+      let respuesta = null;
+      try {
+        respuesta = await fetch(this.$root.dataset.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content },
+          body: JSON.stringify({ tarea: Number(tarjeta.dataset.id), estado: columna.dataset.estado, orden }),
+        });
+      } catch {
+        respuesta = null;
+      }
+      if (respuesta && respuesta.ok) {
+        this.mensaje = "";
+        return;
+      }
+      this.mensaje = respuesta && respuesta.headers.get("Content-Type")?.includes("json") ? (await respuesta.json()).error : "No se ha podido guardar.";
+      setTimeout(() => window.location.reload(), 1500);
+    },
+  }));
+
   // Isla de calendario (FullCalendar), para la pantalla «Calendario» (calendario/templates). Se usa así:
   //   <div x-data="calendario" data-estaticos="/static/generado/fullcalendar/" data-datos="/calendario/datos/"
   //        data-mover="/calendario/mover/" data-nuevo="/calendario/recordatorios/nuevo/">

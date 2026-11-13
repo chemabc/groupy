@@ -101,4 +101,8 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   fuentes de cada módulo, filtros por tipo, arrastrar lo propio, recordatorios y suscripción .ics con
   clave secreta) y series de eventos (cada semana, cada mes…; cada vez es un evento propio creado a 90
   días vista; las cambiadas a mano no se tocan; series de reuniones con una sola solicitud) con tareas
-  diarias en el trabajador (`TareaDiaria`). Recuerda `migrate --database=boveda`.
+  diarias en el trabajador (`TareaDiaria`).
+- **Fase 4 en curso.** Hecho: `proyectos`, primera pieza (proyectos de grupo y personales con
+  subproyectos a cualquier profundidad, cometidos, tareas en proyecto, sueltas o personales, kanban con
+  SortableJS, fechas límite en el calendario). Siguiente: `limpieza`; después recursos y dependencias.
+  Recuerda `migrate --database=boveda`.

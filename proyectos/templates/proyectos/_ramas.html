@@ -1,0 +1,15 @@
+{% comment %}
+  Lista de proyectos en árbol: cada rama sangrada según su nivel. Recibe «ramas» (Rama: proyecto y nivel).
+{% endcomment %}
+<ul class="divide-y divide-slate-100 dark:divide-slate-800">
+  {% for rama in ramas %}
+    <li class="flex flex-wrap items-baseline gap-x-2 py-1.5 {% if rama.proyecto.estado == 'finalizado' %}opacity-60{% endif %}" style="margin-left: calc({{ rama.nivel }} * 1.25rem)">
+      {% if rama.nivel %}<span class="text-slate-400" aria-hidden="true">└</span>{% endif %}
+      <a href="{% url 'proyectos:proyecto' rama.proyecto.pk %}" class="font-medium hover:text-marca hover:underline">{{ rama.proyecto.titulo }}</a>
+      {% include "proyectos/_estado.html" with proyecto=rama.proyecto %}
+      <span class="text-xs text-slate-500">{{ rama.proyecto.tipologia.nombre }}{% if rama.proyecto.grupo and not rama.nivel %} · {{ rama.proyecto.grupo.nombre }} ({{ rama.proyecto.grupo.organizacion.nombre }}){% endif %}{% if rama.proyecto.inicio %} · desde {{ rama.proyecto.inicio|date:"d/m/Y" }}{% endif %}{% if rama.proyecto.limite %} · límite {{ rama.proyecto.limite|date:"d/m/Y" }}{% endif %}</span>
+    </li>
+  {% empty %}
+    <li class="py-2 text-sm text-slate-500">{{ vacio|default:"No hay proyectos." }}</li>
+  {% endfor %}
+</ul>

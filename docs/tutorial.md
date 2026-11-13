@@ -551,3 +551,15 @@ sirve aquí y dónde se usa.
 - **Solo una vez al día, aunque haya dos trabajadores.** `cache.add(clave, valor)` solo guarda si la clave
   no existía, y en Redis eso es atómico: si dos procesos lo intentan a la vez, solo uno gana. Con una clave
   por día («tareas_diarias:2026-11-13») basta para que las tareas diarias se ejecuten una sola vez.
+
+## 25. Árboles de profundidad libre y arrastrar en las pruebas (13 de noviembre de 2026)
+
+- **Padre y raíz.** Un proyecto guarda su padre (para saber dónde va) y la raíz de su árbol. Con la raíz,
+  una sola consulta trae el árbol entero (`raiz_id = …`), y el resto (antecesores, subárbol, sangrado)
+  se calcula en Python con un diccionario. Para los grupos se usó otra técnica, la tabla de cierre
+  (`Contencion`), porque se consultan muchísimo y desde todas partes; aquí basta con algo más sencillo.
+- **Pintar un árbol en una lista.** `en_arbol()` recorre el árbol en profundidad y devuelve cada proyecto
+  con su nivel; la plantilla solo sangra según el nivel. Así la plantilla no necesita recursión.
+- **Arrastrar en Playwright.** SortableJS con `forceFallback` sigue el ratón «a mano», y `drag_to` salta
+  de golpe al destino: no se entera. En la prueba se mueve el ratón en 20 pasos (`arrastrar()` de
+  `proyectos/tests/test_navegador.py`).

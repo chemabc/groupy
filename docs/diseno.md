@@ -1272,6 +1272,33 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - **Vista:** su lugar en el árbol de proyectos y subproyectos, con sus tareas. Todo se puede pulsar, al
   menos para ver la parte que cada cual tiene permitida.
 
+### 14.1.1 Cómo está hecho `proyectos`, primera pieza (13 de noviembre de 2026, decisiones 1A, 2A, 3A y 4A)
+
+- **Subproyectos en todos (petición de la persona usuaria):** cualquier proyecto, también uno personal,
+  puede tener subproyectos, y estos los suyos, sin límite. Cada proyecto guarda su `padre` y su `raiz`
+  (el principal de su árbol), para cargar el árbol entero con una consulta. Un subproyecto es del grupo
+  de su padre (y personal si el padre lo es) y tiene su propia visibilidad (de entrada, la del padre).
+  Desde un subproyecto visible bajo uno que no se ve, el camino dice «(un proyecto que no puedes ver)».
+- **Primero proyectos y tareas (1A):** tipología con sus campos, objetivo general, objetivos específicos,
+  alcance, riesgos, inicio, fecha límite y estado. Recursos, dependencias, documentación por bloques,
+  chat y etiquetas, en la siguiente pieza.
+- **Quién gestiona:** quien lo creó o lo coordina (cometido `proyectos.coordinacion`), o creó o coordina
+  un antecesor; la administración del grupo; el superadmin (salvo lo personal). La coordinación solo la
+  da quien gestiona; documentación y comunicación, cada cual se apunta si ve el proyecto. Crear proyectos
+  y tareas sueltas: permiso `proyectos.crear` (usuario, admin_grupo, admin_org).
+- **Tareas:** en un proyecto (la ve quien ve el proyecto; responsable y colaboradoras deben verlo, y en
+  uno privado pasan a verlo), sueltas en un grupo (con su visibilidad) o personales. Aviso «Me encargan
+  una tarea». Pueden cambiarlas su responsable, quien colabora, quien la creó y quien gestiona el
+  proyecto.
+- **Kanban (2A):** isla con SortableJS: columnas pendiente, en curso, bloqueada y hecha. El de un proyecto
+  incluye las tareas de todos sus subproyectos; también «Mis tareas → Kanban». Solo se arrastra lo que se
+  puede cambiar. *(El bloqueo automático por dependencias, con las dependencias.)*
+- **Personales (3A):** proyectos (con subproyectos) y tareas «privados e individuales», con audiencia
+  personal: ni el superadmin los ve. Pantalla «Proyectos → Personales».
+- **Calendario:** fuentes «Proyectos» (fechas límite) y «Tareas» (las no hechas), de día entero, que se
+  arrastran para cambiar la fecha.
+- **`limpieza` (4A):** después de proyectos, como tarea diaria.
+
 ### 14.2 Tarea
 
 - Atómica: **1 responsable** obligatorio y colaboradores opcionales.

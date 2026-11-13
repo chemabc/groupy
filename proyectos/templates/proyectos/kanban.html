@@ -1,0 +1,28 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Kanban de tareas (proyectos/views.py, kanban y tareas_kanban). Recibe «proyecto» (o None en «Mis
+  tareas»), «columnas» (cada una con código, nombre y tareas; cada tarea con «movible») y «con_proyecto»
+  (si cada tarjeta dice de qué proyecto es). La isla «kanban» de interfaz.js guarda lo que se arrastra.
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-2" x-data="kanban" data-url="{% url 'proyectos:mover_tarea' %}">
+  {% if proyecto %}<p class="text-sm"><a href="{% url 'proyectos:proyecto' proyecto.pk %}" class="text-marca hover:underline">← {{ proyecto.titulo }}</a> · con las tareas de sus subproyectos</p>{% endif %}
+  <p x-show="mensaje" x-cloak x-text="mensaje" role="alert" class="rounded border border-red-300 bg-red-50 px-3 py-1.5 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300"></p>
+  <div class="grid gap-3 md:grid-cols-4">
+    {% for columna in columnas %}
+      <section class="rounded-lg border border-slate-200 bg-slate-100/60 p-2 dark:border-slate-800 dark:bg-slate-900/60" aria-label="{{ columna.nombre }}">
+        <h3 class="mb-2 px-1 text-sm font-semibold">{{ columna.nombre }} <span class="text-slate-400">({{ columna.tareas|length }})</span></h3>
+        <ul class="columna min-h-16 space-y-2" data-estado="{{ columna.codigo }}">
+          {% for tarea in columna.tareas %}
+            <li data-id="{{ tarea.pk }}" class="{% if tarea.movible %}movible cursor-grab{% endif %} rounded border border-slate-200 bg-white p-2 text-sm shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <a href="{% url 'proyectos:tarea' tarea.pk %}" class="font-medium hover:text-marca hover:underline">{{ tarea.titulo }}</a>
+              <p class="text-xs text-slate-500">{{ tarea.responsable.alias }}{% if tarea.limite %} · {{ tarea.limite|date:"d/m" }}{% endif %}{% if con_proyecto and tarea.proyecto %} · {{ tarea.proyecto.titulo }}{% endif %}</p>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+  <p class="text-xs text-slate-500">Arrastra una tarea a otra columna para cambiar su estado. Solo se mueven las tuyas (y todas, si gestionas el proyecto).</p>
+</div>
+{% endblock %}

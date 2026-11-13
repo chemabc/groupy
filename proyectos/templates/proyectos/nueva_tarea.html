@@ -1,0 +1,26 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Nueva tarea» (proyectos/views.py, nueva_tarea). Recibe «formulario», «proyecto» (si es de un
+  proyecto), «personal» y, si es suelta, «grupos» y «grupo» (con un formulario GET para elegirlo).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  {% if proyecto %}<p class="text-sm">Tarea de <a href="{% url 'proyectos:proyecto' proyecto.pk %}" class="text-marca hover:underline">{{ proyecto.titulo }}</a>.</p>
+  {% elif personal %}<p class="text-sm text-slate-600 dark:text-slate-300">Tarea personal: solo la verás tú.</p>
+  {% else %}
+    <form method="get" class="flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <label class="flex flex-col gap-1">Tarea suelta del grupo
+        <select name="grupo" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+          {% for g in grupos %}<option value="{{ g.pk }}" {% if g.pk == grupo.pk %}selected{% endif %}>{{ g.organizacion.nombre }} › {{ g.camino }}</option>{% endfor %}
+        </select>
+      </label>
+      <noscript><button type="submit" class="rounded border border-slate-300 px-3 py-1">Elegir</button></noscript>
+    </form>
+  {% endif %}
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+  </form>
+</div>
+{% endblock %}

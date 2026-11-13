@@ -1,0 +1,14 @@
+{% comment %}
+  Lista de tareas con su estado, fecha límite, responsable y dónde están. Recibe «tareas».
+{% endcomment %}
+<ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+  {% for tarea in tareas %}
+    <li class="flex flex-wrap items-baseline gap-x-2 py-1.5 {% if tarea.estado == 'hecha' %}opacity-60{% endif %}">
+      <span class="rounded bg-slate-100 px-1.5 text-xs dark:bg-slate-800">{{ tarea.get_estado_display }}</span>
+      <a href="{% url 'proyectos:tarea' tarea.pk %}" class="hover:text-marca hover:underline {% if tarea.estado == 'hecha' %}line-through{% endif %}">{{ tarea.titulo }}</a>
+      <span class="text-xs text-slate-500">{% if tarea.limite %}para el {{ tarea.limite|date:"d/m/Y" }} · {% endif %}{{ tarea.responsable.alias }}{% if tarea.proyecto %} · {{ tarea.proyecto.titulo }}{% elif tarea.grupo %} · {{ tarea.grupo.nombre }}{% endif %}</span>
+    </li>
+  {% empty %}
+    <li class="py-2 text-slate-500">No hay tareas.</li>
+  {% endfor %}
+</ul>

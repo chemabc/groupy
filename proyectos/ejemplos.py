@@ -1,0 +1,49 @@
+"""
+Proyectos de ejemplo: «Huerto comunitario» de la asamblea base de Nutria, con un subproyecto («Riego»)
+que tiene el suyo («Bomba solar»), y unas tareas repartidas en las columnas del kanban. Los crea y borra
+la orden «python manage.py ejemplos».
+"""
+
+from datetime import timedelta
+
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+
+from grupos.models import Pertenencia
+from tipologias.models import Tipologia
+
+from .models import Proyecto, Tarea
+from .servicios import crear_proyecto, crear_tarea
+
+# Título del proyecto principal de ejemplo (sirve para saber si ya está y para borrarlo).
+PRINCIPAL = "Huerto comunitario"
+
+
+# Crea el árbol de ejemplo, si no está ya y existen Nutria (con asamblea base) y la tipología «Genérico».
+def crear():
+    nutria = get_user_model().objects.filter(alias="Nutria").first()
+    base = Pertenencia.objects.filter(usuario=nutria, es_base=True).select_related("grupo__organizacion").first() if nutria else None
+    generico = Tipologia.objects.filter(familia=Tipologia.PROYECTO, nombre="Genérico", organizacion__isnull=True).first()
+    if base is None or generico is None or Proyecto.objects.filter(titulo=PRINCIPAL).exists():
+        return
+    hoy = timezone.localdate()
+    huerto = crear_proyecto(
+        nutria, generico, {"titulo": PRINCIPAL, "objetivo_general": "Un huerto para el barrio.", "limite": hoy + timedelta(days=120)},
+        grupo=base.grupo, visibilidad="grupo:0",
+    )
+    riego = crear_proyecto(nutria, generico, {"titulo": "Riego", "limite": hoy + timedelta(days=60)}, padre=huerto)
+    bomba = crear_proyecto(nutria, generico, {"titulo": "Bomba solar"}, padre=riego)
+    for titulo, proyecto, estado, dias in [
+        ("Pedir permiso al distrito", huerto, Tarea.EN_CURSO, 10),
+        ("Comprar semillas", huerto, Tarea.PENDIENTE, 20),
+        ("Medir la parcela", huerto, Tarea.HECHA, None),
+        ("Presupuesto de tuberías", riego, Tarea.PENDIENTE, 15),
+        ("Elegir el panel", bomba, Tarea.BLOQUEADA, None),
+    ]:
+        limite = hoy + timedelta(days=dias) if dias else None
+        crear_tarea(nutria, {"titulo": titulo, "responsable": nutria, "estado": estado, "limite": limite}, proyecto=proyecto)
+
+
+# Borra el árbol de ejemplo (con sus subproyectos y tareas).
+def borrar():
+    Proyecto.objects.filter(titulo=PRINCIPAL, padre__isnull=True).delete()
