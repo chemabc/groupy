@@ -60,8 +60,10 @@ def ajustar(tipo, organizacion_id, apoyos, dias):
 #   - grupo: el grupo al que se pide.
 #   - descripcion, justificacion: qué y por qué.
 #   - datos: lo que necesita el módulo del tipo para crear lo pedido.
+#   - altura: a cuántos niveles por encima del grupo de quien pide está «grupo» (para los tipos con
+#     apoyos según la altura).
 @transaction.atomic
-def pedir(usuario, codigo, grupo, descripcion, justificacion="", datos=None):
+def pedir(usuario, codigo, grupo, descripcion, justificacion="", datos=None, altura=0):
     tipo = registro.solicitudes.get(codigo)
     if tipo is None:
         raise ValidationError(f"No existe el tipo de solicitud «{codigo}».")
@@ -72,6 +74,8 @@ def pedir(usuario, codigo, grupo, descripcion, justificacion="", datos=None):
     if Solicitud.objects.filter(tipo=codigo, grupo=grupo, solicitante=usuario, estado=Solicitud.PENDIENTE).exists():
         raise ValidationError(f"Ya tienes una solicitud pendiente de este tipo en {grupo}.")
     apoyos, dias = ajuste_para(tipo, grupo.organizacion_id)
+    if tipo.apoyos_por_altura:
+        apoyos = tipo.apoyos_por_altura[min(altura, len(tipo.apoyos_por_altura) - 1)]
     solicitud = Solicitud.objects.create(
         tipo=codigo, grupo=grupo, solicitante=usuario, descripcion=descripcion, justificacion=justificacion, datos=datos or {},
         apoyos_necesarios=apoyos, necesita_aprobacion=bool(tipo.aprobacion), caduca_el=timezone.localdate() + timedelta(days=dias),

@@ -1,0 +1,36 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Eventos → Convocar» (eventos/views.py, convocar). Recibe «grupos» y «grupo» (donde puede
+  convocar y el elegido), «ramas» y «tipologia» (los tipos de evento y el elegido) y, con un tipo elegido,
+  «formulario» (datos comunes), «propios» (campos del tipo) y «reunion».
+  Arriba, un formulario GET que se envía solo al cambiar el grupo o el tipo.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  <form method="get" class="flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+    <label class="flex flex-col gap-1">Grupo que convoca
+      <select name="grupo" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+        {% for g in grupos %}<option value="{{ g.pk }}" {% if g.pk == grupo.pk %}selected{% endif %}>{{ g.organizacion.nombre }} › {{ g.camino }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="flex flex-col gap-1">Tipo
+      <select name="tipologia" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+        <option value="">— Elige el tipo —</option>
+        {% for rama in ramas %}<option value="{{ rama.tipologia.pk }}" {% if tipologia and rama.tipologia.pk == tipologia.pk %}selected{% endif %}>{{ rama.camino }}</option>{% endfor %}
+      </select>
+    </label>
+    <noscript><button type="submit" class="rounded border border-slate-300 px-3 py-1">Elegir</button></noscript>
+  </form>
+  {% if tipologia %}
+    {% if reunion %}<p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Una reunión necesita apoyos: quedará pendiente (solo la verás tú) hasta que la apoyen 2 personas de tu grupo (5 si es para el grupo padre, 10 para el abuelo). Entonces se convocará sola.</p>{% endif %}
+    <form method="post" enctype="multipart/form-data" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      {% csrf_token %}
+      {{ formulario }}
+      {% if propios.fields %}<fieldset class="mt-2 border-t border-slate-200 pt-3 dark:border-slate-800"><legend class="mb-2 text-sm font-semibold">Datos de «{{ tipologia.nombre }}»</legend>{{ propios }}</fieldset>{% endif %}
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">{% if reunion %}Pedir los apoyos{% else %}Convocar{% endif %}</button>
+    </form>
+  {% else %}
+    <p class="text-sm text-slate-500">Elige el tipo de evento para ver su formulario.</p>
+  {% endif %}
+</div>
+{% endblock %}

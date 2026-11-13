@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "mantenimiento.apps.MantenimientoConfig",
     "administracion.apps.AdministracionConfig",
     "comunicaciones.apps.ComunicacionesConfig",
+    "eventos.apps.EventosConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,
@@ -238,3 +239,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Carpetas comunes de ficheros estáticos, además de las «static/» de cada módulo. En static/generado/
 # deja «npm run construir» el CSS de Tailwind, htmx y Alpine.
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Ficheros que suben las personas (el cartel de un evento…). Se guardan en esta carpeta, que NO se sirve
+# por una dirección pública: cada módulo los entrega con su propia vista, solo a quien puede ver aquello a
+# lo que pertenecen (ver eventos/views.py, cartel). Más adelante se podrá cambiar por un almacenamiento
+# externo sin tocar nada más.
+MEDIA_ROOT = BASE_DIR / "ficheros"
+# Tamaño máximo de cada imagen subida, en bytes (5 MB).
+TAMANO_MAXIMO_DE_IMAGEN = 5 * 1024 * 1024

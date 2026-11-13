@@ -364,6 +364,20 @@ def puede_ver(usuario, audiencia):
 # ── Explicar ─────────────────────────────────────────────────────────────────────────────────────────
 
 
+# Ids de las personas que ven una audiencia (para avisarlas de algo nuevo). Una consulta. Para las
+# públicas, None (cualquiera: el módulo decide a quién avisar).
+def personas_de(audiencia):
+    if audiencia.tipo == Audiencia.PUBLICA:
+        return None
+    if audiencia.tipo == Audiencia.PRIVADA:
+        return set(audiencia.personas.values_list("usuario_id", flat=True))
+    if audiencia.tipo == Audiencia.ORGANIZACION:
+        filtro = Q(grupo__organizacion_id=audiencia.organizacion_id)
+    else:
+        filtro = Q(grupo__ascendencia__antecesor__in=audiencia.grupos.values("grupo_id"))
+    return set(Pertenencia.objects.filter(filtro).values_list("usuario_id", flat=True))
+
+
 # Cuántas personas ven una audiencia (sin contar al superadmin). Una consulta. Para las públicas, None.
 def cuantas_personas(audiencia):
     if audiencia.tipo == Audiencia.PUBLICA:

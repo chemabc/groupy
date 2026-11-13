@@ -1,0 +1,16 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Editar» de un evento (eventos/views.py, editar). Recibe «evento», «formulario», «propios» y
+  «tipologia».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  <p><a href="{% url 'eventos:evento' evento.pk %}" class="text-sm text-marca hover:underline">← {{ evento.titulo }}</a></p>
+  <form method="post" enctype="multipart/form-data" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    {% if propios.fields %}<fieldset class="mt-2 border-t border-slate-200 pt-3 dark:border-slate-800"><legend class="mb-2 text-sm font-semibold">Datos de «{{ tipologia.nombre }}»</legend>{{ propios }}</fieldset>{% endif %}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+  </form>
+</div>
+{% endblock %}

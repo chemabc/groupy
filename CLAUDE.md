@@ -94,5 +94,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   Solicitudes»), `lugares` (lista común con mapa Leaflet, propuestas de lugares y de cambios, importación,
   lugar privado de cada persona, recuentos desde 5 y «Configuración → Lugares»). `moderacion` se deja para
   cuando haya contenido. Y `talentos` (catálogo común, mis talentos compartidos por grupo, recuentos sin
-  nombres, peticiones con «Lo ofrezco» y «Tengo dudas»). Siguiente: cerrar la fase 2 y empezar la 3
-  (eventos y calendario). Recuerda `migrate --database=boveda`.
+  nombres, peticiones con «Lo ofrezco» y «Tengo dudas»). Fase 2 cerrada (salvo `moderacion`).
+- **Fase 3 en curso.** Hecho: `eventos` (convocar con el selector de visibilidad y los campos de la
+  tipología; reuniones con solicitud de apoyos 2/5/10; cartel privado; «¿Vas a ir?» con alias solo para
+  quien convoca y los cometidos; cometidos; compartir; cancelar). Siguiente: `calendario`, después series. Recuerda `migrate --database=boveda`.

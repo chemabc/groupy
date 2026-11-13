@@ -16,6 +16,8 @@ urlpatterns = [
     path("cuenta/", include("usuarios.urls")),
     # Módulo «grupos»: Organizaciones y grupos (mis grupos, árbol, fichas, relaciones e invitaciones).
     path("organizaciones/", include("grupos.urls")),
+    # Módulo «eventos»: listas, convocar, ficha, editar y cartel.
+    path("eventos/", include("eventos.urls")),
     # Módulo «lugares»: mi lugar, mapa, lista, propuestas e importación.
     path("lugares/", include("lugares.urls")),
     # Módulo «talentos»: mis talentos, peticiones, recuentos y catálogo.

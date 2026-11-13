@@ -235,6 +235,9 @@ class TipoDeSolicitud:
     # Ruta de una función que comprueba, al pedirla, que se puede pedir (recibe usuario y grupo y lanza
     # ValidationError si no). Vacía: no hay más comprobaciones.
     comprobar: str = ""
+    # Apoyos según la altura a la que se pide (0: el propio grupo, 1: el padre, 2 o más: el abuelo…), por
+    # ejemplo (2, 5, 10) para las reuniones. Si se indica, manda sobre «apoyos» y sobre los ajustes.
+    apoyos_por_altura: tuple = ()
     # Si se pide desde «Solicitudes → Nueva», solo con descripción y justificación. Los tipos que
     # necesitan su propio formulario (un debate, una reunión) se piden desde su módulo.
     generica: bool = False

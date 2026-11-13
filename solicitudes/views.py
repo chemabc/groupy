@@ -163,7 +163,8 @@ def ajustes(request):
     tarjetas = []
     for organizacion, nombre in ambitos:
         filas = []
-        for tipo in registro.solicitudes.values():
+        # Los tipos con apoyos según la altura (las reuniones: 2, 5, 10) no se ajustan aquí.
+        for tipo in (t for t in registro.solicitudes.values() if not t.apoyos_por_altura):
             propio = guardados.get((organizacion, tipo.codigo))
             general = guardados.get((None, tipo.codigo))
             apoyos, dias = (propio.apoyos, propio.dias) if propio else ((general.apoyos, general.dias) if general else (tipo.apoyos, tipo.dias))

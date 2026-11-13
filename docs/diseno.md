@@ -1070,6 +1070,34 @@ Todos aparecen en el calendario.
 modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que haga falta con el botón
 «copiar» de cada campo. Se pueden enlazar con un ancla («salida del proyecto»).
 
+### 10.5 Cómo está hecho `eventos` (13 de noviembre de 2026, decisiones 1A, 2A y 3A de la persona usuaria)
+
+- **Orden de la fase 3 (1A):** eventos → calendario → series periódicas.
+- **Convocar:** se elige el grupo (donde se tenga `eventos.convocar`, de entrada cualquier miembro) y el
+  tipo (las tipologías de evento comunes y de su organización); después, los datos comunes, **quién lo
+  ve** (el selector de visibilidad de `audiencias/selector.py`, estrenado aquí, con las opciones que
+  permite la organización: privado, mi grupo, hasta el padre…, toda la organización, público) y los campos
+  propios de su tipología. Presencial pide lugar de la lista o dirección; en línea, el enlace.
+- **Reuniones con apoyos:** una tipología de la rama «Reunión» común es una reunión. Al convocarla queda
+  **pendiente** (solo la ve quien la convoca) y se pide una solicitud «Convocar una reunión» al grupo al que
+  llegará: 2 apoyos en el propio grupo, 5 en el padre, 10 en el abuelo o más arriba
+  (`TipoDeSolicitud.apoyos_por_altura`), en 7 días; el sí del superadmin basta. Al aceptarse, se convoca
+  sola con la visibilidad elegida. La visibilidad de una reunión no se cambia después.
+- **Cartel (2A):** imagen (JPG, PNG o WebP, comprobada con Pillow) de hasta 5 MB, en la carpeta
+  `ficheros/` del servidor (`MEDIA_ROOT`), que **no tiene dirección pública**: la entrega la vista
+  `eventos:cartel` solo a quien ve el evento.
+- **«¿Vas a ir?» (3A):** Sí, No, Aún no lo sé. Todos los que ven el evento ven cuántos van; los alias, solo
+  quien convoca y quien tiene un cometido en el evento (y el superadmin).
+- **Cometidos** (declarados en el contrato): facilitación, toma de acta, promoción y comunicación,
+  logística, cuidados y oveja. Cada persona se apunta o se quita; quien gestiona el evento puede quitar a
+  otras. En un evento privado, apuntarse da acceso. *(Las plazas por cometido y los obligatorios de una
+  acción, más adelante.)*
+- **Compartir:** texto para las redes (con botón «copiar») y enlaces para Telegram, WhatsApp, Mastodon y
+  Bluesky.
+- **Avisos:** «nuevos eventos que puedo ver» (a quienes lo ven; si es público, al grupo que convoca y sus
+  subgrupos) y «se cancela un evento al que iba».
+- Editar y cancelar: quien convoca, la administración del grupo (`grupos.editar_grupo`) o el superadmin.
+
 ### 10.4 Calendario
 
 - Junta todo lo que tiene fecha (cada módulo lo aporta en su contrato), con un color por tipo y filtros.

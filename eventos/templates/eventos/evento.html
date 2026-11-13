@@ -1,0 +1,82 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de un evento (eventos/views.py, evento). Recibe: evento, error, campos (pares nombre, valor de los
+  de su tipo), recuento ({si, no, no_se}), mi_respuesta, respuestas (pares código, nombre), quien_va (las
+  asistencias con alias, solo para quien convoca o tiene un cometido; si no, nada), cometidos (cada uno con
+  quién lo tiene y si quien mira está), gestiona, compartir (pares red, enlace) y solicitud (la de apoyos,
+  si la reunión está pendiente).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <p><a href="{% url 'eventos:proximos' %}" class="text-sm text-marca hover:underline">← Eventos</a></p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% if evento.estado == "pendiente" %}
+    <p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Pendiente de apoyos: solo la ves tú hasta que se convoque.{% if solicitud %} <a href="{% url 'solicitudes:solicitud' solicitud.pk %}" class="underline">Ver la solicitud ({{ solicitud.apoyos }} de {{ solicitud.apoyos_necesarios }} apoyos)</a>{% endif %}</p>
+  {% elif evento.estado == "cancelado" %}
+    <p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300">Este evento está cancelado.</p>
+  {% endif %}
+  <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+    <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <p class="text-xs text-slate-500">{{ evento.tipologia.nombre }} · convoca {{ evento.grupo.nombre }} ({{ evento.grupo.organizacion.nombre }}){% if evento.convocante %} · {{ evento.convocante }}{% endif %}</p>
+      <h2 class="text-xl font-semibold">{{ evento.titulo }}</h2>
+      <dl class="mt-2 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-sm">
+        <dt class="text-slate-500">Cuándo</dt><dd>{{ evento.inicio|date:"l d/m/Y, H:i" }} ({{ evento.duracion }} min)</dd>
+        <dt class="text-slate-500">Dónde</dt><dd>{% if evento.modalidad == "en_linea" %}En línea: <a href="{{ evento.url }}" target="_blank" rel="noopener noreferrer" class="break-all text-marca hover:underline">{{ evento.url }}</a>{% else %}{% if evento.lugar %}<a href="{% url 'lugares:lugar' evento.lugar.pk %}" class="text-marca hover:underline">{{ evento.lugar.nombre }}</a>{% if evento.direccion %} — {% endif %}{% endif %}{{ evento.direccion }}{% endif %}</dd>
+        <dt class="text-slate-500">Coste</dt><dd>{{ evento.get_coste_display }}{% if evento.coste_detalle %}: {{ evento.coste_detalle }}{% endif %}</dd>
+        {% for nombre, valor in campos %}<dt class="text-slate-500">{{ nombre }}</dt><dd class="whitespace-pre-line">{% if valor is True %}Sí{% elif valor is False %}No{% else %}{{ valor }}{% endif %}</dd>{% endfor %}
+      </dl>
+      {% if evento.descripcion %}<p class="mt-3 whitespace-pre-line text-sm">{{ evento.descripcion }}</p>{% endif %}
+      {% if gestiona %}
+        <div class="mt-3 flex flex-wrap gap-2 text-sm">
+          <a href="{% url 'eventos:editar' evento.pk %}" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Editar</a>
+          {% if evento.estado != "cancelado" %}
+            <form method="post">{% csrf_token %}<button type="submit" name="accion" value="cancelar" onclick="return confirm('¿Cancelar «{{ evento.titulo|escapejs }}»? Se avisará a quienes iban.')" class="rounded border border-red-300 px-3 py-1 text-red-700 dark:border-red-800 dark:text-red-300">Cancelar el evento</button></form>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+    <aside class="space-y-3">
+      {% if evento.cartel %}<img src="{% url 'eventos:cartel' evento.pk %}" alt="Cartel de {{ evento.titulo }}" class="w-full rounded-lg border border-slate-200 dark:border-slate-800">{% endif %}
+      {% if evento.estado == "convocado" %}
+        <section class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <h3 class="mb-2 text-sm font-semibold">¿Vas a ir?</h3>
+          <form method="post" class="flex flex-wrap gap-1 text-sm">
+            {% csrf_token %}
+            {% for codigo, nombre in respuestas %}
+              <button type="submit" name="accion" value="{{ codigo }}" class="rounded border px-2 py-0.5 {% if mi_respuesta == codigo %}border-marca bg-marca text-white{% else %}border-slate-300 dark:border-slate-700{% endif %}" {% if mi_respuesta == codigo %}aria-pressed="true"{% endif %}>{{ nombre }}</button>
+            {% endfor %}
+          </form>
+          <p class="mt-2 text-xs text-slate-500">Van {{ recuento.si }} · no van {{ recuento.no }} · aún no lo saben {{ recuento.no_se }}</p>
+          {% if quien_va is not None %}
+            <ul class="mt-1 text-xs">{% for asistencia in quien_va %}<li>{{ asistencia.usuario }} <span class="text-slate-500">({{ asistencia.get_respuesta_display|lower }})</span></li>{% empty %}<li class="text-slate-500">Aún nadie.</li>{% endfor %}</ul>
+            <p class="mt-1 text-[11px] text-slate-400">Los alias solo los ven quien convoca y quien tiene un cometido.</p>
+          {% endif %}
+        </section>
+      {% endif %}
+      <section class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        <h3 class="mb-2 text-sm font-semibold">Compartir</h3>
+        {% if evento.texto_para_redes %}<p class="mb-2 whitespace-pre-line rounded bg-slate-50 p-2 text-xs dark:bg-slate-800">{{ evento.texto_para_redes }}</p>{% endif %}
+        <div class="flex flex-wrap gap-1 text-xs">{% for red, enlace in compartir %}<a href="{{ enlace }}" target="_blank" rel="noopener noreferrer" class="rounded border border-slate-300 px-2 py-0.5 hover:border-marca hover:text-marca dark:border-slate-700">{{ red }}</a>{% endfor %}</div>
+      </section>
+    </aside>
+  </div>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 font-semibold">Cometidos</h3>
+    <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+      {% for cometido in cometidos %}
+        <li class="flex flex-wrap items-center gap-2 py-1.5" data-cometido="{{ cometido.codigo }}">
+          <span class="min-w-40 font-medium" title="{{ cometido.descripcion }}">{{ cometido.nombre }}</span>
+          <span class="flex-1 text-slate-600 dark:text-slate-300">{% for persona in cometido.quienes %}{{ persona }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-slate-400">nadie todavía</span>{% endfor %}</span>
+          {% if evento.estado != "cancelado" %}
+            <form method="post">
+              {% csrf_token %}<input type="hidden" name="cometido" value="{{ cometido.codigo }}">
+              {% if cometido.estoy %}<button type="submit" name="accion" value="desapuntar" class="rounded border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700">Quitarme</button>
+              {% else %}<button type="submit" name="accion" value="apuntar" class="rounded border border-marca px-2 py-0.5 text-xs text-marca">Apuntarme</button>{% endif %}
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}
