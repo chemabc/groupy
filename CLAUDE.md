@@ -93,4 +93,6 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   en un grupo»: sí de la administración y 2 apoyos, o el sí del superadmin; ajustes en «Configuración →
   Solicitudes»), `lugares` (lista común con mapa Leaflet, propuestas de lugares y de cambios, importación,
   lugar privado de cada persona, recuentos desde 5 y «Configuración → Lugares»). `moderacion` se deja para
-  cuando haya contenido. Siguiente: talentos. Recuerda `migrate --database=boveda`.
+  cuando haya contenido. Y `talentos` (catálogo común, mis talentos compartidos por grupo, recuentos sin
+  nombres, peticiones con «Lo ofrezco» y «Tengo dudas»). Siguiente: cerrar la fase 2 y empezar la 3
+  (eventos y calendario). Recuerda `migrate --database=boveda`.

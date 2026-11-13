@@ -1,0 +1,28 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Talentos → Talentos de mis grupos» (talentos/views.py, del_grupo). Recibe «grupos», «elegido»,
+  «recuento» (pares talento, número de personas) y «puede_pedir».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <form method="get" class="flex flex-wrap items-end gap-2 text-sm">
+    <label class="flex flex-col gap-1">Grupo
+      <select name="grupo" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+        {% for grupo in grupos %}<option value="{{ grupo.pk }}" {% if elegido and grupo.pk == elegido.pk %}selected{% endif %}>{{ grupo.organizacion.nombre }} › {{ grupo.camino }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Ver</button>
+    {% if puede_pedir %}<a href="{% url 'talentos:nueva_peticion' %}?grupo={{ elegido.pk }}" class="rounded bg-marca px-3 py-1 text-white">Pedir talentos a este grupo</a>{% endif %}
+  </form>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <p class="mb-2 text-xs text-slate-500">Cuántas personas comparten cada talento con el grupo o con sus subgrupos. Nunca quiénes.</p>
+    <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+      {% for talento, personas in recuento %}
+        <li class="flex justify-between py-1"><span>{{ talento.nombre }} <span class="text-xs text-slate-500">{{ talento.get_tipo_display|lower }}</span></span><span>{{ personas }} persona{{ personas|pluralize }}</span></li>
+      {% empty %}
+        <li class="py-1 text-slate-500">Nadie comparte todavía talentos con este grupo.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

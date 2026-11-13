@@ -983,6 +983,26 @@ usuaria).** Vistas en `grupos/views.py`; qué ve cada cual, en `grupos/acceso.py
 - Los demás solo ven **cuántas personas** ofrecen cada talento, nunca quiénes. Una petición de talento
   llega a quienes lo comparten con ese grupo o proyecto; solo quien responde revela su alias.
 
+**Cómo está hecho `talentos` (13 de noviembre de 2026, decisión 3B de la persona usuaria).**
+- **Módulo propio en la capa de organización**, no dentro de `usuarios`: necesita los grupos, y `usuarios`
+  está en la capa de identidad.
+- **Catálogo común** (`Talento`: nombre, tipo —recurso o habilidad— y palabras relacionadas), con la misma
+  forma fija que las etiquetas. Al escribir uno se proponen los del catálogo (lista de sugerencias del
+  navegador) y, si se escribe uno igual o una relacionada, se usa el que ya existe. El superadmin
+  renombra, cambia el tipo y las relacionadas y fusiona repetidos en «Talentos → Catálogo».
+- **Mis talentos:** cada persona añade los suyos (con un detalle opcional) y marca con qué grupos (de los
+  suyos) comparte cada uno. Sin compartirlo, nadie sabe que lo tiene.
+- **Recuentos:** «Talentos de mis grupos» dice cuántas personas comparten cada talento con un grupo o con
+  sus subgrupos; nunca quiénes.
+- **Peticiones (3B):** una administración (permiso `talentos.pedir`: admin del grupo y de la
+  organización) pide a un grupo qué talentos hacen falta y cuántos de cada uno. Llega como aviso a quienes
+  los comparten con ese grupo o sus subgrupos, y la ven todos los miembros del grupo con «x de y»
+  ofrecidos. Cada persona decide: **«Lo ofrezco»** (con un mensaje opcional; su alias solo lo ven quien
+  pidió y la administración, y se le avisa) o **«Tengo dudas»**, que abre una conversación con la
+  administración del grupo (pantalla de `comunicaciones`, con el asunto puesto). Quien pidió la cierra o la
+  vuelve a abrir. Número en el menú: «Peticiones (N)», las que piden algo que compartes y no has respondido.
+- *(Más adelante: pedir talentos desde un proyecto, con su ancla, cuando exista `proyectos`; y el chat.)*
+
 ---
 
 ## 9. Tipologías y plantillas

@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "tipologias.apps.TipologiasConfig",
     "solicitudes.apps.SolicitudesConfig",
     "lugares.apps.LugaresConfig",
+    "talentos.apps.TalentosConfig",
     # Capa funcional
     "mantenimiento.apps.MantenimientoConfig",
     "administracion.apps.AdministracionConfig",

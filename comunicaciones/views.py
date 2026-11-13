@@ -207,7 +207,8 @@ def conversaciones(request):
 
 
 # Pantalla «Escribir a la administración»: elegir a cuál y escribir el primer mensaje. Con «?aviso=<id>»
-# (desde un aviso que se puede responder) se elige sola la administración del aviso.
+# (desde un aviso que se puede responder) se elige sola la administración del aviso; con
+# «?administracion=<clave>&asunto=<texto>», esa administración y ese asunto.
 #   - POST: los datos de FormularioDeConversacion.
 def nueva_conversacion(request):
     usuario = request.user
@@ -220,7 +221,9 @@ def nueva_conversacion(request):
             .filter(pk=numero, permite_responder=True, notificaciones__usuario=usuario)
             .first()
         )
-    inicial = {}
+    # Con «?administracion=g5&asunto=…» (por ejemplo, «Tengo dudas» en una petición de talentos) se
+    # elige esa administración y se escribe el asunto.
+    inicial = {"administracion": request.GET.get("administracion", ""), "asunto": request.GET.get("asunto", "")[:120]}
     if aviso is not None:
         del_aviso = Buzon(grupo=aviso.grupo, organizacion=aviso.organizacion)
         if buscar(buzones, del_aviso.clave) is None:
