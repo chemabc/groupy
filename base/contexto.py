@@ -9,7 +9,7 @@ memoria, y el alias y las preferencias, del usuario que Django ya ha cargado par
 """
 
 from .preferencias import CLAVES
-from .registro import registro
+from .registro import puede_ver_entrada, registro
 
 # Nombre de la aplicación, para el título de la pestaña del navegador.
 NOMBRE_DE_LA_APLICACION = "Asambleas"
@@ -37,7 +37,8 @@ def interfaz(request):
             # Plantilla de la que heredan las páginas: la página entera, o solo la zona central si la
             # pide la navegación con htmx.
             "plantilla": "base/zona.html" if pide_solo_la_zona(request) else "base/pagina.html",
-            "menu": registro.menu,
+            # Secciones del menú que puede ver (las que piden un permiso, solo si lo tiene).
+            "menu": [entrada for entrada in registro.menu if puede_ver_entrada(usuario, entrada)] if conectado else [],
             "seccion": seccion,
             # Códigos de las entradas del camino, para marcarlas en el menú.
             "codigos": [entrada.codigo for entrada in camino],

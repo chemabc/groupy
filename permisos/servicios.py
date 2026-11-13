@@ -200,6 +200,17 @@ def puede(usuario, permiso, grupo=None, organizacion=None, ancla=None):
     return ancla is not None and (permiso, ancla[0], ancla[1]) in mapa.por_cometido
 
 
+# Dice si una persona tiene un permiso en algún sitio (en algún grupo o en alguna organización), sin
+# decir dónde. Sirve para decidir si se le muestra una sección del menú (ver base/registro.py,
+# puede_ver_entrada). Para hacer algo concreto, se usa puede() con el grupo.
+def puede_en_alguna_parte(usuario, permiso):
+    if permiso not in registro.permisos:
+        raise PermisoNoDeclarado(f"Ningún módulo declara el permiso «{permiso}».")
+    mapa = permisos_de(usuario)
+    lugares = (*mapa.grupos.values(), *mapa.organizaciones.values())
+    return mapa.es_superadmin or any(permiso in codigos for codigos in lugares)
+
+
 # Como puede(), pero si no tiene el permiso lanza SinPermiso con una explicación para la persona. Lo
 # usan los servicios antes de hacer algo y el decorador @requiere_permiso de las vistas.
 def exigir(usuario, permiso, grupo=None, organizacion=None, ancla=None):

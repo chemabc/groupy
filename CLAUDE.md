@@ -45,7 +45,8 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 - Django 5.2, monolito modular por capas: Base (`base`, `eventos_sw`, `anclas`, `etiquetas`,
   `tipologias`, `ejemplos`) → Identidad (`boveda`, `usuarios`) → Organización (`lugares`, `grupos`,
   `permisos`, `audiencias`, `solicitudes`, `moderacion`) → Funcional (`eventos`, `proyectos`, `debates`,
-  `consultas`, `documentos`, `decisiones`, `calendario`, `comunicaciones`, `publico`, `limpieza`). **Un módulo funcional nunca importa otro**: se relacionan con anclas y
+  `consultas`, `documentos`, `decisiones`, `calendario`, `comunicaciones`, `publico`, `limpieza`,
+  `mantenimiento`). **Un módulo funcional nunca importa otro**: se relacionan con anclas y
   eventos_sw.
 - Cada módulo declara todo lo que aporta en una sola clase (contrato de módulo).
 - Visibilidad con audiencias (`audiencia_id`) y permisos precalculados en Redis.
@@ -69,4 +70,5 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   cometidos, caché, `puede`/`exigir`/`@requiere_permiso` y pantalla 403 que explica), la trastienda
   ordenada y explicada, y la orden `python manage.py ejemplos crear` (usuarios: animales y árboles,
   superadmin «Águila», contraseña `M3n0sL3ctiv4s`; organizaciones «ORG <río>» y grupos «GRU <afluente>»).
-  Siguiente: `audiencias`.
+  También la sección «Desarrollo y mantenimiento» (módulo `mantenimiento`: documentación de docs/ y
+  entrada a la trastienda). Siguiente: `audiencias` (preguntas planteadas en [A-18], sin responder).

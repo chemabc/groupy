@@ -90,3 +90,19 @@ class PruebasDeLaTrastienda(PruebaDePantalla):
         self.assertEqual(respuesta.status_code, 302)
         pertenencias = self.lince.pertenencias.all()
         self.assertEqual([(p.grupo, p.rol, p.es_base) for p in pertenencias], [(self.henares, "admin_grupo", True)])
+
+    # Las fichas llevan «Guardar», «Guardar y continuar editando», «Cancelar» (vuelve a la lista) y
+    # «Eliminar»; no «Guardar y añadir otro».
+    def test_botones_de_la_ficha(self):
+        respuesta = self.client.get(f"/trastienda/grupos/grupo/{self.henares.pk}/change/")
+        self.assertContains(respuesta, 'name="_save"')
+        self.assertContains(respuesta, 'name="_continue"')
+        self.assertContains(respuesta, 'class="cancelar">Cancelar</a>')
+        self.assertContains(respuesta, 'class="deletelink"')
+        self.assertNotContains(respuesta, 'name="_addanother"')
+
+    # En la ficha de un rol, cada permiso lleva su explicación y su código aparte.
+    def test_permisos_de_un_rol(self):
+        respuesta = self.client.get("/trastienda/permisos/rol/admin_grupo/change/")
+        self.assertContains(respuesta, "Editar los datos del grupo <code>grupos.editar_grupo</code>")
+

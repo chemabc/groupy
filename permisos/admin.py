@@ -8,6 +8,7 @@ invalidan solos la caché de permisos (permisos/senales.py).
 
 from django import forms
 from django.contrib import admin
+from django.utils.html import format_html
 
 from base.registro import registro
 from base.trastienda import ConAyuda
@@ -17,12 +18,16 @@ from .models import Cometido, ExcepcionDePermiso, PermisoDeRol, Rol
 
 
 # Opciones para elegir permisos: agrupadas por módulo y, en cada una, la explicación y el código.
-# Ejemplo: («Organizaciones y grupos», [(«grupos.invitar», «Invitar a un grupo… (grupos.invitar)»), …]).
-def opciones_de_permisos():
+# Ejemplo: («Organizaciones y grupos», [(«grupos.invitar», «Invitar a un grupo… grupos.invitar»), …]).
+#   - con_formato: el código va en <code> (para las casillas); sin formato, entre paréntesis (para los
+#     desplegables, que no admiten HTML).
+def opciones_de_permisos(con_formato=True):
     por_modulo = {}
     for codigo, permiso in sorted(registro.permisos.items()):
         modulo = registro.modulos[codigo.split(".")[0]].verbose_name
-        por_modulo.setdefault(str(modulo), []).append((codigo, f"{permiso.descripcion} ({codigo})"))
+        # format_html: la explicación como texto y el código en <code>, para que se vea más discreto.
+        texto = format_html("{} <code>{}</code>", permiso.descripcion, codigo) if con_formato else f"{permiso.descripcion} ({codigo})"
+        por_modulo.setdefault(str(modulo), []).append((codigo, texto))
     return list(por_modulo.items())
 
 
@@ -30,7 +35,7 @@ class FormularioDeRol(forms.ModelForm):
     """Ficha de un rol con la lista de permisos para marcar."""
 
     permisos_del_rol = forms.MultipleChoiceField(
-        label="permisos",
+        label="Permisos",
         required=False,
         widget=forms.CheckboxSelectMultiple,
         help_text="Lo que puede hacer quien tiene este rol. El superadmin puede hacerlo todo, sin marcar nada.",
@@ -107,7 +112,7 @@ class FormularioDeExcepcion(forms.ModelForm):
     # Prepara la lista de permisos.
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["permiso"].choices = [("", "---------"), *opciones_de_permisos()]
+        self.fields["permiso"].choices = [("", "---------"), *opciones_de_permisos(con_formato=False)]
 
 
 @admin.register(ExcepcionDePermiso)

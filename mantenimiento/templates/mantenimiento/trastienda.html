@@ -1,0 +1,19 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Desarrollo y mantenimiento → Trastienda»: qué es y un botón para entrar. El enlace no usa
+  htmx (hx-boost="false"): la trastienda es otra aplicación (el panel de Django) y se abre entera.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-4 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+  <p>La <strong>trastienda</strong> es el panel técnico de Django: muestra las tablas tal como están en la
+    base de datos y permite corregirlas a mano. Es solo para emergencias; el trabajo diario se hace en la
+    aplicación.</p>
+  <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+    <li>Lo que se cambia allí no siempre avisa a los demás módulos: úsala con cuidado.</li>
+    <li>Cada pantalla de la trastienda explica arriba qué muestra y qué se puede hacer en ella.</li>
+    <li>Para volver, usa «Ver el sitio» (arriba a la derecha) o el botón «atrás» del navegador.</li>
+  </ul>
+  <a href="/trastienda/" hx-boost="false"
+     class="inline-block rounded bg-marca px-4 py-2 font-medium text-white">Entrar en la trastienda</a>
+</div>
+{% endblock %}

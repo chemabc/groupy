@@ -331,3 +331,25 @@ sirve aquí y dónde se usa.
   con `cache.clear()`.
 - **htmx y los errores.** Por defecto, htmx no pinta las respuestas 4xx y 5xx. Con `responseHandling` (en
   `htmx-config`) se le dice que la 403 sí la pinte, porque trae la explicación.
+
+## 13. Ver la documentación dentro de la aplicación (13 de noviembre de 2026)
+
+- **Markdown a HTML.** Python-Markdown convierte el texto con `#`, `**`, tablas, etc. en HTML. Sus
+  extensiones añaden tablas (`tables`), bloques de código (`fenced_code`) y el índice (`toc`), que además
+  pone un «ancla» (`id`) en cada título para poder enlazarlo.
+- **Memoria con caducidad propia.** `@lru_cache` guarda el resultado de una función según sus
+  parámetros. Al pasarle también la fecha de modificación del fichero, si el fichero cambia la clave es
+  otra y se vuelve a convertir: el documento siempre está al día sin convertirlo en cada visita.
+- **`mark_safe`.** Django escapa todo lo que se pinta en una plantilla (convierte `<` en `&lt;`). El
+  HTML de los documentos es nuestro y de confianza, así que se marca como seguro para que se pinte tal
+  cual. Nunca se hace con texto que escriban las personas.
+- **Prestar una función a una capa inferior.** `base` pinta el menú, pero no puede importar `permisos`.
+  `permisos`, al arrancar, le entrega su función de comprobar (`registrar_comprobador_de_permisos`). Así
+  `base` no depende de nadie y, si no hubiera módulo de permisos, simplemente ocultaría las secciones que
+  piden permiso.
+- **Un enlace que no debe usar htmx.** La trastienda es otra aplicación con su propia página. Si htmx la
+  pidiera, la metería dentro de la zona central. `hx-boost="false"` en el enlace hace que el navegador la
+  cargue entera.
+- **Los botones del panel de Django** salen de la etiqueta `{% submit_row %}`. Se sustituyen
+  redefiniendo el bloque `submit_buttons_bottom` de `admin/change_form.html` en nuestra plantilla de
+  ficha.

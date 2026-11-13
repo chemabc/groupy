@@ -34,14 +34,19 @@ class PermisosConfig(ModuloConfig):
         ),
     )
 
-    # Al arrancar: conecta las señales que invalidan la caché y, después de cada «migrate», crea los roles
+    # Al arrancar: conecta las señales que invalidan la caché, presta al menú la comprobación de permisos
+    # y, después de cada «migrate», crea los roles
     # del sistema que falten y da a los permisos nuevos sus roles por defecto. Django lanza la misma señal
     # cuando las pruebas con servidor de verdad vacían la base, así que también se reparan solos.
     def ready(self):
+        from base.registro import registrar_comprobador_de_permisos
+
         from . import senales
-        from .servicios import sincronizar_permisos
+        from .servicios import puede_en_alguna_parte, sincronizar_permisos
 
         senales.conectar()
+        # El menú (en «base») pregunta aquí si se muestra cada sección que pide un permiso.
+        registrar_comprobador_de_permisos(puede_en_alguna_parte)
         # weak=False: Django guarda las conexiones de forma «débil» y una función creada aquí mismo (lambda)
         # desaparecería al salir de este método.
         post_migrate.connect(

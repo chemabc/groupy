@@ -1,3 +1,10 @@
 {% extends "admin/change_form.html" %}
-{% comment %}Ficha de una tabla de la trastienda con su texto de ayuda encima (ver base/trastienda.py).{% endcomment %}
+{% load static %}
+{% comment %}
+  Ficha de una tabla de la trastienda (ver base/trastienda.py): el texto de ayuda encima, los retoques
+  de estilo de trastienda.css y nuestros botones al pie (Guardar, Guardar y continuar editando,
+  Cancelar y Eliminar).
+{% endcomment %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'trastienda/trastienda.css' %}">{% endblock %}
 {% block content %}{% include "trastienda/ayuda.html" %}{{ block.super }}{% endblock %}
+{% block submit_buttons_bottom %}{% include "trastienda/botones.html" %}{% endblock %}

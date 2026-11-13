@@ -188,6 +188,30 @@ def _esta_dentro(ruta, raiz):
     return Path(ruta).resolve().is_relative_to(Path(raiz).resolve())
 
 
+# Función que dice si una persona tiene un permiso en alguna parte, para mostrarle o no las entradas del
+# menú que piden un permiso. «base» no puede importar el módulo «permisos» (está en una capa superior),
+# así que es «permisos» quien la presta al arrancar, con registrar_comprobador_de_permisos(). Mientras no
+# haya ninguna, las entradas con permiso no se muestran a nadie.
+_comprobador_de_permisos = None
+
+
+# Guarda la función que comprueba permisos. La llama PermisosConfig.ready().
+#   - funcion: recibe (usuario, código del permiso) y devuelve True o False.
+def registrar_comprobador_de_permisos(funcion):
+    global _comprobador_de_permisos
+    _comprobador_de_permisos = funcion
+
+
+# Dice si una persona puede ver una entrada del menú: si no pide permiso, sí; si lo pide, pregunta a la
+# función registrada. La usa base/contexto.py al preparar el menú.
+#   - usuario: quien mira.
+#   - entrada: la EntradaDeMenu.
+def puede_ver_entrada(usuario, entrada):
+    if not entrada.permiso:
+        return True
+    return _comprobador_de_permisos is not None and _comprobador_de_permisos(usuario, entrada.permiso)
+
+
 # El registro único de la aplicación. Todo el código lo importa desde aquí:
 #   from base.registro import registro
 registro = RegistroDeModulos()

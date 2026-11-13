@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     # Capa de organización
     "grupos.apps.GruposConfig",
     "permisos.apps.PermisosConfig",
+    # Capa funcional
+    "mantenimiento.apps.MantenimientoConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,

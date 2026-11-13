@@ -88,4 +88,87 @@
   .campo-de-formulario :where(input:not([type="checkbox"], [type="radio"], [type="file"]), select, textarea) {
     @apply w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900;
   }
+  /* Documentos en Markdown convertidos en HTML (Desarrollo y mantenimiento → Documentación): títulos,
+     párrafos, listas, tablas, código y citas con un aspecto cuidado y legible, en los tres temas. */
+  .documento {
+    @apply leading-relaxed text-slate-800 dark:text-slate-200;
+  }
+  .documento h1 {
+    @apply mb-4 text-2xl font-bold text-slate-900 dark:text-white;
+  }
+  .documento h2 {
+    @apply mt-10 mb-3 border-b border-slate-200 pb-1 text-xl font-semibold text-slate-900 dark:border-slate-700 dark:text-white;
+  }
+  .documento h3 {
+    @apply mt-6 mb-2 text-lg font-semibold text-slate-900 dark:text-white;
+  }
+  .documento h4 {
+    @apply mt-4 mb-2 font-semibold;
+  }
+  .documento :is(h2, h3, h4) {
+    scroll-margin-top: 1rem;
+  }
+  .documento p {
+    @apply my-3;
+  }
+  .documento :is(ul, ol) {
+    @apply my-3 pl-6;
+  }
+  .documento ul {
+    @apply list-disc;
+  }
+  .documento ol {
+    @apply list-decimal;
+  }
+  .documento li {
+    @apply my-1;
+  }
+  .documento li > :is(ul, ol) {
+    @apply my-1;
+  }
+  .documento a {
+    @apply text-marca underline decoration-1 underline-offset-2 hover:decoration-2;
+  }
+  .documento strong {
+    @apply font-semibold text-slate-900 dark:text-white;
+  }
+  .documento code {
+    @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.85em] dark:bg-slate-800;
+  }
+  .documento pre {
+    @apply my-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100;
+  }
+  .documento pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+  .documento blockquote {
+    @apply my-4 border-l-4 border-marca bg-slate-50 px-4 py-2 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300;
+  }
+  .documento table {
+    @apply my-4 block w-full overflow-x-auto border-collapse text-sm;
+  }
+  .documento :is(th, td) {
+    @apply border border-slate-200 px-3 py-2 text-left align-top dark:border-slate-700;
+  }
+  .documento th {
+    @apply bg-slate-100 font-semibold dark:bg-slate-800;
+  }
+  .documento tr:nth-child(even) td {
+    @apply bg-slate-50 dark:bg-slate-800/40;
+  }
+  .documento hr {
+    @apply my-8 border-slate-200 dark:border-slate-700;
+  }
+
+  /* Índice de un documento: la lista de títulos que genera Markdown, con sangría por nivel. */
+  .indice-de-documento ul {
+    @apply space-y-1;
+  }
+  .indice-de-documento ul ul {
+    @apply mt-1 border-l border-slate-200 pl-3 dark:border-slate-700;
+  }
+  .indice-de-documento a {
+    @apply block text-slate-600 hover:text-marca dark:text-slate-400;
+  }
 }
+

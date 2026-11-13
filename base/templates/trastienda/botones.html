@@ -1,0 +1,22 @@
+{% load admin_urls %}
+{% comment %}
+  Botones al pie de cada ficha de la trastienda (sustituyen a los de Django; ver ficha.html):
+  - «Guardar»: guarda y vuelve a la lista de la que se venía (con sus filtros).
+  - «Guardar y continuar editando»: guarda y se queda en la ficha.
+  - «Cancelar»: no guarda y vuelve a la lista.
+  - «Eliminar», a la derecha, si se puede borrar.
+  No está «Guardar y añadir otro» de Django, que confundía. Usa los datos que Django da a la ficha:
+  opts, original, change, has_*_permission, is_popup y preserved_filters.
+{% endcomment %}
+{% url opts|admin_urlname:'changelist' as lista %}
+<div class="submit-row">
+  {% if has_change_permission or not change and has_add_permission %}
+    <input type="submit" value="Guardar" class="default" name="_save">
+    {% if not is_popup %}<input type="submit" value="Guardar y continuar editando" name="_continue">{% endif %}
+  {% endif %}
+  {% if not is_popup %}<a href="{% add_preserved_filters lista %}" class="cancelar">Cancelar</a>{% endif %}
+  {% if change and has_delete_permission and original and not is_popup %}
+    {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as borrar %}
+    <a href="{% add_preserved_filters borrar %}" class="deletelink">Eliminar</a>
+  {% endif %}
+</div>

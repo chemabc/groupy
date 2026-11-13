@@ -117,6 +117,7 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 | Funcional | `comunicaciones` | Notificaciones, mensajes de admins y superadmin, conversaciones y chat anclable |
 | Funcional | `publico` | Portada y banco de recursos públicos por organización |
 | Funcional | `limpieza` | Archivado y borrado programados y configurables |
+| Funcional | `mantenimiento` | Sección «Desarrollo y mantenimiento» del superadmin: documentación de `docs/` convertida en páginas, entrada a la trastienda y, más adelante, la salud del sistema |
 
 **Regla de dependencias:** Base no depende de nada. Identidad depende de Base. Organización depende de
 Base y del modelo de usuario (`get_user_model()`). Funcional depende de Base y Organización, y **nunca de
@@ -679,6 +680,27 @@ para emergencias, debe entenderse la jerarquía:
   de sus subgrupos. Los desplegables de grupos muestran el camino completo, en orden de árbol.
 - **Admins de grupo** es otra forma de ver las pertenencias con rol de admin (modelo «proxy»
   `AdminDeGrupo`). Nombrar a alguien que ya está en el grupo le cambia el rol, sin duplicar nada.
+- **Botones de las fichas** (13 de noviembre de 2026, a petición de la persona usuaria): «Guardar» (guarda
+  y vuelve a la lista), «Guardar y continuar editando» (guarda y se queda), «Cancelar» (no guarda y vuelve
+  a la lista, con sus filtros) y «Eliminar». Se quita «Guardar y añadir otro» de Django, que confundía.
+  Las listas de casillas (los permisos de un rol) ocupan todo el ancho, una opción por línea, agrupadas
+  por módulo y con el código aparte (`base/static/trastienda/trastienda.css`).
+
+**Sección «Desarrollo y mantenimiento» (13 de noviembre de 2026, a petición de la persona usuaria).** Es la
+«Ayuda y referencias» del apartado 5.1, con otro nombre. Módulo `mantenimiento` (capa funcional, porque
+usa `permisos`), con el permiso `mantenimiento.ver`, que de entrada solo tiene el superadmin.
+- **Documentación:** los documentos de `docs/` convertidos en páginas con Python-Markdown 3.11.2
+  (BSD-3), con un índice a la izquierda, tablas y código con estilo propio (clase `documento` en
+  `entrada.css`) y los enlaces entre documentos llevados a sus páginas. Se leen del disco, así que siempre
+  están al día; la conversión se guarda en memoria mientras el fichero no cambie.
+  - *Descartado:* el complemento de tipografía de Tailwind (otra dependencia para unas pocas reglas).
+- **Trastienda:** una página que explica qué es y un botón que la abre (sin htmx, porque es otra
+  aplicación).
+- **El menú oculta las secciones sin permiso.** `EntradaDeMenu.permiso` ya existía; ahora `base` pregunta
+  a una función que le presta `permisos` al arrancar (`registrar_comprobador_de_permisos`), porque `base`
+  no puede importar `permisos`. Se mira si la persona tiene el permiso en alguna parte
+  (`puede_en_alguna_parte`). *(De momento solo las secciones principales; las subsecciones, cuando haga
+  falta.)*
 
 ### 8.2 Lugares
 

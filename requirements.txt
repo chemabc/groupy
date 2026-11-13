@@ -25,3 +25,7 @@ django-debug-toolbar>=8.0,<9
 # Chromium, escribe y pulsa como una persona. Licencia Apache-2.0. Su Chromium se instala aparte con
 # «python -m playwright install --with-deps chromium» (lo hace el contenedor al crearse).
 playwright==1.64.1
+
+# Convierte los documentos de docs/ (Markdown) en HTML para la sección «Desarrollo y mantenimiento →
+# Documentación». Licencia BSD-3.
+markdown==3.11.2

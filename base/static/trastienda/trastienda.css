@@ -1,0 +1,48 @@
+/*
+  Retoques de la trastienda (el panel de Django). Los cargan las plantillas de base/templates/trastienda/.
+*/
+
+/* Listas de casillas (por ejemplo, los permisos de un rol): ocupan todo el ancho disponible y cada
+   opción va en una sola línea. El panel da a todas las etiquetas 170 px de ancho (para la columna de
+   los nombres de los campos) y eso también encogía cada opción. */
+.aligned .form-row div[id^="id_"]:has(input[type="checkbox"]) {
+  flex: 1;
+  min-width: 0;
+}
+.aligned .form-row div[id^="id_"]:has(input[type="checkbox"]) label {
+  width: auto;
+  float: none;
+  display: block;
+  padding: 3px 0;
+  font-weight: normal;
+}
+/* El título de cada grupo de opciones (el módulo): en negrita y con aire encima. */
+.aligned .form-row div[id^="id_"] > div > label:not(:has(input)) {
+  font-weight: bold;
+  margin-top: 10px;
+  color: var(--body-quiet-color);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+/* El código de cada permiso, más discreto que su explicación. */
+.aligned .form-row div[id^="id_"] label code {
+  color: var(--body-quiet-color);
+  font-size: 0.85em;
+  margin-left: 0.3em;
+}
+
+/* Botón «Cancelar» de las fichas: con el mismo aspecto que los demás botones, pero sin relleno. */
+.submit-row a.cancelar {
+  display: inline-flex;
+  align-items: center;
+  height: 35px;
+  padding: 0 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--body-fg);
+  background: var(--body-bg);
+  text-decoration: none;
+}
+.submit-row a.cancelar:hover {
+  background: var(--darkened-bg);
+}
