@@ -5,6 +5,9 @@ Usuarios de ejemplo, para probar y medir las pantallas. Los crea y los borra la 
 Todos tienen la misma contraseña, que está escrita aquí: por eso nunca deben existir en el servidor
 real. Cada cual puede cambiarla desde «Mi cuenta → Contraseña». Los alias son nombres de animales y de
 árboles; varios llevan tilde o ñ, para probar que se puede entrar escribiéndolos sin ellas.
+
+El superadmin de ejemplo se llama «superadmin». Se crea si no existe, pero borrar los datos de ejemplo
+no lo toca (ni a él ni a su contraseña): así siempre se puede volver a entrar.
 """
 
 from django.contrib.auth.hashers import make_password
@@ -14,8 +17,8 @@ from .models import Usuario, normalizar_alias
 # Contraseña común de todos los usuarios de ejemplo.
 CONTRASENA_DE_EJEMPLO = "M3n0sL3ctiv4s"
 
-# Alias del superadmin de ejemplo.
-SUPERADMIN_DE_EJEMPLO = "Águila"
+# Alias del superadmin de ejemplo (no lo borra borrar()).
+SUPERADMIN_DE_EJEMPLO = "superadmin"
 
 # Alias de los demás usuarios de ejemplo: animales y árboles.
 ALIAS_DE_EJEMPLO = [
@@ -47,7 +50,7 @@ def crear():
     Usuario.objects.bulk_create(nuevos)
 
 
-# Borra el superadmin y los usuarios de ejemplo (y solo esos), dejando la base como estaba.
+# Borra los usuarios de ejemplo (y solo esos), dejando la base como estaba. El superadmin no se toca.
 def borrar():
-    normalizados = [normalizar_alias(alias) for alias in [SUPERADMIN_DE_EJEMPLO, *ALIAS_DE_EJEMPLO]]
+    normalizados = [normalizar_alias(alias) for alias in ALIAS_DE_EJEMPLO]
     Usuario.objects.filter(alias_normalizado__in=normalizados).delete()

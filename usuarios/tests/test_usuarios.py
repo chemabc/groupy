@@ -157,17 +157,17 @@ class PruebasDeMiCuenta(PruebaDePantalla):
 class PruebasDeLosEjemplos(TestCase):
     """Comprueba la orden «ejemplos» con los usuarios de ejemplo."""
 
-    # Crear dos veces no duplica; el superadmin es «Águila»; se entra con la contraseña común; borrar
-    # deja la base como estaba.
+    # Crear dos veces no duplica; el superadmin es «superadmin»; se entra con la contraseña común;
+    # borrar quita los usuarios de ejemplo pero no al superadmin.
     @override_settings(DEBUG=True)
     def test_crear_y_borrar(self):
         call_command("ejemplos", "crear", stdout=None)
         call_command("ejemplos", "crear", stdout=None)
         self.assertEqual(Usuario.objects.count(), len(ejemplos.ALIAS_DE_EJEMPLO) + 1)
-        self.assertTrue(Usuario.objects.get(alias="Águila").es_superadmin)
+        self.assertTrue(Usuario.objects.get(alias="superadmin").es_superadmin)
         self.assertTrue(self.client.login(username="cigueña", password=ejemplos.CONTRASENA_DE_EJEMPLO))
         call_command("ejemplos", "borrar", stdout=None)
-        self.assertEqual(Usuario.objects.count(), 0)
+        self.assertEqual(list(Usuario.objects.values_list("alias", flat=True)), ["superadmin"])
 
     # Sin DEBUG (en el servidor real) la orden se niega.
     @override_settings(DEBUG=False)

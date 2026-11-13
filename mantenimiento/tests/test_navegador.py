@@ -5,6 +5,7 @@ vista previa y confirmar).
 """
 
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 
 from base.hojas import Hoja, crear_ods
 from base.pruebas_navegador import PruebaEnElNavegador
@@ -69,3 +70,33 @@ class PruebasDeMantenimientoEnElNavegador(PruebaEnElNavegador):
         self.entrar("corzo", "Clave-Larga-2026")
         self.assertEqual(self.pagina.locator('header a[title="Mi cuenta"]').inner_text(), "Corzo")
         self.assertEqual(self.errores, [])
+
+    # Datos de ejemplo: crear; al borrar, se pide confirmación (si se cancela, no se borra nada). Las
+    # pruebas van con DEBUG apagado, y sin él los botones no salen: aquí se enciende.
+    @override_settings(DEBUG=True)
+    def test_datos_de_ejemplo(self):
+        self.abrir("/mantenimiento/pruebas/ejemplos/")
+        self.pagina.get_by_role("button", name="Crear los datos de ejemplo").click()
+        self.pagina.wait_for_selector("text=Creados los datos de ejemplo")
+        self.assertTrue(Grupo.objects.filter(nombre="GRU Henares").exists())
+        self.pagina.once("dialog", lambda dialogo: dialogo.dismiss())
+        self.pagina.get_by_role("button", name="Borrar los datos de ejemplo").click()
+        self.pagina.wait_for_timeout(300)
+        self.assertTrue(Grupo.objects.filter(nombre="GRU Henares").exists())
+        self.pagina.once("dialog", lambda dialogo: dialogo.accept())
+        self.pagina.get_by_role("button", name="Borrar los datos de ejemplo").click()
+        self.pagina.wait_for_selector("text=Borrados los datos de ejemplo")
+        self.assertFalse(Grupo.objects.exists())
+        self.assertTrue(get_user_model().objects.filter(pk=self.usuario.pk).exists())
+        self.assertEqual(self.errores, [])
+
+    # El resaltado del menú: la subsección activa con fondo; su sección, solo con el texto en color.
+    def test_resaltado_del_menu(self):
+        self.abrir("/mantenimiento/pruebas/grupos/")
+        menu = self.pagina.locator('nav[aria-label="Secciones"]').first
+        seccion = menu.locator('a[data-codigo="mantenimiento.desarrollo"]')
+        subseccion = menu.locator('a[data-codigo="mantenimiento.pruebas"]')
+        self.assertIn("bg-marca/10", subseccion.get_attribute("class"))
+        self.assertNotIn("bg-marca/10", seccion.get_attribute("class"))
+        self.assertIn("text-marca", seccion.get_attribute("class"))
+

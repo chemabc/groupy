@@ -9,6 +9,61 @@ nuevo, que van marcadas como tales. Forma parte del diseño ([diseno.md](diseno.
 
 ---
 
+## Los pasos, de un vistazo: quién hace qué y cuándo
+
+Resumen para orientarse (13 de noviembre de 2026). El porqué de cada paso está en los apartados
+siguientes. Hay tres formas de llegar a tener un alias, según la fase del proyecto.
+
+**Quién interviene:**
+- **Persona:** quien se registra, desde su navegador.
+- **Superadmin:** administra la plataforma.
+- **Bóveda:** la parte que guarda la identidad real, en su propia base de datos.
+- **Plataforma:** la aplicación, donde se actúa con el alias.
+- **Admin del grupo:** admin de la asamblea base de la persona.
+
+### A. Ahora (pruebas): alta directa del alias, sin bóveda
+
+| # | Quién | Qué hace | Cuándo |
+|---|---|---|---|
+| 1 | Superadmin | Crea el alias con su contraseña, sus grupos y su asamblea base: uno a uno o de golpe con «Desarrollo y mantenimiento → Pruebas → Importar usuarios» | Cuando entra alguien nuevo |
+| 2 | Superadmin | Le da a la persona, en mano o por un canal seguro, su alias y su contraseña | Justo después |
+| 3 | Persona | Entra con su alias y cambia la contraseña en «Mi cuenta → Contraseña» | La primera vez que entra |
+
+### B. Alta provisional en la bóveda *(fase 1, en preparación)*
+
+Igual que A, y además:
+
+| # | Quién | Qué hace | Cuándo |
+|---|---|---|---|
+| 1 | Superadmin | Registra a la persona en la bóveda (nombre y correo oficial). Queda **validada por el superadmin** y con su **pase marcado como «ya emitido»** | Al darla de alta |
+| 2 | Superadmin | Crea su alias en la plataforma como en A. **No hay ningún enlace** entre la persona y el alias | Al darla de alta |
+
+Así, cuando llegue el registro real (C), esa persona no podrá conseguir un segundo alias. Seguirá con el que tiene.
+
+### C. Registro real *(fase 8)*
+
+| # | Quién | Qué hace | Cuándo |
+|---|---|---|---|
+| 1 | Persona | Abre la página de registro (sin cuenta). **Elige su organización** de la lista y su asamblea base. Escribe su nombre y su correo oficial. El alias y la contraseña que piensa usar **se quedan en su navegador**, sin enviarse | Cuando quiere entrar |
+| 2 | Bóveda | Comprueba que el correo es de un **dominio permitido para esa organización** *(propuesta)* y que su huella no está ya registrada. Le envía un **correo con un código o un enlace de un solo uso** | Al momento |
+| 3 | Persona | Abre el enlace o escribe el código: queda **validada** | Cuando lee el correo |
+| 4 | Bóveda | **Borra el correo oficial** y guarda solo su huella, el método y el día | Al validarla |
+| 5 | Navegador de la persona | Fabrica un pase, lo «tapa» y la bóveda lo firma sin verlo (firma ciega). La bóveda apunta solo «pase emitido el día D» | Justo después |
+| 6 | Persona | **Espera unos días.** Así nadie puede emparejar su alta en la bóveda con la llegada de un alias nuevo | Unos días |
+| 7 | Persona | Elige su alias (o acepta uno **propuesto al azar** con palabras fáciles de recordar *(propuesta)*) y su contraseña. Su navegador envía a la plataforma el alias, la contraseña, el pase y el sobre de identidad | Tras la espera |
+| 8 | Plataforma | Comprueba la firma del pase y que no se ha usado. Activa el alias («activado el día X») y pide su entrada en la asamblea base | Al momento |
+| 9 | Admin del grupo | Admite el alias en la asamblea base (ve solo el alias) | Cuando lo revisa |
+| 10 | Persona | Entra con su alias y participa | Desde la admisión |
+
+**Variante: alta hecha por el superadmin (fase 8).** El superadmin hace el paso 1 por la persona. La
+bóveda le envía **un correo con un enlace de un solo uso** y desde ahí la persona sigue los pasos 3 a 10
+ella sola. El superadmin sabe quién es la persona, pero **no qué alias elige**.
+
+**Los correos necesitan un servidor de correo**, que aún no está configurado. Llegará con
+`comunicaciones` o con la bóveda real. Hasta entonces, solo existen las formas A y B.
+
+---
+
 ## 1. La idea en dos frases
 
 1. Queremos saber que **detrás de cada cuenta hay una persona real**, que **nadie tiene dos cuentas** y

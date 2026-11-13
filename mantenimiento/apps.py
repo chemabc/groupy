@@ -52,6 +52,7 @@ class MantenimientoConfig(ModuloConfig):
                     vistas=(
                         Vista("Importar grupos", "mantenimiento:importar_grupos"),
                         Vista("Importar usuarios", "mantenimiento:importar_usuarios"),
+                        Vista("Datos de ejemplo", "mantenimiento:datos_de_ejemplo"),
                     ),
                 ),
                 EntradaDeMenu(
@@ -85,7 +86,10 @@ class MantenimientoConfig(ModuloConfig):
                 "funciona si está activado «Permitir el alta masiva de usuarios», porque crea cuentas sin "
                 "pasar por la bóveda.\n\n"
                 "En los dos casos: descarga la plantilla (.ods de LibreOffice), rellénala, súbela, revisa la "
-                "vista previa y confirma. No se crea nada hasta confirmar, y se crea todo o nada."
+                "vista previa y confirma. No se crea nada hasta confirmar, y se crea todo o nada.\n\n"
+                "«Datos de ejemplo»: crea o borra de un golpe los datos inventados de todos los módulos "
+                "(organizaciones de ríos, grupos de afluentes, usuarios de animales y árboles…). Borrarlos no "
+                "toca al superadmin. Solo funciona en desarrollo."
             ),
         ),
         Ayuda(

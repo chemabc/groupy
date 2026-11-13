@@ -71,7 +71,7 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
   `permisos` (roles del sistema y personalizados, permisos por defecto en el contrato, excepciones,
   cometidos, caché, `puede`/`exigir`/`@requiere_permiso` y pantalla 403 que explica), la trastienda
   ordenada y explicada, y la orden `python manage.py ejemplos crear` (usuarios: animales y árboles,
-  superadmin «Águila», contraseña `M3n0sL3ctiv4s`; organizaciones «ORG <río>» y grupos «GRU <afluente>»).
+  superadmin «superadmin», contraseña `M3n0sL3ctiv4s`; organizaciones «ORG <río>» y grupos «GRU <afluente>»).
   También la sección «Desarrollo y mantenimiento» (módulo `mantenimiento`: documentación de docs/ y
   entrada a la trastienda) y `audiencias` (niveles de visibilidad, configuración por organización y regla
   dura entre organizaciones: nada sin invitación hecha y aceptada con privilegios) e importación masiva de

@@ -21,6 +21,7 @@ urlpatterns = [
     path("pruebas/usuarios/", views.importar_usuarios, name="importar_usuarios"),
     path("pruebas/usuarios/plantilla.ods", views.plantilla_usuarios, name="plantilla_usuarios"),
     path("pruebas/usuarios/permitir/", views.permitir_alta_masiva, name="permitir_alta_masiva"),
+    path("pruebas/ejemplos/", views.datos_de_ejemplo, name="datos_de_ejemplo"),
     # La entrada a la trastienda.
     path("trastienda/", views.trastienda, name="trastienda"),
 ]

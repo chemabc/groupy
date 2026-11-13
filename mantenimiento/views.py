@@ -4,6 +4,8 @@ usuarios y la entrada a la trastienda. Solo para quien tiene el permiso «manten
 el superadmin).
 """
 
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import IntegrityError
 from django.http import Http404, HttpResponse
@@ -11,6 +13,9 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from base.hojas import TIPO_ODS, HojaIlegible, crear_ods, leer_filas
+from base.registro import registro
+from ejemplos.servicios import borrar_todos, crear_todos, modulos_con_ejemplos
+from grupos.models import Grupo, Organizacion
 from permisos.decoradores import requiere_permiso
 
 from .documentos import documento
@@ -165,3 +170,29 @@ def permitir_alta_masiva(request):
     ajustes.alta_masiva_de_usuarios = not ajustes.alta_masiva_de_usuarios
     ajustes.save(update_fields=["alta_masiva_de_usuarios"])
     return redirect("mantenimiento:importar_usuarios")
+
+
+# Pantalla «Pruebas → Datos de ejemplo»: crea o borra de un golpe los datos de ejemplo de todos los
+# módulos (lo mismo que «python manage.py ejemplos crear|borrar»). Borrar no toca al superadmin. Solo
+# funciona en desarrollo (DEBUG), porque los usuarios de ejemplo tienen una contraseña conocida.
+#   - POST «accion»: «crear» o «borrar».
+@requiere_permiso("mantenimiento.ver")
+def datos_de_ejemplo(request):
+    hecho = ""
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    if accion in ("crear", "borrar") and settings.DEBUG:
+        etiquetas = crear_todos() if accion == "crear" else borrar_todos()
+        nombres = ", ".join(str(registro.modulos[etiqueta].verbose_name) for etiqueta in etiquetas)
+        hecho = f"{'Creados' if accion == 'crear' else 'Borrados'} los datos de ejemplo de: {nombres}."
+    contexto = {
+        "en_desarrollo": settings.DEBUG,
+        "hecho": hecho,
+        "modulos": [registro.modulos[etiqueta].verbose_name for etiqueta in modulos_con_ejemplos()],
+        # Lo que hay ahora en la base (sea de ejemplo o no), para ver el efecto de los botones.
+        "recuento": [
+            ("organizaciones", Organizacion.objects.count()),
+            ("grupos", Grupo.objects.count()),
+            ("usuarios (sin contar superadmins)", get_user_model().objects.filter(es_superadmin=False).count()),
+        ],
+    }
+    return render(request, "mantenimiento/datos_de_ejemplo.html", contexto)

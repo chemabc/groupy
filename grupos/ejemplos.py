@@ -57,7 +57,7 @@ ESTRUCTURA = {
     ),
 }
 
-# Asamblea base de cada usuario de ejemplo y si es admin de ella. El superadmin (Águila) no está en
+# Asamblea base de cada usuario de ejemplo y si es admin de ella. El superadmin («superadmin») no está en
 # ningún grupo: lo ve todo por ser superadmin.
 ASAMBLEAS_BASE = [
     # ORG Tajo

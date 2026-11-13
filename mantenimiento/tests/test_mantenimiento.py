@@ -6,7 +6,7 @@ niveles, los documentos, las plantillas y las importaciones de grupos y usuarios
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from base.hojas import Hoja, crear_ods, leer_filas
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
@@ -52,6 +52,7 @@ class PruebasComoSuperadmin(PruebaDePantalla):
         self.comprobar_consultas("/mantenimiento/trastienda/", 1, None)
         self.comprobar_consultas("/mantenimiento/pruebas/grupos/", 1, None)
         self.comprobar_consultas("/mantenimiento/pruebas/usuarios/", 2, None)
+        self.comprobar_consultas("/mantenimiento/pruebas/ejemplos/", 4, None)
 
     # Los documentos se convierten con tablas e índice, y sus enlaces llevan a sus páginas; cada uno es
     # una pestaña del menú superior.
@@ -91,6 +92,24 @@ class PruebasComoSuperadmin(PruebaDePantalla):
         self.assertContains(respuesta, "El alta masiva de usuarios está desactivada.")
         self.client.post("/mantenimiento/pruebas/usuarios/permitir/")
         self.assertTrue(AjustesDeMantenimiento.actuales().alta_masiva_de_usuarios)
+
+    # Crear y borrar los datos de ejemplo desde la pantalla; el superadmin se queda.
+    @override_settings(DEBUG=True)
+    def test_datos_de_ejemplo(self):
+        respuesta = self.client.post("/mantenimiento/pruebas/ejemplos/", {"accion": "crear"})
+        self.assertContains(respuesta, "Creados los datos de ejemplo de: Usuarios, Organizaciones y grupos.")
+        self.assertTrue(Organizacion.objects.filter(nombre="ORG Tajo").exists())
+        respuesta = self.client.post("/mantenimiento/pruebas/ejemplos/", {"accion": "borrar"})
+        self.assertContains(respuesta, "Borrados")
+        self.assertFalse(Organizacion.objects.exists())
+        self.assertEqual(set(get_user_model().objects.values_list("alias", flat=True)), {"Águila", "superadmin"})
+
+    # Sin DEBUG (en el servidor real), los botones no hacen nada.
+    @override_settings(DEBUG=False)
+    def test_datos_de_ejemplo_fuera_de_desarrollo(self):
+        respuesta = self.client.post("/mantenimiento/pruebas/ejemplos/", {"accion": "crear"})
+        self.assertContains(respuesta, "Solo se pueden crear o borrar en desarrollo")
+        self.assertFalse(Organizacion.objects.exists())
 
     # Un fichero que no es una hoja se explica.
     def test_fichero_ilegible(self):

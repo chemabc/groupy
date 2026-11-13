@@ -3,11 +3,13 @@
   cualquier profundidad). Recibe «entrada» (una EntradaDeMenu del contrato) y vive dentro del componente
   «menuLateral» de base/static/base/interfaz.js, del que usa «estaAbierta» y «alternarSeccion». Con el menú
   plegado, la variante «plegado:» oculta los textos y las subsecciones y deja solo la inicial.
+  Resaltado: la entrada en la que se está (la última del camino) lleva fondo; las secciones que la
+  contienen, solo el texto en color, más discreto.
 {% endcomment %}
 <div>
   <div class="flex items-center">
     <a href="{% url entrada.url %}" data-codigo="{{ entrada.codigo }}" title="{{ entrada.nombre }}"
-       :class="$store.navegacion.secciones.includes($el.dataset.codigo) ? 'bg-marca/10 text-marca font-medium' : 'hover:bg-slate-100 dark:hover:bg-slate-800'"
+       :class="$store.navegacion.secciones.at(-1) === $el.dataset.codigo ? 'bg-marca/10 text-marca font-medium' : ($store.navegacion.secciones.includes($el.dataset.codigo) ? 'text-marca hover:bg-slate-100 dark:hover:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800')"
        class="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1.5 text-sm">
       <span class="grid size-6 shrink-0 place-items-center rounded bg-slate-100 text-xs dark:bg-slate-800">{{ entrada.icono|default:entrada.nombre|first }}</span>
       <span class="truncate plegado:hidden">{{ entrada.nombre }}</span>

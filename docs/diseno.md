@@ -391,6 +391,8 @@ tiene **al menos dos niveles** (sección y subsección, con `EntradaDeMenu.subse
 nivel son las **vistas del menú superior** de cada subsección. Ejemplo: «Desarrollo y mantenimiento» →
 «Pruebas» (izquierda) → «Importar grupos» · «Importar usuarios» (arriba). Al entrar en una subsección,
 su sección se abre sola en el menú izquierdo. Cuando no esté claro en qué nivel va algo, se pregunta.
+La entrada en la que se está lleva fondo; la sección que la contiene, solo el texto en color (más
+discreto, a petición de la persona usuaria).
 
 **Tabla filtrable (12 de noviembre de 2026).**
 - **Componente propio** (`base/tablas.py` y `base/templates/base/tabla.html`). La vista crea una `Tabla`
@@ -635,7 +637,8 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
   entonces, quien olvide su contraseña se la pide al superadmin.
 - **Datos de ejemplo:** el módulo `ejemplos` aporta ya la orden `python manage.py ejemplos crear|borrar`,
   que llama a los `datos_de_ejemplo` de cada contrato en el orden de las capas y solo funciona en
-  desarrollo. Los usuarios de ejemplo son **animales y árboles**; el superadmin es **Águila**. Todos
+  desarrollo. Los usuarios de ejemplo son **animales y árboles**; el superadmin es **superadmin** (antes «Águila»;
+  cambiado el 13 de noviembre de 2026 para que no haya dudas). Borrar los datos de ejemplo no lo toca. Todos
   tienen la contraseña `M3n0sL3ctiv4s` (a petición de la persona usuaria).
 
 ---
@@ -756,6 +759,11 @@ En «Desarrollo y mantenimiento → Pruebas». Solo para el superadmin.
   marca ninguna, la primera fila del alias, salvo que ya tenga una. El grupo debe existir.
 - **Interruptor «Permitir el alta masiva de usuarios»** (`AjustesDeMantenimiento`), apagado al
   empezar: crea alias sin pasar por la bóveda, así que es para el periodo de pruebas.
+- **«Pruebas → Datos de ejemplo»** (13 de noviembre de 2026): botones para crear y borrar los datos de
+  ejemplo de todos los módulos (lo mismo que `python manage.py ejemplos`). Borrar no toca al superadmin.
+  Solo con DEBUG encendido. Borrar pide confirmación.
+- **Varios superadmins:** cualquier usuario puede ser superadmin (casilla «Superadmin» de su ficha, de
+  momento en la trastienda), para repartir el trabajo.
 - **El menú oculta las secciones sin permiso.** `EntradaDeMenu.permiso` ya existía; ahora `base` pregunta
   a una función que le presta `permisos` al arrancar (`registrar_comprobador_de_permisos`), porque `base`
   no puede importar `permisos`. Se mira si la persona tiene el permiso en alguna parte
