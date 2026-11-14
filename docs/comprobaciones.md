@@ -588,3 +588,15 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor.
 - [ ] Una tarea sin fecha: «Para el» no sale arriba; se pone en el desplegable.
 - [ ] Como alguien que ve la tarea pero no puede cambiarla (ni es responsable, ni colabora, ni gestiona
   el proyecto): los datos no se pueden pulsar y no sale el desplegable.
+
+## 31. Árbol de tipologías con el aspecto de los demás árboles
+
+Antes: `npm run construir` (ver 0.2) y reiniciar el servidor.
+
+- [ ] Como **Lince**, «Administrar → Mi organización → Tipologías → De proyectos»: arriba del árbol, «Tipos
+  de proyectos» en violeta; los subtipos cuelgan de su tipo con rayas a la izquierda.
+- [ ] Crea un subtipo de ORG Tajo («+ Nuevo tipo o subtipo»): sale en amarillo (lo puedes cambiar); los
+  comunes, sin fondo.
+- [ ] Pulsa un tipo: queda con el recuadro rojo y a la derecha salen sus campos, como antes.
+- [ ] Como **superadmin**: todos los tipos en amarillo (los puede cambiar todos).
+- [ ] «De eventos»: igual, con «Tipos de eventos».

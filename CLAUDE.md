@@ -158,6 +158,7 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   **árboles de proyectos** ([A-44]: `proyectos/arboles.py`, rejilla de 3 columnas, tareas plegadas con
   «(hechas/totales) ▸», amarillo si participas, rojo el que se mira). Y la **ficha de tarea** ([A-44]: camino con los
   proyectos en violeta, lo escrito se cambia encima con htmx en `proyectos:tarea_campo`, lo demás en el
-  desplegable «Completar o cambiar todo»). Sigue, acordado en [A-44], tipologías con el mismo aspecto de
-  árbol; después, el grafo de grupos y eventos.
+  desplegable «Completar o cambiar todo»). Y el **árbol de tipologías** con el mismo aspecto (amarillo lo que
+  se puede cambiar, rojo el elegido). Siguen el grafo de grupos y eventos; después, fase 5 (`documentos` y
+  `decisiones`), pendiente de las preguntas de [A-30].
   Recuerda `migrate --database=boveda`.

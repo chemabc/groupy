@@ -1,0 +1,19 @@
+{% comment %}
+  Una tipología dentro del árbol de «Tipologías» (lo incluye tipologias/tipologias.html, y se incluye a sí
+  mismo para cada subtipo). Recibe «nodo»: tipologia, editable (amarillo: quien mira puede cambiarla),
+  actual (recuadro rojo: es la elegida) e hijos. El nombre lleva a la tipología («?t=…»); si es de una
+  organización, su nombre sale al lado.
+{% endcomment %}
+<li>
+  <span class="flex flex-wrap items-center gap-1.5 py-0.5">
+    <a href="?t={{ nodo.tipologia.pk }}"
+       class="arbol-grupo {% if nodo.editable %}arbol-base{% endif %} {% if nodo.actual %}arbol-actual{% endif %}"
+       {% if nodo.actual %}aria-current="page"{% endif %}>{{ nodo.tipologia.nombre }}</a>
+    {% if nodo.tipologia.organizacion %}<span class="rounded bg-slate-100 px-1 text-xs text-slate-500 dark:bg-slate-800">{{ nodo.tipologia.organizacion }}</span>{% endif %}
+  </span>
+  {% if nodo.hijos %}
+    <ul class="arbol">
+      {% for nodo in nodo.hijos %}{% include "tipologias/nodo_de_tipologia.html" %}{% endfor %}
+    </ul>
+  {% endif %}
+</li>

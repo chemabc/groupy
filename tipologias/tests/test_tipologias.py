@@ -7,6 +7,7 @@ import json
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.urls import reverse
 
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
 from grupos.servicios import admitir, crear_organizacion, nombrar_admin_de_organizacion
@@ -223,3 +224,28 @@ class PruebasDeTareasModelo(PruebaDePantalla):
                 crear_tarea_modelo(barrio, f"Tarea {numero}")
 
         self.comprobar_consultas(f"{self.direccion}?t={barrio.pk}", 5, mas_datos)
+
+
+class PruebasDelArbolDeTipologias(PruebaDePantalla):
+    """El árbol de «Tipologías» con el aspecto de los demás árboles: amarillo lo que se puede cambiar y rojo
+    la elegida."""
+
+    # Un tipo común con un subtipo de ORG Tajo; Lince administra ORG Tajo.
+    @classmethod
+    def setUpTestData(cls):
+        cls.tajo, cls.general = crear_organizacion("ORG Tajo", "GRU Tajo")
+        cls.lince = crear_usuario_de_prueba("Lince")
+        admitir(cls.lince, cls.general)
+        nombrar_admin_de_organizacion(cls.lince, cls.tajo)
+        cls.comun = crear_tipologia("proyecto", "Huerto")
+        cls.propio = crear_tipologia("proyecto", "Huerto escolar", padre=cls.comun, organizacion=cls.tajo)
+        cls.usuario = cls.lince
+
+    # El subtipo cuelga del común; el propio (que Lince puede cambiar) va en amarillo y el común no; el
+    # elegido, con el recuadro rojo.
+    def test_aspecto(self):
+        respuesta = self.client.get(f"{reverse('tipologias:proyectos')}?t={self.propio.pk}")
+        contenido = " ".join(respuesta.content.decode().split())
+        self.assertEqual(contenido.count('<ul class="arbol">'), 2)
+        self.assertIn(f'href="?t={self.propio.pk}" class="arbol-grupo arbol-base arbol-actual"', contenido)
+        self.assertIn(f'href="?t={self.comun.pk}" class="arbol-grupo "', contenido)

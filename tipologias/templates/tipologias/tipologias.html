@@ -1,7 +1,8 @@
 {% extends interfaz.plantilla %}
 {% comment %}
-  Pantalla «Administrar → Mi organización → Tipologías» (tipologias/views.py). Recibe: familia, ramas (cada tipología con
-  su nivel, camino y si es editable), elegida (la tipología de la derecha, o nada), camino, editable,
+  Pantalla «Administrar → Mi organización → Tipologías» (tipologias/views.py). Recibe: familia,
+  nombre_de_la_familia, nodos (las tipologías colgadas en árbol: tipologia, editable, actual e hijos; las
+  pinta tipologias/nodo_de_tipologia.html), elegida (la tipología de la derecha, o nada), camino, editable,
   heredados y propios (sus campos), tareas_heredadas y tareas_propias (sus tareas modelo, si con_tareas:
   es de proyectos), los formularios nueva, edicion, campo y tarea_modelo, error y abrir (la acción que
   falló, para dejar abierto su formulario). Los campos propios se ordenan arrastrando (componente
@@ -12,17 +13,20 @@
 
   {# Árbol #}
   <aside class="space-y-3">
-    <nav class="rounded-lg border border-slate-200 bg-white p-2 text-sm dark:border-slate-800 dark:bg-slate-900" aria-label="Árbol de tipologías">
-      {% for fila in ramas %}
-        <a href="?t={{ fila.rama.tipologia.pk }}" style="padding-left: {{ fila.rama.nivel }}.25rem"
-           class="flex items-center justify-between gap-2 rounded py-1 pr-2 {% if elegida and fila.rama.tipologia.pk == elegida.pk %}bg-marca/10 font-medium text-marca{% else %}hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}"
-           {% if elegida and fila.rama.tipologia.pk == elegida.pk %}aria-current="page"{% endif %}>
-          <span class="pl-2">{% if fila.rama.nivel %}↳ {% endif %}{{ fila.rama.tipologia.nombre }}</span>
-          {% if fila.rama.tipologia.organizacion %}<span class="shrink-0 rounded bg-slate-100 px-1 text-xs text-slate-500 dark:bg-slate-800">{{ fila.rama.tipologia.organizacion }}</span>{% endif %}
-        </a>
-      {% empty %}
-        <p class="p-2 text-slate-500">Aún no hay tipos.</p>
-      {% endfor %}
+    {# Árbol con el mismo aspecto que los de grupos y proyectos: la familia arriba, en amarillo lo que puedes cambiar, en rojo el tipo elegido #}
+    <nav class="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900" aria-label="Árbol de tipologías">
+      <p class="mb-2"><span class="arbol-organizacion">Tipos {{ nombre_de_la_familia|lower }}</span></p>
+      {% if nodos %}
+        <ul class="arbol">
+          {% for nodo in nodos %}{% include "tipologias/nodo_de_tipologia.html" %}{% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-slate-500">Aún no hay tipos.</p>
+      {% endif %}
+      <p class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+        <span><span class="arbol-grupo arbol-base">Puedes cambiarlo</span></span>
+        <span><span class="arbol-grupo arbol-actual">El que miras</span></span>
+      </p>
     </nav>
     <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir == "crear_tipologia" %}open{% endif %}>
       <summary class="cursor-pointer text-sm font-semibold">+ Nuevo tipo o subtipo</summary>

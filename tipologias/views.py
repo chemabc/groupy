@@ -42,6 +42,28 @@ def _organizaciones_o_error(request):
     return organizaciones
 
 
+# Cuelga las ramas del árbol (que vienen en orden, cada una detrás de su padre) unas de otras, para pintarlas
+# con el mismo aspecto que los árboles de grupos y de proyectos: en amarillo las que quien mira puede
+# cambiar y en rojo la elegida. Sin consultas.
+#   - ramas: las Rama de arbol(), en orden.
+#   - usuario, organizaciones: quien mira y las organizaciones que gestiona (para saber qué puede cambiar).
+#   - elegida: la tipología que se mira, o None.
+def _en_nodos(ramas, usuario, organizaciones, elegida):
+    raices, por_id = [], {}
+    for rama in ramas:
+        tipologia = rama.tipologia
+        nodo = {
+            "tipologia": tipologia,
+            "editable": puede_editar(usuario, tipologia, organizaciones),
+            "actual": elegida is not None and tipologia.pk == elegida.pk,
+            "hijos": [],
+        }
+        por_id[tipologia.pk] = nodo
+        padre = por_id.get(tipologia.padre_id)
+        (padre["hijos"] if padre else raices).append(nodo)
+    return raices
+
+
 # Pantalla de las tipologías de una familia. Con «?t=<id>» se ve esa tipología a la derecha.
 #   - familia: «evento» o «proyecto» (lo pone la dirección).
 #   - POST «accion»: crear_tipologia, editar_tipologia, borrar_tipologia, crear_campo, borrar_campo,
@@ -101,7 +123,9 @@ def tipologias(request, familia):
     tareas = tareas_modelo_de(elegida, cargadas) if elegida and familia == Tipologia.PROYECTO else []
     contexto = {
         "familia": familia,
-        "ramas": [{"rama": rama, "editable": puede_editar(request.user, rama.tipologia, organizaciones)} for rama in ramas],
+        # Las tipologías colgadas en árbol (cada una con sus subtipos), para pintarlas como los demás árboles.
+        "nodos": _en_nodos(ramas, request.user, organizaciones, elegida),
+        "nombre_de_la_familia": dict(Tipologia.FAMILIAS)[familia],
         "elegida": elegida,
         "camino": next((rama.camino for rama in ramas if elegida and rama.tipologia.pk == elegida.pk), ""),
         "editable": editable,

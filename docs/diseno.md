@@ -1294,6 +1294,15 @@ Un solo componente dibuja los grupos en árbol en todas las pantallas, para que 
 
 ---
 
+
+**Árbol de tipologías con el aspecto de los demás árboles (14 de noviembre de 2026, [A-44]).** La persona
+usuaria pidió el mismo protocolo visual para todas las jerarquías. En «Tipologías», el árbol de la
+izquierda cuelga cada tipo de su padre con rayas (clase `arbol`); arriba, la familia («Tipos de
+proyectos») en la etiqueta violeta; en amarillo, los tipos que quien mira puede cambiar (los de su
+organización; el superadmin, todos), y en rojo el elegido. El resto de la pantalla no cambia. Lo pinta
+`tipologias/nodo_de_tipologia.html` (se incluye a sí misma); la vista cuelga las ramas sin consultas
+(`_en_nodos`).
+
 ## 10. Eventos y calendario
 
 ### 10.1 Datos comunes de un evento
