@@ -101,7 +101,9 @@ hecho.
 python manage.py shell -c "from django.apps import apps; P=apps.get_model('proyectos','Proyecto'); T=apps.get_model('tipologias','TareaModelo'); print(P.objects.filter(titulo='Huerto comunitario', recursos__isnull=False).exists(), T.objects.exists())"
 ```
 
-  **Si no** (borra y vuelve a crear los ejemplos; no toca al superadmin):
+  **Si no** (borra y vuelve a crear los ejemplos; no toca al superadmin). Ojo: borra también lo que hayas
+  creado al probar dentro de las organizaciones de ejemplo (eventos, proyectos, recordatorios, peticiones
+  de talentos, subgrupos…) y lo de las personas de ejemplo; lo de otras organizaciones no lo toca:
 
 ```bash
 # Borra los datos de ejemplo de todos los módulos y los crea de nuevo

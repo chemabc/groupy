@@ -4,10 +4,12 @@ asamblea base. Los crea y borra la orden «python manage.py ejemplos».
 """
 
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
+from grupos.ejemplos import organizaciones_de_ejemplo
 from grupos.models import Pertenencia
 
-from .models import Compartido, Talento, TalentoDePersona
+from .models import Compartido, PeticionDeTalentos, Talento, TalentoDePersona
 
 # Catálogo de ejemplo: (nombre, tipo, palabras relacionadas).
 CATALOGO = [
@@ -42,6 +44,12 @@ def crear():
             Compartido.objects.create(talento_de_persona=suyo, grupo_id=bases[usuarios[alias].pk])
 
 
-# Borra el catálogo de ejemplo (y, con él, los talentos de las personas y lo compartido).
+# Borra el catálogo de ejemplo (y, con él, los talentos de las personas y lo compartido). Antes quita las
+# peticiones de talentos hechas al probar en los grupos de ejemplo o que piden un talento del catálogo de
+# ejemplo: cada cosa pedida protege su talento, y sin esto no se podría borrar.
 def borrar():
-    Talento.objects.filter(nombre__in=[fila[0] for fila in CATALOGO]).delete()
+    nombres = [fila[0] for fila in CATALOGO]
+    PeticionDeTalentos.objects.filter(
+        Q(grupo__organizacion__in=organizaciones_de_ejemplo()) | Q(necesidades__talento__nombre__in=nombres)
+    ).delete()
+    Talento.objects.filter(nombre__in=nombres).delete()

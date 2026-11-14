@@ -7,6 +7,7 @@ from base.contrato import (
     Ayuda,
     Capa,
     Cometido,
+    DatosDeEjemplo,
     Emision,
     EntradaDeMenu,
     FuenteDeCalendario,
@@ -36,6 +37,8 @@ class EventosConfig(ModuloConfig):
         "ir?» y cometidos."
     )
     anclas = (Ancla("eventos.evento", "eventos.Evento", "Un evento (reunión, acción…)"),)
+    # No crea ejemplos, pero al borrarlos quita los eventos convocados al probar en los grupos de ejemplo.
+    datos_de_ejemplo = DatosDeEjemplo(crear="", borrar="eventos.ejemplos.borrar")
     permisos = (
         Permiso("eventos.convocar", "Convocar eventos del grupo (las reuniones, además, con apoyos)", roles=("usuario", "admin_grupo", "admin_org")),
     )

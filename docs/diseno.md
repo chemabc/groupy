@@ -850,6 +850,16 @@ Resumen; el detalle y las explicaciones están en [registro-y-validacion.md](reg
   desarrollo. Los usuarios de ejemplo son **animales y árboles**; el superadmin es **superadmin** (antes «Águila»;
   cambiado el 13 de noviembre de 2026 para que no haya dudas). Borrar los datos de ejemplo no lo toca. Todos
   tienen la contraseña `M3n0sL3ctiv4s` (a petición de la persona usuaria).
+  - **Borrar quita también lo creado al probar** (14 de noviembre de 2026). Antes, cada módulo borraba solo
+    lo que había creado él; lo que se hacía siguiendo las comprobaciones (una petición de talentos, un
+    evento, un proyecto, un recordatorio, un subtipo propio…) protegía a lo de los módulos de abajo y
+    `ejemplos borrar` fallaba (`ProtectedError`). Ahora el borrado de cada módulo quita además lo suyo
+    que esté en las **organizaciones de ejemplo** (`grupos.ejemplos.organizaciones_de_ejemplo`) o sea de
+    las **personas de ejemplo** (`usuarios.ejemplos.usuarios_de_ejemplo`). `eventos` y `calendario`, que no
+    crean ejemplos, declaran solo el borrado (`DatosDeEjemplo(crear="", borrar=…)`). Lo de otras
+    organizaciones no se toca. Lo vigila `ejemplos/tests/test_ejemplos.py`, que simula lo que se hace al
+    probar y comprueba que se borra y se vuelve a crear.
+  - *Descartado:* borrar las protecciones (`PROTECT` → `CASCADE`): protegen datos reales en producción.
 
 ---
 

@@ -360,9 +360,16 @@ class DatosDeEjemplo:
     """
     Funciones que crean y borran los datos de ejemplo del módulo, para probar y medir las pantallas.
     Lo usa el módulo «ejemplos».
+
+    El borrado quita también lo que se haya creado al probar dentro de las organizaciones de ejemplo o a
+    nombre de las personas de ejemplo (grupos.ejemplos.organizaciones_de_ejemplo y
+    usuarios.ejemplos.usuarios_de_ejemplo): si no, protegería lo de los módulos de abajo y no se podría
+    borrar. Por eso un módulo que no crea ejemplos pero guarda contenido (eventos, calendario) declara
+    solo el borrado.
     """
 
-    # Ruta de la función que crea los datos de ejemplo. Ejemplo: «eventos.ejemplos.crear».
+    # Ruta de la función que crea los datos de ejemplo. Ejemplo: «proyectos.ejemplos.crear». Vacía: el
+    # módulo no crea ejemplos, solo borra (ver arriba).
     crear: str
     # Ruta de la función que los borra, dejando la base como estaba.
     borrar: str

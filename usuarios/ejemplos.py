@@ -52,5 +52,11 @@ def crear():
 
 # Borra los usuarios de ejemplo (y solo esos), dejando la base como estaba. El superadmin no se toca.
 def borrar():
+    usuarios_de_ejemplo().delete()
+
+
+# Los usuarios de ejemplo (sin el superadmin), como consulta. La usan este borrar() y el de los módulos de
+# encima (calendario, proyectos), que antes quitan lo que esas personas hayan creado al probar.
+def usuarios_de_ejemplo():
     normalizados = [normalizar_alias(alias) for alias in ALIAS_DE_EJEMPLO]
-    Usuario.objects.filter(alias_normalizado__in=normalizados).delete()
+    return Usuario.objects.filter(alias_normalizado__in=normalizados)

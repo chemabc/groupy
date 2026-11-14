@@ -168,11 +168,18 @@ def _organizacion_llamada(nombre, grupos):
     return next(grupo.organizacion for grupo in grupos.values() if grupo.organizacion.nombre == nombre)
 
 
+# Las organizaciones de ejemplo (las de ESTRUCTURA que haya en la base), como consulta. La usan
+# borrar() y el de los módulos de encima (eventos, calendario, proyectos, talentos), que antes de borrar
+# los ejemplos quitan lo que se haya creado dentro de ellas al probar la aplicación.
+def organizaciones_de_ejemplo():
+    return Organizacion.objects.filter(nombre__in=list(ESTRUCTURA))
+
+
 # Borra las organizaciones de ejemplo con todo lo suyo (grupos, pertenencias, admins…). Los grupos se
 # protegen entre sí (un grupo con subgrupos no se puede borrar), así que primero se sueltan de su padre
 # y después se borran todos juntos.
 def borrar():
-    organizaciones = Organizacion.objects.filter(nombre__in=list(ESTRUCTURA))
+    organizaciones = organizaciones_de_ejemplo()
     grupos = Grupo.objects.filter(organizacion__in=organizaciones)
     grupos.update(padre=None)
     grupos.delete()

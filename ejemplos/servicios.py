@@ -20,9 +20,10 @@ def modulos_con_ejemplos():
 
 
 # Crea los datos de ejemplo de todos los módulos, todo o nada (en una sola transacción). Devuelve las
-# etiquetas de los módulos, en el orden en que se han creado.
+# etiquetas de los módulos, en el orden en que se han creado. Los que solo borran (crear vacío, como
+# eventos o calendario) no se llaman.
 def crear_todos():
-    etiquetas = modulos_con_ejemplos()
+    etiquetas = [etiqueta for etiqueta in modulos_con_ejemplos() if registro.datos_de_ejemplo[etiqueta].crear]
     with transaction.atomic():
         for etiqueta in etiquetas:
             import_string(registro.datos_de_ejemplo[etiqueta].crear)()

@@ -8,10 +8,13 @@ espera al presupuesto de tuberías, así que está bloqueada sola) y unos recurs
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.utils import timezone
 
+from grupos.ejemplos import organizaciones_de_ejemplo
 from grupos.models import Pertenencia
 from tipologias.models import Tipologia
+from usuarios.ejemplos import usuarios_de_ejemplo
 
 from .models import Proyecto, Tarea
 from .servicios import anadir_recurso, crear_proyecto, crear_tarea
@@ -55,6 +58,17 @@ def crear():
             recurso.save(update_fields=["conseguido"])
 
 
-# Borra el árbol de ejemplo (con sus subproyectos y tareas).
+# Borra los proyectos y las tareas de ejemplo y, con ellos, lo que se haya creado al probar dentro de las
+# organizaciones de ejemplo o a nombre de las personas de ejemplo: proyectos de sus grupos (con sus
+# subproyectos, tareas y recursos), proyectos personales, tareas sueltas y cualquier tarea de la que sea
+# responsable una persona de ejemplo. Si no, protegerían sus tipologías, sus grupos o sus responsables y no
+# se podrían borrar los ejemplos de los módulos de abajo.
 def borrar():
-    Proyecto.objects.filter(titulo=PRINCIPAL, padre__isnull=True).delete()
+    organizaciones, personas = organizaciones_de_ejemplo(), usuarios_de_ejemplo()
+    Tarea.objects.filter(
+        Q(grupo__organizacion__in=organizaciones) | Q(proyecto__grupo__organizacion__in=organizaciones)
+        | Q(responsable__in=personas) | Q(personal=True, creador__in=personas)
+    ).delete()
+    Proyecto.objects.filter(
+        Q(grupo__organizacion__in=organizaciones) | Q(personal=True, creador__in=personas) | Q(titulo=PRINCIPAL), padre__isnull=True
+    ).delete()

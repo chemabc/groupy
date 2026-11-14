@@ -45,7 +45,7 @@ def _comprobar_funciones():
     rutas += [entrada.contador for entrada in _todas_las_entradas(registro.menu) if entrada.contador]
     rutas += [entrada.tambien_si for entrada in _todas_las_entradas(registro.menu) if entrada.tambien_si]
     for datos in registro.datos_de_ejemplo.values():
-        rutas += [datos.crear, datos.borrar]
+        rutas += [ruta for ruta in (datos.crear, datos.borrar) if ruta]
     errores = []
     for ruta in rutas:
         try:

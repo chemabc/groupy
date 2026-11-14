@@ -301,7 +301,9 @@ flowchart LR
 ### 6.3 ejemplos [Módulo · Base]
 
 La orden `python manage.py ejemplos crear|borrar` y la pantalla «Pruebas → Datos de ejemplo». Llama, en
-orden de capas, a las funciones que cada módulo declara en `datos_de_ejemplo`.
+orden de capas, a las funciones que cada módulo declara en `datos_de_ejemplo` (al borrar, al revés). El
+borrado de cada módulo quita también lo creado al probar en las organizaciones y por las personas de
+ejemplo; `eventos` y `calendario` solo borran.
 
 ```mermaid
 flowchart LR
@@ -309,9 +311,14 @@ flowchart LR
   classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
   ej["ejemplos<br/>[Módulo · Base]"]:::yo
   mods["usuarios · grupos · etiquetas · tipologias<br/>lugares · talentos · proyectos"]:::otro
+  solo["eventos · calendario<br/>(solo borrar)"]:::otro
+  quien["grupos.ejemplos: organizaciones_de_ejemplo<br/>usuarios.ejemplos: usuarios_de_ejemplo"]:::otro
   mant["mantenimiento (botones)"]:::otro
   mant --> ej
   mods -. "DatosDeEjemplo(crear, borrar)" .-> ej
+  solo -. "DatosDeEjemplo(crear vacío, borrar)" .-> ej
+  mods --> quien
+  solo --> quien
 ```
 
 ### 6.4 boveda [Módulo · Identidad]

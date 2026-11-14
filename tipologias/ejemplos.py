@@ -5,6 +5,7 @@ tareas modelo de «Preparación de acción». Las crea y las borra la orden «py
 
 from django.db.models import Q
 
+from grupos.ejemplos import organizaciones_de_ejemplo
 from grupos.models import Organizacion
 
 from .models import Campo, Tipologia
@@ -69,8 +70,10 @@ def _crear_ramas(familia, ramas, padre):
 
 
 # Borra las tipologías de ejemplo: primero las más bajas del árbol (un tipo con subtipos no se puede
-# borrar). Solo las comunes y las de ORG Tajo con esos nombres, para no tocar las que haya creado otra
-# organización. Las de ORG Tajo se borran también aquí, antes que la organización.
+# borrar). Las comunes, solo las de esos nombres (para no tocar las que haya creado el superadmin); de las
+# organizaciones de ejemplo, todas, también los subtipos propios creados al probar: si no, un subtipo de
+# ORG Tajo dentro de «Acción» dejaría «Acción» sin borrar y, al volver a crear los ejemplos, chocaría.
+# Se borran aquí, antes que la organización.
 def borrar():
     nombres = {"Acción de barrio"}
     pendientes = [ramas for ramas in COMUNES.values()]
@@ -80,7 +83,7 @@ def borrar():
             pendientes.append(subtipos)
     while True:
         hojas = Tipologia.objects.filter(
-            Q(organizacion__isnull=True) | Q(organizacion__nombre="ORG Tajo"), nombre__in=nombres, hijas__isnull=True
+            Q(organizacion__isnull=True, nombre__in=nombres) | Q(organizacion__in=organizaciones_de_ejemplo()), hijas__isnull=True
         )
         if not hojas.exists():
             break

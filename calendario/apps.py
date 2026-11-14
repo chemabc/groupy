@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «calendario».
 """
 
-from base.contrato import Ayuda, Capa, EntradaDeMenu, FuenteDeCalendario, Limpiable, ModuloConfig, Permiso, Vista
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, EntradaDeMenu, FuenteDeCalendario, Limpiable, ModuloConfig, Permiso, Vista
 
 
 class CalendarioConfig(ModuloConfig):
@@ -20,6 +20,9 @@ class CalendarioConfig(ModuloConfig):
         "con un color por tipo y filtros; recordatorios libres que se ven en el grupo (y, si lo decide su "
         "administración, en el padre y el abuelo); y suscripción .ics para verlo en el móvil."
     )
+    # No crea ejemplos, pero al borrarlos quita los recordatorios apuntados al probar en los grupos de
+    # ejemplo o por las personas de ejemplo.
+    datos_de_ejemplo = DatosDeEjemplo(crear="", borrar="calendario.ejemplos.borrar")
     permisos = (
         Permiso(
             "calendario.ampliar_recordatorios", "Hacer visibles los recordatorios del grupo a los grupos padre y abuelo",
