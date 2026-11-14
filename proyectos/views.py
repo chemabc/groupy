@@ -24,6 +24,7 @@ from tipologias.models import Tipologia
 from tipologias.servicios import a_json, arbol, campos_de, formulario_de, tareas_modelo_de
 
 from . import servicios
+from .arboles import arboles_de_proyectos
 from .formularios import FormularioDeProyecto, FormularioDeRecurso, FormularioDeTarea
 from .models import Proyecto, Recurso, Tarea
 
@@ -34,10 +35,10 @@ MAXIMO = 300
 # ── Listas de proyectos ──────────────────────────────────────────────────────────────────────────────
 
 
-# Pantalla «Proyectos de mis grupos»: los proyectos de grupo que se ven, en árbol (cada uno con sus
-# subproyectos debajo). Los finalizados, al final de su rama y atenuados; los archivados (con todo su
-# árbol), no: están en «Archivo». Cada uno con sus etiquetas, que se pulsan para ver solo los que la
-# llevan. Unas 4 consultas.
+# Pantalla «Proyectos de mis grupos»: los proyectos de grupo que se ven, un árbol por proyecto principal
+# en una rejilla de 3 columnas (proyectos/arboles.py), con sus subproyectos debajo y sus tareas plegadas.
+# Los finalizados, en gris; los archivados (con todo su árbol), no: están en «Archivo». Cada uno con sus
+# etiquetas, que se pulsan para ver solo los que la llevan. Unas 6 consultas.
 #   - GET «etiqueta»: solo los proyectos con esa etiqueta (su nombre exacto).
 def proyectos(request):
     etiqueta = request.GET.get("etiqueta", "").strip()
@@ -48,15 +49,16 @@ def proyectos(request):
     etiquetas = servicios.etiquetas_de_varios(p.pk for p in lista)
     for proyecto in lista:
         proyecto.etiquetas = etiquetas.get(proyecto.pk, [])
-    return render(request, "proyectos/lista.html", {"ramas": servicios.en_arbol(lista), "personal": False, "etiqueta": etiqueta})
+    contexto = {"arboles": arboles_de_proyectos(request.user, lista), "personal": False, "etiqueta": etiqueta}
+    return render(request, "proyectos/lista.html", contexto)
 
 
-# Pantalla «Personales»: mis proyectos personales (en árbol) y mis tareas personales sueltas, sin lo
-# archivado.
+# Pantalla «Personales»: mis proyectos personales (en árboles, como en «De mis grupos») y mis tareas
+# personales sueltas, sin lo archivado.
 def personales(request):
     lista = list(Proyecto.objects.filter(personal=True, creador=request.user, raiz__archivado__isnull=True).select_related("tipologia")[:MAXIMO])
     tareas = list(Tarea.objects.filter(personal=True, proyecto__isnull=True, creador=request.user, archivado__isnull=True).order_by("estado", "limite", "pk")[:MAXIMO])
-    return render(request, "proyectos/lista.html", {"ramas": servicios.en_arbol(lista), "personal": True, "tareas": tareas})
+    return render(request, "proyectos/lista.html", {"arboles": arboles_de_proyectos(request.user, lista), "personal": True, "tareas": tareas})
 
 
 # ── Crear, ficha y editar ────────────────────────────────────────────────────────────────────────────
@@ -192,8 +194,11 @@ def proyecto(request, pk):
     recursos = list(proyecto.recursos.all())
     etiquetas = [] if proyecto.personal else etiquetas_de((servicios.ANCLA, proyecto.pk))
     de_cometidos = [] if proyecto.personal else servicios.cometidos(proyecto)
+    del_arbol = [p for p in entero.values() if p.pk in visibles_del_arbol]
     contexto = {
         "proyecto": proyecto,
+        # Todo su árbol (lo que se ve), con este proyecto en un recuadro rojo.
+        "arboles": arboles_de_proyectos(usuario, del_arbol, actual=proyecto.pk),
         # Un proyecto se archiva con todo su árbol: lo dice su proyecto principal.
         "archivado": entero[proyecto.raiz_id].archivado if proyecto.raiz_id in entero else None,
         "camino": camino,

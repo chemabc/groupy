@@ -1,0 +1,10 @@
+{% comment %}
+  Título de un proyecto en su árbol (lo usa proyectos/nodo_de_proyecto.html): enlace a su ficha con los
+  colores del árbol (amarillo si participas, recuadro rojo si es el que miras), su estado y sus etiquetas
+  (si las trae, como enlaces que filtran la lista). Recibe «nodo» y «proyecto».
+{% endcomment %}
+<a href="{% url 'proyectos:proyecto' proyecto.pk %}"
+   class="arbol-grupo {% if nodo.participa %}arbol-base{% endif %} {% if nodo.actual %}arbol-actual{% endif %}"
+   {% if nodo.actual %}aria-current="page"{% endif %}>{{ proyecto.titulo }}</a>
+{% include "proyectos/_estado.html" %}
+{% for nombre in proyecto.etiquetas %}<a href="{% url 'proyectos:proyectos' %}?etiqueta={{ nombre|urlencode }}" class="rounded-full bg-marca/10 px-2 text-xs text-marca hover:underline">#{{ nombre }}</a>{% endfor %}

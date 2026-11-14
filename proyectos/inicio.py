@@ -5,14 +5,13 @@ archivar). Participas si lo has creado, si tienes un cometido en él (por ejempl
 eres responsable o colaboras en una de sus tareas.
 """
 
-from django.db.models import F, Q
+from django.db.models import F
 from django.urls import reverse
 
 from base.contrato import ApartadoDeTarjeta, FilaDeResumen, ResumenDeTarjeta
-from permisos.models import Cometido
-
-from .models import Proyecto, Tarea
-from .servicios import ANCLA, visibles
+from .arboles import en_los_que_participa
+from .models import Proyecto
+from .servicios import visibles
 
 # Cuántos proyectos enseña como mucho.
 FILAS = 8
@@ -22,11 +21,9 @@ FILAS = 8
 # antes), después el resto por título. Cuesta 2 consultas, haya los que haya.
 #   - usuario: quien mira.
 def abiertos(usuario):
-    con_cometido = Cometido.objects.filter(usuario=usuario, ancla_tipo=ANCLA).values("ancla_id")
-    con_tarea = Tarea.objects.filter(Q(responsable=usuario) | Q(colaboradores=usuario)).values("proyecto_id")
     consulta = (
         visibles(usuario)
-        .filter(Q(creador=usuario) | Q(pk__in=con_cometido) | Q(pk__in=con_tarea))
+        .filter(pk__in=en_los_que_participa(usuario))
         .filter(terminado__isnull=True, raiz__archivado__isnull=True)
         .exclude(estado=Proyecto.FINALIZADO)
         .select_related("grupo", "raiz")

@@ -1594,6 +1594,31 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
   días y, si esperan a la anterior, como dependencia (bloqueadas hasta que esté hecha). De ejemplo,
   «Preparación de acción»: pedir permiso, preparar el material y difundir.
 
+### 14.1.4 Árboles de proyectos (14 de noviembre de 2026, [A-43] y [A-44]: decisiones 1B, 2A y 3 de la persona usuaria)
+
+Los proyectos se ven como los grupos: un árbol por proyecto principal, con el mismo protocolo visual
+(apartado 8.1, «Árboles de grupos»). Lo pidió la persona usuaria en docs/todo.md («Siempre que haya una
+jerarquía… han de aparecer en árbol»; «Árbol de proyectos: cada árbol en una celda de tabla de 3 columnas»).
+- **Rejilla:** un árbol por celda, hasta 3 columnas (2 en pantallas medianas, 1 en el móvil), en «De mis
+  grupos» y en «Personales» (3). Arriba de cada celda, el grupo que coordina el proyecto principal en una
+  etiqueta verde («Personal» si lo es), con su organización al lado.
+- **Las tareas, dentro del árbol y plegadas (1B):** junto a cada proyecto, «(hechas/totales)» y una
+  flecha ▸ que las despliega. Es un `<details>` de HTML: se abre sin JavaScript.
+  - *Descartado (1A):* solo proyectos, con el número de tareas.
+- **Colores (2A):** con fondo amarillo, los proyectos en los que participas (los creaste, tienes un
+  cometido o tienes una tarea en ellos); con recuadro rojo, el que miras (en su ficha sale arriba su árbol
+  entero); en gris, los finalizados. *Descartado (2B):* amarillo solo para los que coordinas o creaste.
+- **En la ficha** se mantienen el camino («Proyectos › Huerto › Riego») y las listas de subproyectos y de
+  tareas que ya había; el árbol va encima.
+- **Cómo está hecho:** `proyectos/arboles.py` (`arboles_de_proyectos`, 2 consultas sean cuantos sean los
+  proyectos y las tareas; `en_los_que_participa`, que usa también la tarjeta de Inicio) y las plantillas
+  `proyectos/arboles.html`, `nodo_de_proyecto.html` (se incluye a sí misma) y `_titulo_en_arbol.html`.
+  Reutiliza las clases de los árboles de grupos (`arbol`, `arbol-base`, `arbol-actual`) y añade
+  `arbol-coordina` y `arbol-tareas`. La lista pasa de 3 a 5 consultas; la ficha, de 9 a 11.
+- **Otras jerarquías** (la persona usuaria pidió que se le indicaran): las tipologías siguen el mismo
+  protocolo (decidido en [A-44]); las etiquetas relacionadas no son un árbol sino una red; las respuestas
+  de los debates y los puntos de un orden del día lo seguirán cuando existan.
+
 ### 14.2 Tarea
 
 - Atómica: **1 responsable** obligatorio y colaboradores opcionales.

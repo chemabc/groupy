@@ -1,6 +1,7 @@
 {% extends interfaz.plantilla %}
 {% comment %}
-  Ficha de un proyecto (proyectos/views.py, proyecto). Recibe: proyecto, camino (sus antecesores, cada uno
+  Ficha de un proyecto (proyectos/views.py, proyecto). Recibe: proyecto, arboles (su árbol entero, con él en
+  recuadro rojo; proyectos/arboles.py), camino (sus antecesores, cada uno
   con si se ve), subproyectos (en árbol), tareas, gestiona, error, estados (pares código, nombre), campos
   (pares nombre, valor de su tipo), cometidos (cada uno con quién lo tiene y si quien mira está) y
   coordinacion (el código del cometido de coordinación), recursos, nuevo_recurso (su formulario),
@@ -14,6 +15,8 @@
     {% for antecesor, se_ve in camino %} › {% if se_ve %}<a href="{% url 'proyectos:proyecto' antecesor.pk %}" class="text-marca hover:underline">{{ antecesor.titulo }}</a>{% else %}<span class="text-slate-400">(un proyecto que no puedes ver)</span>{% endif %}{% endfor %}
     › <span>{{ proyecto.titulo }}</span>
   </nav>
+  {# Su árbol entero (lo que se ve): dónde está este proyecto (recuadro rojo) y dónde participas (amarillo) #}
+  {% include "proyectos/arboles.html" with columnas=1 %}
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
   <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
     <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">

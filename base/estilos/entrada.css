@@ -221,13 +221,21 @@
   .arbol-grupo {
     @apply inline-block rounded px-1.5 hover:text-marca hover:underline;
   }
-  /* La asamblea base de quien mira: fondo amarillo. */
+  /* La asamblea base de quien mira (o, en los árboles de proyectos, uno en el que participa): fondo amarillo. */
   .arbol-base {
     @apply bg-yellow-200 font-semibold text-yellow-950 dark:bg-yellow-400/30 dark:text-yellow-100;
   }
-  /* El grupo que se está mirando (en su ficha): recuadro rojo. */
+  /* El grupo (o el proyecto) que se está mirando, en su ficha: recuadro rojo. */
   .arbol-actual {
     @apply ring-2 ring-red-600 dark:ring-red-500;
+  }
+  /* Árboles de proyectos (proyectos/templates/proyectos/arboles.html): el grupo que coordina, arriba,
+     en una etiqueta verde; y la lista de tareas que se despliega bajo un proyecto. */
+  .arbol-coordina {
+    @apply inline-block rounded border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200;
+  }
+  .arbol-tareas {
+    @apply mb-1 ml-2 border-l border-dashed border-slate-300 pl-3 dark:border-slate-700;
   }
 }
 

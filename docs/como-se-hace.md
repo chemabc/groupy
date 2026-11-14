@@ -142,6 +142,13 @@ En «Calendario y eventos → Calendario», pulsa un hueco del día. Decide si l
 2. Elige si es de un grupo o personal. Los personales solo los ves tú.
 3. Dentro de su ficha puedes crear subproyectos, tareas y recursos.
 
+### Ver el árbol de un proyecto y sus tareas
+
+En «Tareas y proyectos → Proyectos», cada proyecto principal sale en su recuadro, con el grupo que lo
+coordina arriba y sus subproyectos colgando. Los proyectos en los que participas tienen el fondo amarillo.
+Junto a cada uno, «(3/5)» son sus tareas hechas y totales: pulsa la flecha ▸ para verlas. En la ficha de un
+proyecto sale arriba su árbol, con ese proyecto en un recuadro rojo.
+
 ### Encargar una tarea a alguien
 
 1. Al crear o cambiar la tarea, en «Responsable» (o en «Colaboran»), pulsa **Elegir…**.

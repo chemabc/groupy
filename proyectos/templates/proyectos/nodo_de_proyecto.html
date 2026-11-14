@@ -1,0 +1,36 @@
+{% comment %}
+  Un proyecto dentro de un árbol (lo incluye proyectos/arboles.html, y se incluye a sí mismo para cada
+  subproyecto). Recibe «nodo», un NodoDeProyecto de proyectos/arboles.py. Si tiene tareas, la línea del
+  proyecto es un desplegable (<details>, sin JavaScript): «(hechas/totales) ▸» lo abre y enseña sus tareas.
+  El título lleva a la ficha del proyecto.
+{% endcomment %}
+{% with proyecto=nodo.proyecto %}
+<li class="{% if proyecto.estado == 'finalizado' %}text-slate-400{% endif %}">
+  {% if nodo.tareas %}
+    <details class="group/tareas">
+      <summary class="flex cursor-pointer list-none flex-wrap items-center gap-1.5 py-0.5 [&::-webkit-details-marker]:hidden">
+        {% include "proyectos/_titulo_en_arbol.html" %}
+        <span class="text-xs text-slate-500" title="Tareas hechas y totales">({{ nodo.hechas }}/{{ nodo.tareas|length }})</span>
+        <span class="inline-block text-xs text-slate-500 transition-transform group-open/tareas:rotate-90" aria-hidden="true">▸</span>
+        <span class="sr-only">Desplegar sus tareas</span>
+      </summary>
+      <ul class="arbol-tareas">
+        {% for tarea in nodo.tareas %}
+          <li class="flex flex-wrap items-baseline gap-x-1.5 py-0.5 text-xs {% if tarea.estado == 'hecha' %}text-slate-400{% endif %}">
+            <span aria-hidden="true">☐</span>
+            <a href="{% url 'proyectos:tarea' tarea.pk %}" class="hover:text-marca hover:underline {% if tarea.estado == 'hecha' %}line-through{% endif %}">{{ tarea.titulo }}</a>
+            <span class="text-slate-500">{{ tarea.get_estado_display|lower }}{% if tarea.responsable %} · {{ tarea.responsable.alias }}{% endif %}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </details>
+  {% else %}
+    <span class="flex flex-wrap items-center gap-1.5 py-0.5">{% include "proyectos/_titulo_en_arbol.html" %}</span>
+  {% endif %}
+  {% if nodo.hijos %}
+    <ul class="arbol">
+      {% for nodo in nodo.hijos %}{% include "proyectos/nodo_de_proyecto.html" %}{% endfor %}
+    </ul>
+  {% endif %}
+</li>
+{% endwith %}

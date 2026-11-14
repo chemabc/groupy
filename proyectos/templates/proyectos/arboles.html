@@ -1,0 +1,35 @@
+{% comment %}
+  Componente «árboles de proyectos» (proyectos/arboles.py): un recuadro por proyecto principal, en una
+  rejilla de hasta 3 columnas, con el grupo que lo coordina arriba y sus subproyectos colgando. Se incluye
+  con {% include "proyectos/arboles.html" with arboles=… %}. Recibe:
+    - arboles: la lista de ArbolDeProyecto que devuelve arboles_de_proyectos().
+    - columnas (opcional): «1» para un solo árbol a todo lo ancho (la ficha de un proyecto; entonces la
+      leyenda explica también el recuadro rojo).
+    - vacio (opcional): lo que se dice si no hay ninguno.
+  Colores: grupo que coordina en verde, proyectos en los que participas con fondo amarillo, el que se
+  mira con recuadro rojo y los finalizados en gris.
+{% endcomment %}
+{% if arboles %}
+  <div class="grid gap-4 {% if columnas != 1 %}md:grid-cols-2 xl:grid-cols-3{% endif %}">
+    {% for arbol in arboles %}
+      <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" aria-label="Árbol de {{ arbol.raiz.proyecto.titulo }}">
+        <p class="mb-2">
+          {% if arbol.grupo %}<a href="{% url 'grupos:grupo' arbol.grupo.pk %}" class="arbol-coordina hover:underline" title="Grupo que coordina">{{ arbol.grupo.nombre }}</a> <span class="text-xs text-slate-500">{{ arbol.grupo.organizacion.nombre }}</span>
+          {% else %}<span class="arbol-coordina">Personal</span>{% endif %}
+        </p>
+        <ul class="arbol text-sm">
+          {% with nodo=arbol.raiz %}{% include "proyectos/nodo_de_proyecto.html" %}{% endwith %}
+        </ul>
+      </section>
+    {% endfor %}
+  </div>
+  <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+    <span><span class="arbol-coordina">Grupo que coordina</span></span>
+    <span><span class="arbol-grupo arbol-base">Participas</span></span>
+    {% if columnas == 1 %}<span><span class="arbol-grupo arbol-actual">El proyecto que miras</span></span>{% endif %}
+    <span><span class="text-slate-400">En gris</span>: finalizado</span>
+    <span>(3/5): tareas hechas y totales; ▸ las despliega</span>
+  </p>
+{% else %}
+  <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">{{ vacio|default:"No hay proyectos." }}</p>
+{% endif %}

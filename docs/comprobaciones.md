@@ -551,3 +551,21 @@ se leen al arrancar: `config/inicio.py` y los `inicio.py` de los módulos). No h
 - [ ] Mover un recuadro: en `config/inicio.py`, pon `"lugares.mi_lugar"` en la primera fila de
   `"mis_datos"`, reinicia el servidor y mira el cambio. Déjalo como estaba. Si dejas una tarjeta sin
   colocar, `python manage.py check` da el error `base.E007`.
+
+## 29. Árboles de proyectos
+
+Antes: `npm run construir` (hay clases nuevas; ver 0.2). No hace falta migrar.
+
+- [ ] Como **Nutria**, «Tareas y proyectos → Proyectos → De mis grupos»: un recuadro por proyecto principal
+  (en pantalla ancha caben tres por fila). Arriba, «GRU Henares» en una etiqueta verde y «ORG Tajo» al lado.
+  Huerto comunitario, Riego y Bomba solar cuelgan uno de otro con rayas a la izquierda.
+- [ ] Los proyectos en los que Nutria participa tienen el fondo amarillo. Los finalizados salen en gris.
+- [ ] Junto a cada proyecto con tareas, «(hechas/totales)» y una flecha ▸. Al pulsar la flecha (o la
+  línea, fuera del título), se despliegan sus tareas: estado y responsable; las hechas, tachadas. La flecha
+  gira. Al pulsar el título se va a la ficha del proyecto.
+- [ ] Las etiquetas (#Barrio…) siguen saliendo y filtran la lista.
+- [ ] «Personales»: los proyectos personales, también en recuadros, con la etiqueta «Personal» arriba.
+- [ ] Ficha de **Riego**: arriba, el camino («Proyectos › Huerto comunitario › Riego») y debajo el árbol
+  entero de Huerto comunitario, con Riego en un **recuadro rojo**. La leyenda explica también el rojo. Las
+  listas de subproyectos y tareas siguen más abajo.
+- [ ] En el móvil, los recuadros van uno debajo de otro.

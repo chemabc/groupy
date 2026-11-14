@@ -87,7 +87,9 @@ class PruebasDeSubproyectos(PruebaDeProyectos):
         pagina = self.client.get("/proyectos/").content.decode()
         self.assertLess(pagina.index("Huerto"), pagina.index("Riego"))
         self.assertLess(pagina.index("Riego"), pagina.index("Bomba solar"))
-        self.assertIn("calc(2 * 1.25rem)", pagina)
+        # Tres niveles: dos listas de subproyectos, una dentro de otra, en un solo árbol.
+        self.assertEqual(pagina.count('<ul class="arbol">'), 2)
+        self.assertEqual(pagina.count('aria-label="Árbol de'), 1)
         ficha = self.client.get(f"/proyectos/{bomba.pk}/")
         self.assertContains(ficha, f'href="/proyectos/{huerto.pk}/"')
         self.assertContains(self.client.get(f"/proyectos/{huerto.pk}/"), "Bomba solar")
@@ -424,9 +426,11 @@ class PruebasDeConsultas(PruebaDeProyectos):
     # Listas: más proyectos y subproyectos.
     def test_listas(self):
         huerto = self.proyecto()
-        self.comprobar_consultas("/proyectos/", 3, lambda: self.proyecto("Otro", padre=huerto, etiquetas=["Barrio"]))
-        self.comprobar_consultas("/proyectos/?etiqueta=Barrio", 3, lambda: self.proyecto("Más", etiquetas=["Barrio", "Huerto"]))
-        self.comprobar_consultas("/proyectos/personales/", 3, lambda: crear_proyecto(self.nutria, self.generico, {"titulo": "P"}, personal=True))
+        self.comprobar_consultas("/proyectos/", 5, lambda: self.proyecto("Otro", padre=huerto, etiquetas=["Barrio"]))
+        self.comprobar_consultas("/proyectos/?etiqueta=Barrio", 5, lambda: self.proyecto("Más", etiquetas=["Barrio", "Huerto"]))
+        # Con un proyecto personal desde el principio (sin ninguno, el árbol no hace sus 2 consultas).
+        crear_proyecto(self.nutria, self.generico, {"titulo": "Primero"}, personal=True)
+        self.comprobar_consultas("/proyectos/personales/", 5, lambda: crear_proyecto(self.nutria, self.generico, {"titulo": "P"}, personal=True))
         self.comprobar_consultas(f"/proyectos/nuevo/?grupo={self.henares.pk}&tipologia={self.generico.pk}", 7, None)
 
     # Ficha y kanban: más subproyectos y tareas.
@@ -440,7 +444,7 @@ class PruebasDeConsultas(PruebaDeProyectos):
             anadir_recurso(self.nutria, huerto, {"nombre": "Mangueras", "cantidad": "3", "origen": "Ferretería"})
 
         mas()
-        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 9, mas)
+        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 11, mas)
         self.comprobar_consultas(f"/proyectos/{huerto.pk}/kanban/", 6, mas)
 
     # Mis tareas, su kanban y la ficha de una tarea.

@@ -654,7 +654,10 @@ flowchart LR
 ### 6.17 proyectos [Módulo · Funcional]
 
 Proyectos de grupo y personales con subproyectos a cualquier profundidad, cometidos, tareas (en proyecto,
-sueltas o personales) con dependencias que bloquean solas, kanban, recursos, etiquetas y tareas modelo.
+sueltas o personales) con dependencias que bloquean solas, kanban, recursos, etiquetas y tareas modelo. El
+componente de **árboles de proyectos** (`proyectos/arboles.py`): un árbol por proyecto principal, con sus
+tareas plegadas, los proyectos en los que participas en amarillo y el que miras en rojo. Su tarjeta de
+Inicio, «Mis proyectos abiertos» (`proyectos/inicio.py`).
 
 ```mermaid
 flowchart LR
@@ -688,6 +691,11 @@ flowchart LR
   pro -. "FuenteDeCalendario proyectos y tareas" .-> cal
   pro -. "Limpiable proyecto y tarea" .-> lim
   pro ==> com
+  arbp["proyectos.arboles<br/>árboles de proyectos<br/>[Componente]"]:::otro
+  arbp --> per
+  pro --> arbp
+  ini["base: Inicio"]:::otro
+  pro -. "TarjetaDeInicio proyectos.abiertos" .-> ini
 ```
 
 ### 6.18 limpieza [Módulo · Funcional]
