@@ -135,13 +135,20 @@ class PruebasDeSeries(PruebaDeEventos):
         self.assertGreaterEqual(serie.veces.count(), 3)
         self.assertEqual(self.client.get(f"/eventos/series/{serie.pk}/").status_code, 200)
 
-    # La tarea diaria crea las veces nuevas (al pasar los días) y solo se ejecuta una vez al día.
+    # La tarea diaria crea las veces nuevas (al pasar los días) y solo se ejecuta una vez al día. Cuántas
+    # son depende de la hora a la que se pase la prueba (la vez del día 120 cae a las 18:00 y entra o no
+    # en los 120 días según la hora de ahora), así que se calculan con veces() en lugar de escribir un
+    # número fijo (con 5 fallaba antes de las 18:00).
     def test_tarea_diaria(self):
         serie = self.semanal()
+        antes = serie.veces.count()
         Serie.objects.filter(pk=serie.pk).update(antelacion=120)
         cache.clear()
         resultados = dict(ejecutar_las_de_hoy())
-        self.assertEqual(resultados["eventos.generar_series"], 5)
+        esperadas = len(list(veces(serie, timezone.now() + timedelta(days=120)))) - antes
+        self.assertGreaterEqual(esperadas, 4)
+        self.assertEqual(resultados["eventos.generar_series"], esperadas)
+        self.assertEqual(serie.veces.count(), antes + esperadas)
         self.assertIsNone(ejecutar_las_de_hoy())
 
     # Las pantallas cuestan lo mismo con más series y más veces.

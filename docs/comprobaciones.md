@@ -42,9 +42,21 @@ npm install
 
 ### 0.2 Ficheros de la interfaz generados
 
-- [ ] **¿Ya está?** `ls static/generado/diagramas static/generado/fullcalendar` lista
-  `mermaid.min.js`, `svg-pan-zoom.min.js`, `index.global.min.js` y `es.global.min.js`.
-  **Si no** (o si has cambiado plantillas y faltan estilos):
+- [ ] **¿Ya está?** Dos cosas:
+  - `ls static/generado/diagramas static/generado/fullcalendar` lista `mermaid.min.js`,
+    `svg-pan-zoom.min.js`, `index.global.min.js` y `es.global.min.js`;
+  - y esta orden no escribe nada (si escribe plantillas, son más nuevas que los estilos y puede faltar
+    alguno):
+
+```bash
+# Busca plantillas más nuevas que los estilos compilados
+#     -name '*.html': solo las plantillas
+#     -newer static/generado/estilos.css: solo las cambiadas después de compilar los estilos
+#     -not -path './node_modules/*': sin mirar dentro de las librerías
+find . -name '*.html' -newer static/generado/estilos.css -not -path './node_modules/*'
+```
+
+  **Si no:**
 
 ```bash
 # Copia las librerías a static/generado/ y compila el CSS
@@ -53,6 +65,8 @@ npm run construir
 ```
 
 ### 0.3 Tablas de la base de datos al día (las dos bases)
+
+Hazlo antes que el 0.4: si faltan tablas, la orden del 0.4 falla con «relation "…" does not exist».
 
 - [ ] **¿Ya está?** Estas dos órdenes terminan sin decir nada (si falta alguna migración, la nombran):
 
@@ -75,8 +89,9 @@ python manage.py migrate --database=boveda
 
 ### 0.4 Datos de ejemplo al día
 
-Los ejemplos han crecido hoy: el proyecto «Huerto comunitario» lleva dependencias, recursos y etiquetas,
-y el tipo «Preparación de acción» trae tareas modelo.
+Los ejemplos crecen con cada pieza. Los últimos que se añadieron: el proyecto «Huerto comunitario» lleva
+dependencias, recursos y etiquetas, y el tipo «Preparación de acción» trae tareas modelo. Necesita el 0.3
+hecho.
 
 - [ ] **¿Ya está?** Esta orden escribe `True True`:
 
@@ -96,7 +111,7 @@ python manage.py ejemplos borrar && python manage.py ejemplos crear
 
 ### 0.5 El trabajador (reparte las notificaciones y hace las tareas diarias)
 
-Lee el código al arrancar: después de los cambios de hoy hay que **reiniciarlo** aunque esté en marcha.
+Lee el código al arrancar: después de cada pieza nueva hay que **reiniciarlo** aunque esté en marcha.
 
 - [ ] **¿Está en marcha?** En una terminal **de tu ordenador** (fuera de VS Code):
   `docker ps --format '{{.Names}}' | grep trabajador` muestra un nombre. Dentro del contenedor, otra
@@ -134,9 +149,12 @@ python manage.py tareas_diarias
 
 - [ ] **¿Ya está el servidor?** http://localhost:8000 abre la entrada. **Si no:**
   `python manage.py runserver 0.0.0.0:8000` (se reinicia solo al cambiar el código).
-- [ ] **Pruebas:** `python manage.py test --parallel 4` termina con `OK` (unas 375). Si dice
-  `skipped=` con muchas, falta Chromium para las pruebas en el navegador:
+- [ ] **Pruebas:** `python manage.py test --parallel 4` termina con `OK` (unas 395, en un par de
+  minutos). Si dice `skipped=` con muchas, falta Chromium para las pruebas en el navegador:
   `python -m playwright install --with-deps chromium`.
+  Si en paralelo salen muchos fallos de golpe con «Ya existe Organización…», suele ser **uno solo** que
+  arrastra a los demás (en paralelo, un fallo deja sus datos sin deshacer). Busca en la salida el primer
+  «failed:» o pásalas en serie (`python manage.py test`, unos 5 minutos), que dice cuál es.
 
 ---
 
@@ -286,12 +304,12 @@ Necesita el trabajador (paso 0.5).
 - [ ] Pulsa un hueco: abre «Apuntar un recordatorio» con ese día. «Solo yo», «Mi grupo» y, como Lince,
   hasta el padre o el abuelo.
 - [ ] «Suscripción»: copia la dirección .ics y ábrela en otra ventana sin sesión: descarga el
-  calendario. «Cambiar la clave» y la dirección vieja deja de funcionar.
+  calendario. «Cambiar la dirección» y la vieja deja de funcionar.
 - [ ] Las fechas límite de proyectos y tareas salen como días enteros y se arrastran.
 
 ## 19. Series de eventos y tareas diarias
 
-- [ ] Al convocar, elige «Repetir cada semana» hasta dentro de dos meses: se crean las veces de los
+- [ ] Al convocar, en «¿Se repite?» elige «Cada semana» hasta dentro de dos meses: se crean las veces de los
   próximos 90 días, cada una con su ficha, a la misma hora de aquí aunque cambie el horario de verano.
 - [ ] «Mis eventos → Series»: la ficha de la serie; cambia la hora: las veces futuras sin tocar cambian
   y una que hayas editado a mano se queda como estaba.
