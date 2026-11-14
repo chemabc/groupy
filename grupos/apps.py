@@ -101,7 +101,7 @@ class GruposConfig(ModuloConfig):
         ),
         Permiso(
             "grupos.ver_arbol",
-            "Ver el árbol de los grupos que administra, con sus subgrupos, en «Organizaciones y grupos → Árbol»",
+            "Ver el árbol de los grupos que administra, con sus subgrupos, en «Administrar → Grupos que administro → Árbol»",
             roles=("admin_grupo", "admin_org"),
         ),
         Permiso("grupos.editar_grupo", "Editar los datos del grupo", roles=("admin_grupo", "admin_org")),
@@ -133,42 +133,54 @@ class GruposConfig(ModuloConfig):
             icono="⬢",
             color="#16a34a",
             otras_rutas=("grupos:grupo", "grupos:organizacion"),
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="grupos.mis_grupos",
-                    nombre="Mis grupos",
-                    url="grupos:mis_grupos",
-                    icono="◉",
-                    color="#059669",
-                    vistas=(Vista("Mis grupos", "grupos:mis_grupos"),),
-                ),
-                EntradaDeMenu(
-                    codigo="grupos.arbol",
-                    nombre="Árbol",
-                    url="grupos:arbol",
-                    icono="⋔",
-                    color="#65a30d",
-                    permiso="grupos.ver_arbol",
-                    vistas=(Vista("Árbol", "grupos:arbol"),),
-                ),
-                EntradaDeMenu(
-                    codigo="grupos.relaciones",
-                    nombre="Relaciones",
-                    url="grupos:relaciones",
-                    icono="⇄",
-                    color="#0d9488",
-                    vistas=(Vista("Lista", "grupos:relaciones"),),
-                ),
-                EntradaDeMenu(
-                    codigo="grupos.invitaciones",
-                    nombre="Invitaciones",
-                    url="grupos:invitaciones",
-                    icono="✉",
-                    color="#d97706",
-                    contador="grupos.contadores.invitaciones_pendientes",
-                    vistas=(Vista("Recibidas y enviadas", "grupos:invitaciones"),),
-                ),
-            ),
+        ),
+        # Las demás entradas; dónde va cada una lo decide config/menu.py: las de lo propio, en
+        # «Organizaciones y grupos → Mis grupos»; las de administrar, en «Administrar».
+        EntradaDeMenu(
+            codigo="grupos.mios",
+            nombre="Mis grupos",
+            url="grupos:mis_grupos",
+            icono="◉",
+            color="#059669",
+        ),
+        EntradaDeMenu(
+            codigo="grupos.mis_grupos",
+            nombre="Árboles",
+            url="grupos:mis_grupos",
+            icono="⚲",
+            color="#047858",
+        ),
+        EntradaDeMenu(
+            codigo="grupos.relaciones",
+            nombre="Relaciones",
+            url="grupos:relaciones",
+            icono="⇄",
+            color="#0d9488",
+        ),
+        EntradaDeMenu(
+            codigo="grupos.arbol",
+            nombre="Árbol",
+            url="grupos:arbol",
+            icono="⋔",
+            color="#65a30d",
+            permiso="grupos.ver_arbol",
+        ),
+        EntradaDeMenu(
+            codigo="grupos.invitaciones",
+            nombre="Invitaciones entre grupos",
+            url="grupos:invitaciones",
+            icono="✉",
+            color="#d97706",
+            permiso="grupos.invitar",
+            contador="grupos.contadores.invitaciones_pendientes",
+        ),
+        EntradaDeMenu(
+            codigo="grupos.mi_organizacion",
+            nombre="Datos",
+            url="grupos:mis_organizaciones",
+            icono="⬡",
+            color="#166535",
+            permiso="grupos.editar_organizacion",
         ),
     )
     ayuda = (
@@ -186,7 +198,7 @@ class GruposConfig(ModuloConfig):
         ),
         Ayuda(
             seccion="grupos.mis_grupos",
-            titulo="Mis grupos",
+            titulo="Mis grupos: árboles",
             texto=(
                 "Los grupos en los que estás, por organización y en forma de árbol. Los que salen en gris no los "
                 "has elegido tú: contienen a uno de los tuyos, así que también eres miembro de ellos (por "
@@ -206,6 +218,14 @@ class GruposConfig(ModuloConfig):
             ),
         ),
         Ayuda(
+            seccion="grupos.mi_organizacion",
+            titulo="Datos de la organización",
+            texto=(
+                "Las organizaciones que administras. Pulsa una para cambiar su nombre y su descripción, sus "
+                "admins y si sus miembros ven la lista de miembros de sus grupos."
+            ),
+        ),
+        Ayuda(
             seccion="grupos.relaciones",
             titulo="Relaciones",
             texto=(
@@ -217,9 +237,10 @@ class GruposConfig(ModuloConfig):
         ),
         Ayuda(
             seccion="grupos.invitaciones",
-            titulo="Invitaciones",
+            titulo="Invitaciones entre grupos",
             texto=(
-                "Invitaciones de un grupo a un grupo de otra organización para algo concreto (por ejemplo, un "
+                "No son solicitudes para entrar en un grupo (eso está en «Comunicaciones → Solicitudes»): son "
+                "invitaciones de un grupo a un grupo de otra organización para algo concreto (por ejemplo, un "
                 "proyecto conjunto). Aceptarla solo abre eso: nadie cambia de grupo ni de organización.\n\n"
                 "El número del menú son las pendientes que puedes responder tú (de entrada, el admin del grupo "
                 "invitado). Las invitaciones se hacen desde lo que se comparte (un proyecto…), no desde aquí; "

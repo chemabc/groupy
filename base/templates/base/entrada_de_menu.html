@@ -9,6 +9,8 @@
   Las subsecciones cuyo código está en «interfaz.ocultas» (piden un permiso que no se tiene) no se pintan.
   Si la entrada tiene contador, su número va entre paréntesis tras el nombre, en un <span> con id propio
   que base/zona.html pone al día al navegar.
+  Si sus subsecciones van como pestañas (entrada.en_pestanas, ver base/disposicion.py), aquí no se pintan:
+  salen arriba, en la zona central.
   Resaltado: la entrada en la que se está (la última del camino) lleva fondo; las secciones que la
   contienen, solo el texto en color, más discreto.
 {% endcomment %}
@@ -20,7 +22,7 @@
       <span class="grid size-6 shrink-0 place-items-center rounded bg-(--icono)/15 text-sm text-(--icono) dark:bg-(--icono)/25 dark:text-[color-mix(in_oklab,var(--icono)_65%,white)]" style="--icono: {{ entrada.color }}" aria-hidden="true">{{ entrada.icono|default:entrada.nombre|first }}&#xFE0E;</span>
       <span class="truncate plegado:hidden">{{ entrada.nombre }}{% if entrada.codigo in interfaz.contadores %} <span id="contador-{{ entrada.codigo|slugify }}" data-contador>({% for codigo, numero in interfaz.contadores.items %}{% if codigo == entrada.codigo %}{{ numero }}{% endif %}{% endfor %})</span>{% endif %}</span>
     </a>
-    {% if entrada.subsecciones %}
+    {% if entrada.subsecciones and not entrada.en_pestanas %}
       <button type="button" data-codigo="{{ entrada.codigo }}"
               class="rounded px-1 plegado:hidden text-xs text-slate-400 transition-transform hover:bg-slate-100 dark:hover:bg-slate-800"
               :class="estaAbierta($el.dataset.codigo) && 'rotate-90'"
@@ -29,7 +31,7 @@
               @click="alternarSeccion($el.dataset.codigo)">▸</button>
     {% endif %}
   </div>
-  {% if entrada.subsecciones %}
+  {% if entrada.subsecciones and not entrada.en_pestanas %}
     <div data-codigo="{{ entrada.codigo }}" x-show="estaAbierta($el.dataset.codigo)" x-cloak class="ml-4 plegado:hidden">
       {% for entrada in entrada.subsecciones %}{% if entrada.codigo not in interfaz.ocultas %}{% include "base/entrada_de_menu.html" %}{% endif %}{% endfor %}
     </div>

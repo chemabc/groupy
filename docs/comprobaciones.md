@@ -173,7 +173,7 @@ python manage.py tareas_diarias
 
 ## 2. Audiencias (quién ve cada cosa)
 
-- [ ] Como **Lince**: «Configuración → Visibilidad» muestra ORG Tajo con su altura máxima, «toda la
+- [ ] Como **Lince**: «Administrar → Mi organización → Visibilidad» muestra ORG Tajo con su altura máxima, «toda la
   organización» y «público», cerrados de entrada, y una frase que lo resume.
 - [ ] Cambia la altura máxima y guarda: al convocar un evento en GRU Henares, el desplegable «Quién lo
   ve» ofrece más o menos niveles por encima del grupo según esa altura.
@@ -184,7 +184,7 @@ python manage.py tareas_diarias
 
 - [ ] El menú izquierdo tiene sección y subsección; arriba salen las vistas de la subsección. Al entrar
   por una dirección, la sección se abre sola y la subsección queda marcada.
-- [ ] Como **superadmin**, «Pruebas → Importar grupos»: descarga la plantilla .ods, ábrela con
+- [ ] Como **superadmin**, «Desarrollo y mantenimiento → Pruebas → Importar grupos»: descarga la plantilla .ods, ábrela con
   LibreOffice (instrucciones y desplegables), añade dos grupos (uno dentro de otro) y súbela.
 - [ ] La vista previa marca los errores por fila; no se crea nada hasta «Confirmar», y luego todo de
   golpe.
@@ -192,7 +192,7 @@ python manage.py tareas_diarias
 
 ## 4. Datos de ejemplo desde la pantalla
 
-- [ ] Como **superadmin**, «Pruebas → Datos de ejemplo»: muestra cuántos hay de cada cosa; «Borrar»
+- [ ] Como **superadmin**, «Desarrollo y mantenimiento → Pruebas → Datos de ejemplo»: muestra cuántos hay de cada cosa; «Borrar»
   pide confirmación y deja al superadmin; «Crear» los vuelve a poner. (Si los borras aquí, repite el
   paso 0.4.)
 
@@ -207,7 +207,7 @@ python manage.py tareas_diarias
 
 ## 6. Etiquetas
 
-- [ ] Como **Lince**, «Configuración → Etiquetas»: crear «  #REUNIÓN   general» la guarda como «Reunion
+- [ ] Como **Lince**, «Administrar → Mi organización → Etiquetas»: crear «  #REUNIÓN   general» la guarda como «Reunion
   general» (primera en mayúscula, sin tildes; la ñ se queda).
 - [ ] Palabras relacionadas: buscar por una relacionada encuentra la etiqueta.
 - [ ] Fusionar dos marcadas en una; borrar una.
@@ -215,7 +215,7 @@ python manage.py tareas_diarias
 
 ## 7. Tipologías
 
-- [ ] Como **Lince**, «Configuración → Tipologías → De eventos»: el árbol común (Reunión, Acción,
+- [ ] Como **Lince**, «Administrar → Mi organización → Tipologías → De eventos»: el árbol común (Reunión, Acción,
   Recaudatorio, Genérico) y el subtipo propio «Acción de barrio».
 - [ ] Un subtipo muestra los campos heredados (con borde de puntos) y los suyos; los suyos se ordenan
   arrastrando por el asa ⠿ y el orden se queda al recargar.
@@ -240,10 +240,11 @@ python manage.py tareas_diarias
 - [ ] «Explicar un permiso»: elige Nutria, el permiso y el grupo; el razonamiento dice por qué sí o no
   (y la excepción aparece en él).
 
-## 11. Visibilidad y etiquetas en Configuración (cierre de la fase 1)
+## 11. Lo que configura cada organización (cierre de la fase 1)
 
-- [ ] «Configuración» agrupa Tipologías, Visibilidad, Etiquetas, Niveles de aviso, Solicitudes,
-  Lugares y Limpieza (cada una solo para quien tiene su permiso).
+- [ ] «Administrar → Mi organización» agrupa, como pestañas, Datos, Visibilidad, Tipologías, Etiquetas,
+  Apoyos y plazos, Lugares y Web pública (cada una solo para quien tiene su permiso). Los niveles de aviso
+  y la limpieza están en «Plataforma» (solo el superadmin).
 
 ## 12. Notificaciones
 
@@ -253,11 +254,12 @@ Necesita el trabajador (paso 0.5).
   segundos y el número de «Comunicaciones → Notificaciones (N)» sube al navegar.
 - [ ] Bandejas por origen; abrir una notificación la marca vista y lleva a su enlace; papelera;
   «Marcar todas como vistas» y «Limpiar las vistas».
-- [ ] «Preferencias de aviso»: desactiva un tipo y comprueba que ese aviso ya no llega.
+- [ ] «Configuración de mi cuenta → Avisos que recibo»: desactiva un tipo y comprueba que ese aviso ya no
+  llega.
 
 ## 13. Avisos y conversaciones con la administración
 
-- [ ] Como **superadmin**, «Configuración → Niveles de aviso»: Información, Atención y Problema con su
+- [ ] Como **superadmin**, «Plataforma → Catálogos comunes → Niveles de aviso»: Información, Atención y Problema con su
   color; uno usado no se borra.
 - [ ] Como **Lince**, «Avisos de la administración»: aviso de nivel «Atención» a GRU Henares con «Se
   puede responder». A Nutria le llega con borde de color y un enlace para responder.
@@ -267,25 +269,25 @@ Necesita el trabajador (paso 0.5).
 
 ## 14. Solicitudes con apoyos
 
-- [ ] Como alguien de fuera, pide «Entrar en un grupo» a GRU Henares. Sale en «Solicitudes →
-  Pendientes (N)» de sus miembros.
+- [ ] Como alguien de fuera, pide «Entrar en un grupo» a GRU Henares. Sale en «Comunicaciones →
+  Solicitudes → Para apoyar (N)» de sus miembros, y en «Administrar → Por aprobar (N)» de Lince.
 - [ ] Hacen falta el sí de la administración (Lince) y 2 apoyos; los apoyos se ven con alias y los
   rechazos solo como número. El sí del superadmin basta solo.
-- [ ] «Configuración → Solicitudes»: apoyos y días por plataforma y por organización.
+- [ ] «Administrar → Mi organización → Apoyos y plazos»: apoyos y días por plataforma y por organización.
 
 ## 15. Lugares
 
-- [ ] Como **Nutria**, «Lugares → Mi lugar»: elegir uno (privado), proponer un lugar nuevo o un cambio.
-- [ ] Como **superadmin**, «Gestión de lugares → Propuestas»: se ve qué cambia antes de aceptar.
-- [ ] «Mapa y lista»: el mapa de Leaflet con chinchetas agrupadas; los números de personas solo
+- [ ] Como **Nutria**, «Configuración de mi cuenta → Mis datos → Lugar»: elegir uno (privado), proponer un lugar nuevo o un cambio.
+- [ ] Como **superadmin**, «Plataforma → Catálogos comunes → Lugares → Propuestas»: se ve qué cambia antes de aceptar.
+- [ ] «Organizaciones y grupos → Mapa de lugares»: el mapa de Leaflet con chinchetas agrupadas; los números de personas solo
   aparecen desde 5.
-- [ ] «Importar» desde .ods o .csv en dos pasos; «Configuración → Lugares».
+- [ ] «Importar» desde .ods o .csv en dos pasos; «Administrar → Mi organización → Lugares».
 
 ## 16. Talentos
 
-- [ ] Como **Nutria**, «Mis talentos»: «Furgoneta», compartida con GRU Henares; compártela también con
+- [ ] Como **Nutria**, «Configuración de mi cuenta → Mis datos → Talentos»: «Furgoneta», compartida con GRU Henares; compártela también con
   GRU Lozoya.
-- [ ] «Talentos de mis grupos»: solo números, nunca alias.
+- [ ] «Organizaciones y grupos → Mis grupos → Talentos de mis grupos»: solo números, nunca alias.
 - [ ] Como **Lince**, «Peticiones → Pedir talentos» a GRU Henares (Furgoneta, 1). A Nutria le llega
   el aviso; «Lo ofrezco» muestra su alias solo a la administración; «Tengo dudas» abre una conversación.
 
@@ -300,7 +302,7 @@ Necesita el trabajador (paso 0.5).
 
 ## 18. Calendario
 
-- [ ] «Calendario → Ver el calendario»: mes, semana, día y lista (en el móvil, lista). Cada tipo con su
+- [ ] «Calendario y eventos → Calendario»: mes, semana, día y lista (en el móvil, lista). Cada tipo con su
   color y casillas arriba para ocultarlo; al recargar, los filtros se recuerdan.
 - [ ] Arrastra un evento tuyo a otro día: se guarda. Uno ajeno no se puede arrastrar.
 - [ ] Pulsa un hueco: abre «Apuntar un recordatorio» con ese día. «Solo yo», «Mi grupo» y, como Lince,
@@ -313,13 +315,13 @@ Necesita el trabajador (paso 0.5).
 
 - [ ] Al convocar, en «¿Se repite?» elige «Cada semana» hasta dentro de dos meses: se crean las veces de los
   próximos 90 días, cada una con su ficha, a la misma hora de aquí aunque cambie el horario de verano.
-- [ ] «Mis eventos → Series»: la ficha de la serie; cambia la hora: las veces futuras sin tocar cambian
+- [ ] «Calendario y eventos → Mis eventos → Series»: la ficha de la serie; cambia la hora: las veces futuras sin tocar cambian
   y una que hayas editado a mano se queda como estaba.
 - [ ] «Terminar la serie»; una serie de reuniones pide **una sola** solicitud de apoyos.
 
 ## 20. Proyectos y tareas
 
-- [ ] Como **Nutria**, «Proyectos → De mis grupos»: «Huerto comunitario» › «Riego» › «Bomba solar»
+- [ ] Como **Nutria**, «Tareas y proyectos → De mis grupos»: «Huerto comunitario» › «Riego» › «Bomba solar»
   sangrados en árbol.
 - [ ] La ficha: camino desde el principal, datos, subproyectos, tareas y cometidos (coordinación,
   documentación, comunicación). «+ Subproyecto» y «Cambiar estado».
@@ -327,16 +329,16 @@ Necesita el trabajador (paso 0.5).
   Henares), sí.
 - [ ] Kanban del huerto: incluye las tareas de los subproyectos; arrastra una tuya de columna y recarga:
   sigue allí. Las de otra persona no se arrastran.
-- [ ] «Mis tareas» en lista y en kanban. Encargar una tarea a Garza (por su alias): le llega el aviso.
+- [ ] «Tareas y proyectos → Tareas» en kanban y en lista. Encargar una tarea a Garza (por su alias): le llega el aviso.
 - [ ] «Personales»: un proyecto personal con subproyecto; no lo ve nadie más, ni el superadmin.
 
 ## 21. Limpieza (archivo y borrado)
 
-- [ ] Como **superadmin**, «Configuración → Limpieza»: los plazos de cada tipo (30 días para archivar,
+- [ ] Como **superadmin**, «Plataforma → Limpieza»: los plazos de cada tipo (30 días para archivar,
   365 para borrar; notificaciones 90 y 365). Cambia uno y vuelve «De partida».
 - [ ] Prueba rápida: crea un proyecto «Prueba», ponlo en «Finalizado» y ejecuta las dos órdenes de
   abajo (hacen como si hubiera terminado hace 40 días y pasan la limpieza). Desaparece de la lista y
-  está en «Archivo → Archivados», con su ficha marcada «Archivado el…».
+  está en «Configuración de mi cuenta → Archivo → Archivados», con su ficha marcada «Archivado el…».
 
 ```bash
 # Hace como si el proyecto «Prueba» se hubiera finalizado hace 40 días
@@ -347,7 +349,7 @@ python manage.py tareas_diarias
 
 - [ ] A quienes lo ven les llega «Se ha archivado un elemento que ves».
 - [ ] «Conservar»: queda «conservado por…» y ya no tiene fecha de borrado. Como superadmin, «Dejar de
-  conservar» y «Borrar ya»: aparece en «Archivo → Borrados» como poda a mano.
+  conservar» y «Borrar ya»: aparece en «Configuración de mi cuenta → Archivo → Borrados» como poda a mano.
 - [ ] Reabrir un proyecto archivado (cambiar su estado) lo devuelve a la lista.
 
 ## 22. Dependencias entre tareas y recursos
@@ -370,7 +372,7 @@ python manage.py tareas_diarias
   todos» lo quita).
 - [ ] Editar el proyecto: el selector de etiquetas con sugerencias de ORG Tajo; añade una y guarda.
 - [ ] Un proyecto **personal** no tiene campo de etiquetas.
-- [ ] Como **superadmin**, «Configuración → Tipologías → De proyectos → Preparación de acción»: tres
+- [ ] Como **superadmin**, «Administrar → Mi organización → Tipologías → De proyectos → Preparación de acción»: tres
   tareas modelo (pedir permiso, preparar el material, difundir), con sus días y «espera a la anterior».
   Como Lince, en un subtipo propio salen como heredadas y se le pueden añadir otras.
 - [ ] Nuevo proyecto de «Preparación de acción» con la casilla «Crear las 3 tareas modelo» marcada: las
@@ -382,9 +384,9 @@ python manage.py tareas_diarias
 Antes: `npm run construir` (hay clases nuevas: ver 0.2; si `static/generado/estilos.css` no contiene
 `panel-abierto`, no está hecho) y reiniciar el servidor (hay un módulo nuevo, `ayuda`; no tiene tablas).
 
-- [ ] Como **superadmin**: las tres últimas secciones del menú son «Ayuda», «Configuración de mi cuenta»
-  (antes «Mi cuenta») y «Desarrollo y mantenimiento». Como **Nutria**: «Ayuda» es la penúltima y
-  «Configuración de mi cuenta», la última.
+- [ ] En el bloque de lo propio, las dos últimas secciones son «Ayuda» y «Configuración de mi cuenta»
+  (antes «Mi cuenta»); como **superadmin**, «Desarrollo y mantenimiento» es la última de «Plataforma» (ver
+  la sección 26).
 - [ ] «Ayuda» tiene, por este orden, «How to?», «Documentación de la plataforma» (pestañas Tutorial,
   Arquitectura, Arranque y tests, Registro y validación) y «Guía de desarrollo» (Comprobaciones pendientes,
   Diseño y decisiones).
@@ -436,7 +438,7 @@ DJANGO_GUIAS_PARA_TODOS=0 python manage.py runserver 0.0.0.0:8000
 
 Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor.
 
-- [ ] Como **Nutria**, «Proyectos → Proyectos → Huerto comunitario» → nueva tarea. En «Responsable», pulsa
+- [ ] Como **Nutria**, «Tareas y proyectos → Proyectos → Huerto comunitario» → nueva tarea. En «Responsable», pulsa
   **Elegir…**: sale «Elegir una persona» con «Aquí: GRU Henares» (Lince con «admin», Nutria con «tú»)
   desplegado y con más color, y debajo los bloques más lejanos, plegados y más suaves, cada uno con su
   número de personas.
@@ -447,10 +449,54 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor.
 - [ ] En «Colaboran», marca dos personas: abajo pone «2 elegidas»; «Listo» las deja como pastillas.
   Crea la tarea y en su ficha salen la responsable y las colaboradoras.
 - [ ] En la ficha de una tarea, al cambiarla, el selector sale con las personas que ya tenía.
-- [ ] Una tarea suelta nueva («Mis tareas → Nueva» en un grupo): cambia «Quién la ve» a «Hasta el grupo
+- [ ] Una tarea suelta nueva («Tareas y proyectos → Tareas → Nueva» en un grupo): cambia «Quién la ve» a «Hasta el grupo
   padre» y vuelve a abrir el selector: aparece el bloque «Un nivel por encima».
-- [ ] Como **Lince**, en «Organizaciones y grupos → Árbol», pulsa ORG Tajo y desmarca «Los miembros ven la
+- [ ] Como **Lince**, en «Administrar → Grupos que administro → Árbol», pulsa ORG Tajo y desmarca «Los miembros ven la
   lista de miembros de sus grupos». Como **Nutria**, el selector ya no enseña la lista: pide el alias exacto. Escribe uno de otra
   organización (por ejemplo, «Zorro») y crea: dice «No está entre quienes ven esto: Zorro.» (el mismo
   mensaje que con un alias que no existe). Como Lince, sigue viendo la lista. Vuelve a dejarlo como estaba.
+
+## 26. Menú en tres bloques
+
+Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor (hay un módulo nuevo,
+`proximamente`; no tiene tablas).
+
+- [ ] Como **Nutria** (sin nada que administrar): el menú tiene un solo bloque, sin título: Inicio,
+  Calendario y eventos, Comunicaciones, Tareas y proyectos, Participación, Organizaciones y grupos, Ayuda y
+  Configuración de mi cuenta. No sale «Administrar» ni «Plataforma».
+- [ ] «Inicio»: pestañas «Panel» y «Mis datos», que dicen que aún están vacías y qué tendrán.
+- [ ] «Calendario y eventos»: no se despliega a la izquierda; arriba, las pestañas Calendario · Eventos de
+  mis grupos · Mis eventos · Convocar. En «Eventos de mis grupos» y «Mis eventos», una segunda fila más
+  pequeña (Próximos · Pasados; Mis eventos · Series). El calendario tiene los botones «+ Recordatorio»,
+  «Mis recordatorios» y «Suscripción». Al abrir uno de ellos, el menú sigue marcando «Calendario y eventos».
+- [ ] «Comunicaciones»: Notificaciones; Conversaciones (pestañas: Con la administración · Con grupos · Con
+  personas, estas dos vacías); Solicitudes (pestañas: Enviadas · Para apoyar · Peticiones de talentos ·
+  Histórico). En «Con la administración» solo salen tus conversaciones.
+- [ ] «Tareas y proyectos»: «Tareas» abre el kanban (la lista es la segunda pestaña). Al entrar en una
+  tarea, el menú sigue marcando «Tareas» (antes saltaba a la sección); al entrar en un proyecto,
+  «Proyectos».
+- [ ] «Participación»: Debates, Consultas, Órdenes del día y actas y Decisiones, todas vacías.
+- [ ] «Organizaciones y grupos»: «Mis grupos» (pestañas: Árboles · Grafo (vacía) · Relaciones · Talentos de
+  mis grupos) y «Mapa de lugares».
+- [ ] «Configuración de mi cuenta», con submenús a la izquierda: Usabilidad, Mis datos (pestañas: Datos
+  (vacía) · Talentos · Lugar), Avisos que recibo, Contraseña y Archivo (pestañas: Archivados · Borrados).
+- [ ] Como **Lince** (admin de GRU Henares y de ORG Tajo): debajo sale el bloque «ADMINISTRAR», con su título
+  y una franja ámbar: Grupos que administro (Árbol · Miembros (vacía) · Invitaciones entre grupos), Buzón de la
+  administración (Conversaciones que atiendo · Avisar), Por aprobar, Eventos y talentos (Eventos de mis grupos
+  (vacía) · Pedir talentos), Moderación (vacía) y Mi organización (Datos · Visibilidad · Tipologías ·
+  Etiquetas · Apoyos y plazos · Lugares · Web pública (vacía)).
+- [ ] En cualquier pantalla de «Administrar», arriba sale la banda ámbar «Estás administrando…».
+- [ ] Una conversación de Nutria con la administración de GRU Henares: Lince la ve en «Administrar → Buzón de
+  la administración», no en sus conversaciones propias. Al abrirla, «← Conversaciones» vuelve al buzón.
+- [ ] Una solicitud para entrar en GRU Henares: a Nutria le sale en «Para apoyar» (con Apoyar/Rechazar, sin
+  «Dar el sí»); a Lince, además, en «Administrar → Por aprobar» (con «Dar el sí de la administración», sin
+  Apoyar). Cada una con su número en el menú.
+- [ ] «Mi organización → Datos»: ORG Tajo con el enlace a su ficha (ahí se cambian sus datos).
+- [ ] Los números del menú: «Grupos que administro (N)» suma sus pestañas (las invitaciones pendientes), y
+  la pestaña lleva también el suyo.
+- [ ] Como **superadmin**: además, el bloque «PLATAFORMA» con franja roja: Usuarios, Catálogos comunes
+  (Lugares · Talentos · Niveles de aviso), Limpieza y Desarrollo y mantenimiento (con Pruebas, Trastienda y
+  Componentes, la demostración que antes estaba en Inicio). Su banda es roja.
+- [ ] Mover algo de sitio: en `config/menu.py`, mueve una línea (por ejemplo, `"lugares.mapa"` dentro de
+  «Calendario y eventos», como pestaña), recarga y mira el cambio. Déjalo como estaba.
 

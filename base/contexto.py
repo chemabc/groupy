@@ -27,8 +27,6 @@ def interfaz(request):
     # está en el menú.
     camino = registro.rutas.get(ruta, ())
     seccion = camino[-1] if camino else None
-    vistas = [{"vista": vista, "activa": vista.url == ruta} for vista in seccion.vistas] if seccion else []
-    vista_activa = next((elemento["vista"] for elemento in vistas if elemento["activa"]), None)
     # Quien ha iniciado sesión. Se usa el usuario de Django sin importar el módulo «usuarios» (que está en
     # una capa superior): basta con su alias (get_username) y sus preferencias.
     usuario = getattr(request, "user", None)
@@ -40,10 +38,34 @@ def interfaz(request):
     for entrada in menu:
         _recorrer_subsecciones(usuario, entrada, ocultas, contadores)
     # Una sección cuyas subsecciones están todas ocultas tampoco se muestra (no habría nada que ver).
-    menu = [
-        entrada for entrada in menu
-        if not entrada.subsecciones or any(sub.codigo not in ocultas for sub in entrada.subsecciones)
-    ]
+    menu = [entrada for entrada in menu if entrada.codigo not in ocultas]
+    visibles = {entrada.codigo for entrada in menu}
+    # Los bloques del menú con lo que puede ver; los que se quedan vacíos no se pintan.
+    bloques = []
+    for bloque, entradas in registro.bloques:
+        suyas = [entrada for entrada in entradas if entrada.codigo in visibles]
+        if suyas:
+            bloques.append({"titulo": bloque.titulo, "tono": bloque.tono, "entradas": suyas})
+    # Si la página es de una sección con pestañas (la más alta del camino que las tenga): la sección es la
+    # madre, sus subsecciones son las pestañas de arriba y la elegida es la del camino. Si no, las pestañas
+    # son las vistas de la sección, como siempre.
+    madre, hija = _pestanas_del_camino(camino)
+    if madre is not None:
+        pestanas = [
+            {"nombre": sub.nombre, "url": sub.url, "codigo": sub.codigo, "activa": sub.codigo == hija.codigo, "numero": contadores.get(sub.codigo)}
+            for sub in madre.subsecciones if sub.codigo not in ocultas
+        ]
+        subvistas = [{"vista": vista, "activa": vista.url == ruta} for vista in hija.vistas] if len(hija.vistas) > 1 else []
+        vistas_de_la_pagina = subvistas
+        marcadas = camino[: camino.index(madre) + 1]
+    else:
+        pestanas = [{"nombre": vista.nombre, "url": vista.url, "codigo": "", "activa": vista.url == ruta, "numero": None} for vista in seccion.vistas] if seccion else []
+        subvistas = []
+        vistas_de_la_pagina = [{"vista": vista, "activa": vista.url == ruta} for vista in seccion.vistas] if seccion else []
+        marcadas = camino
+    vista_activa = next((elemento["vista"] for elemento in vistas_de_la_pagina if elemento["activa"]), None)
+    nombre_de_la_seccion = (madre or seccion).nombre if seccion else ""
+    ayuda = (registro.ayuda.get(seccion.codigo) or (registro.ayuda.get(madre.codigo) if madre else None)) if seccion else None
     solo_la_zona = pide_solo_la_zona(request)
     en_el_panel = pide_el_panel(request)
     # Plantilla de la que heredan las páginas: la página entera, solo la zona central (navegación con htmx)
@@ -55,7 +77,10 @@ def interfaz(request):
     else:
         plantilla = "base/pagina.html"
     # Título de la pestaña: «Vista · Sección · Asambleas», con lo que haya.
-    partes = [vista_activa.nombre if vista_activa else "", seccion.nombre if seccion else "", NOMBRE_DE_LA_APLICACION]
+    partes = []
+    for parte in (vista_activa.nombre if vista_activa else "", hija.nombre if madre is not None else "", nombre_de_la_seccion, NOMBRE_DE_LA_APLICACION):
+        if parte and (not partes or partes[-1] != parte):
+            partes.append(parte)
     return {
         "interfaz": {
             # Plantilla de la que heredan las páginas (ver arriba).
@@ -65,15 +90,28 @@ def interfaz(request):
             "solo_la_zona": solo_la_zona,
             # Secciones del menú que puede ver (las que piden un permiso, solo si lo tiene).
             "menu": menu,
+            # Los mismos, por bloques: [{titulo, tono, entradas}] (ver base/disposicion.py).
+            "bloques": bloques,
+            # Banda de arriba si la sección es de un bloque con banda: {texto, tono}, o None.
+            "banda": _banda(camino),
             # Códigos de las subsecciones que no puede ver (piden un permiso que no tiene).
             "ocultas": ocultas,
             # Número de cada entrada con contador: {código: número}.
             "contadores": contadores,
             "seccion": seccion,
-            # Códigos de las entradas del camino, para marcarlas en el menú.
-            "codigos": [entrada.codigo for entrada in camino],
-            "vistas": vistas,
-            "ayuda": registro.ayuda.get(seccion.codigo) if seccion else None,
+            # Nombre que sale como título de la zona: el de la sección con pestañas, si la hay.
+            "nombre_de_la_seccion": nombre_de_la_seccion,
+            # Códigos de las entradas del camino que se ven en el menú izquierdo, para marcarlas (las que van
+            # como pestañas no salen en él).
+            "codigos": [entrada.codigo for entrada in marcadas],
+            # Pestañas de arriba: [{nombre, url, codigo, activa, numero}] (las subsecciones de una sección
+            # con pestañas, con su contador si lo tienen, o, si no, las vistas de la sección).
+            "pestanas": pestanas,
+            # Segunda fila, más pequeña: las vistas de la pestaña elegida, si tiene varias.
+            "subvistas": subvistas,
+            # Las vistas de la página (para el panel de ayuda, que pinta sus propias pestañas).
+            "vistas": vistas_de_la_pagina,
+            "ayuda": ayuda,
             # Subsecciones de la ayuda que puede ver, para el botón «?» rojo de la cabecera, que las abre
             # en el panel de la derecha. Lista vacía: no hay botón.
             "ayuda_lateral": _ayuda_lateral(menu, ocultas) if conectado else [],
@@ -90,6 +128,30 @@ def interfaz(request):
             "preferencias": {clave: getattr(usuario, clave, "") for clave in CLAVES} if conectado else {},
         }
     }
+
+
+# Busca en el camino la sección más alta cuyas subsecciones van como pestañas y devuelve (madre, hija): la
+# sección y la pestaña elegida (la siguiente del camino o, si la página es la de la propia madre, su
+# primera subsección). Sin ninguna, (None, None).
+#   - camino: las entradas desde la sección principal hasta la de la página.
+def _pestanas_del_camino(camino):
+    for posicion, entrada in enumerate(camino):
+        if entrada.en_pestanas and entrada.subsecciones:
+            hija = camino[posicion + 1] if posicion + 1 < len(camino) else entrada.subsecciones[0]
+            return entrada, hija
+    return None, None
+
+
+# Banda de la zona central ({texto, tono}) si la sección principal del camino es de un bloque con banda;
+# None si no.
+#   - camino: las entradas desde la sección principal.
+def _banda(camino):
+    if not camino:
+        return None
+    for bloque, entradas in registro.bloques:
+        if bloque.banda and any(entrada.codigo == camino[0].codigo for entrada in entradas):
+            return {"texto": bloque.banda, "tono": bloque.tono}
+    return None
 
 
 # Devuelve las subsecciones de la entrada de la ayuda (registro.entrada_de_ayuda) que la persona puede
@@ -139,6 +201,8 @@ def _direcciones_de_la_ayuda():
 #   - entrada: la EntradaDeMenu (ya se sabe que la puede ver).
 #   - ocultas: conjunto que se va rellenando con códigos.
 #   - contadores: diccionario que se va rellenando con {código: número}.
+#   Además: una entrada con subsecciones que tiene todas ocultas también se oculta (no habría nada que
+#   ver), y una con pestañas lleva la suma de los números de sus pestañas (para verlo desde el menú).
 def _recorrer_subsecciones(usuario, entrada, ocultas, contadores):
     if entrada.contador:
         contadores[entrada.codigo] = import_string(entrada.contador)(usuario)
@@ -147,6 +211,12 @@ def _recorrer_subsecciones(usuario, entrada, ocultas, contadores):
             _recorrer_subsecciones(usuario, subseccion, ocultas, contadores)
         else:
             ocultas.add(subseccion.codigo)
+    if entrada.subsecciones and all(subseccion.codigo in ocultas for subseccion in entrada.subsecciones):
+        ocultas.add(entrada.codigo)
+    if entrada.en_pestanas:
+        numeros = [contadores[sub.codigo] for sub in entrada.subsecciones if sub.codigo in contadores and sub.codigo not in ocultas]
+        if numeros:
+            contadores[entrada.codigo] = sum(numeros)
 
 
 # Dice si la petición la ha hecho la navegación con htmx del menú y, por tanto, basta con mandar la zona

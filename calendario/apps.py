@@ -39,62 +39,45 @@ class CalendarioConfig(ModuloConfig):
         FuenteDeCalendario("calendario.recordatorios", "Recordatorios", "calendario.fuentes.recordatorios", color="#ca8a04", mover="calendario.fuentes.mover"),
     )
     menu = (
+        # La sección «Calendario y eventos»: sus pestañas (el calendario y las de «eventos») las coloca
+        # config/menu.py.
         EntradaDeMenu(
             codigo="calendario.calendario",
-            nombre="Calendario",
+            nombre="Calendario y eventos",
             url="calendario:calendario",
             icono="▦",
             color="#0e7490",
-            otras_rutas=("calendario:recordatorio",),
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="calendario.ver", nombre="Ver el calendario", url="calendario:calendario", icono="◫", color="#0ea5e9",
-                    vistas=(Vista("Calendario", "calendario:calendario"),),
-                ),
-                EntradaDeMenu(
-                    codigo="calendario.recordatorios", nombre="Recordatorios", url="calendario:recordatorios", icono="✐", color="#a855f7",
-                    vistas=(Vista("Próximos", "calendario:recordatorios"), Vista("Apuntar uno", "calendario:nuevo")),
-                ),
-                EntradaDeMenu(
-                    codigo="calendario.suscripcion", nombre="Suscripción", url="calendario:suscripcion", icono="⟳", color="#475569",
-                    vistas=(Vista("Suscripción .ics", "calendario:suscripcion"),),
-                ),
-            ),
+        ),
+        # El calendario. Los recordatorios y la suscripción se abren con sus botones, desde el propio
+        # calendario.
+        EntradaDeMenu(
+            codigo="calendario.ver", nombre="Calendario", url="calendario:calendario", icono="◫", color="#0ea5e9",
+            otras_rutas=("calendario:recordatorio", "calendario:recordatorios", "calendario:nuevo", "calendario:suscripcion"),
         ),
     )
     ayuda = (
         Ayuda(
             seccion="calendario.calendario",
-            titulo="Calendario",
+            titulo="Calendario y eventos",
             texto=(
-                "Todo lo que tiene fecha y puedes ver, en un mismo calendario: eventos, recordatorios… Cada tipo "
-                "tiene su color y con las casillas de arriba lo ocultas o lo muestras."
+                "Todo lo que tiene fecha y puedes ver. «Calendario»: los eventos, los recordatorios y las fechas "
+                "límite juntos. «Eventos de mis grupos»: las actividades de tus grupos (reuniones, acciones, "
+                "recaudatorios…). «Mis eventos»: los que convocas o a los que vas. «Convocar»: crear uno."
             ),
         ),
         Ayuda(
             seccion="calendario.ver",
-            titulo="Ver el calendario",
+            titulo="Calendario",
             texto=(
-                "Cambia entre mes, semana, día y lista con los botones. Pulsa algo para abrir su ficha. Lo que "
-                "gestionas (tus eventos, tus recordatorios) se puede arrastrar a otro día u hora. Pulsa un hueco "
-                "para apuntar un recordatorio ese día."
+                "Todo lo que tiene fecha y puedes ver: eventos, recordatorios, fechas límite… Cada tipo tiene su "
+                "color y con las casillas de arriba lo ocultas o lo muestras. Cambia entre mes, semana, día y lista "
+                "con los botones. Pulsa algo para abrir su ficha. Lo que gestionas (tus eventos, tus "
+                "recordatorios) se puede arrastrar a otro día u hora. Pulsa un hueco para apuntar un recordatorio.\n\n"
+                "«+ Recordatorio»: una anotación libre («llevar las pancartas»); decides si la ves solo tú o tu "
+                "grupo. «Mis recordatorios»: los próximos.\n\n"
+                "«Suscripción»: una dirección secreta para ver tu calendario en el móvil. Quien la tenga ve tus "
+                "fechas sin entrar: no la compartas. Si se te escapa, cámbiala y la anterior deja de funcionar."
             ),
-        ),
-        Ayuda(
-            seccion="calendario.recordatorios",
-            titulo="Recordatorios",
-            texto=(
-                "Anotaciones libres en el calendario («llevar las pancartas», «cierra el local»). Decides si lo ves "
-                "solo tú o tu grupo; la administración del grupo puede abrirlo también al grupo padre y al abuelo."
-            ),
-        ),
-        Ayuda(
-            seccion="calendario.suscripcion",
-            titulo="Suscripción",
-            texto=(
-                "Una dirección secreta para ver tu calendario en el móvil o en otro programa de calendario. Quien "
-                "la tenga ve tus fechas sin entrar: no la compartas. Si se te escapa, cámbiala y la anterior deja "
-                "de funcionar."
-            ),
+            ejemplo="Apuntas «llevar las pancartas» el viernes para tu grupo, y le sale a todo el grupo en su calendario.",
         ),
     )

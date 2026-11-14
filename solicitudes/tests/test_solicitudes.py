@@ -146,9 +146,10 @@ class PruebasDePantallas(PruebaDeSolicitudes):
         solicitud = self.pide_pato()
         self.como(self.erizo)
         self.assertEqual(self.client.get(f"/solicitudes/{solicitud.pk}/").status_code, 404)
-        self.assertContains(self.client.get("/solicitudes/"), "No hay solicitudes pendientes.")
+        self.assertContains(self.client.get("/solicitudes/"), "No hay nada pendiente de apoyar en tus grupos.")
         self.como(crear_usuario_de_prueba("superadmin", es_superadmin=True))
-        self.assertContains(self.client.get("/solicitudes/"), "Aceptar como superadmin")
+        self.assertContains(self.client.get("/solicitudes/por-aprobar/"), "Aceptar como superadmin")
+        self.assertNotContains(self.client.get("/solicitudes/"), "Aceptar como superadmin")
 
     # El admin de la organización cambia los apoyos de su organización; las nuevas solicitudes los usan.
     def test_ajustes(self):
@@ -175,3 +176,7 @@ class PruebasDePantallas(PruebaDeSolicitudes):
         self.comprobar_consultas("/solicitudes/", 8, mas)
         self.comprobar_consultas("/solicitudes/pasadas/", 6, mas)
         self.comprobar_consultas(f"/solicitudes/{solicitud.pk}/", 8, None)
+        # «Por aprobar», como Lince (admin de GRU Henares): ahí está lo que espera su sí.
+        self.como(self.lince)
+        respuesta = self.comprobar_consultas("/solicitudes/por-aprobar/", 8, mas)
+        self.assertContains(respuesta, "Dar el sí de la administración")

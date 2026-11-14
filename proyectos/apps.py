@@ -70,24 +70,27 @@ class ProyectosConfig(ModuloConfig):
         FuenteDeCalendario("proyectos.tareas", "Tareas", "proyectos.calendario.tareas", color="#0f766e", mover="proyectos.calendario.mover_tarea"),
     )
     menu = (
+        # «Tareas y proyectos». La ficha de una tarea pertenece a «Tareas» y la de un proyecto a «Proyectos»,
+        # para que el menú siga marcando dónde se está al entrar en ellas.
         EntradaDeMenu(
             codigo="proyectos.seccion",
-            nombre="Proyectos",
-            url="proyectos:proyectos",
+            nombre="Tareas y proyectos",
+            url="proyectos:tareas_kanban",
             icono="◆",
             color="#4338ca",
-            otras_rutas=("proyectos:proyecto", "proyectos:editar", "proyectos:kanban", "proyectos:tarea"),
             subsecciones=(
                 EntradaDeMenu(
+                    codigo="proyectos.tareas", nombre="Tareas", url="proyectos:tareas_kanban", icono="☑", color="#b91c1c",
+                    otras_rutas=("proyectos:tarea",),
+                    vistas=(Vista("Kanban", "proyectos:tareas_kanban"), Vista("Lista", "proyectos:tareas"), Vista("Nueva", "proyectos:nueva_tarea")),
+                ),
+                EntradaDeMenu(
                     codigo="proyectos.proyectos", nombre="Proyectos", url="proyectos:proyectos", icono="❏", color="#6d28d9",
+                    otras_rutas=("proyectos:proyecto", "proyectos:editar", "proyectos:kanban"),
                     vistas=(
                         Vista("De mis grupos", "proyectos:proyectos"), Vista("Personales", "proyectos:personales"),
                         Vista("Nuevo", "proyectos:nuevo"),
                     ),
-                ),
-                EntradaDeMenu(
-                    codigo="proyectos.tareas", nombre="Mis tareas", url="proyectos:tareas", icono="☑", color="#b91c1c",
-                    vistas=(Vista("Lista", "proyectos:tareas"), Vista("Kanban", "proyectos:tareas_kanban"), Vista("Nueva", "proyectos:nueva_tarea")),
                 ),
             ),
         ),
@@ -95,10 +98,11 @@ class ProyectosConfig(ModuloConfig):
     ayuda = (
         Ayuda(
             seccion="proyectos.seccion",
-            titulo="Proyectos",
+            titulo="Tareas y proyectos",
             texto=(
                 "Lo que se proponen hacer tus grupos, y tus proyectos personales. Cada proyecto puede tener "
-                "subproyectos (y estos los suyos), y tareas con una persona responsable."
+                "subproyectos (y estos los suyos), y tareas con una persona responsable. «Tareas»: las tuyas, en "
+                "kanban o en lista. «Proyectos»: los que puedes ver, en árbol."
             ),
         ),
         Ayuda(
@@ -112,7 +116,7 @@ class ProyectosConfig(ModuloConfig):
         ),
         Ayuda(
             seccion="proyectos.tareas",
-            titulo="Mis tareas",
+            titulo="Tareas",
             texto=(
                 "Las tareas de las que eres responsable o en las que colaboras. En el kanban, arrastra una tarea "
                 "de columna para cambiar su estado: pendiente, en curso, bloqueada, hecha."

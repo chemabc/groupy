@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     # Capa funcional
     "mantenimiento.apps.MantenimientoConfig",
     "ayuda.apps.AyudaConfig",
+    "proximamente.apps.ProximamenteConfig",
     "administracion.apps.AdministracionConfig",
     "comunicaciones.apps.ComunicacionesConfig",
     "eventos.apps.EventosConfig",

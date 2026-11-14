@@ -4,10 +4,11 @@ consultas y rutas del menú en el registro.
 """
 
 from django.test import SimpleTestCase
+from django.utils.module_loading import import_string
 
 from base.comprobaciones import comprobar_contrato
 from base.contrato import EntradaDeMenu, Vista
-from base.pruebas import PruebaDePantalla, contratos_de_prueba, modulo_falso
+from base.pruebas import PruebaDePantalla, contratos_de_prueba, crear_usuario_de_prueba, modulo_falso
 from base.registro import RegistroDeModulos
 
 # Cabeceras que manda htmx al navegar con el menú (ver base/contexto.py).
@@ -20,12 +21,12 @@ CABECERAS_DEL_PANEL = {"HX-Request": "true", "HX-Target": "panel-de-ayuda-conten
 class PruebasDeLaPlantilla(PruebaDePantalla):
     """Comprueba las pantallas de «Inicio» y lo que pinta la plantilla general."""
 
-    # «Inicio → Estructura» hace una sola consulta, la que carga el usuario de la sesión (la sesión está
+    # «Inicio → Panel» hace una sola consulta, la que carga el usuario de la sesión (la sesión está
     # en la caché). El menú y la ayuda salen del registro, en memoria.
     def test_consultas_de_inicio(self):
         self.comprobar_consultas("/", 1, None)
 
-    # «Inicio → Componentes», igual.
+    # «Desarrollo y mantenimiento → Componentes», igual.
     def test_consultas_de_componentes(self):
         self.comprobar_consultas("/componentes/", 1, None)
 
@@ -35,10 +36,10 @@ class PruebasDeLaPlantilla(PruebaDePantalla):
         self.assertContains(respuesta, "<!DOCTYPE html>")
         self.assertContains(respuesta, 'aria-label="Secciones"')
         self.assertContains(respuesta, 'id="zona"', count=1)
-        self.assertContains(respuesta, "<title>Estructura · Inicio · Asambleas</title>", count=1)
+        self.assertContains(respuesta, "<title>Panel · Inicio · Asambleas</title>", count=1)
         # La miniayuda «?» de la sección, en su ventana emergente; arriba, el «?» rojo y el panel de ayuda.
         self.assertContains(respuesta, 'role="dialog"')
-        self.assertContains(respuesta, "Esta es la portada provisional")
+        self.assertContains(respuesta, "Tu portada.")
         self.assertContains(respuesta, 'id="boton-de-ayuda"', count=1)
         self.assertContains(respuesta, 'id="panel-de-ayuda"', count=1)
         self.assertContains(respuesta, 'data-direccion="/ayuda/como-se-hace/"')
@@ -62,7 +63,7 @@ class PruebasDeLaPlantilla(PruebaDePantalla):
         self.assertNotContains(respuesta, "<html")
         self.assertNotContains(respuesta, 'aria-label="Secciones"')
         self.assertContains(respuesta, 'id="zona"', count=1)
-        self.assertContains(respuesta, "<title>Componentes · Inicio · Asambleas</title>")
+        self.assertContains(respuesta, "<title>Componentes · Asambleas</title>")
 
     # Para el botón «atrás», htmx pide la página entera, aunque mande sus cabeceras.
     def test_pagina_entera_al_volver_atras(self):
@@ -78,8 +79,35 @@ class PruebasDeLaPlantilla(PruebaDePantalla):
     # La zona lleva los códigos de la sección actual (para marcar el menú) y marca la vista activa.
     def test_seccion_y_vista_marcadas(self):
         respuesta = self.client.get("/componentes/")
-        self.assertContains(respuesta, 'data-secciones="base.inicio"')
+        self.assertContains(respuesta, 'data-secciones="mantenimiento.desarrollo base.componentes"')
         self.assertContains(respuesta, 'aria-current="page">Componentes</a>')
+
+    # Una sección con pestañas («Calendario y eventos»): arriba, sus subsecciones (aunque sean de módulos
+    # distintos), la elegida marcada y, en una segunda fila, sus vistas; el menú izquierdo marca la sección
+    # (las pestañas no salen en él) y el título es el de la sección.
+    def test_seccion_con_pestanas(self):
+        # «base» no puede importar «grupos» (está más arriba): sus servicios se nombran como texto.
+        _tajo, grupo = import_string("grupos.servicios.crear_organizacion")("ORG Tajo", "GRU Tajo")
+        import_string("grupos.servicios.admitir")(self.usuario, grupo)
+        respuesta = self.client.get("/eventos/")
+        interfaz = respuesta.context["interfaz"]
+        self.assertEqual(interfaz["codigos"], ["calendario.calendario"])
+        self.assertEqual([p["nombre"] for p in interfaz["pestanas"]], ["Calendario", "Eventos de mis grupos", "Mis eventos", "Convocar"])
+        self.assertEqual([p["activa"] for p in interfaz["pestanas"]], [False, True, False, False])
+        self.assertEqual([v["vista"].nombre for v in interfaz["subvistas"]], ["Próximos", "Pasados"])
+        self.assertContains(respuesta, '<h1 class="text-lg font-semibold">Calendario y eventos</h1>', html=False)
+        self.assertNotContains(respuesta, 'data-codigo="eventos.lista"')
+
+    # El menú va en bloques: una persona sin nada que administrar solo ve el suyo, sin título ni banda; la
+    # admin de un grupo ve también «Administrar» y, en sus pantallas, la banda que lo recuerda.
+    def test_bloques(self):
+        respuesta = self.client.get("/")
+        self.assertEqual([b["titulo"] for b in respuesta.context["interfaz"]["bloques"]], [""])
+        self.assertNotContains(respuesta, "Estás administrando")
+        self.client.force_login(crear_usuario_de_prueba("Jefa", es_superadmin=True))
+        respuesta = self.client.get("/solicitudes/por-aprobar/")
+        self.assertEqual([b["titulo"] for b in respuesta.context["interfaz"]["bloques"]], ["", "Administrar", "Plataforma"])
+        self.assertContains(respuesta, "Estás administrando")
 
 
 class PruebasDeRutasDelMenu(SimpleTestCase):

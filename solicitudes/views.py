@@ -1,6 +1,6 @@
 """
 Pantallas de la sección «Solicitudes» (pendientes, pasadas, mis solicitudes, pedir algo y cada
-solicitud) y de «Configuración → Solicitudes» (apoyos y plazos). Ver docs/diseno.md, apartado 6.
+solicitud) y de «Administrar → Mi organización → Apoyos y plazos» (apoyos y plazos). Ver docs/diseno.md, apartado 6.
 
 Cada persona ve las solicitudes de sus grupos (también de los que contienen a los suyos), las de los
 grupos donde da el sí de la administración y las suyas; el superadmin, todas. Los apoyos se ven con el
@@ -63,21 +63,46 @@ def _visibles(usuario, mios):
     return servicios.visibles_para(usuario, mios).select_related("grupo__organizacion", "solicitante", "aprobada_por")
 
 
-# Pantalla «Solicitudes → Pendientes». Cuesta unas 7 consultas.
+# Pantalla «Comunicaciones → Solicitudes → Para apoyar»: las pendientes de los grupos de quien mira que
+# puede apoyar o rechazar como miembro (también las que ya ha respondido, para poder retirar su
+# respuesta). Lo que espera su sí como admin está aparte, en «Por aprobar». Cuesta unas 7 consultas.
 def pendientes(request):
-    mios = grupos_de(request.user)
-    lista = list(_visibles(request.user, mios).filter(estado=Solicitud.PENDIENTE).order_by("caduca_el", "pk")[:MAXIMO])
-    return render(request, "solicitudes/lista.html", {"filas": _filas(request.user, lista, mios), "vacio": "No hay solicitudes pendientes."})
+    filas = [
+        {**fila, "puede_aprobar": False, "superadmin_basta": False}
+        for fila in _pendientes(request.user)
+        if fila["puede_responder"] or fila["mi_respuesta"] is not None
+    ]
+    return render(request, "solicitudes/lista.html", {"filas": filas, "vacio": "No hay nada pendiente de apoyar en tus grupos."})
 
 
-# Pantalla «Solicitudes → Pasadas»: aceptadas, canceladas y caducadas. Cuesta unas 7 consultas.
+# Pantalla «Administrar → Por aprobar»: las pendientes que esperan el sí de la administración de un grupo
+# donde quien mira puede darlo (el superadmin: también las que su sí basta para aceptar). Cuesta unas 7
+# consultas.
+def por_aprobar(request):
+    filas = [
+        {**fila, "puede_responder": False}
+        for fila in _pendientes(request.user)
+        if fila["puede_aprobar"] or fila["superadmin_basta"]
+    ]
+    return render(request, "solicitudes/lista.html", {"filas": filas, "vacio": "No hay nada que espere el sí de la administración."})
+
+
+# Las filas de todas las solicitudes pendientes que ve una persona. La usan las dos pantallas de arriba.
+def _pendientes(usuario):
+    mios = grupos_de(usuario)
+    lista = list(_visibles(usuario, mios).filter(estado=Solicitud.PENDIENTE).order_by("caduca_el", "pk")[:MAXIMO])
+    return _filas(usuario, lista, mios)
+
+
+# Pantalla «Comunicaciones → Solicitudes → Histórico»: las ya cerradas (aceptadas, canceladas y
+# caducadas). Cuesta unas 7 consultas.
 def pasadas(request):
     mios = grupos_de(request.user)
     lista = list(_visibles(request.user, mios).exclude(estado=Solicitud.PENDIENTE).order_by("-resuelta_el", "-pk")[:MAXIMO])
     return render(request, "solicitudes/lista.html", {"filas": _filas(request.user, lista, mios), "vacio": "No hay solicitudes pasadas."})
 
 
-# Pantalla «Solicitudes → Mis solicitudes». Cuesta unas 7 consultas.
+# Pantalla «Comunicaciones → Solicitudes → Enviadas»: lo que ha pedido quien mira. Cuesta unas 7 consultas.
 def mias(request):
     mios = grupos_de(request.user)
     lista = list(_visibles(request.user, mios).filter(solicitante=request.user)[:MAXIMO])
@@ -136,7 +161,7 @@ def solicitud(request, pk):
     return render(request, "solicitudes/solicitud.html", {"fila": fila, "error": error})
 
 
-# Pantalla «Configuración → Solicitudes»: apoyos y días de cada tipo, para toda la plataforma (el
+# Pantalla «Administrar → Mi organización → Apoyos y plazos»: apoyos y días de cada tipo, para toda la plataforma (el
 # superadmin) y para cada organización que ajusta quien mira (su admin).
 #   - POST: «tipo», «organizacion» (número o vacío para la plataforma), «apoyos» y «dias».
 def ajustes(request):

@@ -79,7 +79,7 @@ class Archivado(models.Model):
 
 class Borrado(models.Model):
     """
-    Registro de un elemento borrado por la limpieza: se ve en «Archivo → Borrados» para que quede memoria
+    Registro de un elemento borrado por la limpieza: se ve en «Configuración de mi cuenta → Archivo → Borrados» para que quede memoria
     de qué se borró y cuándo. Nunca se borra.
     """
 

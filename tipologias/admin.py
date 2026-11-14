@@ -1,6 +1,6 @@
 """
 Tipologías en la trastienda (el panel de Django): solo para emergencias. El trabajo diario se hace en
-«Configuración → Tipologías».
+«Administrar → Mi organización → Tipologías».
 """
 
 from django.contrib import admin
@@ -25,7 +25,7 @@ class TipologiaEnLaTrastienda(ConAyuda, admin.ModelAdmin):
     ayuda = (
         "Tipologías: los tipos de proyecto y de evento, en árbol, con los campos que pide cada uno. Un subtipo "
         "pide también los campos de su tipo.\n\n"
-        "Lo normal es cambiarlas en «Configuración → Tipologías», que comprueba quién puede tocar cada una. "
+        "Lo normal es cambiarlas en «Administrar → Mi organización → Tipologías», que comprueba quién puede tocar cada una. "
         "Aquí no se comprueba: úsalo solo para arreglar algo que no se pueda hacer desde allí."
     )
     list_display = ["nombre", "familia", "padre", "de_quien"]

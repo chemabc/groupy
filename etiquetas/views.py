@@ -2,7 +2,7 @@
 Pantallas del módulo «etiquetas»:
 - Las sugerencias mientras se escribe en un selector de etiquetas (componente «selectorDePalabras» de
   base/static/base/interfaz.js), en JSON.
-- «Configuración → Etiquetas»: las etiquetas de cada organización (y las comunes, para el superadmin),
+- «Administrar → Mi organización → Etiquetas»: las etiquetas de cada organización (y las comunes, para el superadmin),
   para crearlas, renombrarlas, ponerles palabras relacionadas, fusionar repetidas y borrarlas.
 """
 
@@ -39,7 +39,7 @@ def sugerencias(request):
     return JsonResponse({"sugerencias": sugerir(request.GET.get("q", ""), organizacion)})
 
 
-# Pantalla «Configuración → Etiquetas»: arriba se elige de quién (una organización que puede ordenar
+# Pantalla «Administrar → Mi organización → Etiquetas»: arriba se elige de quién (una organización que puede ordenar
 # quien mira o, para el superadmin, las comunes); debajo, sus etiquetas con cuántas cosas las llevan, y
 # los formularios para crear, cambiar, fusionar y borrar. Cuesta 4 consultas.
 #   - GET «de»: número de la organización o «comunes». «q»: buscar (también en las relacionadas).

@@ -1,5 +1,5 @@
 """
-Pantalla «Configuración → Tipologías» (de eventos y de proyectos): el árbol a la izquierda y, a la
+Pantalla «Administrar → Mi organización → Tipologías» (de eventos y de proyectos): el árbol a la izquierda y, a la
 derecha, la tipología elegida con sus campos (los heredados y los suyos, que se ordenan arrastrando).
 """
 

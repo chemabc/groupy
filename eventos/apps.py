@@ -83,39 +83,30 @@ class EventosConfig(ModuloConfig):
         FuenteDeCalendario("eventos.eventos", "Eventos", "eventos.calendario.fechas", color="#e11d78", mover="eventos.calendario.mover"),
     )
     menu = (
+        # Van como pestañas de «Calendario y eventos» (ver config/menu.py).
         EntradaDeMenu(
-            codigo="eventos.eventos",
-            nombre="Eventos",
-            url="eventos:proximos",
-            icono="✷",
-            color="#e11d78",
-            otras_rutas=("eventos:evento", "eventos:editar", "eventos:cartel", "eventos:serie"),
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="eventos.lista", nombre="Próximos", url="eventos:proximos", icono="➤", color="#0284d9",
-                    vistas=(Vista("Próximos", "eventos:proximos"), Vista("Pasados", "eventos:pasados")),
-                ),
-                EntradaDeMenu(
-                    codigo="eventos.mios", nombre="Mis eventos", url="eventos:mios", icono="★", color="#166534",
-                    vistas=(Vista("Mis eventos", "eventos:mios"), Vista("Series", "eventos:series"), Vista("Convocar", "eventos:convocar")),
-                ),
-            ),
+            codigo="eventos.lista", nombre="Eventos de mis grupos", url="eventos:proximos", icono="➤", color="#0284d9",
+            otras_rutas=("eventos:evento", "eventos:editar", "eventos:cartel"),
+            vistas=(Vista("Próximos", "eventos:proximos"), Vista("Pasados", "eventos:pasados")),
+        ),
+        EntradaDeMenu(
+            codigo="eventos.mios", nombre="Mis eventos", url="eventos:mios", icono="★", color="#166534",
+            otras_rutas=("eventos:serie",),
+            vistas=(Vista("Mis eventos", "eventos:mios"), Vista("Series", "eventos:series")),
+        ),
+        EntradaDeMenu(
+            codigo="eventos.convocar", nombre="Convocar", url="eventos:convocar", icono="✷", color="#e11d78",
+            permiso="eventos.convocar",
         ),
     )
     ayuda = (
         Ayuda(
-            seccion="eventos.eventos",
-            titulo="Eventos",
+            seccion="eventos.lista",
+            titulo="Eventos de mis grupos",
             texto=(
                 "Las actividades con fecha de tus grupos: reuniones, acciones, recaudatorios… Cada una dice quién "
-                "la convoca, de qué tipo es, quién puede verla, dónde y cuándo es, y si cuesta algo."
-            ),
-        ),
-        Ayuda(
-            seccion="eventos.lista",
-            titulo="Próximos y pasados",
-            texto=(
-                "Los eventos que puedes ver, del más cercano al más lejano. Pulsa uno para ver sus datos, decir "
+                "la convoca, de qué tipo es, quién puede verla, dónde y cuándo es, y si cuesta algo.\n\n"
+                "Arriba, «Próximos» y «Pasados»: los eventos que puedes ver, del más cercano al más lejano. Pulsa uno para ver sus datos, decir "
                 "si vas a ir y apuntarte a un cometido (facilitación, logística…). Cuántas personas van lo ve "
                 "todo el mundo; quiénes, solo quien convoca y quien tiene un cometido."
             ),
@@ -124,7 +115,7 @@ class EventosConfig(ModuloConfig):
             seccion="eventos.mios",
             titulo="Mis eventos",
             texto=(
-                "Los que has convocado y aquellos a los que has dicho que vas o quizá. Con «Convocar» creas uno. "
+                "Los que has convocado y aquellos a los que has dicho que vas o quizá. Con la pestaña «Convocar» creas uno. "
                 "Una reunión necesita apoyos: queda pendiente (solo la ves tú) hasta que la apoyan 2 personas de "
                 "tu grupo (5 si es para el grupo padre, 10 para el abuelo); entonces se convoca sola. Al convocar "
                 "puedes hacer que se repita (cada semana, cada mes…): en «Series» ves y cambias las tuyas. Cada vez "

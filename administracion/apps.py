@@ -28,6 +28,26 @@ class AdministracionConfig(ModuloConfig):
         ),
     )
     menu = (
+        # Las secciones de «Administrar» (admin de grupo y de organización): cada una junta, como pestañas,
+        # pantallas de varios módulos, y se ve si alguna de ellas se ve (ver config/menu.py). No piden
+        # permiso propio: cada pestaña pide el suyo.
+        EntradaDeMenu(
+            codigo="administracion.grupos", nombre="Grupos que administro", url="grupos:arbol", icono="⛬", color="#a16208",
+        ),
+        EntradaDeMenu(
+            codigo="administracion.buzon", nombre="Buzón de la administración", url="comunicaciones:atendidas", icono="☖", color="#92400f",
+        ),
+        EntradaDeMenu(
+            codigo="administracion.eventos_y_talentos", nombre="Eventos y talentos", url="proximamente:eventos_administrados",
+            icono="✺", color="#9a3413",
+        ),
+        EntradaDeMenu(
+            codigo="administracion.organizacion", nombre="Mi organización", url="grupos:mis_organizaciones", icono="⬣", color="#14532d",
+        ),
+        # Y la de «Plataforma» (solo el superadmin) con los catálogos comunes.
+        EntradaDeMenu(
+            codigo="administracion.catalogos", nombre="Catálogos comunes", url="lugares:propuestas", icono="❒", color="#1e40af",
+        ),
         EntradaDeMenu(
             codigo="administracion.usuarios",
             nombre="Usuarios",

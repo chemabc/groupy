@@ -18,6 +18,6 @@ urlpatterns = [
     path("propuestas/", views.propuestas, name="propuestas"),
     path("nuevo/", views.nuevo, name="nuevo"),
     path("importar/", views.importar, name="importar"),
-    # Configuración → Lugares.
+    # Administrar → Mi organización → Lugares.
     path("configuracion/", views.configuracion, name="configuracion"),
 ]

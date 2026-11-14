@@ -1,5 +1,5 @@
 """
-Pruebas de «Configuración → Etiquetas»: número de consultas, de quién ve las etiquetas cada cual, y
+Pruebas de «Administrar → Mi organización → Etiquetas»: número de consultas, de quién ve las etiquetas cada cual, y
 crear, renombrar, fusionar y borrar.
 """
 

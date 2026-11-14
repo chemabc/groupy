@@ -23,8 +23,8 @@ class PruebasDelMapaEnElNavegador(PruebaEnElNavegador):
             ("IES Ebro", "https://www.openstreetmap.org/#map=18/41.6600/-0.8700"),
         ):
             Lugar(nombre=nombre, direccion="C/ X", url_localizacion=url).save()
-        self.abrir("/lugares/")
-        self.pagina.locator('a:has-text("Mapa y lista")').first.click()
+        self.abrir("/organizaciones/")
+        self.pagina.locator('nav[aria-label="Secciones"] a[data-codigo="lugares.mapa"]').first.click()
         self.pagina.wait_for_selector(".marker-cluster")
         self.assertEqual(self.pagina.locator(".marker-cluster").inner_text(), "2")
         self.pagina.locator('.leaflet-marker-icon[title="IES Ebro"]').click()

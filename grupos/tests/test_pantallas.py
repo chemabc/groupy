@@ -71,6 +71,14 @@ class PruebasDeConsultas(PruebaDeGrupos):
     def test_mis_grupos(self):
         self.comprobar_consultas("/organizaciones/", 5, lambda: admitir(self.nutria, crear_grupo(self.tajo, "GRU Lozoya", padre=self.jarama)))
 
+    # «Mi organización → Datos»: Zorro (admin de ORG Tajo) ve la suya; Nutria no puede entrar.
+    def test_mis_organizaciones(self):
+        self.como(self.zorro)
+        respuesta = self.comprobar_consultas("/organizaciones/mis-organizaciones/", 2, None)
+        self.assertContains(respuesta, f'href="/organizaciones/organizacion/{self.tajo.pk}/"')
+        self.como(self.nutria)
+        self.assertEqual(self.client.get("/organizaciones/mis-organizaciones/").status_code, 403)
+
     # Árbol, como admin de la organización y como superadmin.
     def test_arbol(self):
         self.como(self.zorro)
@@ -121,11 +129,12 @@ class PruebasDeConsultas(PruebaDeGrupos):
 class PruebasDeQuienVeQue(PruebaDeGrupos):
     """Qué ve cada cual en el menú y en las fichas."""
 
-    # Una persona sin admin no ve «Árbol» en el menú ni puede abrirlo; su admin sí.
+    # Una persona sin admin no ve «Administrar» (con «Árbol» e «Invitaciones») en el menú ni puede abrir el
+    # árbol; su admin sí.
     def test_arbol_solo_para_admins(self):
         respuesta = self.client.get("/organizaciones/")
         self.assertNotContains(respuesta, 'href="/organizaciones/arbol/"')
-        self.assertContains(respuesta, "Invitaciones <span")
+        self.assertNotContains(respuesta, 'aria-label="Administrar"')
         self.assertEqual(self.client.get("/organizaciones/arbol/").status_code, 403)
         self.como(self.lince)
         respuesta = self.client.get("/organizaciones/arbol/")

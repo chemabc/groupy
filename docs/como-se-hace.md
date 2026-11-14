@@ -1,8 +1,21 @@
 # How to? Cómo se hace cada cosa
 
 Guías cortas, paso a paso, para las tareas de cada día. Los caminos se escriben como en el menú:
-«Eventos → Mis eventos» quiere decir «en el menú de la izquierda, la sección Eventos y, dentro, Mis
-eventos».
+«Comunicaciones → Solicitudes» quiere decir «en el menú de la izquierda, la sección Comunicaciones y, dentro,
+Solicitudes». Algunas secciones tienen sus partes como pestañas arriba (por ejemplo, «Calendario y eventos»).
+
+## Cómo está ordenado el menú
+
+El menú de la izquierda tiene hasta tres bloques:
+
+- **Lo tuyo** (arriba, sin título): tu inicio, tu calendario, tus comunicaciones, tus tareas, tus grupos, la
+  ayuda y tu cuenta.
+- **Administrar** (con una franja ámbar): solo si administras un grupo o una organización. Lo que hagas ahí
+  afecta a otras personas; arriba de cada pantalla lo recuerda una banda.
+- **Plataforma** (con una franja roja): solo para el superadmin.
+
+Las herramientas que aún no existen ya tienen su sitio en el menú: al pulsarlas, dicen que están vacías y
+qué harán.
 
 Cada sección tiene además su miniayuda: el botón **?** gris que hay junto a su título abre una ventana
 rápida que explica qué es esa sección y para qué se usa (a veces, con un ejemplo).
@@ -28,7 +41,7 @@ Si la pantalla principal no cabe, sale una barra de desplazamiento abajo.
 ### Cambiar el tamaño de la letra de la ayuda
 
 Arriba del panel, los botones **−** y **+** achican o agrandan la letra del panel (solo la del panel; la
-de la pantalla principal se cambia en «Configuración de mi cuenta → Preferencias»). Se recuerda.
+de la pantalla principal se cambia en «Configuración de mi cuenta → Usabilidad»). Se recuerda.
 
 ### Ver el índice de un documento
 
@@ -43,7 +56,7 @@ En el panel, pulsa **Abrir en grande ↗**: la misma página se abre en la panta
 
 ### Cambiar el tema, la letra o la densidad
 
-1. Ve a «Configuración de mi cuenta → Preferencias».
+1. Ve a «Configuración de mi cuenta → Usabilidad».
 2. Elige el tema (claro, día u oscuro), el tamaño de la letra y la densidad.
 
 Se guardan en tu cuenta: te siguen al móvil o a otro ordenador. El botón ☀/◐/☾ de la cabecera cambia el
@@ -56,7 +69,7 @@ tema en un clic.
 
 ### Elegir qué notificaciones te llegan
 
-1. Ve a «Comunicaciones → Preferencias de aviso».
+1. Ve a «Configuración de mi cuenta → Avisos que recibo».
 2. Desmarca los tipos que no te interesen. Los que ya tienes se quedan.
 
 ## Grupos
@@ -68,21 +81,21 @@ miembro de ellos, por herencia. Pulsa uno para ver su ficha.
 
 ### Pedir entrar en un grupo
 
-1. Ve a «Solicitudes → Mis solicitudes» y pulsa **Pedir algo**.
+1. Ve a «Comunicaciones → Solicitudes → Enviadas» y pulsa **Pedir algo**.
 2. Elige «Entrar en un grupo», el grupo y explica por qué.
 3. La solicitud necesita el sí de la administración del grupo y el apoyo de miembros del grupo (o el sí
    del superadmin). Su estado se ve en «Mis solicitudes».
 
 ### Apoyar o rechazar una solicitud
 
-1. Ve a «Solicitudes → Pendientes». El número del menú son las que esperan algo de ti.
+1. Ve a «Comunicaciones → Solicitudes → Para apoyar». El número son las que aún no has respondido.
 2. Pulsa **Apoyar** o **Rechazar**. Puedes retirar tu respuesta mientras siga pendiente.
 
 ## Eventos y calendario
 
 ### Convocar un evento
 
-1. Ve a «Eventos → Mis eventos» y pulsa **Convocar**.
+1. Ve a «Calendario y eventos» y pulsa la pestaña **Convocar**.
 2. Elige el tipo (reunión, acción…): algunos piden datos extra.
 3. Elige quién lo ve (de entrada, nadie más que tú y quien tenga un cometido) y rellena dónde y cuándo.
 4. Si se repite, elige cada cuánto (cada semana, cada mes…).
@@ -92,25 +105,25 @@ grupo padre, 10 para el abuelo).
 
 ### Decir si voy a ir
 
-Abre el evento (desde «Eventos → Próximos» o desde el calendario) y responde **¿Vas a ir?**. Cuántas
+Abre el evento (desde «Calendario y eventos → Eventos de mis grupos» o desde el calendario) y responde **¿Vas a ir?**. Cuántas
 personas van lo ve todo el mundo; quiénes, solo quien convoca y quien tiene un cometido.
 
 ### Ver el calendario en el móvil
 
-1. Ve a «Calendario → Suscripción» y copia la dirección secreta.
+1. Ve a «Calendario y eventos → Calendario → Suscripción» y copia la dirección secreta.
 2. Añádela como calendario suscrito en el programa de calendario del móvil.
 
 No la compartas: quien la tenga ve tus fechas. Si se te escapa, cámbiala allí mismo.
 
 ### Apuntar un recordatorio
 
-En «Calendario → Ver el calendario», pulsa un hueco del día. Decide si lo ves solo tú o tu grupo.
+En «Calendario y eventos → Calendario», pulsa un hueco del día. Decide si lo ves solo tú o tu grupo.
 
 ## Proyectos y tareas
 
 ### Crear un proyecto
 
-1. Ve a «Proyectos → Proyectos» y pulsa **Nuevo proyecto**.
+1. Ve a «Tareas y proyectos → Proyectos» y pulsa **Nuevo proyecto**.
 2. Elige si es de un grupo o personal. Los personales solo los ves tú.
 3. Dentro de su ficha puedes crear subproyectos, tareas y recursos.
 
@@ -129,32 +142,32 @@ a quien ve la tarea.
 
 ### Mover una tarea de estado
 
-En «Proyectos → Mis tareas» (o en el kanban de un proyecto), arrastra la tarjeta a otra columna: pendiente,
+En «Tareas y proyectos → Tareas» (o en el kanban de un proyecto), arrastra la tarjeta a otra columna: pendiente,
 en curso, bloqueada o hecha.
 
 ### Rescatar algo archivado
 
-Lo terminado hace tiempo pasa a «Archivo → Archivados». Si debe quedarse, pulsa **Conservar**: no se
+Lo terminado hace tiempo pasa a «Configuración de mi cuenta → Archivo → Archivados». Si debe quedarse, pulsa **Conservar**: no se
 borrará solo.
 
 ## Talentos y lugares
 
 ### Compartir lo que puedo aportar
 
-1. Ve a «Talentos → Mis talentos» y añade los tuyos (recursos o habilidades).
+1. Ve a «Configuración de mi cuenta → Mis datos → Talentos» y añade los tuyos (recursos o habilidades).
 2. Marca con qué grupos compartes cada uno. En esos grupos solo se ve cuántas personas lo comparten, nunca
    quiénes.
 
 ### Elegir mi lugar de trabajo
 
-Ve a «Lugares → Mi lugar» y elígelo de la lista. Si no está, propón uno nuevo. Solo lo ves tú y el
+Ve a «Configuración de mi cuenta → Mis datos → Lugar» y elígelo de la lista. Si no está, propón uno nuevo. Solo lo ves tú y el
 superadmin.
 
 ## Hablar con la administración
 
 ### Escribir a la administración de mi grupo
 
-1. Ve a «Comunicaciones → Con la administración».
+1. Ve a «Comunicaciones → Conversaciones → Con la administración».
 2. Pulsa **Escribir a la administración** y elige a cuál (la de tu grupo, la de tu organización o el
    superadmin).
 

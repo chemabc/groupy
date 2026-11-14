@@ -27,7 +27,7 @@ class EtiquetasConfig(ModuloConfig):
         ),
     )
     datos_de_ejemplo = DatosDeEjemplo(crear="etiquetas.ejemplos.crear", borrar="etiquetas.ejemplos.borrar")
-    # «Configuración → Etiquetas» (13 de noviembre de 2026), colocada dentro de «Configuración» en config/menu.py.
+    # «Administrar → Mi organización → Etiquetas» (13 de noviembre de 2026), colocada dentro de «Configuración» en config/menu.py.
     menu = (
         EntradaDeMenu(
             codigo="etiquetas.etiquetas",

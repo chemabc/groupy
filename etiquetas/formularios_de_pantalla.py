@@ -1,5 +1,5 @@
 """
-Formularios de la pantalla «Configuración → Etiquetas» (etiquetas/views.py, etiquetas). Los del
+Formularios de la pantalla «Administrar → Mi organización → Etiquetas» (etiquetas/views.py, etiquetas). Los del
 selector de etiquetas, que usan los demás módulos, están en etiquetas/formularios.py.
 """
 

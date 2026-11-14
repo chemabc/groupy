@@ -1,6 +1,8 @@
 {% comment %}
-  Zona central de la pantalla: título de la sección, botón de ayuda «?», menú superior con las vistas y
-  el contenido de la página. El botón «?» gris abre la miniayuda de la sección en una ventana emergente
+  Zona central de la pantalla: banda de administración (si la sección es de un bloque con banda), título de
+  la sección, botón de ayuda «?», pestañas de arriba (las vistas de la sección o, en una sección con
+  pestañas, sus subsecciones, con una segunda fila para las vistas de la elegida) y el contenido de la
+  página. El botón «?» gris abre la miniayuda de la sección en una ventana emergente
   (qué es, para qué se usa y, si lo trae, un ejemplo). No tiene nada que ver con el panel de ayuda de la
   derecha, que abre el «?» rojo de la cabecera.
   Con el panel abierto, la zona no se estrecha por debajo de 32rem (variante «panel-abierto:» de
@@ -21,10 +23,14 @@
      x-data="{ ayudaAbierta: false }"
      data-secciones="{{ interfaz.codigos|join:' ' }}"
      x-init="$store.navegacion.secciones = $el.dataset.secciones.split(' ')">
-  {# Cabecera de la sección: título, ayuda y vistas #}
+  {# Banda que recuerda que se está administrando (bloques «Administrar» y «Plataforma») #}
+  {% if interfaz.banda %}
+    <p class="border-b px-4 py-1 text-xs font-medium {% if interfaz.banda.tono == 'plataforma' %}border-rose-300 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200{% else %}border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200{% endif %}" role="note">{{ interfaz.banda.texto }}</p>
+  {% endif %}
+  {# Cabecera de la sección: título, ayuda y pestañas #}
   <div class="border-b border-slate-200 px-4 pt-3 dark:border-slate-800">
     <div class="flex items-center gap-2">
-      <h1 class="text-lg font-semibold">{% firstof titulo_de_la_pagina interfaz.seccion.nombre "Asambleas" %}</h1>
+      <h1 class="text-lg font-semibold">{% firstof titulo_de_la_pagina interfaz.nombre_de_la_seccion "Asambleas" %}</h1>
       {% if interfaz.ayuda %}
         <button type="button"
                 class="grid size-6 place-items-center rounded-full border border-slate-300 text-xs text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
@@ -32,15 +38,25 @@
                 @click="ayudaAbierta = true">?</button>
       {% endif %}
     </div>
-    {# Menú superior con las vistas de la sección. En el móvil se desliza de lado. #}
+    {# Pestañas de arriba. En el móvil se deslizan de lado. #}
     <nav class="-mb-px mt-2 flex gap-5 overflow-x-auto text-sm" aria-label="Vistas de la sección">
-      {% for elemento in interfaz.vistas %}
-        <a href="{% url elemento.vista.url %}"
-           class="whitespace-nowrap border-b-2 pb-2 {% if elemento.activa %}border-marca font-medium text-marca{% else %}border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200{% endif %}"
-           {% if elemento.activa %}aria-current="page"{% endif %}>{{ elemento.vista.nombre }}</a>
+      {% for pestana in interfaz.pestanas %}
+        <a href="{% url pestana.url %}"
+           class="whitespace-nowrap border-b-2 pb-2 {% if pestana.activa %}border-marca font-medium text-marca{% else %}border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200{% endif %}"
+           {% if pestana.activa and not interfaz.subvistas %}aria-current="page"{% endif %}>{{ pestana.nombre }}{% if pestana.numero is not None %} ({{ pestana.numero }}){% endif %}</a>
       {% endfor %}
     </nav>
   </div>
+  {# Segunda fila, más pequeña: las vistas de la pestaña elegida, si tiene varias #}
+  {% if interfaz.subvistas %}
+    <nav class="flex gap-4 overflow-x-auto border-b border-slate-200 bg-slate-50 px-4 py-1.5 text-xs dark:border-slate-800 dark:bg-slate-900" aria-label="Vistas de la pestaña">
+      {% for elemento in interfaz.subvistas %}
+        <a href="{% url elemento.vista.url %}"
+           class="whitespace-nowrap rounded-full px-2 py-0.5 {% if elemento.activa %}bg-marca/10 font-medium text-marca{% else %}text-slate-500 hover:text-slate-800 dark:hover:text-slate-200{% endif %}"
+           {% if elemento.activa %}aria-current="page"{% endif %}>{{ elemento.vista.nombre }}</a>
+      {% endfor %}
+    </nav>
+  {% endif %}
 
   {# Contenido propio de cada página #}
   <main class="p-4">{% block contenido %}{% endblock %}</main>

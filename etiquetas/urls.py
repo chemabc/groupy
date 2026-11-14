@@ -9,7 +9,7 @@ from . import views
 app_name = "etiquetas"
 
 urlpatterns = [
-    # Configuración → Etiquetas.
+    # Administrar → Mi organización → Etiquetas.
     path("", views.etiquetas, name="etiquetas"),
     # Sugerencias mientras se escribe (JSON).
     path("sugerencias/", views.sugerencias, name="sugerencias"),

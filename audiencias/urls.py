@@ -9,6 +9,6 @@ from . import views
 app_name = "audiencias"
 
 urlpatterns = [
-    # Configuración → Visibilidad: qué niveles ofrece cada organización.
+    # Administrar → Mi organización → Visibilidad: qué niveles ofrece cada organización.
     path("", views.visibilidad, name="visibilidad"),
 ]

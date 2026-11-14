@@ -1,5 +1,5 @@
 """
-Pantalla «Configuración → Visibilidad»: qué niveles de visibilidad ofrece cada organización a quien
+Pantalla «Administrar → Mi organización → Visibilidad»: qué niveles de visibilidad ofrece cada organización a quien
 publica algo en ella (ver docs/diseno.md, apartado 3.4). La ve el superadmin (todas las organizaciones)
 y el admin de cada organización (la suya), con el permiso «audiencias.configurar».
 """

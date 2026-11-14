@@ -170,18 +170,36 @@ def cambiar_estado(conversacion, estado):
     conversacion.save(update_fields=["estado"])
 
 
-# Número de conversaciones con algo sin leer para una persona: las suyas con respuesta de la
-# administración y las de las administraciones que atiende con mensajes de la persona. Para el menú
-# («Conversaciones (2)»). Sin consultas si está en la caché.
+# Número de conversaciones propias con algo sin leer (con respuesta de la administración), para el menú
+# («Con la administración (2)»). Sin consultas si está en la caché.
 #   - usuario: quién.
 def conversaciones_sin_leer(usuario):
-    clave = f"comunicaciones:conversaciones:v{_version_de_conversaciones()}:{usuario.pk}"
+    return _sin_leer(usuario, "suyas", lambda: Q(persona=usuario, pendiente_persona=True))
+
+
+# Número de conversaciones de las administraciones que atiende con mensajes nuevos de la persona que
+# escribió, para el menú de administrar («Conversaciones que atiendo (3)»). Sin consultas si está en la
+# caché.
+#   - usuario: quién.
+def atendidas_sin_leer(usuario):
+    # Condición: las de las administraciones que atiende (todas, si es superadmin) con algo sin leer.
+    def condicion():
+        filtro = filtro_de_lo_que_atiende(usuario)
+        return Q(pendiente_admins=True) & (filtro if filtro is not None else Q()) & ~Q(persona=usuario)
+
+    return _sin_leer(usuario, "atendidas", condicion)
+
+
+# Cuenta las conversaciones que cumplen una condición, guardando el número en la caché. La usan los dos
+# contadores de arriba.
+#   - usuario: quién.
+#   - cuales: nombre del recuento, para la clave de la caché.
+#   - condicion: función sin parámetros que devuelve la condición (solo se llama si hay que contar).
+def _sin_leer(usuario, cuales, condicion):
+    clave = f"comunicaciones:conversaciones:{cuales}:v{_version_de_conversaciones()}:{usuario.pk}"
     numero = cache.get(clave)
     if numero is None:
-        filtro = filtro_de_lo_que_atiende(usuario)
-        suyas = Q(persona=usuario, pendiente_persona=True)
-        que_atiende = Q(pendiente_admins=True) & (filtro if filtro is not None else Q())
-        numero = Conversacion.objects.filter(suyas | que_atiende).count()
+        numero = Conversacion.objects.filter(condicion()).count()
         cache.set(clave, numero, DURACION_EN_CACHE)
     return numero
 

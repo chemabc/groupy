@@ -138,7 +138,7 @@ def poner_relacionadas(etiqueta, texto):
     return etiqueta
 
 
-# Crea una etiqueta desde la pantalla «Configuración → Etiquetas», con sus palabras relacionadas. Si ya
+# Crea una etiqueta desde la pantalla «Administrar → Mi organización → Etiquetas», con sus palabras relacionadas. Si ya
 # hay una igual (en la organización o común), da error en lugar de devolverla. Devuelve la etiqueta.
 #   - nombre: lo escrito.
 #   - organizacion: la organización (objeto), o None para una común (solo el superadmin).

@@ -29,7 +29,7 @@ class UsuarioEnLaTrastienda(ConAyuda, admin.ModelAdmin):
         "Se puede: activar o desactivar una cuenta, marcarla como superadmin y cambiar su correo "
         "alternativo. En la ficha se ven y se cambian sus pertenencias (en qué grupos está), y la lista de "
         "todos sus grupos, también los que contienen a los suyos.\n\n"
-        "La contraseña no se ve ni se cambia aquí: cada persona la cambia en «Mi cuenta → Contraseña»."
+        "La contraseña no se ve ni se cambia aquí: cada persona la cambia en «Configuración de mi cuenta → Contraseña»."
     )
     list_display = ["alias", "es_superadmin", "activo", "activado_el", "last_login"]
     list_filter = ["es_superadmin", "activo"]

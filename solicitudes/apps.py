@@ -42,45 +42,56 @@ class SolicitudesConfig(ModuloConfig):
         ),
     )
     menu = (
+        # «Solicitudes», con sus pestañas (enviadas, para apoyar, histórico… y las peticiones de talentos):
+        # las coloca config/menu.py.
         EntradaDeMenu(
             codigo="solicitudes.solicitudes",
             nombre="Solicitudes",
-            url="solicitudes:pendientes",
+            url="solicitudes:mias",
             icono="☛",
             color="#7c2d12",
             otras_rutas=("solicitudes:solicitud",),
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="solicitudes.pendientes",
-                    nombre="Pendientes",
-                    url="solicitudes:pendientes",
-                    icono="⧗",
-                    color="#eab308",
-                    contador="solicitudes.servicios.pendientes_para",
-                    vistas=(Vista("Pendientes", "solicitudes:pendientes"),),
-                ),
-                EntradaDeMenu(
-                    codigo="solicitudes.pasadas",
-                    nombre="Pasadas",
-                    url="solicitudes:pasadas",
-                    icono="◷",
-                    color="#78716c",
-                    vistas=(Vista("Pasadas", "solicitudes:pasadas"),),
-                ),
-                EntradaDeMenu(
-                    codigo="solicitudes.mias",
-                    nombre="Mis solicitudes",
-                    url="solicitudes:mias",
-                    icono="✎",
-                    color="#15803d",
-                    vistas=(Vista("Mis solicitudes", "solicitudes:mias"), Vista("Pedir algo", "solicitudes:nueva")),
-                ),
-            ),
         ),
-        # «Configuración → Solicitudes», colocada dentro de «Configuración» en config/menu.py.
+        EntradaDeMenu(
+            codigo="solicitudes.mias",
+            nombre="Enviadas",
+            url="solicitudes:mias",
+            icono="✎",
+            color="#15803d",
+            vistas=(Vista("Enviadas", "solicitudes:mias"), Vista("Pedir algo", "solicitudes:nueva")),
+        ),
+        EntradaDeMenu(
+            codigo="solicitudes.pendientes",
+            nombre="Para apoyar",
+            url="solicitudes:pendientes",
+            icono="⧗",
+            color="#eab308",
+            contador="solicitudes.servicios.para_apoyar_para",
+        ),
+        EntradaDeMenu(
+            codigo="solicitudes.pasadas",
+            nombre="Histórico",
+            url="solicitudes:pasadas",
+            icono="◷",
+            color="#78716c",
+        ),
+        # Para administrar: lo que espera el sí de la administración. La ve quien puede dar el sí a algún
+        # tipo de solicitud: de entrada, quien puede admitir en un grupo (y, con aprueba_algo, quien pueda
+        # aprobar los tipos que se añadan).
+        EntradaDeMenu(
+            codigo="solicitudes.por_aprobar",
+            nombre="Por aprobar",
+            url="solicitudes:por_aprobar",
+            icono="✔",
+            color="#ca8a05",
+            contador="solicitudes.servicios.por_aprobar_para",
+            permiso="grupos.admitir",
+            tambien_si="solicitudes.servicios.aprueba_algo",
+        ),
+        # «Administrar → Mi organización → Apoyos y plazos», colocada dentro de «Configuración» en config/menu.py.
         EntradaDeMenu(
             codigo="solicitudes.ajustes",
-            nombre="Solicitudes",
+            nombre="Apoyos y plazos",
             url="solicitudes:ajustes",
             icono="⚖",
             color="#6b21a8",
@@ -101,22 +112,33 @@ class SolicitudesConfig(ModuloConfig):
         ),
         Ayuda(
             seccion="solicitudes.pendientes",
-            titulo="Pendientes",
+            titulo="Para apoyar",
             texto=(
-                "Las solicitudes pendientes de tus grupos (también de los que contienen a los tuyos) y, si eres "
-                "admin, las que esperan tu sí. Puedes apoyar, rechazar o retirar tu respuesta mientras está "
-                "pendiente. «2 de 5» son los apoyos que tiene y los que necesita. Si llega la fecha sin lo "
-                "necesario, caduca. El número del menú son las que esperan algo de ti."
+                "Las solicitudes pendientes de tus grupos (también de los que contienen a los tuyos). Puedes "
+                "apoyar, rechazar o retirar tu respuesta mientras está pendiente. «2 de 5» son los apoyos que "
+                "tiene y los que necesita. Si llega la fecha sin lo necesario, caduca. El número del menú son las "
+                "que aún no has respondido. Si administras un grupo, lo que espera tu sí está en «Administrar → "
+                "Por aprobar»."
+            ),
+            ejemplo="Garza pide entrar en GRU Henares: como miembro de Henares, la apoyas para que llegue a los 2 apoyos.",
+        ),
+        Ayuda(
+            seccion="solicitudes.por_aprobar",
+            titulo="Por aprobar",
+            texto=(
+                "Las solicitudes de los grupos que administras que esperan el sí de la administración (por "
+                "ejemplo, entrar en el grupo). Además de tu sí, necesitan los apoyos de los miembros. El "
+                "superadmin ve todas y, en algunas, su sí basta."
             ),
         ),
         Ayuda(
             seccion="solicitudes.pasadas",
-            titulo="Pasadas",
-            texto="Las solicitudes ya cerradas de tus grupos: aceptadas, canceladas y caducadas.",
+            titulo="Histórico",
+            texto="Las solicitudes ya cerradas de tus grupos y las tuyas: aceptadas, canceladas y caducadas, con quién las pidió.",
         ),
         Ayuda(
             seccion="solicitudes.mias",
-            titulo="Mis solicitudes",
+            titulo="Enviadas",
             texto=(
                 "Lo que has pedido, con cómo va cada cosa. Puedes cancelar las pendientes. Con «Pedir algo» pides, "
                 "por ejemplo, entrar en un grupo."

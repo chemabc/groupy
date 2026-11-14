@@ -96,7 +96,7 @@ class AyudaConfig(ModuloConfig):
             ),
             ejemplo=(
                 "No sabes cómo convocar una reunión: pulsa el ? rojo, elige «How to?» y, con los pasos de "
-                "«Convocar un evento» a la derecha, ve a «Eventos → Mis eventos» y rellena el formulario."
+                "«Convocar un evento» a la derecha, ve a «Calendario y eventos → Mis eventos» y rellena el formulario."
             ),
         ),
         Ayuda(

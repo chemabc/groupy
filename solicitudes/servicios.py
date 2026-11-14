@@ -230,22 +230,46 @@ def grupos_donde_aprueba(usuario):
     return {grupo for grupo, codigos in permisos_de(usuario).grupos.items() if codigos & permisos}
 
 
-# «Solicitudes (N)»: las pendientes a las que la persona aún no ha respondido y puede responder, más las
-# que esperan su sí de la administración (el superadmin: todas las que esperan el sí). Sin consultas si
-# está en la caché.
+# Dice si una persona puede dar el sí de la administración a algún tipo de solicitud en algún grupo. La
+# usa el menú (la entrada «Por aprobar», con tambien_si). Sin consultas si los permisos están en la caché.
+def aprueba_algo(usuario):
+    return bool(grupos_donde_aprueba(usuario))
+
+
+# «Para apoyar (N)»: las pendientes de sus grupos a las que la persona aún no ha respondido (como miembro).
+# Sin consultas si está en la caché.
 #   - usuario: quién.
-def pendientes_para(usuario):
-    clave = f"solicitudes:pendientes:v{_version()}:{usuario.pk}"
+def para_apoyar_para(usuario):
+    # Condición: de sus grupos (y de los que los contienen) y sin su respuesta.
+    def condicion():
+        respondidas = Apoyo.objects.filter(usuario=usuario).values("solicitud_id")
+        return Q(grupo_id__in=grupos_de(usuario)) & ~Q(pk__in=respondidas)
+
+    return _contar(usuario, "apoyar", condicion)
+
+
+# «Por aprobar (N)»: las pendientes que esperan el sí de la administración de un grupo donde la persona
+# puede darlo (el superadmin: todas las que lo esperan). Sin consultas si está en la caché.
+#   - usuario: quién.
+def por_aprobar_para(usuario):
+    # Condición: necesitan el sí, aún no lo tienen y son de un grupo donde puede darlo.
+    def condicion():
+        condicion = Q(necesita_aprobacion=True, aprobada_por__isnull=True)
+        return condicion if usuario.is_superuser else condicion & Q(grupo_id__in=grupos_donde_aprueba(usuario))
+
+    return _contar(usuario, "aprobar", condicion)
+
+
+# Cuenta las solicitudes pendientes (que no ha pedido la propia persona) que cumplen una condición, con el
+# número guardado en la caché. La usan los dos contadores de arriba.
+#   - usuario: quién.
+#   - cuales: nombre del recuento, para la clave de la caché.
+#   - condicion: función sin parámetros que devuelve la condición (solo se llama si hay que contar).
+def _contar(usuario, cuales, condicion):
+    clave = f"solicitudes:{cuales}:v{_version()}:{usuario.pk}"
     numero = cache.get(clave)
     if numero is None:
-        respondidas = Apoyo.objects.filter(usuario=usuario).values("solicitud_id")
-        pendientes = Solicitud.objects.filter(estado=Solicitud.PENDIENTE).exclude(solicitante=usuario)
-        responder = Q(grupo_id__in=grupos_de(usuario)) & ~Q(pk__in=respondidas)
-        if usuario.is_superuser:
-            aprobar = Q(necesita_aprobacion=True, aprobada_por__isnull=True)
-        else:
-            aprobar = Q(necesita_aprobacion=True, aprobada_por__isnull=True, grupo_id__in=grupos_donde_aprueba(usuario))
-        numero = pendientes.filter(responder | aprobar).count()
+        numero = Solicitud.objects.filter(estado=Solicitud.PENDIENTE).exclude(solicitante=usuario).filter(condicion()).count()
         cache.set(clave, numero, DURACION_EN_CACHE)
     return numero
 

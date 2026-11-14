@@ -27,7 +27,7 @@ class PruebasDelCalendarioEnElNavegador(PruebaEnElNavegador):
         recordatorio = crear_recordatorio(self.usuario, grupo, {"titulo": "Pancartas", "inicio": dia, "todo_el_dia": True}, "grupo:0")
 
         self.abrir("/calendario/recordatorios/")
-        self.pagina.locator('nav[aria-label="Secciones"] a[data-codigo="calendario.ver"]').click()
+        self.pagina.locator('nav[aria-label="Secciones"] a[data-codigo="calendario.calendario"]').first.click()
         evento = self.pagina.locator(".fc-event", has_text="Pancartas")
         evento.wait_for()
         casilla = self.pagina.locator("label", has_text="Recordatorios").locator("input")

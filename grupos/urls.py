@@ -17,4 +17,6 @@ urlpatterns = [
     # Fichas de un grupo y de una organización.
     path("grupo/<int:pk>/", views.grupo, name="grupo"),
     path("organizacion/<int:pk>/", views.organizacion, name="organizacion"),
+    # Las organizaciones que administra quien mira («Administrar → Mi organización → Datos»).
+    path("mis-organizaciones/", views.mis_organizaciones, name="mis_organizaciones"),
 ]

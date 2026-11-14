@@ -1,5 +1,5 @@
 """
-Formularios de la pantalla «Configuración → Visibilidad».
+Formularios de la pantalla «Administrar → Mi organización → Visibilidad».
 """
 
 from django import forms

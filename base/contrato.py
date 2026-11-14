@@ -255,8 +255,8 @@ class TipoDeSolicitud:
     # Ruta de la función que crea lo pedido al aceptarse: recibe la solicitud y devuelve el ancla (tipo,
     # id) de lo creado, o None. Ejemplo: «grupos.solicitudes.entrar».
     resolver: str
-    # Apoyos de miembros del grupo que hacen falta, si nadie lo ha ajustado (en «Configuración →
-    # Solicitudes»). Quien solicita no cuenta.
+    # Apoyos de miembros del grupo que hacen falta, si nadie lo ha ajustado (en «Administrar → Mi
+    # organización → Apoyos y plazos»). Quien solicita no cuenta.
     apoyos: int = 2
     # Días que tiene para conseguirlos antes de caducar, si nadie lo ha ajustado.
     dias: int = 15
@@ -273,8 +273,9 @@ class TipoDeSolicitud:
     # Apoyos según la altura a la que se pide (0: el propio grupo, 1: el padre, 2 o más: el abuelo…), por
     # ejemplo (2, 5, 10) para las reuniones. Si se indica, manda sobre «apoyos» y sobre los ajustes.
     apoyos_por_altura: tuple = ()
-    # Si se pide desde «Solicitudes → Nueva», solo con descripción y justificación. Los tipos que
-    # necesitan su propio formulario (un debate, una reunión) se piden desde su módulo.
+    # Si se pide desde «Comunicaciones → Solicitudes → Enviadas → Pedir algo», solo con descripción y
+    # justificación. Los tipos que necesitan su propio formulario (un debate, una reunión) se piden desde su
+    # módulo.
     generica: bool = False
 
 
@@ -348,7 +349,7 @@ class Limpiable:
     # Si se borra sin archivar antes (sin avisos ni «Conservar», como las notificaciones): ruta de la
     # función que recibe un momento, borra lo que terminó antes y devuelve cuántos ha borrado.
     borrar: str = ""
-    # Días de partida tras terminar hasta archivarlo (el superadmin los cambia en «Configuración →
+    # Días de partida tras terminar hasta archivarlo (el superadmin los cambia en «Plataforma →
     # Limpieza»). No se usa si se borra sin archivar.
     archivar_a: int = 30
     # Días de partida tras archivarlo hasta borrarlo (o, si se borra sin archivar, tras terminar).
@@ -429,6 +430,9 @@ class EntradaDeMenu:
     # en cada página): lo normal es que guarde el resultado en la caché. Ejemplo:
     # «grupos.contadores.invitaciones_pendientes».
     contador: str = ""
+    # Si sus subsecciones salen como pestañas arriba en lugar de en el menú de la izquierda. No lo pone el
+    # módulo: lo decide la disposición del menú (config/menu.py, con Pestanas).
+    en_pestanas: bool = False
     # Si es la entrada de la ayuda: sus subsecciones salen también en el botón «?» rojo de la cabecera,
     # que las abre en el panel de ayuda de la derecha (ver base/templates/base/pagina.html). Solo puede
     # haber una. La declara el módulo «ayuda».

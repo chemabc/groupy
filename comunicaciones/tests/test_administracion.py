@@ -144,12 +144,17 @@ class PruebasDeConversaciones(PruebaDeAdministracion):
             abrir_conversacion(self.garza, Buzon(grupo=self.henares), "Otra", "Hola")
             escribir(conversacion, self.lince, "Respuesta", como_admin=True)
 
-        self.comprobar_consultas("/comunicaciones/conversaciones/", 5, mas)
+        self.comprobar_consultas("/comunicaciones/conversaciones/", 2, mas)
         self.comprobar_consultas(f"/comunicaciones/conversaciones/{conversacion.pk}/", 6, mas)
+        # Lo que atiende Lince (admin de GRU Henares) está en su buzón, no entre sus conversaciones.
+        self.como(self.lince)
+        self.assertNotContains(self.client.get("/comunicaciones/conversaciones/"), "Duda")
+        respuesta = self.comprobar_consultas("/comunicaciones/conversaciones/atendidas/", 4, mas)
+        self.assertContains(respuesta, "Duda")
 
 
 class PruebasDeNiveles(PruebaDeAdministracion):
-    """Configuración → Niveles de aviso (solo el superadmin)."""
+    """Plataforma → Catálogos comunes → Niveles de aviso (solo el superadmin)."""
 
     # Crear uno, cambiarle el color, no poder borrar uno usado; un admin no entra.
     def test_niveles(self):

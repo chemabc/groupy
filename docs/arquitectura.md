@@ -84,7 +84,7 @@ flowchart LR
       direction TB
       subgraph FUN["Funcional"]
         direction LR
-        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza<br/>administracion · mantenimiento · ayuda<br/>[Módulo · Funcional]"]:::capafun
+        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza<br/>administracion · mantenimiento · ayuda<br/>proximamente<br/>[Módulo · Funcional]"]:::capafun
       end
       subgraph ORG["Organización"]
         direction LR
@@ -154,7 +154,7 @@ flowchart TB
   classDef capaiden fill:#dcfce7,stroke:#16a34a,color:#14532d
   classDef capaorg fill:#fef9c3,stroke:#ca8a04,color:#713f12
   classDef capafun fill:#fce7f3,stroke:#db2777,color:#831843
-  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, administracion, mantenimiento, ayuda"]:::capafun
+  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, administracion, mantenimiento, ayuda,<br/>proximamente"]:::capafun
   O["Organización<br/>grupos, permisos, audiencias, etiquetas,<br/>tipologias, solicitudes, lugares, talentos"]:::capaorg
   I["Identidad<br/>boveda, usuarios"]:::capaiden
   B["Base<br/>base, eventos_sw, ejemplos"]:::capabase
@@ -212,7 +212,9 @@ flowchart LR
   comprob["base/comprobaciones.py<br/>manage.py check<br/>[Componente]"]:::capabase
   ready["BaseConfig.ready()<br/>[Núcleo de Django]"]:::django
   usos["menú y ayuda · permisos · calendario · avisos<br/>solicitudes · tareas diarias · limpieza · ejemplos"]:::modulo
-  menu["config/menu.py: DISPOSICION<br/>(orden y agrupación del menú)<br/>[Configuración]"]:::django
+  menu["config/menu.py: DISPOSICION<br/>(bloques, orden, agrupación y pestañas)<br/>[Configuración]"]:::django
+  dispo["base/disposicion.py: Bloque, Pestanas<br/>[Componente]"]:::capabase
+  menu --> dispo
   apps -- "rellena las fichas" --> contrato
   ready -- "al arrancar, una vez" --> registro
   ready -- "DISPOSICION_DEL_MENU (settings)" --> menu
@@ -229,8 +231,11 @@ las fechas de `eventos` y `proyectos` sin importarlos.
 
 El menú es la excepción a «cada módulo lo declara todo»: el módulo declara sus entradas (`EntradaDeMenu`:
 nombre, dirección, icono, permiso, vistas), pero **dónde va cada una** (el orden y dentro de qué sección)
-lo decide un solo fichero, `config/menu.py`. El registro rehace el árbol del menú con esa disposición y
-avisa si falta una entrada, si sobra o si se repite.
+lo decide un solo fichero, `config/menu.py`, escrito con dos piezas de `base/disposicion.py`: `Bloque`
+(«Lo propio», «Administrar», «Plataforma», cada uno con su título, su color y su banda) y `Pestanas` (una
+entrada cuyas subsecciones salen arriba, aunque sean de módulos distintos). El registro rehace el árbol del
+menú con esa disposición (`registro.bloques` y `registro.menu`) y avisa si falta una entrada, si sobra o si
+se repite.
 
 ### 5.2 Los eventos_sw y el trabajador [Módulo · Base]
 
@@ -686,7 +691,10 @@ flowchart LR
 
 ### 6.19 administracion [Módulo · Funcional]
 
-La sección «Usuarios» del superadmin: bóveda (personas, dominios), alias y roles y permisos.
+La sección «Usuarios» del superadmin: bóveda (personas, dominios), alias y roles y permisos. Además declara
+las secciones que juntan pantallas de varios módulos en «Administrar» (Grupos que administro, Buzón de la
+administración, Eventos y talentos, Mi organización) y en «Plataforma» (Catálogos comunes): solo nombran
+direcciones de otros módulos, no los importan.
 
 ```mermaid
 flowchart LR
@@ -696,9 +704,11 @@ flowchart LR
   bov["boveda"]:::otro
   gru["grupos"]:::otro
   per["permisos (roles, excepciones, explicar)"]:::otro
+  otros["grupos · comunicaciones · talentos · lugares<br/>audiencias · tipologias · etiquetas · proximamente<br/>(sus entradas, como pestañas)"]:::otro
   adm --> bov
   adm --> gru
   adm --> per
+  otros -. "colocadas en sus secciones<br/>(config/menu.py)" .-> adm
 ```
 
 ### 6.20 mantenimiento [Módulo · Funcional]
@@ -750,7 +760,26 @@ flowchart LR
   ayu -. "panel_de_ayuda en su EntradaDeMenu" .-> panel
 ```
 
-### 6.22 config [Configuración]
+### 6.22 proximamente [Módulo · Funcional]
+
+Las herramientas que aún no existen, cada una con su entrada de menú (para ir organizándolo) y una página
+que dice que está vacía y qué hará. Cuando se construye una, su módulo declara su entrada y se cambia su
+código en `config/menu.py`.
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  pro["proximamente<br/>[Módulo · Funcional]"]:::yo
+  base["base: contrato, registro<br/>(puede_ver_entrada), proximamente.html"]:::otro
+  per["permisos: SinPermiso, explicar_falta"]:::otro
+  menu["config/menu.py<br/>[Configuración]"]:::otro
+  pro --> base
+  pro --> per
+  menu -. "coloca sus entradas" .-> pro
+```
+
+### 6.23 config [Configuración]
 
 Los ajustes (`settings.py`: apps, bases de datos, caché, cookies, guías de desarrollo), las direcciones
 (`urls.py`), la disposición del menú (`menu.py`: el orden y la agrupación de todas las entradas), el
@@ -782,7 +811,7 @@ flowchart LR
 flowchart LR
   classDef comp fill:#ede9fe,stroke:#7c3aed,color:#3b0764
   classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
-  pagina["pagina.html / zona.html / panel.html<br/>[Componente]"]:::comp
+  pagina["pagina.html (menú por bloques) / zona.html<br/>(pestañas en dos filas, banda) / panel.html<br/>[Componente]"]:::comp
   contexto["contexto.py: interfaz()<br/>menú, vistas, ayuda, título,<br/>ayuda lateral, plantilla (zona o panel)<br/>[Componente]"]:::comp
   registro["registro: menú (ya colocado),<br/>rutas, ayuda, entrada_de_ayuda"]:::otro
   disposicion["config/menu.py<br/>[Configuración]"]:::otro

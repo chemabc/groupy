@@ -1,5 +1,5 @@
 """
-Datos y formulario de demostración para la pantalla «Inicio → Componentes».
+Datos y formulario de demostración para la pantalla «Desarrollo y mantenimiento → Componentes → Componentes».
 
 Sirven para ver funcionando la tabla filtrable (en sus dos modos) y el botón «copiar» mientras no hay
 tablas de verdad. Los datos son inventados, se generan en memoria y no tocan la base de datos.

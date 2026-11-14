@@ -1,10 +1,10 @@
 """
 Pantallas del módulo «limpieza»:
 
-- «Archivo → Archivados»: lo archivado que ve cada persona, con qué día se borrará y el botón
+- «Configuración de mi cuenta → Archivo → Archivados»: lo archivado que ve cada persona, con qué día se borrará y el botón
   «Conservar». El superadmin, además, puede dejar de conservar y borrar ya (podar a mano).
-- «Archivo → Borrados»: el registro de lo que se ha borrado (lo que veía cada persona).
-- «Configuración → Limpieza»: los plazos de cada tipo de elemento (solo el superadmin).
+- «Configuración de mi cuenta → Archivo → Borrados»: el registro de lo que se ha borrado (lo que veía cada persona).
+- «Plataforma → Limpieza»: los plazos de cada tipo de elemento (solo el superadmin).
 """
 
 from django.core.exceptions import ValidationError
@@ -79,7 +79,7 @@ def borrados(request):
     return render(request, "limpieza/borrados.html", {"filas": filas})
 
 
-# Pantalla «Configuración → Limpieza»: los plazos de cada tipo, para cambiarlos o volver a los de
+# Pantalla «Plataforma → Limpieza»: los plazos de cada tipo, para cambiarlos o volver a los de
 # partida. Solo el superadmin (permiso «limpieza.configurar»). Cuesta 1 consulta.
 #   - POST «tipo» y los campos de FormularioDePlazo; o «partida» con «tipo» para volver a los de partida.
 @requiere_permiso("limpieza.configurar")

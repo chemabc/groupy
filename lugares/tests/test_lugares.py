@@ -131,7 +131,7 @@ class PruebasDeLoQueSeVe(PruebaDeLugares):
         configuracion = ConfiguracionDeLugares.objects.get(organizacion=self.tajo)
         self.assertEqual((configuracion.mapa_para_miembros, configuracion.recuentos_para_miembros), (False, True))
         self.como(self.usuario)
-        self.assertContains(self.client.get("/lugares/mapa/"), "Configuración → Lugares", status_code=403)
+        self.assertContains(self.client.get("/lugares/mapa/"), "Mi organización → Lugares", status_code=403)
         self.assertEqual(self.client.get("/lugares/lista/").status_code, 403)
 
     # Lo que cuestan el mapa y la lista (con más lugares).

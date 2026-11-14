@@ -6,7 +6,7 @@ from django import forms
 
 
 class FormularioDePlazo(forms.Form):
-    """Los plazos de un tipo de elemento en «Configuración → Limpieza»."""
+    """Los plazos de un tipo de elemento en «Plataforma → Limpieza»."""
 
     activo = forms.BooleanField(label="Activo", required=False, help_text="Si se limpia este tipo. Sin marcar: no se archiva ni se borra nada de él.")
     archivar_a = forms.IntegerField(

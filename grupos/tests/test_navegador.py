@@ -29,13 +29,15 @@ class PruebasDeGruposEnElNavegador(PruebaEnElNavegador):
             invitar("alfa.proyecto", 7, henares, segre, lince, "Hagamos algo juntos")
 
             self.abrir("/organizaciones/")
-            contador = self.pagina.locator("#contador-gruposinvitaciones")
+            # El número sale en la sección de administrar que lleva «Invitaciones entre grupos» como pestaña.
+            contador = self.pagina.locator("#contador-administraciongrupos")
             self.assertEqual(contador.inner_text(), "(1)")
-            # Se entra en «Invitaciones» con el menú (htmx) y se acepta.
-            self.pagina.locator('nav[aria-label="Secciones"] a[data-codigo="grupos.invitaciones"]').click()
+            # Se entra con el menú (htmx), se pasa a la pestaña y se acepta.
+            self.pagina.locator('nav[aria-label="Secciones"] a[data-codigo="administracion.grupos"]').first.click()
+            self.pagina.locator("#zona nav a", has_text="Invitaciones entre grupos").click()
             self.pagina.locator('button[value="aceptar"]').click()
             self.pagina.wait_for_selector("text=Aceptada")
             self.assertEqual(contador.inner_text(), "(0)")
             # Solo hay un contador de invitaciones en la página (htmx lo ha sustituido, no duplicado).
-            self.assertEqual(self.pagina.locator("#contador-gruposinvitaciones").count(), 1)
+            self.assertEqual(self.pagina.locator("#contador-administraciongrupos").count(), 1)
         self.assertEqual(self.errores, [])

@@ -5,7 +5,7 @@ Se aplican como atributos de <html> (data-tema, data-letra, data-densidad), que 
 (base/estilos/entrada.css) usa para cambiar colores, tamaños y espacios. Los valores de aquí deben
 coincidir con los de esa hoja.
 
-Las usan la pantalla «Mi cuenta → Preferencias» (para pintar los botones) y el modelo Usuario (para
+Las usan la pantalla «Configuración de mi cuenta → Usabilidad» (para pintar los botones) y el modelo Usuario (para
 guardar la elección de cada persona y comprobar que es una opción válida).
 """
 

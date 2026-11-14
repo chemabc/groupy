@@ -58,7 +58,7 @@ class PruebasEnElNavegador(PruebaEnElNavegador):
 
     # Navegar con el menú superior cambia solo la zona central, y el botón ☰ estrecha el menú izquierdo.
     def test_navegacion_y_menu_plegable(self):
-        self.abrir("/")
+        self.abrir("/estructura/")
         menu = self.pagina.locator('nav[aria-label="Secciones"]').first
         ancho_inicial = menu.bounding_box()["width"]
         self.pagina.locator('button[title="Plegar o desplegar el menú"]').click()

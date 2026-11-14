@@ -443,7 +443,9 @@ color, permiso, vistas); las subsecciones que declaran solo agrupan su contrato.
 - Se quitan `EntradaDeMenu.orden` y `EntradaDeMenu.dentro_de` (había dos formas de decir lo mismo).
 - El final del menú es, por este orden: «Ayuda», «Configuración de mi cuenta» (antes «Mi cuenta») y
   «Desarrollo y mantenimiento» (solo el superadmin). Para quien no es superadmin, «Ayuda» es la penúltima
-  y «Configuración de mi cuenta», la última: «Ayuda» siempre va antes que la cuenta.
+  y «Configuración de mi cuenta», la última: «Ayuda» siempre va antes que la cuenta. *(Desde el mismo día,
+  con el menú en tres bloques, «Ayuda» y la cuenta cierran el bloque de lo propio y «Desarrollo y
+  mantenimiento», el de «Plataforma».)*
 - *Descartado:* seguir con un número `orden` en cada contrato (el orden queda repartido por veinte
   ficheros y hay que buscar números libres).
 - *Mejora futura (2C):* editar la disposición desde la interfaz, guardada en la base de datos. Como la
@@ -504,6 +506,51 @@ color, permiso, vistas); las subsecciones que declaran solo agrupan su contrato.
 - **Sin HTML escrito a mano en los documentos:** la conversión de Markdown escapa cualquier etiqueta que
   no esté en un bloque de código. *Motivo:* el tutorial mencionaba «`<script>`» sin comillas de código y se colaba en la página
   como etiqueta de verdad (salió en las pruebas del panel). Ningún documento usaba HTML a propósito.
+
+**Menú en tres bloques (14 de noviembre de 2026, decisiones 1A, 2a, 3A y 4A de la persona usuaria).** Lo
+propio va separado de lo que se hace por otras personas.
+- *Motivo:* antes se mezclaban; por ejemplo, en «Comunicaciones» convivían tus notificaciones con el buzón
+  que atiendes como admin, y en «Solicitudes», las que apoyas con las que esperan tu sí.
+- **Tres bloques** (`base/disposicion.py`, `Bloque`), siempre visibles y en este orden:
+  - **Lo propio**, sin título: Inicio (Panel · Mis datos), Calendario y eventos, Comunicaciones
+    (Notificaciones, Conversaciones, Solicitudes), Tareas y proyectos, Participación, Organizaciones y
+    grupos (Mis grupos, Mapa de lugares), Ayuda y Configuración de mi cuenta (Usabilidad, Mis datos, Avisos
+    que recibo, Contraseña, Archivo).
+  - **Administrar** (admin de grupo y de organización; franja ámbar): Grupos que administro, Buzón de la
+    administración, Por aprobar, Eventos y talentos, Moderación y Mi organización. Cada pantalla enseña
+    solo lo que administra quien mira (2a: una sola sección para los dos tipos de admin, no una por rol).
+  - **Plataforma** (solo superadmin; franja roja): Usuarios, Catálogos comunes, Limpieza y Desarrollo y
+    mantenimiento (con «Componentes», la demostración de la plantilla que antes era «Inicio»).
+  - Las pantallas de «Administrar» y «Plataforma» llevan arriba una **banda** de su color que lo recuerda.
+  - Un bloque sin nada que ver no sale. Un superadmin que además está en grupos ve los tres.
+  - *Descartado (1B):* un interruptor «Personal / Administración» que cambie el menú entero (esconde
+    cosas y hay que recordar en qué modo se está).
+- **Secciones con pestañas** (`Pestanas` en `config/menu.py`): las subsecciones de una entrada salen
+  arriba como pestañas, no en el menú de la izquierda. Así una sección junta pantallas de módulos distintos
+  (por ejemplo, «Mis grupos»: Árboles · Grafo · Relaciones · Talentos de mis grupos). Si la pestaña elegida
+  tiene varias vistas, salen en una segunda fila, más pequeña. El menú de la izquierda marca la sección;
+  el título es el suyo; su número es la suma de los de sus pestañas.
+- **«Configuración de mi cuenta» con submenús a la izquierda** (no pestañas), para poder añadir más.
+- **Herramientas que aún no existen** (módulo `proximamente`): cada una tiene su entrada, con su sitio en
+  el menú, y al pulsarla dice que está vacía y qué hará. Son: conversaciones con grupos y con personas,
+  grafo de grupos, datos de la cuenta, debates, consultas, órdenes del día y actas, decisiones, miembros,
+  eventos de los grupos que administro, moderación y web pública. «Inicio → Panel» y «Mis datos» también
+  dicen que están vacíos. Cuando se construye una, se cambia su código en `config/menu.py`.
+- **Separaciones que han hecho falta:**
+  - Las conversaciones: las propias, en «Comunicaciones»; las que se atienden, en «Administrar → Buzón de
+    la administración» (con su número aparte).
+  - Las solicitudes: «Para apoyar» (como miembro), en lo propio; «Por aprobar» (el sí de la
+    administración), en «Administrar», cada una con su número.
+  - «Pedir talentos» sale de la pantalla de peticiones y va a «Administrar».
+  - «Mi organización → Datos»: pantalla nueva con las organizaciones que se administran y el enlace a su
+    ficha.
+- **Las invitaciones no son solicitudes:** son de un grupo a un grupo de otra organización, para algo
+  concreto, y las responde su administración. Van en «Administrar». Entrar en un grupo sí es una solicitud.
+- **Corregido de paso:** al entrar en una tarea, el menú marcaba la sección y no «Tareas»; ahora la ficha
+  de la tarea pertenece a «Tareas» y la del proyecto a «Proyectos».
+- *Pendiente:* las tipologías y las etiquetas comunes las cambia el superadmin desde «Administrar → Mi
+  organización» (es la misma pantalla que la de cada organización); si se quiere, se puede separar en
+  «Plataforma → Catálogos comunes».
 
 **Selector de personas (14 de noviembre de 2026, decisiones 1A, 2, 3A, 4A con buscador y 5 de la persona
 usuaria).** Para elegir personas (de entrada, la responsable y quienes colaboran en una tarea) ya no se

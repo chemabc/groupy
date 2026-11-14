@@ -275,7 +275,7 @@ def plantilla_de_usuarios():
         ["Una fila por cada grupo en el que está una persona: si está en dos grupos, dos filas con el mismo alias."],
         ["Alias: seudónimo con el que entra. De 3 a 30 letras, números, espacios, puntos o guiones. Nunca el nombre real."],
         ["   Da igual escribirlo con o sin mayúsculas y tildes: «María» y «maria» son el mismo alias."],
-        ["Contraseña: la que tendrá al empezar. Basta en una de sus filas. Cada persona la cambia en «Mi cuenta → Contraseña»."],
+        ["Contraseña: la que tendrá al empezar. Basta en una de sus filas. Cada persona la cambia en «Configuración de mi cuenta → Contraseña»."],
         ["   Si el alias ya existe, su contraseña no se cambia."],
         ["Organización y Grupo: deben existir (impórtalos antes en «Importar grupos»)."],
         [f"Rol: vacío es «usuario» (miembro normal). Otros: {', '.join(roles)}."],

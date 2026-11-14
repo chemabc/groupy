@@ -3,7 +3,7 @@ Usuarios de ejemplo, para probar y medir las pantallas. Los crea y los borra la 
 «python manage.py ejemplos» (módulo «ejemplos»), que solo funciona en desarrollo.
 
 Todos tienen la misma contraseña, que está escrita aquí: por eso nunca deben existir en el servidor
-real. Cada cual puede cambiarla desde «Mi cuenta → Contraseña». Los alias son nombres de animales y de
+real. Cada cual puede cambiarla desde «Configuración de mi cuenta → Contraseña». Los alias son nombres de animales y de
 árboles; varios llevan tilde o ñ, para probar que se puede entrar escribiéndolos sin ellas.
 
 El superadmin de ejemplo se llama «superadmin». Se crea si no existe, pero borrar los datos de ejemplo

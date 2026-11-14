@@ -14,10 +14,10 @@ urlpatterns = [
     path("entrar/", views.Entrar.as_view(), name="entrar"),
     # Cierra la sesión. Solo acepta POST (el botón «Salir» de la cabecera) y vuelve a la entrada.
     path("salir/", LogoutView.as_view(), name="salir"),
-    # Mi cuenta → Preferencias.
+    # Configuración de mi cuenta → Usabilidad.
     path("preferencias/", views.preferencias, name="preferencias"),
     # Guarda una preferencia (la llama interfaz.js).
     path("preferencias/guardar/", views.guardar_preferencia, name="guardar_preferencia"),
-    # Mi cuenta → Contraseña.
+    # Configuración de mi cuenta → Contraseña.
     path("contrasena/", views.contrasena, name="contrasena"),
 ]

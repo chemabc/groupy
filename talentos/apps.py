@@ -36,49 +36,39 @@ class TalentosConfig(ModuloConfig):
         Permiso("talentos.catalogo", "Ordenar el catálogo de talentos: renombrar, poner relacionadas y fusionar repetidos"),
     )
     menu = (
+        # Las entradas de talentos van en sitios distintos (ver config/menu.py): los míos, en «Configuración de
+        # mi cuenta»; las peticiones, en «Comunicaciones → Solicitudes»; los del grupo, en «Mis grupos»; pedir,
+        # en «Administrar»; el catálogo, en «Plataforma».
         EntradaDeMenu(
-            codigo="talentos.talentos",
-            nombre="Talentos",
-            url="talentos:mis_talentos",
-            icono="✿",
-            color="#c2410c",
+            codigo="talentos.mios", nombre="Talentos", url="talentos:mis_talentos", icono="❀", color="#86198f",
+            vistas=(Vista("Mis talentos", "talentos:mis_talentos"),),
+        ),
+        EntradaDeMenu(
+            codigo="talentos.peticiones", nombre="Peticiones de talentos", url="talentos:peticiones", icono="☘", color="#4d7c0f",
+            contador="talentos.servicios.peticiones_para",
             otras_rutas=("talentos:peticion",),
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="talentos.mios", nombre="Mis talentos", url="talentos:mis_talentos", icono="❀", color="#86198f",
-                    vistas=(Vista("Mis talentos", "talentos:mis_talentos"),),
-                ),
-                EntradaDeMenu(
-                    codigo="talentos.peticiones", nombre="Peticiones", url="talentos:peticiones", icono="☘", color="#4d7c0f",
-                    contador="talentos.servicios.peticiones_para",
-                    vistas=(Vista("Peticiones", "talentos:peticiones"), Vista("Pedir talentos", "talentos:nueva_peticion")),
-                ),
-                EntradaDeMenu(
-                    codigo="talentos.del_grupo", nombre="Talentos de mis grupos", url="talentos:del_grupo", icono="⁂", color="#0c4a6e",
-                    vistas=(Vista("Cuántos hay", "talentos:del_grupo"),),
-                ),
-                EntradaDeMenu(
-                    codigo="talentos.catalogo", nombre="Catálogo", url="talentos:catalogo", icono="▤", color="#831843",
-                    permiso="talentos.catalogo",
-                    vistas=(Vista("Catálogo", "talentos:catalogo"),),
-                ),
-            ),
+        ),
+        EntradaDeMenu(
+            codigo="talentos.del_grupo", nombre="Talentos de mis grupos", url="talentos:del_grupo", icono="⁂", color="#0c4a6e",
+        ),
+        EntradaDeMenu(
+            codigo="talentos.pedir", nombre="Pedir talentos", url="talentos:nueva_peticion", icono="✿", color="#c2410c",
+            permiso="talentos.pedir",
+        ),
+        EntradaDeMenu(
+            codigo="talentos.catalogo", nombre="Talentos", url="talentos:catalogo", icono="▤", color="#831843",
+            permiso="talentos.catalogo",
+            vistas=(Vista("Catálogo", "talentos:catalogo"),),
         ),
     )
     ayuda = (
         Ayuda(
-            seccion="talentos.talentos",
-            titulo="Talentos",
-            texto=(
-                "Lo que cada persona puede aportar: recursos (una furgoneta, un local) y habilidades (trabajos "
-                "verticales, diseño). Es un dato tuyo: decides con qué grupos compartes cada talento, y en esos "
-                "grupos solo se ve cuántas personas lo comparten, nunca quiénes."
-            ),
-        ),
-        Ayuda(
             seccion="talentos.mios",
             titulo="Mis talentos",
             texto=(
+                "Lo que puedes aportar: recursos (una furgoneta, un local) y habilidades (trabajos verticales, "
+                "diseño). Es un dato tuyo: decides con qué grupos compartes cada talento, y en esos grupos solo se "
+                "ve cuántas personas lo comparten, nunca quiénes.\n\n"
                 "Añade tus talentos (el catálogo te propone los que ya existen, para no repetirlos) y marca con qué "
                 "grupos compartes cada uno. Si no lo compartes con ningún grupo, nadie sabrá que lo tienes y no te "
                 "llegarán peticiones."
@@ -99,7 +89,16 @@ class TalentosConfig(ModuloConfig):
             titulo="Talentos de mis grupos",
             texto=(
                 "Cuántas personas comparten cada talento con el grupo (o con sus subgrupos). Nunca quiénes. Si "
-                "administras el grupo, desde aquí puedes pedir talentos."
+                "administras el grupo, puedes pedir talentos en «Administrar → Eventos y talentos»."
+            ),
+        ),
+        Ayuda(
+            seccion="talentos.pedir",
+            titulo="Pedir talentos",
+            texto=(
+                "Pide a un grupo que administras los talentos que hacen falta (por ejemplo, «2 furgonetas» para una "
+                "mudanza). Les llega a quienes comparten ese talento con el grupo, y quien lo tiene responde «Lo "
+                "ofrezco». Tú ves su alias; el resto del grupo, no."
             ),
         ),
         Ayuda(

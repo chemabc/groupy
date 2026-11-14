@@ -1,7 +1,7 @@
 """
 Pantallas del módulo «lugares»: mi lugar (elegir, proponer un lugar nuevo o un cambio), mapa y lista,
 ficha de un lugar, gestión del superadmin (propuestas, nuevo lugar, importar y recordatorio) y
-«Configuración → Lugares».
+«Administrar → Mi organización → Lugares».
 """
 
 from django.core.exceptions import ValidationError
@@ -86,7 +86,7 @@ def mi_lugar(request):
 # muestra).
 def _exigir_mapa(usuario):
     if not servicios.ve_el_mapa(usuario):
-        raise SinPermiso("Tus organizaciones no muestran el mapa de lugares a sus miembros. Lo decide su admin en «Configuración → Lugares».")
+        raise SinPermiso("Tus organizaciones no muestran el mapa de lugares a sus miembros. Lo decide su admin en «Administrar → Mi organización → Lugares».")
 
 
 # Pantalla «Mapa»: los lugares con coordenadas en un mapa (isla de Leaflet, componente «mapa» de
@@ -263,7 +263,7 @@ def _plantilla():
 # ── Configuración ────────────────────────────────────────────────────────────────────────────────────
 
 
-# Pantalla «Configuración → Lugares»: por cada organización que ajusta quien mira, qué ven sus miembros y
+# Pantalla «Administrar → Mi organización → Lugares»: por cada organización que ajusta quien mira, qué ven sus miembros y
 # si se publica el mapa.
 #   - POST: «organizacion» y las casillas mapa_para_miembros, recuentos_para_miembros, publicar_en_la_web.
 def configuracion(request):

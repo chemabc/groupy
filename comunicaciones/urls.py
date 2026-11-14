@@ -15,11 +15,13 @@ urlpatterns = [
     path("preferencias/", views.preferencias, name="preferencias"),
     # Conversaciones con la administración: lista, nueva y cada una.
     path("conversaciones/", views.conversaciones, name="conversaciones"),
+    # Lo que llega a las administraciones que atiende quien mira (en «Administrar»).
+    path("conversaciones/atendidas/", views.atendidas, name="atendidas"),
     path("conversaciones/nueva/", views.nueva_conversacion, name="nueva_conversacion"),
     path("conversaciones/<int:pk>/", views.conversacion, name="conversacion"),
     # Avisos de la administración: enviar y ver cada uno.
     path("avisos/", views.avisos, name="avisos"),
     path("avisos/<int:pk>/", views.aviso, name="aviso"),
-    # Configuración → Niveles de aviso.
+    # Plataforma → Catálogos comunes → Niveles de aviso.
     path("niveles/", views.niveles, name="niveles"),
 ]

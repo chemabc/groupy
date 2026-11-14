@@ -43,56 +43,73 @@ class ComunicacionesConfig(ModuloConfig):
         ),
     )
     menu = (
+        # Las entradas de «Comunicaciones». Dónde va cada una (también las de administrar y la de las
+        # preferencias, que van en otros bloques) lo decide config/menu.py.
         EntradaDeMenu(
             codigo="comunicaciones.comunicaciones",
             nombre="Comunicaciones",
             url="comunicaciones:notificaciones",
             icono="☏",
             color="#9333ea",
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="comunicaciones.notificaciones",
-                    nombre="Notificaciones",
-                    url="comunicaciones:notificaciones",
-                    icono="⚑",
-                    color="#1e3a8a",
-                    contador="comunicaciones.servicios.sin_ver",
-                    otras_rutas=("comunicaciones:abrir", "comunicaciones:aviso"),
-                    vistas=(Vista("Bandeja", "comunicaciones:notificaciones"),),
-                ),
-                EntradaDeMenu(
-                    codigo="comunicaciones.conversaciones",
-                    nombre="Con la administración",
-                    url="comunicaciones:conversaciones",
-                    icono="❝",
-                    color="#0f766e",
-                    contador="comunicaciones.servicios.conversaciones_sin_leer",
-                    otras_rutas=("comunicaciones:conversacion",),
-                    vistas=(
-                        Vista("Conversaciones", "comunicaciones:conversaciones"),
-                        Vista("Escribir a la administración", "comunicaciones:nueva_conversacion"),
-                    ),
-                ),
-                EntradaDeMenu(
-                    codigo="comunicaciones.avisos",
-                    nombre="Avisos de la administración",
-                    url="comunicaciones:avisos",
-                    icono="✪",
-                    color="#b45309",
-                    permiso="comunicaciones.avisar",
-                    vistas=(Vista("Avisar y enviados", "comunicaciones:avisos"),),
-                ),
-                EntradaDeMenu(
-                    codigo="comunicaciones.preferencias",
-                    nombre="Preferencias de aviso",
-                    url="comunicaciones:preferencias",
-                    icono="✓",
-                    color="#57534e",
-                    vistas=(Vista("Qué quiero recibir", "comunicaciones:preferencias"),),
-                ),
+        ),
+        EntradaDeMenu(
+            codigo="comunicaciones.notificaciones",
+            nombre="Notificaciones",
+            url="comunicaciones:notificaciones",
+            icono="⚑",
+            color="#1e3a8a",
+            contador="comunicaciones.servicios.sin_ver",
+            otras_rutas=("comunicaciones:abrir", "comunicaciones:aviso"),
+            vistas=(Vista("Bandeja", "comunicaciones:notificaciones"),),
+        ),
+        # «Conversaciones», con sus pestañas (con la administración, con grupos, con personas).
+        EntradaDeMenu(
+            codigo="comunicaciones.conversar",
+            nombre="Conversaciones",
+            url="comunicaciones:conversaciones",
+            icono="✆",
+            color="#0d9489",
+        ),
+        EntradaDeMenu(
+            codigo="comunicaciones.conversaciones",
+            nombre="Con la administración",
+            url="comunicaciones:conversaciones",
+            icono="❝",
+            color="#0f766e",
+            contador="comunicaciones.servicios.conversaciones_sin_leer",
+            otras_rutas=("comunicaciones:conversacion",),
+            vistas=(
+                Vista("Mis conversaciones", "comunicaciones:conversaciones"),
+                Vista("Escribir a la administración", "comunicaciones:nueva_conversacion"),
             ),
         ),
-        # «Configuración → Niveles de aviso», colocada dentro de «Configuración» en config/menu.py.
+        # Para administrar: lo que llega a las administraciones que se atienden y los avisos.
+        EntradaDeMenu(
+            codigo="comunicaciones.atendidas",
+            nombre="Conversaciones que atiendo",
+            url="comunicaciones:atendidas",
+            icono="⇋",
+            color="#115e5a",
+            permiso="comunicaciones.avisar",
+            contador="comunicaciones.servicios.atendidas_sin_leer",
+        ),
+        EntradaDeMenu(
+            codigo="comunicaciones.avisos",
+            nombre="Avisar",
+            url="comunicaciones:avisos",
+            icono="✪",
+            color="#b45309",
+            permiso="comunicaciones.avisar",
+            vistas=(Vista("Avisar y enviados", "comunicaciones:avisos"),),
+        ),
+        EntradaDeMenu(
+            codigo="comunicaciones.preferencias",
+            nombre="Avisos que recibo",
+            url="comunicaciones:preferencias",
+            icono="✓",
+            color="#57534e",
+            vistas=(Vista("Qué quiero recibir", "comunicaciones:preferencias"),),
+        ),
         EntradaDeMenu(
             codigo="comunicaciones.niveles",
             nombre="Niveles de aviso",
@@ -109,10 +126,10 @@ class ComunicacionesConfig(ModuloConfig):
             titulo="Notificaciones",
             texto=(
                 "Avisos de lo que pasa y te afecta: te han admitido en un grupo, han invitado a uno de tus "
-                "grupos… Arriba, las bandejas según su origen, con cuántas tienes sin ver.\\n\\n"
+                "grupos… Arriba, las bandejas según su origen, con cuántas tienes sin ver.\n\n"
                 "Pulsa una notificación para ir a lo que cuenta (queda vista), o márcala como vista sin abrirla. "
                 "La papelera la borra. «Limpiar las vistas» borra de una vez todas las que ya has visto; las "
-                "que no has visto se quedan.\\n\\n"
+                "que no has visto se quedan.\n\n"
                 "El número del menú son las que tienes sin ver. Se pone al día al cambiar de pantalla."
             ),
         ),
@@ -125,15 +142,26 @@ class ComunicacionesConfig(ModuloConfig):
                 "admin, sino a la administración: la atienden todos sus admins, y quien responde firma como "
                 "«Admin de GRU Henares (Lince)». Las pueden leer también los admins de la organización y el "
                 "superadmin, porque son temas administrativos.\n\n"
-                "Cada conversación tiene un estado (abierta, en proceso, solucionada) que cambian los admins. Si "
-                "atiendes alguna administración, debajo salen las conversaciones que le llegan; primero, las que "
-                "tienen algo sin leer. El número del menú cuenta las que tienen algo nuevo para ti.\n\n"
+                "Cada conversación tiene un estado (abierta, en proceso, solucionada) que cambian los admins. El "
+                "número del menú cuenta las que tienen una respuesta nueva para ti. Si atiendes alguna "
+                "administración, lo que le llega está aparte, en «Administrar → Buzón de la administración».\n\n"
                 "Con una conversación abierta, los mensajes nuevos aparecen solos (se mira cada 10 segundos)."
             ),
         ),
         Ayuda(
+            seccion="comunicaciones.atendidas",
+            titulo="Conversaciones que atiendo",
+            texto=(
+                "Lo que llega a las administraciones que atiendes (la de tus grupos, la de tu organización o, si "
+                "eres superadmin, todas); primero, lo que tiene algo sin leer. Respondes en nombre de la "
+                "administración: tu respuesta se firma como «Admin de GRU Henares (tu alias)». Cambia el estado "
+                "(abierta, en proceso, solucionada) según avance."
+            ),
+            ejemplo="Nutria pregunta a la administración de GRU Henares cómo entrar en GRU Sorbe; Lince responde y la marca como solucionada.",
+        ),
+        Ayuda(
             seccion="comunicaciones.avisos",
-            titulo="Avisos de la administración",
+            titulo="Avisar",
             texto=(
                 "Para avisar a grupos (cada uno con sus subgrupos) o a personas, en nombre de una administración "
                 "que atiendes. Cada aviso tiene un nivel con su color (Información, Atención, Problema…), que "
@@ -153,7 +181,7 @@ class ComunicacionesConfig(ModuloConfig):
         ),
         Ayuda(
             seccion="comunicaciones.preferencias",
-            titulo="Preferencias de aviso",
+            titulo="Avisos que recibo",
             texto=(
                 "Qué tipos de aviso quieres recibir, agrupados por su origen. Desmarca los que no te interesen: "
                 "dejarán de llegarte (los que ya tienes se quedan). De momento solo llegan a la web; más "

@@ -27,7 +27,7 @@ class AudienciasConfig(ModuloConfig):
         ),
     )
 
-    # «Configuración → Visibilidad» (13 de noviembre de 2026), colocada dentro de «Configuración» en config/menu.py.
+    # «Administrar → Mi organización → Visibilidad» (13 de noviembre de 2026), colocada dentro de «Configuración» en config/menu.py.
     menu = (
         EntradaDeMenu(
             codigo="audiencias.visibilidad",

@@ -1,5 +1,5 @@
 """
-Pruebas de «Configuración → Tipologías» en un navegador de verdad (ver base/pruebas_navegador.py): los
+Pruebas de «Administrar → Mi organización → Tipologías» en un navegador de verdad (ver base/pruebas_navegador.py): los
 campos se ordenan arrastrándolos por el asa (componente «listaOrdenable» de interfaz.js, con SortableJS).
 """
 

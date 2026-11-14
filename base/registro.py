@@ -16,6 +16,7 @@ from pathlib import Path
 from django.utils.module_loading import import_string
 
 from .contrato import ORIGENES_DE_AVISO, ROLES_DEL_SISTEMA, Capa, Escucha, Modo, ModuloConfig
+from .disposicion import Bloque, Pestanas
 
 # Apartados del contrato que son listas de fichas con un código único, y el nombre del campo que hace de
 # código en cada una. El registro los recorre todos igual: comprueba el prefijo y que no se repitan.
@@ -63,6 +64,9 @@ class RegistroDeModulos:
         # Todas las entradas del menú tal como las declaran los módulos (secciones y subsecciones, a
         # cualquier profundidad), por su código. Sirve para colocarlas y para preguntar por una concreta.
         self.entradas = {}
+        # Los bloques del menú, en orden: pares (Bloque, lista de sus secciones principales ya colocadas). Sin
+        # disposición, un solo bloque sin título con todo el menú.
+        self.bloques = []
         # La entrada de la ayuda (la que lleva panel_de_ayuda), ya colocada con sus subsecciones, o None.
         # La usa el botón «?» rojo de la cabecera (base/contexto.py).
         self.entrada_de_ayuda = None
@@ -96,6 +100,8 @@ class RegistroDeModulos:
                 )
         if disposicion is not None:
             self.menu = self._disponer(disposicion)
+        else:
+            self.bloques = [(Bloque("", "", ()), self.menu)]
         self._buscar_la_entrada_de_ayuda()
         self._conectar_avisos()
         self._comprobar_escuchas()
@@ -167,24 +173,36 @@ class RegistroDeModulos:
     # pone al final del menú, sin subsecciones, para que no desaparezca sin más).
     #   - disposicion: tupla de elementos; cada uno es un código («usuarios.cuenta») o un par (código,
     #     tupla de elementos) para una entrada con subsecciones.
+    #   La disposición puede ir partida en Bloques (con título); si no, es un solo bloque sin título. Las
+    #   secciones de cada bloque quedan en self.bloques.
     def _disponer(self, disposicion):
         colocadas = set()
-        menu = self._colocar(disposicion, colocadas)
+        if disposicion and all(isinstance(elemento, Bloque) for elemento in disposicion):
+            bloques = list(disposicion)
+        else:
+            if any(isinstance(elemento, Bloque) for elemento in disposicion):
+                self.errores.append("La disposición del menú mezcla bloques con entradas sueltas: o todo va en bloques, o nada.")
+            bloques = [Bloque("", "", tuple(elemento for elemento in disposicion if not isinstance(elemento, Bloque)))]
+        self.bloques = [(bloque, self._colocar(bloque.elementos, colocadas)) for bloque in bloques]
         for codigo, entrada in self.entradas.items():
             if codigo not in colocadas:
                 self.errores.append(f"La entrada del menú «{codigo}» no está colocada en la disposición del menú (config/menu.py).")
-                menu.append(replace(entrada, subsecciones=()))
-        return menu
+                self.bloques[-1][1].append(replace(entrada, subsecciones=()))
+        return [entrada for _bloque, entradas in self.bloques for entrada in entradas]
 
     # Convierte un nivel de la disposición en una lista de entradas, con sus subsecciones ya colocadas
     # (se llama a sí misma para cada nivel de más abajo). La usa _disponer.
-    #   - elementos: los elementos de este nivel (ver _disponer).
+    #   - elementos: los elementos de este nivel (ver _disponer). Uno con Pestanas lleva sus subsecciones
+    #     como pestañas arriba (en_pestanas).
     #   - colocadas: conjunto de códigos ya colocados, que se va rellenando (para avisar de repetidos).
     def _colocar(self, elementos, colocadas):
         entradas = []
         for elemento in elementos:
+            en_pestanas = isinstance(elemento, Pestanas)
             if isinstance(elemento, str):
                 codigo, hijos = elemento, ()
+            elif en_pestanas:
+                codigo, hijos = elemento.codigo, tuple(elemento.hijas)
             elif isinstance(elemento, tuple) and len(elemento) == 2 and isinstance(elemento[1], tuple):
                 codigo, hijos = elemento
             else:
@@ -198,7 +216,7 @@ class RegistroDeModulos:
                 self.errores.append(f"«{codigo}» está dos veces en la disposición del menú.")
                 continue
             colocadas.add(codigo)
-            entradas.append(replace(entrada, subsecciones=tuple(self._colocar(hijos, colocadas))))
+            entradas.append(replace(entrada, subsecciones=tuple(self._colocar(hijos, colocadas)), en_pestanas=en_pestanas))
         return entradas
 
     # Busca, ya colocado el menú, la entrada de la ayuda (la que lleva panel_de_ayuda) y la guarda en

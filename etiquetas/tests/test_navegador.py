@@ -1,6 +1,6 @@
 """
 Pruebas del selector de etiquetas en un navegador de verdad (ver base/pruebas_navegador.py), en el
-formulario de demostración de «Inicio → Componentes».
+formulario de demostración de «Desarrollo y mantenimiento → Componentes → Componentes».
 """
 
 from base.pruebas_navegador import PruebaEnElNavegador
@@ -36,7 +36,7 @@ class PruebasDelSelectorEnElNavegador(PruebaEnElNavegador):
 
 
 class PruebasDeLaPantallaDeEtiquetasEnElNavegador(PruebaEnElNavegador):
-    """«Configuración → Etiquetas» como admin de ORG Tajo, con otra organización (ORG Ebro) que también administra."""
+    """«Administrar → Mi organización → Etiquetas» como admin de ORG Tajo, con otra organización (ORG Ebro) que también administra."""
 
     # Cambiar el desplegable «De» lleva a la otra organización sin pulsar nada (se envía solo, con htmx);
     # marcar dos etiquetas en la tabla y pulsar «Fusionar las marcadas» (un formulario aparte, al que

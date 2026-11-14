@@ -34,9 +34,9 @@ urlpatterns = [
     path("comunicaciones/", include("comunicaciones.urls")),
     # Módulo «administracion»: pantallas del superadmin (personas de la bóveda, dominios y alias).
     path("usuarios/", include("administracion.urls")),
-    # Módulo «tipologias»: Configuración → Tipologías.
+    # Módulo «tipologias»: Administrar → Mi organización → Tipologías.
     path("configuracion/tipologias/", include("tipologias.urls")),
-    # Módulo «audiencias»: Configuración → Visibilidad.
+    # Módulo «audiencias»: Administrar → Mi organización → Visibilidad.
     path("configuracion/visibilidad/", include("audiencias.urls")),
     # Módulo «etiquetas»: sugerencias del selector de etiquetas.
     path("etiquetas/", include("etiquetas.urls")),
@@ -44,6 +44,8 @@ urlpatterns = [
     path("mantenimiento/", include("mantenimiento.urls")),
     # Módulo «ayuda»: «How to?», la documentación de la plataforma y la guía de desarrollo.
     path("ayuda/", include("ayuda.urls")),
+    # Módulo «proximamente»: las herramientas que aún no existen (dicen que están vacías y qué harán).
+    path("proximamente/", include("proximamente.urls")),
     # Módulo «base»: la portada y el escaparate de componentes.
     path("", include("base.urls")),
 ]

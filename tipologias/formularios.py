@@ -1,5 +1,5 @@
 """
-Formularios de la pantalla «Configuración → Tipologías».
+Formularios de la pantalla «Administrar → Mi organización → Tipologías».
 """
 
 from django import forms

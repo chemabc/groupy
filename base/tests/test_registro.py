@@ -9,6 +9,7 @@ bien lo que declaran y que avisa de cada error de declaración. No tocan la base
 from django.test import SimpleTestCase
 
 from base.contrato import Ayuda, EntradaDeMenu, Emision, Escucha, Permiso
+from base.disposicion import Pestanas
 from base.pruebas import contratos_de_prueba, modulo_falso
 from base.registro import RegistroDeModulos, registro
 
@@ -102,9 +103,23 @@ class PruebasDelRegistro(SimpleTestCase):
 
     # El menú real: «Ayuda» va antes que «Configuración de mi cuenta», y «Desarrollo y mantenimiento», al
     # final (a petición de la persona usuaria, 14 de noviembre de 2026).
+    # Y va en tres bloques: lo propio, «Administrar» y «Plataforma» (14 de noviembre de 2026).
     def test_final_del_menu_real(self):
-        self.assertEqual([entrada.codigo for entrada in registro.menu[-3:]], ["ayuda.ayuda", "usuarios.cuenta", "mantenimiento.desarrollo"])
+        self.assertEqual([bloque.titulo for bloque, _entradas in registro.bloques], ["", "Administrar", "Plataforma"])
+        propio = [entrada.codigo for entrada in registro.bloques[0][1]]
+        self.assertEqual(propio[-2:], ["ayuda.ayuda", "usuarios.cuenta"])
+        self.assertEqual(registro.bloques[2][1][-1].codigo, "mantenimiento.desarrollo")
         self.assertEqual(registro.entrada_de_ayuda.codigo, "ayuda.ayuda")
+
+    # Pestanas: la entrada queda marcada (en_pestanas) con sus subsecciones, aunque sean de otro módulo.
+    def test_pestanas(self):
+        madre = EntradaDeMenu("alfa.madre", "Madre", url="alfa:a")
+        hija = EntradaDeMenu("beta.hija", "Hija", url="beta:h")
+        nuevo = RegistroDeModulos()
+        nuevo.cargar([modulo_falso("alfa", menu=(madre,)), modulo_falso("beta", menu=(hija,))], disposicion=(Pestanas("alfa.madre", ("beta.hija",)),))
+        self.assertEqual(nuevo.errores, [])
+        self.assertTrue(nuevo.menu[0].en_pestanas)
+        self.assertEqual([sub.codigo for sub in nuevo.menu[0].subsecciones], ["beta.hija"])
 
     # Un código que no empieza por la etiqueta del módulo es un error.
     def test_avisa_del_prefijo_equivocado(self):

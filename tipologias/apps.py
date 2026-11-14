@@ -8,7 +8,7 @@ from base.contrato import Ayuda, Capa, DatosDeEjemplo, EntradaDeMenu, ModuloConf
 class TipologiasConfig(ModuloConfig):
     """
     Contrato del módulo «tipologias»: los tipos de proyecto y de evento, en árbol, con sus campos
-    personalizados. Aporta la sección «Configuración → Tipologías». Está en la capa de organización porque
+    personalizados. Aporta la sección «Administrar → Mi organización → Tipologías». Está en la capa de organización porque
     cada organización puede tener subtipos propios.
     """
 
@@ -28,25 +28,16 @@ class TipologiasConfig(ModuloConfig):
     )
     datos_de_ejemplo = DatosDeEjemplo(crear="tipologias.ejemplos.crear", borrar="tipologias.ejemplos.borrar")
     menu = (
+        # Va en «Administrar → Mi organización» (ver config/menu.py). El superadmin cambia ahí también las
+        # comunes.
         EntradaDeMenu(
-            codigo="tipologias.configuracion",
-            nombre="Configuración",
+            codigo="tipologias.tipologias",
+            nombre="Tipologías",
             url="tipologias:eventos",
-            icono="⚙",
-            color="#0891b2",
-            # La sección no pide permiso: se ve si alguna de sus subsecciones se ve. Las de otros módulos
-            # (Visibilidad, Etiquetas…) se colocan dentro en config/menu.py.
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="tipologias.tipologias",
-                    nombre="Tipologías",
-                    url="tipologias:eventos",
-                    icono="❖",
-                    color="#c026d3",
-                    permiso="tipologias.gestionar",
-                    vistas=(Vista("De eventos", "tipologias:eventos"), Vista("De proyectos", "tipologias:proyectos")),
-                ),
-            ),
+            icono="❖",
+            color="#c026d3",
+            permiso="tipologias.gestionar",
+            vistas=(Vista("De eventos", "tipologias:eventos"), Vista("De proyectos", "tipologias:proyectos")),
         ),
     )
     ayuda = (

@@ -7,7 +7,7 @@
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-3xl space-y-3">
-  <p><a href="{% url 'comunicaciones:conversaciones' %}" class="text-sm text-marca hover:underline">← Conversaciones</a></p>
+  <p><a href="{% if atiende %}{% url 'comunicaciones:atendidas' %}{% else %}{% url 'comunicaciones:conversaciones' %}{% endif %}" class="text-sm text-marca hover:underline">← Conversaciones</a></p>
   <header class="rounded-lg border border-violet-300 bg-white p-4 dark:border-violet-800 dark:bg-slate-900">
     <h2 class="text-lg font-semibold">{{ conversacion.asunto }}</h2>
     <p class="text-xs text-slate-500">{{ conversacion.persona }} ↔ {{ conversacion.nombre_de_la_administracion }} · estado: <strong>{{ conversacion.get_estado_display }}</strong>

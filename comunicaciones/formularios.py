@@ -1,5 +1,5 @@
 """
-Formularios de la sección «Comunicaciones» y de «Configuración → Niveles de aviso».
+Formularios de la sección «Comunicaciones» y de «Plataforma → Catálogos comunes → Niveles de aviso».
 """
 
 from django import forms

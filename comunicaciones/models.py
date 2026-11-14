@@ -22,8 +22,8 @@ from base.contrato import ORIGENES_DE_AVISO
 class NivelDeAviso(models.Model):
     """
     Nivel de un aviso de la administración: cuánta atención pide («Información», «Atención»,
-    «Problema»…). Se ve con su color en la bandeja. Los crea y edita el superadmin en «Configuración →
-    Niveles de aviso».
+    «Problema»…). Se ve con su color en la bandeja. Los crea y edita el superadmin en «Plataforma →
+    Catálogos comunes → Niveles de aviso».
     """
 
     nombre = models.CharField("nombre", max_length=40, unique=True, help_text="Como se verá: «Atención».")

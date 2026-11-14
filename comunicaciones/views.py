@@ -7,7 +7,7 @@ Pantallas de la sección «Comunicaciones» (ver docs/diseno.md, apartado 17):
 - Preferencias: qué tipos de aviso quiere recibir cada persona.
 - Conversaciones con la administración: las de cada persona y las de las administraciones que atiende.
 - Avisos de la administración: enviar avisos a grupos o personas, y ver los enviados.
-- «Configuración → Niveles de aviso»: los niveles (Información, Atención, Problema…) con su color.
+- «Plataforma → Catálogos comunes → Niveles de aviso»: los niveles (Información, Atención, Problema…) con su color.
 
 Cada persona solo ve y toca sus notificaciones y sus conversaciones, y las de las administraciones que
 atiende (comunicaciones/administraciones.py).
@@ -181,25 +181,41 @@ def aviso(request, pk):
 # ── Conversaciones con la administración ─────────────────────────────────────────────────────────────
 
 
-# Pantalla «Conversaciones»: las de quien mira con las administraciones y, si atiende alguna, las que
-# le llegan a ellas (primero las que tienen algo sin leer). Cuesta unas 5 consultas.
+# Pantalla «Comunicaciones → Conversaciones → Con la administración»: las conversaciones de quien mira con
+# las administraciones (primero las que tienen algo sin leer). Lo que llega a las administraciones que
+# atiende está aparte, en «Administrar» (atendidas). Cuesta 2 consultas.
 #   - GET «estado»: muestra solo las de ese estado.
 def conversaciones(request):
+    return _conversaciones(request, como_admin=False)
+
+
+# Pantalla «Administrar → Buzón de la administración → Conversaciones que atiendo»: lo que llega a las
+# administraciones que atiende quien mira (primero lo que tiene algo sin leer). Cuesta unas 4 consultas.
+#   - GET «estado»: muestra solo las de ese estado.
+def atendidas(request):
+    return _conversaciones(request, como_admin=True)
+
+
+# Lo común a las dos pantallas de conversaciones.
+#   - como_admin: si son las que atiende (True) o las suyas (False).
+def _conversaciones(request, como_admin):
     usuario = request.user
     estado = request.GET.get("estado", "")
     estado = estado if estado in dict(Conversacion.ESTADOS) else ""
     base = Conversacion.objects.select_related("persona", "grupo__organizacion", "organizacion")
     if estado:
         base = base.filter(estado=estado)
-    mias = list(base.filter(persona=usuario).order_by("-pendiente_persona", "-actualizada"))
-    filtro = filtro_de_lo_que_atiende(usuario)
-    atiende = base.exclude(persona=usuario).order_by("-pendiente_admins", "-actualizada")
-    atiende = list((atiende if filtro is None else atiende.filter(filtro))[:200])
+    mias, atiende, filtro = [], [], None
+    if como_admin:
+        filtro = filtro_de_lo_que_atiende(usuario)
+        atiende = base.exclude(persona=usuario).order_by("-pendiente_admins", "-actualizada")
+        atiende = list((atiende if filtro is None else atiende.filter(filtro))[:200])
+    else:
+        mias = list(base.filter(persona=usuario).order_by("-pendiente_persona", "-actualizada"))
     contexto = {
+        "como_admin": como_admin,
         "mias": mias,
         "atiende": atiende,
-        # La parte de «lo que atiendes» sale si atiende algo (o es superadmin).
-        "es_admin": filtro is None or bool(atiende),
         "estado": estado,
         "estados": Conversacion.ESTADOS,
     }
@@ -281,7 +297,7 @@ def conversacion(request, pk):
 # ── Niveles de aviso ─────────────────────────────────────────────────────────────────────────────────
 
 
-# Pantalla «Configuración → Niveles de aviso»: los niveles con su color, para cambiarlos, crear más o
+# Pantalla «Plataforma → Catálogos comunes → Niveles de aviso»: los niveles con su color, para cambiarlos, crear más o
 # borrar los que no se usan. Solo el superadmin (permiso «comunicaciones.niveles»). Cuesta 3 consultas.
 #   - POST «accion»: crear, editar (con «nivel») o borrar (con «nivel»).
 @requiere_permiso("comunicaciones.niveles")

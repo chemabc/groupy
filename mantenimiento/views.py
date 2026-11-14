@@ -60,13 +60,13 @@ IMPORTACIONES = {
 }
 
 
-# Pantalla «Pruebas → Importar grupos».
+# Pantalla «Desarrollo y mantenimiento → Pruebas → Importar grupos».
 @requiere_permiso("mantenimiento.ver")
 def importar_grupos(request):
     return _importar(request, "grupos", permitido=True)
 
 
-# Pantalla «Pruebas → Importar usuarios». Solo importa si está permitido el alta masiva.
+# Pantalla «Desarrollo y mantenimiento → Pruebas → Importar usuarios». Solo importa si está permitido el alta masiva.
 @requiere_permiso("mantenimiento.ver")
 def importar_usuarios(request):
     ajustes = AjustesDeMantenimiento.actuales()
@@ -160,7 +160,7 @@ def permitir_alta_masiva(request):
     return redirect("mantenimiento:importar_usuarios")
 
 
-# Pantalla «Pruebas → Datos de ejemplo»: crea o borra de un golpe los datos de ejemplo de todos los
+# Pantalla «Desarrollo y mantenimiento → Pruebas → Datos de ejemplo»: crea o borra de un golpe los datos de ejemplo de todos los
 # módulos (lo mismo que «python manage.py ejemplos crear|borrar»). Borrar no toca al superadmin. Solo
 # funciona en desarrollo (DEBUG), porque los usuarios de ejemplo tienen una contraseña conocida.
 #   - POST «accion»: «crear» o «borrar».

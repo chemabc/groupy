@@ -1,5 +1,5 @@
 """
-Pruebas de «Configuración → Visibilidad»: número de consultas, quién ve qué organización y que guardar
+Pruebas de «Administrar → Mi organización → Visibilidad»: número de consultas, quién ve qué organización y que guardar
 cambia lo que se puede elegir al publicar.
 """
 

@@ -153,7 +153,7 @@ class PruebasDeTablaEnBaseDeDatos(TestCase):
 
 
 class PruebasDeLaPantallaDeComponentes(PruebaDePantalla):
-    """Comprueba la pantalla «Inicio → Componentes» y sus respuestas parciales."""
+    """Comprueba la pantalla «Desarrollo y mantenimiento → Componentes → Componentes» y sus respuestas parciales."""
 
     # Solo la consulta del usuario de la sesión: los datos son inventados y están en memoria.
     def test_consultas(self):

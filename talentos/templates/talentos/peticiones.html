@@ -1,11 +1,10 @@
 {% extends interfaz.plantilla %}
 {% comment %}
-  Pantalla «Talentos → Peticiones» (talentos/views.py, peticiones). Recibe «filas» (cada petición con sus
-  talentos y cuántos se han ofrecido) y «puede_pedir».
+  Pantalla «Comunicaciones → Solicitudes → Peticiones de talentos» (talentos/views.py, peticiones). Recibe «filas» (cada petición con sus
+  talentos y cuántos se han ofrecido). Pedir talentos está en «Administrar».
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-4xl space-y-3">
-  {% if puede_pedir %}<p><a href="{% url 'talentos:nueva_peticion' %}" class="inline-block rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Pedir talentos</a></p>{% endif %}
   <ul class="space-y-2">
     {% for fila in filas %}
       <li class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">

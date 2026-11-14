@@ -1,6 +1,6 @@
 """
 Pruebas del módulo «tipologias»: reglas del árbol, herencia de campos, formulario de los campos, quién
-puede cambiar qué y la pantalla «Configuración → Tipologías» (con su número de consultas).
+puede cambiar qué y la pantalla «Administrar → Mi organización → Tipologías» (con su número de consultas).
 """
 
 import json

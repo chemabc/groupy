@@ -11,8 +11,9 @@ from .contrato import Ayuda, Capa, EntradaDeMenu, ModuloConfig, Vista
 
 class BaseConfig(ModuloConfig):
     """
-    Contrato del módulo «base». Aporta la sección «Inicio» del menú, que de momento sirve para ver
-    funcionando la plantilla general, y carga el registro de módulos al arrancar.
+    Contrato del módulo «base». Aporta la sección «Inicio» del menú (la portada de cada cuenta) y la
+    demostración de la plantilla («Componentes», para quien desarrolla), y carga el registro de módulos al
+    arrancar.
     """
 
     name = "base"
@@ -27,12 +28,20 @@ class BaseConfig(ModuloConfig):
             codigo="base.inicio",
             nombre="Inicio",
             url="base:inicio",
-            icono="⌂",
+            icono="⊡",
             color="#0284c7",
-            vistas=(
-                Vista("Estructura", "base:inicio"),
-                Vista("Componentes", "base:componentes"),
-            ),
+            vistas=(Vista("Panel", "base:inicio"), Vista("Mis datos", "base:mis_datos")),
+        ),
+        # La demostración de la plantilla general, para quien desarrolla (va en «Desarrollo y
+        # mantenimiento», ver config/menu.py).
+        EntradaDeMenu(
+            codigo="base.componentes",
+            nombre="Componentes",
+            url="base:estructura",
+            icono="◧",
+            color="#64748b",
+            permiso="mantenimiento.ver",
+            vistas=(Vista("Estructura", "base:estructura"), Vista("Componentes", "base:componentes")),
         ),
     )
     ayuda = (
@@ -40,9 +49,20 @@ class BaseConfig(ModuloConfig):
             seccion="base.inicio",
             titulo="Inicio",
             texto=(
-                "Esta es la portada provisional mientras se construye la aplicación.\n\n"
-                "«Estructura» explica las partes de la pantalla y permite elegir el tema, el tamaño de "
-                "letra y la densidad. «Componentes» muestra las piezas comunes de la interfaz."
+                "Tu portada.\n\n"
+                "«Panel»: lo pendiente (comunicaciones y solicitudes, enviadas y recibidas) y los proyectos "
+                "abiertos en los que participas.\n\n"
+                "«Mis datos»: un resumen de tu cuenta, con un botón para editar cada parte.\n\n"
+                "Los dos están aún por hacer."
+            ),
+            ejemplo="Al entrar por la mañana, el panel te dice que tienes una solicitud por apoyar y dos tareas de un proyecto.",
+        ),
+        Ayuda(
+            seccion="base.componentes",
+            titulo="Componentes",
+            texto=(
+                "Para quien desarrolla: «Estructura» explica las partes de la pantalla y «Componentes» muestra "
+                "las piezas comunes de la interfaz (tablas filtrables, botón «copiar»…) con datos inventados."
             ),
         ),
     )

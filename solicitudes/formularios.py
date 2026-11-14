@@ -1,5 +1,5 @@
 """
-Formularios de la sección «Solicitudes» y de «Configuración → Solicitudes».
+Formularios de la sección «Solicitudes» y de «Administrar → Mi organización → Apoyos y plazos».
 """
 
 from django import forms

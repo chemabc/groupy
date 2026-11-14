@@ -1,7 +1,8 @@
 {% extends interfaz.plantilla %}
 {% load static %}
 {% comment %}
-  Pantalla «Calendario → Ver el calendario» (calendario/views.py, calendario). No recibe nada: la isla
+  Pantalla «Calendario y eventos → Calendario» (calendario/views.py, calendario), con los botones de los
+  recordatorios y de la suscripción. No recibe nada: la isla
   «calendario» de base/static/base/interfaz.js pide las fechas a «datos» y guarda los cambios en «mover».
 {% endcomment %}
 {% block contenido %}
@@ -16,6 +17,8 @@
       </label>
     </template>
     <a href="{% url 'calendario:nuevo' %}" class="ml-auto rounded bg-marca px-3 py-1 text-sm font-medium text-white">+ Recordatorio</a>
+    <a href="{% url 'calendario:recordatorios' %}" class="rounded border border-slate-300 px-3 py-1 text-sm dark:border-slate-700">Mis recordatorios</a>
+    <a href="{% url 'calendario:suscripcion' %}" class="rounded border border-slate-300 px-3 py-1 text-sm dark:border-slate-700">Suscripción</a>
   </div>
   <p x-show="mensaje" x-cloak x-text="mensaje" role="alert"
      class="rounded border border-red-300 bg-red-50 px-3 py-1.5 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300"></p>

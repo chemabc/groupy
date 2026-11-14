@@ -478,3 +478,17 @@ def invitaciones(request):
             enviadas.append(fila)
     contexto = {"recibidas": recibidas, "enviadas": enviadas, "todo": alcance.todo, "error": error}
     return render(request, "grupos/invitaciones.html", contexto)
+
+
+# Pantalla «Administrar → Mi organización → Datos»: las organizaciones que administra quien mira (el
+# superadmin: todas), cada una con el enlace a su ficha, donde se cambian sus datos, sus admins y si sus
+# miembros ven la lista de miembros. Dos consultas (los permisos salen de la caché).
+def mis_organizaciones(request):
+    usuario = request.user
+    consulta = Organizacion.objects.order_by("nombre")
+    if not usuario.is_superuser:
+        ids = [org for org, codigos in permisos_de(usuario).organizaciones.items() if "grupos.editar_organizacion" in codigos]
+        if not ids:
+            raise SinPermiso(explicar_falta("grupos.editar_organizacion"))
+        consulta = consulta.filter(pk__in=ids)
+    return render(request, "grupos/mis_organizaciones.html", {"organizaciones": list(consulta)})

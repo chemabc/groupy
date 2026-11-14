@@ -85,7 +85,7 @@ def peticiones(request):
         {"peticion": peticion, "necesidades": [{"necesidad": n, "ofrecidos": ofrecidos.get(n.pk, 0)} for n in peticion.necesidades.all()]}
         for peticion in lista
     ]
-    return render(request, "talentos/peticiones.html", {"filas": filas, "puede_pedir": _grupos_donde_pide(usuario) != []})
+    return render(request, "talentos/peticiones.html", {"filas": filas})
 
 
 # Pantalla de una petición: cada talento con «x de y» ofrecidos, los botones «Lo ofrezco» / «Retirar» (si

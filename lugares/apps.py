@@ -43,30 +43,24 @@ class LugaresConfig(ModuloConfig):
         ),
     )
     menu = (
+        # Van en sitios distintos (ver config/menu.py): mi lugar, en «Configuración de mi cuenta → Mis datos»;
+        # el mapa, en «Organizaciones y grupos»; la gestión, en «Plataforma»; lo que se muestra, en
+        # «Administrar → Mi organización».
         EntradaDeMenu(
-            codigo="lugares.lugares",
-            nombre="Lugares",
-            url="lugares:mi_lugar",
-            icono="⌖",
-            color="#065f46",
-            otras_rutas=("lugares:lugar",),
-            subsecciones=(
-                EntradaDeMenu(
-                    codigo="lugares.mi_lugar", nombre="Mi lugar", url="lugares:mi_lugar", icono="⊙", color="#be123c",
-                    vistas=(Vista("Mi lugar", "lugares:mi_lugar"),),
-                ),
-                EntradaDeMenu(
-                    codigo="lugares.mapa", nombre="Mapa y lista", url="lugares:mapa", icono="◍", color="#047857",
-                    vistas=(Vista("Mapa", "lugares:mapa"), Vista("Lista", "lugares:lista")),
-                ),
-                EntradaDeMenu(
-                    codigo="lugares.gestion", nombre="Gestión de lugares", url="lugares:propuestas", icono="✚", color="#9a3412",
-                    permiso="lugares.gestionar", contador="lugares.servicios.propuestas_pendientes",
-                    vistas=(Vista("Propuestas", "lugares:propuestas"), Vista("Nuevo lugar", "lugares:nuevo"), Vista("Importar", "lugares:importar")),
-                ),
-            ),
+            codigo="lugares.mi_lugar", nombre="Lugar", url="lugares:mi_lugar", icono="⊙", color="#be123c",
+            vistas=(Vista("Mi lugar", "lugares:mi_lugar"),),
         ),
-        # «Configuración → Lugares», colocada dentro de «Configuración» en config/menu.py.
+        EntradaDeMenu(
+            codigo="lugares.mapa", nombre="Mapa de lugares", url="lugares:mapa", icono="◍", color="#047857",
+            otras_rutas=("lugares:lugar",),
+            vistas=(Vista("Mapa", "lugares:mapa"), Vista("Lista", "lugares:lista")),
+        ),
+        EntradaDeMenu(
+            codigo="lugares.gestion", nombre="Lugares", url="lugares:propuestas", icono="✚", color="#9a3412",
+            permiso="lugares.gestionar", contador="lugares.servicios.propuestas_pendientes",
+            vistas=(Vista("Propuestas", "lugares:propuestas"), Vista("Nuevo lugar", "lugares:nuevo"), Vista("Importar", "lugares:importar")),
+        ),
+        # «Administrar → Mi organización → Lugares», colocada dentro de «Configuración» en config/menu.py.
         EntradaDeMenu(
             codigo="lugares.configuracion", nombre="Lugares", url="lugares:configuracion", icono="⌗", color="#3f6212",
             permiso="lugares.configurar",
@@ -75,18 +69,12 @@ class LugaresConfig(ModuloConfig):
     )
     ayuda = (
         Ayuda(
-            seccion="lugares.lugares",
-            titulo="Lugares",
-            texto=(
-                "Los lugares de trabajo (institutos, hospitales…), en una lista común a toda la plataforma. Tu "
-                "lugar solo lo ves tú y el superadmin. Los demás solo ven cuántas personas de su organización hay "
-                "en cada lugar, y solo si son 5 o más."
-            ),
-        ),
-        Ayuda(
             seccion="lugares.mi_lugar",
             titulo="Mi lugar",
             texto=(
+                "Tu lugar de trabajo (un instituto, un hospital…), de una lista común a toda la plataforma. Solo "
+                "lo ves tú y el superadmin; los demás solo ven cuántas personas de su organización hay en cada "
+                "lugar, y solo si son 5 o más.\n\n"
                 "Elige tu lugar de trabajo de la lista. Si no está, propón uno nuevo con su nombre, su dirección y "
                 "el enlace a un mapa (de OpenStreetMap o Google Maps); el superadmin lo revisará. Si algún dato de "
                 "tu lugar está mal, pulsa «Proponer un cambio»: el superadmin lo revisa y lo corrige para todos."
@@ -94,7 +82,7 @@ class LugaresConfig(ModuloConfig):
         ),
         Ayuda(
             seccion="lugares.mapa",
-            titulo="Mapa y lista",
+            titulo="Mapa de lugares",
             texto=(
                 "Todos los lugares de la lista. En el mapa, las chinchetas cercanas se agrupan en un círculo con su "
                 "número; pulsa para acercarte o para ver los datos del lugar. Cada organización decide si sus "
@@ -103,7 +91,7 @@ class LugaresConfig(ModuloConfig):
         ),
         Ayuda(
             seccion="lugares.gestion",
-            titulo="Gestión de lugares",
+            titulo="Lugares (gestión)",
             texto=(
                 "Para el superadmin. «Propuestas»: lugares nuevos y cambios que proponen las personas; en los "
                 "cambios se ve qué datos cambian. «Nuevo lugar»: añadir uno a mano. «Importar»: subir muchos desde "

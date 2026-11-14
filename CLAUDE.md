@@ -71,7 +71,7 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   Identidad (`boveda`, `usuarios`) → Organización (`lugares`, `grupos`, `permisos`, `audiencias`,
   `etiquetas`, `tipologias`, `solicitudes`, `moderacion`) → Funcional (`eventos`, `proyectos`, `debates`,
   `consultas`, `documentos`, `decisiones`, `calendario`, `comunicaciones`, `publico`, `limpieza`,
-  `mantenimiento`, `ayuda`). **Un módulo funcional nunca importa otro**: se relacionan con anclas y
+  `mantenimiento`, `ayuda`, `proximamente`). **Un módulo funcional nunca importa otro**: se relacionan con anclas y
   eventos_sw.
 - Cada módulo declara todo lo que aporta en una sola clase (contrato de módulo).
 - Visibilidad con audiencias (`audiencia_id`) y permisos precalculados en Redis.
@@ -84,7 +84,8 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
 - Nada es público por defecto: todo nace privado.
 - Menú: al menos dos niveles a la izquierda (sección y subsección) y el tercer nivel arriba (las vistas
   de la subsección). Si no está claro en qué nivel va algo, se pregunta. El orden y la agrupación de
-  todas las entradas se decide solo en `config/menu.py` (cada entrada nueva se coloca allí).
+  todas las entradas se decide solo en `config/menu.py` (cada entrada nueva se coloca allí). Lo propio va
+  separado de lo que se hace por otras personas: bloques «Administrar» y «Plataforma».
 - El modelo de usuario es `usuarios.Usuario` (su nombre visible es el alias). Nada se ve sin sesión.
 
 ## Estado
@@ -144,5 +145,9 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   y panel de ayuda a la derecha (no se vuelve a pintar al navegar, separador arrastrable, se recuerda) e
   índice plegable. Y selector de personas común ([A-35]: `base` SelectorDePersonas/CampoDePersonas, isla
   `selectorDePersonas`, `audiencias/cercania.py`), de entrada en la responsable y colaboran de las tareas.
-  Siguiente: fase 5 (`documentos` y `decisiones`), pendiente de las preguntas de [A-30].
+  Y el **menú en tres bloques** ([A-37], [A-38]): lo propio, «Administrar» y «Plataforma» (`Bloque` y
+  `Pestanas` en `base/disposicion.py`, usados en `config/menu.py`), con las herramientas que faltan en el
+  módulo `proximamente`. Siguen las piezas acordadas en [A-37]: Inicio (panel y mis datos), árboles de
+  grupos con colores y grafo, proyectos (rejilla, migas de pan y tarea editable) y eventos. Después, fase 5
+  (`documentos` y `decisiones`), pendiente de las preguntas de [A-30].
   Recuerda `migrate --database=boveda`.

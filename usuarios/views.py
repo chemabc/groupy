@@ -26,7 +26,7 @@ class Entrar(LoginView):
     redirect_authenticated_user = True
 
 
-# Pantalla «Mi cuenta → Preferencias»: botones para elegir el tema, la letra y la densidad. Al pulsarlos,
+# Pantalla «Configuración de mi cuenta → Usabilidad»: botones para elegir el tema, la letra y la densidad. Al pulsarlos,
 # el navegador aplica el cambio al momento y lo guarda con guardar_preferencia (ver interfaz.js).
 def preferencias(request):
     return render(request, "usuarios/preferencias.html", {"preferencias": PREFERENCIAS})
@@ -47,7 +47,7 @@ def guardar_preferencia(request):
     return HttpResponse(status=204)
 
 
-# Pantalla «Mi cuenta → Contraseña»: cambia la contraseña pidiendo la actual. Al cambiarla no se cierra
+# Pantalla «Configuración de mi cuenta → Contraseña»: cambia la contraseña pidiendo la actual. Al cambiarla no se cierra
 # la sesión (update_session_auth_hash) y se muestra un aviso en la misma pantalla.
 def contrasena(request):
     formulario = PasswordChangeForm(request.user, request.POST or None)

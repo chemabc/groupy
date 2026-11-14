@@ -10,8 +10,11 @@ from . import views
 app_name = "base"
 
 urlpatterns = [
-    # Portada de la aplicación (sección «Inicio», vista «Estructura»).
+    # Portada de cada cuenta (sección «Inicio», vista «Panel»).
     path("", views.inicio, name="inicio"),
-    # Escaparate de componentes (sección «Inicio», vista «Componentes»).
+    # Resumen de los datos de la cuenta («Inicio → Mis datos»).
+    path("mis-datos/", views.mis_datos, name="mis_datos"),
+    # Demostración de la plantilla («Desarrollo y mantenimiento → Componentes»): estructura y componentes.
+    path("estructura/", views.estructura, name="estructura"),
     path("componentes/", views.componentes, name="componentes"),
 ]

@@ -31,10 +31,11 @@ class PruebasDeUsuariosEnElNavegador(PruebaEnElNavegador):
         self.assertEqual(self.pagina.evaluate("document.documentElement.dataset.tema"), "dia")
         self.assertEqual(self.errores, [])
 
-    # Navegar a «Mi cuenta → Contraseña» con el menú superior y cambiarla sin salir de la zona central.
+    # Navegar a «Configuración de mi cuenta → Contraseña» con el menú izquierdo y cambiarla sin salir de la
+    # zona central.
     def test_cambiar_contrasena(self):
         self.abrir("/cuenta/preferencias/")
-        self.pagina.locator("#zona nav a", has_text="Contraseña").click()
+        self.pagina.locator('nav[aria-label="Secciones"] a[data-codigo="usuarios.contrasena"]').click()
         self.pagina.wait_for_selector('input[name="old_password"]')
         self.pagina.locator('input[name="old_password"]').fill("contraseña-de-prueba")
         self.pagina.locator('input[name="new_password1"]').fill("Otra-Contraseña-Larga-7")
