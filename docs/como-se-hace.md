@@ -76,8 +76,10 @@ tema en un clic.
 
 ### Ver mis grupos
 
-Ve a «Organizaciones y grupos → Mis grupos». Los grupos en gris contienen a uno de los tuyos: también eres
-miembro de ellos, por herencia. Pulsa uno para ver su ficha.
+Ve a «Organizaciones y grupos → Mis grupos → Árboles». Sale un árbol por organización (la organización, en
+violeta). Tu asamblea base tiene el fondo amarillo. Los grupos en gris contienen a uno de los tuyos: también
+eres miembro de ellos, por herencia. Pulsa uno para ver su ficha: arriba, el mismo árbol con ese grupo en
+un recuadro rojo, para ver dónde está respecto a ti.
 
 ### Pedir entrar en un grupo
 

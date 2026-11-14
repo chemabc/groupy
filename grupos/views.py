@@ -22,11 +22,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from base.registro import registro
 from base.tablas import Columna, Filtro, FuenteDeLista, Tabla
-from permisos.models import Rol
 from permisos.servicios import SinPermiso, exigir, explicar_falta, permisos_de, puede
 
 from . import servicios
 from .acceso import alcance_de, grupos_visibles, ve_miembros
+from .arboles import arboles_de, nombres_de_roles_de_grupo
 from .formularios import (
     FormularioDeAdmision,
     FormularioDeAlias,
@@ -52,7 +52,7 @@ from .models import (
 
 # Nombres visibles de los roles de grupo, por su código: {"usuario": "Usuario", …}. Una consulta.
 def _roles_de_grupo():
-    return dict(Rol.objects.filter(nivel=Rol.GRUPO).order_by("nombre").values_list("codigo", "nombre"))
+    return nombres_de_roles_de_grupo()
 
 
 # Pasa los mensajes de un ValidationError a un solo texto, para mostrarlo arriba de la ficha.
@@ -89,32 +89,12 @@ def _admins_del_grupo():
 # ── Mis grupos ───────────────────────────────────────────────────────────────────────────────────────
 
 
-# Pantalla «Mis grupos»: por cada organización, sus grupos en árbol. Los directos llevan su rol y si son
-# la asamblea base; los que solo contienen a uno de los suyos salen como heredados. Cuesta 4 consultas.
+# Pantalla «Mis grupos → Árboles»: un árbol por organización (componente de grupos/arboles.py), en una
+# rejilla de 3 columnas: los grupos en los que está, los que los contienen (por herencia) y los que
+# administra, con la asamblea base en amarillo. Cuesta 5 consultas.
 def mis_grupos(request):
     usuario = request.user
-    directas = {pertenencia.grupo_id: pertenencia for pertenencia in Pertenencia.objects.filter(usuario=usuario)}
-    roles = _roles_de_grupo() if directas else {}
-    admin_de = set(AdminDeOrganizacion.objects.filter(usuario=usuario).values_list("organizacion_id", flat=True))
-    consulta = Grupo.objects.en_orden_de_arbol().select_related("organizacion").filter(
-        pk__in=Contencion.objects.filter(descendiente_id__in=list(directas)).values("antecesor_id")
-    )
-    organizaciones = {}
-    for grupo in consulta if directas else []:
-        bloque = organizaciones.setdefault(
-            grupo.organizacion_id, {"organizacion": grupo.organizacion, "admin": grupo.organizacion_id in admin_de, "grupos": []}
-        )
-        pertenencia = directas.get(grupo.pk)
-        bloque["grupos"].append(
-            {
-                "grupo": grupo,
-                "nivel": grupo.camino.count(" › "),
-                "directo": pertenencia is not None,
-                "base": pertenencia is not None and pertenencia.es_base,
-                "rol": roles.get(pertenencia.rol, pertenencia.rol) if pertenencia and pertenencia.rol != Pertenencia.USUARIO else "",
-            }
-        )
-    contexto = {"organizaciones": list(organizaciones.values()), "superadmin": usuario.is_superuser}
+    contexto = {"arboles": arboles_de(usuario), "superadmin": usuario.is_superuser}
     return render(request, "grupos/mis_grupos.html", contexto)
 
 
@@ -181,7 +161,8 @@ def arbol(request):
 
 
 # Pantalla de la ficha de un grupo. La ven sus miembros (también los de sus subgrupos) y quienes lo
-# administran. Cuesta unas 11 consultas, sea cual sea el número de miembros.
+# administran. Arriba, el árbol de su organización. Cuesta unas 13 consultas, sea cual sea el número de
+# miembros.
 #   - pk: el número del grupo.
 #   - POST «accion»: editar, subgrupo, admitir, sacar o rol (cada una pide su permiso).
 def grupo(request, pk):
@@ -249,6 +230,7 @@ def grupo(request, pk):
     ve_lista = ve_miembros(usuario, grupo, alcance)
     contexto = {
         "grupo": grupo,
+        "arboles": arboles_de(usuario, actual=grupo.pk, organizacion=grupo.organizacion_id, administrados=alcance.administrados, roles=roles),
         "antecesores": list(
             Contencion.objects.filter(descendiente=grupo, distancia__gt=0).order_by("-distancia").values_list("antecesor_id", "antecesor__nombre")
         ),

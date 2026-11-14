@@ -207,6 +207,28 @@
   .indice-de-documento a {
     @apply block text-slate-600 hover:text-marca dark:text-slate-400;
   }
+
+  /* Árboles de grupos (grupos/templates/grupos/arboles.html). Cada lista de subgrupos va metida hacia
+     dentro, con una raya a la izquierda que la une a su grupo padre. */
+  .arbol .arbol {
+    @apply ml-2 border-l border-slate-300 pl-3 dark:border-slate-700;
+  }
+  /* La organización: una etiqueta violeta, para distinguirla de los grupos. */
+  .arbol-organizacion {
+    @apply inline-block rounded border border-violet-300 bg-violet-100 px-2 py-0.5 font-semibold text-violet-900 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-200;
+  }
+  /* Cada grupo: su nombre, que lleva a su ficha. */
+  .arbol-grupo {
+    @apply inline-block rounded px-1.5 hover:text-marca hover:underline;
+  }
+  /* La asamblea base de quien mira: fondo amarillo. */
+  .arbol-base {
+    @apply bg-yellow-200 font-semibold text-yellow-950 dark:bg-yellow-400/30 dark:text-yellow-100;
+  }
+  /* El grupo que se está mirando (en su ficha): recuadro rojo. */
+  .arbol-actual {
+    @apply ring-2 ring-red-600 dark:ring-red-500;
+  }
 }
 
 

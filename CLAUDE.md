@@ -150,4 +150,8 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   módulo `proximamente`. Siguen las piezas acordadas en [A-37]: Inicio (panel y mis datos), árboles de
   grupos con colores y grafo, proyectos (rejilla, migas de pan y tarea editable) y eventos. Después, fase 5
   (`documentos` y `decisiones`), pendiente de las preguntas de [A-30].
+  Y los **árboles de grupos** ([A-40]: `grupos/arboles.py`, en «Mis grupos → Árboles» y arriba de la ficha de
+  cada grupo; asamblea base en amarillo, organización en violeta, grupo que se mira en rojo). Sigue Inicio
+  (Panel = dashboard que resume otras secciones, y Mis datos: Inicio enseña y «Configuración de mi cuenta →
+  Mis datos» edita, con el árbol de grupos).
   Recuerda `migrate --database=boveda`.

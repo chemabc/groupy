@@ -1,0 +1,20 @@
+{% comment %}
+  Un grupo dentro de un árbol (lo incluye grupos/arboles.html, y se incluye a sí mismo para cada
+  subgrupo). Recibe «nodo», un NodoDeArbol de grupos/arboles.py. El nombre lleva a la ficha del grupo.
+{% endcomment %}
+<li>
+  <span class="flex flex-wrap items-center gap-1.5 py-0.5">
+    <a href="{% url 'grupos:grupo' nodo.id %}"
+       class="arbol-grupo {% if nodo.base %}arbol-base{% elif nodo.heredado %}text-slate-400{% endif %} {% if nodo.actual %}arbol-actual{% endif %}"
+       {% if nodo.actual %}aria-current="page"{% endif %}>{{ nodo.nombre }}</a>
+    {% if nodo.base %}<span class="rounded bg-yellow-100 px-1.5 text-xs text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200">asamblea base</span>{% endif %}
+    {% if nodo.rol %}<span class="rounded bg-marca/10 px-1.5 text-xs text-marca">{{ nodo.rol }}</span>{% endif %}
+    {% if nodo.administra_desde_aqui and not nodo.rol %}<span class="rounded bg-amber-100 px-1.5 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200">administras (y lo de debajo)</span>{% endif %}
+    {% if nodo.heredado %}<span class="text-xs text-slate-400">(por herencia)</span>{% endif %}
+  </span>
+  {% if nodo.hijos %}
+    <ul class="arbol">
+      {% for nodo in nodo.hijos %}{% include "grupos/nodo_de_arbol.html" %}{% endfor %}
+    </ul>
+  {% endif %}
+</li>

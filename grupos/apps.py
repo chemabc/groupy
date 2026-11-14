@@ -202,8 +202,9 @@ class GruposConfig(ModuloConfig):
             texto=(
                 "Los grupos en los que estás, por organización y en forma de árbol. Los que salen en gris no los "
                 "has elegido tú: contienen a uno de los tuyos, así que también eres miembro de ellos (por "
-                "herencia). «Asamblea base» es tu grupo más local, el que te valida; solo hay una por persona.\n\n"
-                "Pulsa un grupo para ver su ficha."
+                "herencia). «Asamblea base» (fondo amarillo) es tu grupo más local, el que te valida; solo hay una por "
+                "persona. La organización sale en violeta.\n\n"
+                "Pulsa un grupo para ver su ficha: arriba verás el mismo árbol, con ese grupo en un recuadro rojo."
             ),
         ),
         Ayuda(

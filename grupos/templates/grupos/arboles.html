@@ -1,0 +1,32 @@
+{% comment %}
+  Componente «árboles de grupos» (grupos/arboles.py): un recuadro por organización, en una rejilla de
+  hasta 3 columnas, con sus grupos colgando unos de otros. Se incluye con
+  {% include "grupos/arboles.html" with arboles=… %}. Recibe:
+    - arboles: la lista de ArbolDeOrganizacion que devuelve arboles_de().
+    - leyenda (opcional): si se pinta debajo la explicación de los colores.
+    - columnas (opcional): «1» para un solo árbol a todo lo ancho, en la ficha de un grupo (entonces la
+      leyenda explica también el recuadro rojo).
+  Colores: organización en violeta, asamblea base con fondo amarillo y grupo que se mira con recuadro rojo.
+{% endcomment %}
+<div class="grid gap-4 {% if columnas != 1 %}md:grid-cols-2 xl:grid-cols-3{% endif %}">
+  {% for arbol in arboles %}
+    <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" aria-label="Árbol de {{ arbol.organizacion.nombre }}">
+      <h2 class="mb-2">
+        {% if arbol.admin %}<a href="{% url 'grupos:organizacion' arbol.organizacion.pk %}" class="arbol-organizacion hover:underline">{{ arbol.organizacion.nombre }}</a>
+        {% else %}<span class="arbol-organizacion">{{ arbol.organizacion.nombre }}</span>{% endif %}
+        {% if arbol.admin %}<span class="ml-1 rounded bg-marca/10 px-1.5 text-xs text-marca">eres admin de la organización</span>{% endif %}
+      </h2>
+      <ul class="arbol text-sm">
+        {% for nodo in arbol.raices %}{% include "grupos/nodo_de_arbol.html" %}{% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+</div>
+{% if leyenda and arboles %}
+  <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+    <span><span class="arbol-organizacion">Organización</span></span>
+    <span><span class="arbol-grupo arbol-base">Tu asamblea base</span></span>
+    {% if columnas == 1 %}<span><span class="arbol-grupo arbol-actual">El grupo que miras</span></span>{% endif %}
+    <span><span class="text-slate-400">En gris</span>: eres miembro por herencia (contiene a uno de los tuyos)</span>
+  </p>
+{% endif %}

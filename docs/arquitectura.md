@@ -370,7 +370,9 @@ flowchart LR
 ### 6.6 grupos [Módulo · Organización]
 
 Organizaciones y grupos a cualquier profundidad (tabla de cierre `Contencion`), pertenencias, asamblea
-base, admins, relaciones e invitaciones entre organizaciones. La solicitud «Entrar en un grupo».
+base, admins, relaciones e invitaciones entre organizaciones. La solicitud «Entrar en un grupo». El
+componente de **árboles de grupos** (`grupos/arboles.py` y la plantilla `grupos/arboles.html`): los grupos
+de cada persona en árbol, con su asamblea base en amarillo y el grupo que se mira en rojo.
 
 ```mermaid
 flowchart LR
@@ -383,6 +385,10 @@ flowchart LR
   sol["solicitudes"]:::otro
   com["comunicaciones"]:::otro
   casi["casi todos los demás<br/>(Grupo, Pertenencia, Contencion)"]:::otro
+  arb["grupos.arboles<br/>árboles de grupos<br/>[Componente]"]:::otro
+  vis["grupos.views<br/>Mis grupos · ficha de grupo"]:::otro
+  vis --> arb
+  arb --> per
   gru --> per
   gru --> bov
   gru --> esw

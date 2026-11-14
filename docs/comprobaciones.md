@@ -500,3 +500,25 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor 
 - [ ] Mover algo de sitio: en `config/menu.py`, mueve una línea (por ejemplo, `"lugares.mapa"` dentro de
   «Calendario y eventos», como pestaña), recarga y mira el cambio. Déjalo como estaba.
 
+
+## 27. Árboles de grupos
+
+Antes: `npm run construir` (hay clases nuevas; ver 0.2). No hace falta migrar.
+
+- [ ] Como **Nutria**, «Organizaciones y grupos → Mis grupos → Árboles»: un recuadro por organización. Arriba,
+  «ORG Tajo» en una etiqueta violeta; debajo, GRU Tajo y GRU Jarama en gris «(por herencia)», GRU Henares con
+  fondo amarillo y «asamblea base», y GRU Lozoya. Cada grupo cuelga del suyo con una raya a la izquierda.
+- [ ] No salen grupos que Nutria no ve (por ejemplo, GRU Manzanares, hermano de GRU Henares).
+- [ ] Debajo, la leyenda: Organización · Tu asamblea base · En gris. Sin «El grupo que miras».
+- [ ] Pulsa un grupo: lleva a su ficha. Arriba de la ficha, el árbol de ORG Tajo con ese grupo en un
+  **recuadro rojo** (y GRU Henares sigue en amarillo); la leyenda explica también el recuadro rojo. El
+  camino («ORG Tajo › GRU Tajo › …») sigue encima.
+- [ ] Como **Lince** (en ORG Tajo y en ORG Ebro): dos árboles, uno al lado del otro (en pantalla ancha caben
+  tres por fila). En GRU Henares, «Admin del grupo»; GRU Sorbe cuelga debajo. «ORG Tajo» lleva a la ficha de
+  la organización (Lince la administra) y al lado dice «eres admin de la organización».
+- [ ] Como **Zorro** (admin de ORG Ebro): toda ORG Ebro, con «administras (y lo de debajo)» solo en GRU Ebro, no
+  en cada grupo.
+- [ ] Como **superadmin**: «Aún no estás en ningún grupo…»; en la ficha de cualquier grupo, el árbol enseña
+  el camino hasta él, con el recuadro rojo.
+- [ ] Con el tema oscuro (☾), los colores se siguen leyendo (amarillo, violeta y rojo más apagados).
+- [ ] En el móvil (o la ventana estrecha), los árboles van uno debajo de otro.

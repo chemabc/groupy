@@ -1137,6 +1137,31 @@ usuaria).** Vistas en `grupos/views.py`; qué ve cada cual, en `grupos/acceso.py
 - **Fuera de esta pieza:** mapa (con `lugares`), peticiones de borrado de grupos (con `solicitudes`),
   recuento de talentos y grafo de relaciones.
 
+**Árboles de grupos (14 de noviembre de 2026, [A-40]; lo pedido en docs/todo.md, «Grupos y proyectos»).**
+Un solo componente dibuja los grupos en árbol en todas las pantallas, para que se lean siempre igual.
+- *Motivo:* la persona usuaria quiere saber de un vistazo dónde está, con los mismos colores en todas
+  partes; y el mismo árbol servirá para «Inicio → Mis datos» (decidido en [A-40]: primero el árbol y después
+  Inicio, para no hacerlo dos veces).
+- **Qué sale:** los grupos en los que está la persona, los que los contienen (miembro por herencia, en
+  gris) y los que administra, con sus subgrupos. Nada más: ni los grupos hermanos ni los de otras ramas,
+  que no ve. El superadmin ve solo los suyos (todos los grupos están en «Administrar → Árbol»).
+- **Colores:** la organización en una etiqueta violeta; la asamblea base con fondo amarillo (y la etiqueta
+  «asamblea base»); el grupo cuya ficha se mira, con un recuadro rojo. Junto a cada grupo, el rol si no es
+  el normal, y «administras (y lo de debajo)» solo en el grupo más alto de lo que se administra (ponerlo
+  en todos lo llenaba de etiquetas). Cada nombre lleva a la ficha del grupo; el de la organización, a la
+  suya, si se administra.
+- **Un árbol por organización**, en una rejilla de hasta 3 columnas (2 en pantallas medianas, 1 en el
+  móvil). Debajo, la leyenda de los colores.
+- **Dónde está:** «Organizaciones y grupos → Mis grupos → Árboles» (sustituye a la lista con sangría, con lo
+  mismo que enseñaba) y arriba de la ficha de cada grupo (solo el árbol de su organización, con el
+  recuadro rojo). El camino de la ficha («ORG Tajo › GRU Tajo › …») se mantiene.
+- **Cómo está hecho:** `grupos/arboles.py` (`arboles_de`, que cuesta de 2 a 5 consultas sean cuantos
+  sean los grupos) y las plantillas `grupos/arboles.html` y `grupos/nodo_de_arbol.html` (se incluye a sí
+  misma para cada subgrupo). Los colores son clases propias en `base/estilos/entrada.css` (`arbol`,
+  `arbol-organizacion`, `arbol-base`, `arbol-actual`). La ficha de grupo pasa de 10 a 13 consultas.
+  - *Descartado:* una isla de JavaScript (un árbol que se pliega no hace falta con pocos grupos, y sin
+    JavaScript sale ya pintado) y el grafo, que es otra pestaña («Mis grupos → Grafo», aún por hacer).
+
 ### 8.2 Lugares
 
 - El superadmin sube listas desde Excel en dos pasos (vista previa → confirmar). Mapa con chinchetas

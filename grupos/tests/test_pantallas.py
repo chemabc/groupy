@@ -11,6 +11,7 @@ from django.core.cache import cache
 
 from base.contrato import Ancla
 from base.pruebas import PruebaDePantalla, contratos_de_prueba, crear_usuario_de_prueba, modulo_falso
+from grupos.arboles import arboles_de
 from grupos.models import Grupo, InvitacionDeGrupo, Pertenencia, RelacionEntreGrupos
 from grupos.servicios import (
     admitir,
@@ -69,7 +70,7 @@ class PruebasDeConsultas(PruebaDeGrupos):
 
     # Mis grupos, como Nutria.
     def test_mis_grupos(self):
-        self.comprobar_consultas("/organizaciones/", 5, lambda: admitir(self.nutria, crear_grupo(self.tajo, "GRU Lozoya", padre=self.jarama)))
+        self.comprobar_consultas("/organizaciones/", 4, lambda: admitir(self.nutria, crear_grupo(self.tajo, "GRU Lozoya", padre=self.jarama)))
 
     # «Mi organización → Datos»: Zorro (admin de ORG Tajo) ve la suya; Nutria no puede entrar.
     def test_mis_organizaciones(self):
@@ -89,9 +90,9 @@ class PruebasDeConsultas(PruebaDeGrupos):
     # Ficha de un grupo, como su admin (con la gestión de miembros) y como miembro.
     def test_ficha_de_grupo(self):
         self.como(self.lince)
-        self.comprobar_consultas(f"/organizaciones/grupo/{self.henares.pk}/", 10, self.mas_gente)
+        self.comprobar_consultas(f"/organizaciones/grupo/{self.henares.pk}/", 13, self.mas_gente)
         self.como(self.nutria)
-        self.comprobar_consultas(f"/organizaciones/grupo/{self.henares.pk}/", 9, self.mas_gente)
+        self.comprobar_consultas(f"/organizaciones/grupo/{self.henares.pk}/", 12, self.mas_gente)
 
     # Ficha de la organización, como su admin.
     def test_ficha_de_organizacion(self):
@@ -314,3 +315,60 @@ class PruebasDeInvitaciones(PruebaDeGrupos):
             # El superadmin ve todas en una sola lista.
             self.como(self.superadmin)
             self.assertContains(self.client.get("/organizaciones/invitaciones/"), "Todas las invitaciones")
+
+
+class PruebasDeArboles(PruebaDeGrupos):
+    """
+    El componente de árboles (grupos/arboles.py): qué grupos salen en cada árbol, cómo cuelgan y qué marca
+    lleva cada uno.
+    """
+
+    # Pasa un árbol a una lista de textos «sangría + nombre + marcas», fácil de comparar.
+    def aplanar(self, nodos, nivel=0):
+        lineas = []
+        for nodo in nodos:
+            marcas = [nombre for nombre in ("base", "heredado", "administra", "actual") if getattr(nodo, nombre)]
+            if nodo.rol:
+                marcas.append(nodo.rol)
+            lineas.append("  " * nivel + nodo.nombre + (f" [{', '.join(marcas)}]" if marcas else ""))
+            lineas += self.aplanar(nodo.hijos, nivel + 1)
+        return lineas
+
+    # Nutria (en GRU Henares) ve su rama: los que la contienen, por herencia, y no los subgrupos ni ORG Ebro.
+    def test_miembro(self):
+        arboles = arboles_de(self.nutria)
+        self.assertEqual([arbol.organizacion.nombre for arbol in arboles], ["ORG Tajo"])
+        self.assertEqual(
+            self.aplanar(arboles[0].raices),
+            ["GRU Tajo [heredado]", "  GRU Jarama [heredado]", "    GRU Henares [base]"],
+        )
+
+    # Lince (admin de GRU Henares) ve además GRU Sorbe, que administra; su rol sale junto a su grupo.
+    def test_admin_de_grupo(self):
+        lineas = self.aplanar(arboles_de(self.lince)[0].raices)
+        self.assertEqual(lineas[2], "    GRU Henares [base, administra, Admin del grupo]")
+        self.assertEqual(lineas[3], "      GRU Sorbe [administra]")
+
+    # Zorro (admin de ORG Tajo) ve toda su organización, con su nombre enlazado a la ficha.
+    def test_admin_de_organizacion(self):
+        (arbol,) = arboles_de(self.zorro)
+        self.assertTrue(arbol.admin)
+        self.assertEqual(len(self.aplanar(arbol.raices)), 4)
+
+    # Varias organizaciones: un árbol por cada una, en orden alfabético.
+    def test_varias_organizaciones(self):
+        admitir(self.nutria, self.segre)
+        self.assertEqual([arbol.organizacion.nombre for arbol in arboles_de(self.nutria)], ["ORG Ebro", "ORG Tajo"])
+
+    # El superadmin, en la ficha de un grupo en el que no está, ve el camino hasta él con el recuadro.
+    def test_superadmin_en_una_ficha(self):
+        (arbol,) = arboles_de(self.superadmin, actual=self.sorbe.pk, organizacion=self.tajo.pk)
+        self.assertEqual(self.aplanar(arbol.raices)[-1], "      GRU Sorbe [actual]")
+
+    # La pantalla «Mis grupos» y la ficha pintan los colores: amarillo para la base, rojo para el actual.
+    def test_pantallas(self):
+        respuesta = self.client.get("/organizaciones/")
+        self.assertContains(respuesta, "arbol-grupo arbol-base")
+        self.assertContains(respuesta, "arbol-organizacion")
+        respuesta = self.client.get(f"/organizaciones/grupo/{self.jarama.pk}/")
+        self.assertContains(respuesta, 'aria-current="page">GRU Jarama</a>')

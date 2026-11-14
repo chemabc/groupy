@@ -100,7 +100,9 @@ class PruebasDelSelectorDePersonasEnElNavegador(PruebaEnElNavegador):
         self.assertTrue(ventana.get_by_text("En sus subgrupos").is_visible())
         self.assertEqual(ventana.get_by_text("Zorro").count(), 0)
         ventana.get_by_placeholder("Buscar por alias o por grupo…").fill("gar")
-        self.assertFalse(ventana.get_by_role("radio", name="Lince").is_visible())
+        # El filtro lo aplica Alpine justo después de escribir: se espera a que Lince se esconda (sin esperar,
+        # a veces se miraba antes de tiempo y la prueba fallaba sin motivo).
+        ventana.get_by_role("radio", name="Lince").wait_for(state="hidden")
         ventana.get_by_role("radio", name="Garza").click()
         ventana.wait_for(state="hidden")
         self.pagina.locator('input[type="hidden"][name="responsable"][value="Garza"]').wait_for(state="attached")

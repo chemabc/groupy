@@ -1,6 +1,7 @@
 {% extends interfaz.plantilla %}
 {% comment %}
   Ficha de un grupo (grupos/views.py, grupo). Recibe: grupo (con su organización y su camino),
+  arboles (el árbol de su organización, con este grupo en recuadro rojo; grupos/arboles.py),
   antecesores (pares id, nombre, del más alto al padre), subgrupos (con «personas»), admins (pertenencias
   de admin del grupo), admins_de_organizacion, ve_lista (si ve la lista de miembros), tabla (los miembros,
   si los ve), directos (miembros directos, solo para quien puede admitir), puede_editar, puede_subgrupo,
@@ -15,6 +16,8 @@
     {% for pk, nombre in antecesores %}<span>›</span><a href="{% url 'grupos:grupo' pk %}" class="hover:text-marca hover:underline">{{ nombre }}</a>{% endfor %}
     <span>›</span><span class="font-medium text-slate-700 dark:text-slate-200">{{ grupo.nombre }}</span>
   </nav>
+  {# Árbol de la organización: dónde está este grupo (recuadro rojo) y dónde estás tú (amarillo) #}
+  {% include "grupos/arboles.html" with columnas=1 leyenda=True %}
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
 
   {# Datos #}

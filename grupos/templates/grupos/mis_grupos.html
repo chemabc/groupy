@@ -1,29 +1,15 @@
 {% extends interfaz.plantilla %}
 {% comment %}
-  Pantalla «Organizaciones y grupos → Mis grupos» (grupos/views.py, mis_grupos). Recibe «organizaciones»:
-  una lista con la organización, si quien mira es su admin y sus grupos (grupo, nivel de sangría, si es
-  directo, si es la asamblea base y el rol si no es «usuario»), ya en orden de árbol; y «superadmin».
+  Pantalla «Organizaciones y grupos → Mis grupos → Árboles» (grupos/views.py, mis_grupos). Recibe
+  «arboles» (un ArbolDeOrganizacion por organización, de grupos/arboles.py) y «superadmin».
 {% endcomment %}
 {% block contenido %}
-<div class="max-w-3xl space-y-4">
-  <p class="text-sm text-slate-600 dark:text-slate-300">Los grupos en los que estás. En gris, los que contienen a uno de los tuyos: también eres miembro de ellos, por herencia. Pulsa un grupo para ver su ficha.</p>
-  {% for bloque in organizaciones %}
-    <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-      <h2 class="mb-2 font-semibold">{{ bloque.organizacion.nombre }}
-        {% if bloque.admin %}<a href="{% url 'grupos:organizacion' bloque.organizacion.pk %}" class="ml-2 rounded bg-marca/10 px-1.5 text-xs font-normal text-marca hover:underline">eres admin de la organización</a>{% endif %}</h2>
-      <ul class="space-y-0.5 text-sm">
-        {% for fila in bloque.grupos %}
-          <li style="padding-left: {{ fila.nivel }}.25rem" class="flex flex-wrap items-center gap-2">
-            <span class="{% if not fila.directo %}text-slate-400{% endif %}">{% if fila.nivel %}↳ {% endif %}<a href="{% url 'grupos:grupo' fila.grupo.pk %}" class="hover:text-marca hover:underline">{{ fila.grupo.nombre }}</a></span>
-            {% if fila.base %}<span class="rounded bg-emerald-100 px-1.5 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">asamblea base</span>{% endif %}
-            {% if fila.rol %}<span class="rounded bg-marca/10 px-1.5 text-xs text-marca">{{ fila.rol }}</span>{% endif %}
-            {% if not fila.directo %}<span class="text-xs text-slate-400">(por herencia)</span>{% endif %}
-          </li>
-        {% endfor %}
-      </ul>
-    </section>
-  {% empty %}
-    <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">Aún no estás en ningún grupo.{% if superadmin %} Como superadmin, ves todos en «Árbol».{% endif %}</p>
-  {% endfor %}
+<div class="space-y-4">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Los grupos en los que estás, uno por organización. En gris, los que contienen a uno de los tuyos: también eres miembro de ellos, por herencia. Pulsa un grupo para ver su ficha.</p>
+  {% if arboles %}
+    {% include "grupos/arboles.html" with leyenda=True %}
+  {% else %}
+    <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">Aún no estás en ningún grupo.{% if superadmin %} Como superadmin, ves todos en «Administrar → Grupos que administro → Árbol».{% endif %}</p>
+  {% endif %}
 </div>
 {% endblock %}
