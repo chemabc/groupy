@@ -797,6 +797,8 @@ document.addEventListener("alpine:init", () => {
   //     caja con botones para acercar, alejar, ajustar y verlo a pantalla completa; se mueve arrastrándolo
   //     y se acerca con doble clic. Mermaid solo se carga si hay diagramas, y cada uno se dibuja cuando
   //     está a punto de verse al bajar por la página (dibujarlos todos de golpe tarda mucho).
+  //   - Enlaces (opcional, con data-enlaces): cada nodo del diagrama lleva a una dirección (el grafo de
+  //     grupos, grupos/templates/grupos/grafo.html).
   Alpine.data("documento", () => ({
     // Los diagramas ya dibujados (de svg-pan-zoom), para quitarlos al salir de la página.
     dibujos: [],
@@ -906,6 +908,7 @@ document.addEventListener("alpine:init", () => {
         zoomScaleSensitivity: 0.6,
       });
       this.dibujos.push(zoom);
+      this.enlazar(dibujo);
       // Un botón con su texto, su explicación y lo que hace al pulsarlo.
       const boton = (texto, titulo, accion) => {
         const elemento = document.createElement("button");
@@ -924,6 +927,29 @@ document.addEventListener("alpine:init", () => {
         else await caja.requestFullscreen();
         zoom.resize(); zoom.fit(); zoom.center();
       });
+    },
+
+    // Si la página trae enlaces para los nodos (data-enlaces: el id de un <script> con {nodo: dirección},
+    // como el grafo de grupos), cada nodo se puede pulsar y lleva a su dirección. Mermaid llama a cada nodo
+    // «…flowchart-<nombre>-<número>»; de ahí se saca su nombre. Un arrastre para mover el dibujo no cuenta
+    // como pulsación.
+    //   - dibujo: el <svg> ya dibujado.
+    enlazar(dibujo) {
+      const fuente = this.$root.dataset.enlaces && document.getElementById(this.$root.dataset.enlaces);
+      if (!fuente) return;
+      const enlaces = JSON.parse(fuente.textContent);
+      for (const nodo of dibujo.querySelectorAll("g.node")) {
+        const nombre = (nodo.id.match(/flowchart-(.+)-\d+$/) || [])[1];
+        const direccion = enlaces[nombre];
+        if (!direccion) continue;
+        nodo.style.cursor = "pointer";
+        let desde = null;
+        nodo.addEventListener("pointerdown", (evento) => { desde = [evento.clientX, evento.clientY]; });
+        nodo.addEventListener("click", (evento) => {
+          if (desde && Math.hypot(evento.clientX - desde[0], evento.clientY - desde[1]) > 5) return;
+          window.location.href = direccion;
+        });
+      }
     },
 
     // Al salir de la página (htmx cambia la zona central): deja de vigilar y suelta los diagramas.

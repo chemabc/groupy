@@ -403,6 +403,11 @@ flowchart LR
   com["comunicaciones"]:::otro
   casi["casi todos los demás<br/>(Grupo, Pertenencia, Contencion)"]:::otro
   arb["grupos.arboles<br/>árboles de grupos<br/>[Componente]"]:::otro
+  graf["grupos.grafo<br/>grafo de grupos (texto Mermaid)<br/>[Componente]"]:::otro
+  doc["isla «documento» + Mermaid<br/>[Isla JS]"]:::otro
+  graf --> arb
+  vis --> graf
+  doc -. "dibuja el texto y enlaza los nodos" .-> graf
   vis["grupos.views<br/>Mis grupos · ficha de grupo"]:::otro
   vis --> arb
   arb --> per

@@ -600,3 +600,15 @@ Antes: `npm run construir` (ver 0.2) y reiniciar el servidor.
 - [ ] Pulsa un tipo: queda con el recuadro rojo y a la derecha salen sus campos, como antes.
 - [ ] Como **superadmin**: todos los tipos en amarillo (los puede cambiar todos).
 - [ ] «De eventos»: igual, con «Tipos de eventos».
+
+## 32. Grafo de grupos
+
+Antes: reiniciar el servidor (cambia interfaz.js: recarga la página con Ctrl+F5).
+
+- [ ] Como **Lince**, «Organizaciones y grupos → Mis grupos → Grafo»: una caja violeta por organización
+  (ORG Tajo y ORG Ebro), con sus grupos unidos por flechas. GRU Henares en amarillo; lo que administra, con
+  borde ámbar; los grupos de más arriba, en gris.
+- [ ] Las relaciones de «Relaciones» salen como flechas de puntos con su texto.
+- [ ] Botones + − ⤢ ⛶: acercan, alejan, ajustan y ponen a pantalla completa. Se puede arrastrar.
+- [ ] Al pulsar un grupo se va a su ficha (al arrastrar el dibujo, no).
+- [ ] Como **Nutria**: solo su rama (GRU Tajo › GRU Jarama › GRU Henares y GRU Lozoya).

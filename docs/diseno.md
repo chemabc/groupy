@@ -1197,6 +1197,20 @@ Un solo componente dibuja los grupos en árbol en todas las pantallas, para que 
   - *Descartado:* una isla de JavaScript (un árbol que se pliega no hace falta con pocos grupos, y sin
     JavaScript sale ya pintado) y el grafo, que es otra pestaña («Mis grupos → Grafo», aún por hacer).
 
+**Grafo de grupos (14 de noviembre de 2026, versión sencilla pedida por la persona usuaria tras [A-47]).**
+«Organizaciones y grupos → Mis grupos → Grafo».
+- **Qué sale:** los mismos grupos que los árboles (los tuyos, los que los contienen y los que
+  administras), cada organización en su caja violeta; flechas llenas de cada grupo a sus subgrupos y de
+  puntos para las relaciones libres («colabora», «apoya»…). Si una relación llega a un grupo que no sale en
+  tu árbol, ese grupo sale punteado (es lo mismo que enseña «Relaciones»). Mismos colores que los árboles:
+  asamblea base amarilla, heredados en gris, lo que administras con borde ámbar.
+- **Cada grupo se pulsa** y lleva a su ficha. Se acerca, se aleja, se arrastra y se ve a pantalla completa.
+- **Cómo está hecho:** sin librerías nuevas. `grupos/grafo.py` escribe el grafo en texto de Mermaid (la
+  librería de los diagramas de la ayuda) y lo dibuja la misma isla, «documento», a la que se le ha
+  añadido `data-enlaces` para que los nodos se puedan pulsar. Cuesta 5 consultas.
+  - *Descartado:* una librería de grafos interactivos (Cytoscape, vis-network…): más peso para lo mismo.
+    Si hace falta mover nodos a mano o filtrar, se reconsidera.
+
 ### 8.2 Lugares
 
 - El superadmin sube listas desde Excel en dos pasos (vista previa → confirmar). Mapa con chinchetas

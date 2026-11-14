@@ -12,6 +12,7 @@ from django.core.cache import cache
 from base.contrato import Ancla
 from base.pruebas import PruebaDePantalla, contratos_de_prueba, crear_usuario_de_prueba, modulo_falso
 from grupos.arboles import arboles_de
+from grupos.grafo import grafo_de
 from grupos.models import Grupo, InvitacionDeGrupo, Pertenencia, RelacionEntreGrupos
 from grupos.servicios import (
     admitir,
@@ -372,3 +373,33 @@ class PruebasDeArboles(PruebaDeGrupos):
         self.assertContains(respuesta, "arbol-organizacion")
         respuesta = self.client.get(f"/organizaciones/grupo/{self.jarama.pk}/")
         self.assertContains(respuesta, 'aria-current="page">GRU Jarama</a>')
+
+
+class PruebasDelGrafo(PruebaDeGrupos):
+    """El texto del grafo (grupos/grafo.py) y su pantalla."""
+
+    # Nutria: su rama de ORG Tajo dentro de su caja, GRU Henares en amarillo, sus relaciones (también con
+    # un grupo que no sale en su árbol, GRU Sorbe, que sale punteado) y el enlace de cada nodo a su ficha.
+    def test_texto(self):
+        relacionar(self.henares, self.sorbe, "colabora")
+        relacionar(self.henares, self.jarama, "apoya")
+        texto, enlaces = grafo_de(self.nutria)
+        self.assertIn(f'subgraph o{self.tajo.pk}["ORG Tajo"]', texto)
+        self.assertIn(f'g{self.henares.pk}["GRU Henares"]:::base', texto)
+        self.assertIn(f"g{self.jarama.pk} --> g{self.henares.pk}", texto)
+        self.assertIn(f'g{self.henares.pk} -. "apoya" .-> g{self.jarama.pk}', texto)
+        self.assertEqual(enlaces[f"g{self.henares.pk}"], f"/organizaciones/grupo/{self.henares.pk}/")
+        self.assertIn(f'g{self.sorbe.pk}["GRU Sorbe"]:::fuera', texto)
+
+    # La pantalla cuesta lo mismo con más grupos y relaciones.
+    def test_consultas(self):
+        relacionar(self.henares, self.jarama, "apoya")
+
+        # Un subgrupo más de Henares y una relación con él.
+        def mas():
+            nuevo = crear_grupo(self.tajo, f"GRU Badiel {Grupo.objects.count()}", padre=self.henares)
+            admitir(self.nutria, nuevo)
+            relacionar(nuevo, self.henares, "colabora")
+
+        respuesta = self.comprobar_consultas("/organizaciones/grafo/", 5, mas)
+        self.assertContains(respuesta, "language-mermaid")

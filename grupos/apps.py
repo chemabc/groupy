@@ -155,6 +155,13 @@ class GruposConfig(ModuloConfig):
             color="#047858",
         ),
         EntradaDeMenu(
+            codigo="grupos.grafo",
+            nombre="Grafo",
+            url="grupos:grafo",
+            icono="⌘",
+            color="#9d174d",
+        ),
+        EntradaDeMenu(
             codigo="grupos.relaciones",
             nombre="Relaciones",
             url="grupos:relaciones",

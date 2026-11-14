@@ -67,7 +67,7 @@ DISPOSICION = (
         ("grupos.organizaciones", (
             Pestanas("grupos.mios", (
                 "grupos.mis_grupos",
-                "proximamente.grafo",
+                "grupos.grafo",
                 "grupos.relaciones",
                 "talentos.del_grupo",
             )),

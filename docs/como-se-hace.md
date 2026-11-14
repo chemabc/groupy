@@ -94,6 +94,13 @@ violeta). Tu asamblea base tiene el fondo amarillo. Los grupos en gris contienen
 eres miembro de ellos, por herencia. Pulsa uno para ver su ficha: arriba, el mismo árbol con ese grupo en
 un recuadro rojo, para ver dónde está respecto a ti.
 
+### Ver mis grupos en un grafo
+
+En «Organizaciones y grupos → Mis grupos → Grafo» salen tus grupos dibujados, cada organización en su caja.
+Las flechas llenas van de un grupo a sus subgrupos; las de puntos son relaciones («colabora», «apoya»…).
+Usa los botones + y − (o doble clic) para acercar, arrastra para moverte y ⛶ para verlo a pantalla
+completa. Pulsa un grupo para ir a su ficha.
+
 ### Pedir entrar en un grupo
 
 1. Ve a «Comunicaciones → Solicitudes → Enviadas» y pulsa **Pedir algo**.

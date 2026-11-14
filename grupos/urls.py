@@ -9,8 +9,9 @@ from . import views
 app_name = "grupos"
 
 urlpatterns = [
-    # Subsecciones del menú: mis grupos, árbol, relaciones e invitaciones.
+    # Subsecciones del menú: mis grupos (árboles y grafo), árbol, relaciones e invitaciones.
     path("", views.mis_grupos, name="mis_grupos"),
+    path("grafo/", views.grafo, name="grafo"),
     path("arbol/", views.arbol, name="arbol"),
     path("relaciones/", views.relaciones, name="relaciones"),
     path("invitaciones/", views.invitaciones, name="invitaciones"),

@@ -27,6 +27,7 @@ from permisos.servicios import SinPermiso, exigir, explicar_falta, permisos_de, 
 from . import servicios
 from .acceso import alcance_de, grupos_visibles, ve_miembros
 from .arboles import arboles_de, nombres_de_roles_de_grupo
+from .grafo import grafo_de
 from .formularios import (
     FormularioDeAdmision,
     FormularioDeAlias,
@@ -96,6 +97,14 @@ def mis_grupos(request):
     usuario = request.user
     contexto = {"arboles": arboles_de(usuario), "superadmin": usuario.is_superuser}
     return render(request, "grupos/mis_grupos.html", contexto)
+
+
+# Pantalla «Mis grupos → Grafo»: los mismos grupos que los árboles, en un grafo (grupos/grafo.py) con
+# cada organización en su caja y las relaciones libres como flechas de puntos. Se acerca, se aleja, se ve a
+# pantalla completa y cada grupo se pulsa para ir a su ficha. Cuesta unas 6 consultas.
+def grafo(request):
+    texto, enlaces = grafo_de(request.user)
+    return render(request, "grupos/grafo.html", {"texto": texto, "enlaces": enlaces})
 
 
 # ── Árbol ────────────────────────────────────────────────────────────────────────────────────────────

@@ -161,6 +161,9 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   «(hechas/totales) ▸», amarillo si participas, rojo el que se mira). Y la **ficha de tarea** ([A-44]: camino con los
   proyectos en violeta, lo escrito se cambia encima con htmx en `proyectos:tarea_campo`, lo demás en el
   desplegable «Completar o cambiar todo»). Y el **árbol de tipologías** con el mismo aspecto (amarillo lo que
-  se puede cambiar, rojo el elegido). Siguen el grafo de grupos y eventos; después, fase 5 (`documentos` y
-  `decisiones`), pendiente de las preguntas de [A-30].
+  se puede cambiar, rojo el elegido). Y el **grafo de grupos** (`grupos/grafo.py`: texto Mermaid
+  dibujado por la isla «documento», nodos que se pulsan).
+- **Fases 5, 6 y 7 en curso** (encargo tras [A-47]: versiones sencillas y funcionales sin preguntar; las
+  dudas esenciales, apuntadas en docs/diseno.md §20 para el final). Lo que queda de [A-37] (eventos de los
+  grupos que administro, miembros, conversaciones con grupos y personas) se pospone.
   Recuerda `migrate --database=boveda`.
