@@ -1,29 +1,48 @@
 {% extends interfaz.plantilla %}
 {% comment %}
-  Ficha de una tarea (proyectos/views.py, tarea). Recibe «tarea», «colaboradores», «espera_a» (las tareas
-  a las que espera), «desbloquea» (las que la esperan), «formulario» (para
-  quien puede cambiarla; si no, None) y «abrir» (formulario desplegado tras un error).
+  Ficha de una tarea (proyectos/views.py, tarea). Recibe «tarea», «camino» (los proyectos de los que viene,
+  del principal al suyo, cada uno con si se ve), «cambia» (si quien mira puede cambiarla), «colaboradores»,
+  «espera_a» (las tareas a las que espera), «desbloquea» (las que la esperan), «formulario» (para quien puede
+  cambiarla; si no, None), «abrir» (formulario desplegado tras un error) y «estados».
+  Lo ya escrito se cambia encima (proyectos/_campo_de_tarea.html); las personas y las dependencias, y lo
+  que aún no está escrito, en el desplegable «Completar o cambiar todo».
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-2xl space-y-3">
   {% include "base/_archivado.html" with fecha=tarea.archivado %}
-  <p class="text-sm">{% if tarea.proyecto %}<a href="{% url 'proyectos:proyecto' tarea.proyecto_id %}" class="text-marca hover:underline">← {{ tarea.proyecto.titulo }}</a>{% else %}<a href="{% url 'proyectos:tareas' %}" class="text-marca hover:underline">← Mis tareas</a>{% endif %}</p>
+  {# Camino: de dónde viene la tarea. Los proyectos, en violeta; el grupo de una tarea suelta, en verde #}
+  <nav aria-label="De dónde viene la tarea" class="flex flex-wrap items-center gap-1 text-sm">
+    <a href="{% url 'proyectos:tareas_kanban' %}" class="text-marca hover:underline">Tareas</a>
+    {% if camino %}
+      {% for proyecto, se_ve in camino %}
+        <span aria-hidden="true">›</span>
+        {% if se_ve %}<a href="{% url 'proyectos:proyecto' proyecto.pk %}" class="miga-de-proyecto hover:underline">{{ proyecto.titulo }}</a>
+        {% else %}<span class="text-slate-400">(un proyecto que no puedes ver)</span>{% endif %}
+      {% endfor %}
+    {% elif tarea.personal %}
+      <span aria-hidden="true">›</span><a href="{% url 'proyectos:personales' %}" class="miga-de-proyecto hover:underline">Personales</a>
+    {% elif tarea.grupo %}
+      <span aria-hidden="true">›</span><a href="{% url 'grupos:grupo' tarea.grupo_id %}" class="arbol-coordina hover:underline">{{ tarea.grupo.nombre }}</a>
+    {% endif %}
+    <span aria-hidden="true">›</span><span class="font-medium">{{ tarea.titulo }}</span>
+  </nav>
   <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-    <p class="text-xs text-slate-500">{% if tarea.personal %}Tarea personal{% elif tarea.proyecto %}Tarea del proyecto{% else %}Tarea suelta de {{ tarea.grupo.nombre }} ({{ tarea.grupo.organizacion.nombre }}){% endif %}{% if tarea.creador %} · creada por {{ tarea.creador.alias }}{% endif %}</p>
-    <h2 class="text-xl font-semibold">{{ tarea.titulo }}</h2>
-    <dl class="mt-2 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-sm">
-      <dt class="text-slate-500">Estado</dt><dd>{{ tarea.get_estado_display }}</dd>
-      <dt class="text-slate-500">Responsable</dt><dd>{{ tarea.responsable.alias }}</dd>
-      {% if colaboradores %}<dt class="text-slate-500">Colaboran</dt><dd>{% for persona in colaboradores %}{{ persona.alias }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
-      {% if tarea.limite %}<dt class="text-slate-500">Para el</dt><dd>{{ tarea.limite|date:"l d/m/Y" }}</dd>{% endif %}
-      {% if espera_a %}<dt class="text-slate-500">Espera a</dt><dd>{% for otra in espera_a %}<a href="{% url 'proyectos:tarea' otra.pk %}" class="hover:text-marca hover:underline {% if otra.estado == 'hecha' %}text-slate-400 line-through{% endif %}">{{ otra.titulo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if tarea.bloqueo_automatico %} <span class="text-xs text-slate-500">(bloqueada hasta que estén hechas)</span>{% endif %}</dd>{% endif %}
-      {% if desbloquea %}<dt class="text-slate-500">La esperan</dt><dd>{% for otra in desbloquea %}<a href="{% url 'proyectos:tarea' otra.pk %}" class="hover:text-marca hover:underline">{{ otra.titulo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+    <p class="text-xs text-slate-500">{% if tarea.personal %}Tarea personal{% elif tarea.proyecto %}Tarea del proyecto{% else %}Tarea suelta de {{ tarea.grupo.nombre }} ({{ tarea.grupo.organizacion.nombre }}){% endif %}{% if tarea.creador %} · creada por {{ tarea.creador.alias }}{% endif %}{% if cambia %} · pulsa un dato para cambiarlo{% endif %}</p>
+    {% include "proyectos/_campo_de_tarea.html" with campo="titulo" %}
+    <dl class="mt-2 grid grid-cols-[8rem_1fr] items-start gap-x-3 gap-y-1 text-sm">
+      <dt class="py-0.5 text-slate-500">Estado</dt><dd>{% include "proyectos/_campo_de_tarea.html" with campo="estado" %}</dd>
+      <dt class="py-0.5 text-slate-500">Responsable</dt><dd class="flex items-center gap-1.5">{{ tarea.responsable.alias }}{% if formulario and "responsable" in formulario.fields %}{% include "proyectos/_abrir_desplegable.html" %}{% endif %}</dd>
+      {% if colaboradores %}<dt class="py-0.5 text-slate-500">Colaboran</dt><dd class="flex items-center gap-1.5"><span>{% for persona in colaboradores %}{{ persona.alias }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% if formulario %}{% include "proyectos/_abrir_desplegable.html" %}{% endif %}</dd>{% endif %}
+      {% if tarea.limite %}<dt class="py-0.5 text-slate-500">Para el</dt><dd>{% include "proyectos/_campo_de_tarea.html" with campo="limite" %}</dd>{% endif %}
+      {% if espera_a %}<dt class="py-0.5 text-slate-500">Espera a</dt><dd>{% for otra in espera_a %}<a href="{% url 'proyectos:tarea' otra.pk %}" class="hover:text-marca hover:underline {% if otra.estado == 'hecha' %}text-slate-400 line-through{% endif %}">{{ otra.titulo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if tarea.bloqueo_automatico %} <span class="text-xs text-slate-500">(bloqueada hasta que estén hechas)</span>{% endif %}{% if formulario %} {% include "proyectos/_abrir_desplegable.html" %}{% endif %}</dd>{% endif %}
+      {% if desbloquea %}<dt class="py-0.5 text-slate-500">La esperan</dt><dd>{% for otra in desbloquea %}<a href="{% url 'proyectos:tarea' otra.pk %}" class="hover:text-marca hover:underline">{{ otra.titulo }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
     </dl>
-    {% if tarea.descripcion %}<p class="mt-2 whitespace-pre-line text-sm">{{ tarea.descripcion }}</p>{% endif %}
+    {% if tarea.descripcion %}<div class="mt-2">{% include "proyectos/_campo_de_tarea.html" with campo="descripcion" %}</div>{% endif %}
   </section>
   {% if formulario %}
-    <details class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir %}open{% endif %}>
-      <summary class="cursor-pointer text-sm font-semibold">Cambiar</summary>
+    {# Todo junto, con los valores de ahora escritos: para completar lo que falta (fecha, descripción, colaboradores, dependencias…) o cambiar varias cosas a la vez #}
+    <details id="cambiar-tarea" class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900" {% if abrir %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-semibold">Completar o cambiar todo</summary>
       <form method="post" class="mt-2">
         {% csrf_token %}<input type="hidden" name="accion" value="guardar">
         {{ formulario }}

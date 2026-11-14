@@ -156,7 +156,8 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   (Inicio enseña y «Configuración de mi cuenta → Mis datos → Datos» edita), con `TarjetaDeInicio` en el
   contrato, la función en el `inicio.py` de cada módulo y la colocación en `config/inicio.py`. Y los
   **árboles de proyectos** ([A-44]: `proyectos/arboles.py`, rejilla de 3 columnas, tareas plegadas con
-  «(hechas/totales) ▸», amarillo si participas, rojo el que se mira). Siguen, acordadas en [A-44]: ficha de
-  tarea (camino de proyectos en otro color, editar sobre lo escrito y desplegable con los valores) y
-  tipologías con el mismo aspecto de árbol; después, el grafo de grupos y eventos.
+  «(hechas/totales) ▸», amarillo si participas, rojo el que se mira). Y la **ficha de tarea** ([A-44]: camino con los
+  proyectos en violeta, lo escrito se cambia encima con htmx en `proyectos:tarea_campo`, lo demás en el
+  desplegable «Completar o cambiar todo»). Sigue, acordado en [A-44], tipologías con el mismo aspecto de
+  árbol; después, el grafo de grupos y eventos.
   Recuerda `migrate --database=boveda`.

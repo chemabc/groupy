@@ -458,5 +458,39 @@ class PruebasDeConsultas(PruebaDeProyectos):
         mas()
         self.comprobar_consultas("/proyectos/tareas/", 2, mas)
         self.comprobar_consultas("/proyectos/tareas/kanban/", 2, mas)
-        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').first().pk}/", 8, mas)
-        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').last().pk}/", 8, mas)
+        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').first().pk}/", 10, mas)
+        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').last().pk}/", 10, mas)
+
+
+class PruebasDeCambiarUnDato(PruebaDeProyectos):
+    """Cambiar un solo dato de una tarea desde su ficha (proyectos/views.py, tarea_campo)."""
+
+    # Una tarea de Nutria en Huerto.
+    def setUp(self):
+        super().setUp()
+        self.tarea = crear_tarea(self.nutria, {"titulo": "Regar", "responsable": self.nutria}, proyecto=self.proyecto())
+        self.url = f"/proyectos/tareas/{self.tarea.pk}/campo/"
+
+    # Nutria cambia el estado y la fecha; recibe el trozo de la ficha con el valor nuevo.
+    def test_cambiar(self):
+        respuesta = self.client.post(self.url, {"campo": "estado", "valor": Tarea.EN_CURSO})
+        self.assertContains(respuesta, 'id="campo-de-tarea-estado"')
+        self.assertContains(respuesta, "En curso")
+        self.client.post(self.url, {"campo": "limite", "valor": "2026-12-01"})
+        self.tarea.refresh_from_db()
+        self.assertEqual((self.tarea.estado, self.tarea.limite), (Tarea.EN_CURSO, date(2026, 12, 1)))
+
+    # Un campo que no se cambia así (la responsable) da 404; un título vacío vuelve con el error.
+    def test_campos_y_errores(self):
+        self.assertEqual(self.client.post(self.url, {"campo": "responsable", "valor": "Lince"}).status_code, 404)
+        respuesta = self.client.post(self.url, {"campo": "titulo", "valor": ""})
+        self.assertContains(respuesta, 'role="alert"')
+        self.tarea.refresh_from_db()
+        self.assertEqual(self.tarea.titulo, "Regar")
+
+    # Quien no la ve (Erizo, de otra organización) no puede cambiarla.
+    def test_quien_puede(self):
+        self.como(self.erizo)
+        self.assertEqual(self.client.post(self.url, {"campo": "titulo", "valor": "Otro"}).status_code, 403)
+        self.tarea.refresh_from_db()
+        self.assertEqual(self.tarea.titulo, "Regar")

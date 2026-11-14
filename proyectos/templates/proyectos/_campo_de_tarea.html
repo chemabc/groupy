@@ -1,0 +1,40 @@
+{% comment %}
+  Un dato de una tarea que se cambia sobre lo ya escrito, en su ficha (lo incluye proyectos/tarea.html y lo
+  devuelve la vista tarea_campo después de guardar). Al pulsar el dato (o ✎) se cambia por su cuadro de
+  edición con el valor de ahora; «Guardar» (o Intro) lo manda con htmx y este trozo se sustituye por el
+  nuevo; «Cancelar» (o Escape) lo deja como estaba. Recibe:
+    - tarea: la tarea.
+    - campo: «titulo», «descripcion», «limite» o «estado».
+    - cambia: si quien mira puede cambiarla (si no, solo se pinta el dato).
+    - estados: pares (código, nombre) de los estados, para «estado».
+    - error (opcional): el error al guardar; entonces sale abierto para corregirlo.
+{% endcomment %}
+<div id="campo-de-tarea-{{ campo }}" {% if cambia %}x-data="{ editando: {{ error|yesno:'true,false' }} }"{% endif %} data-campo="{{ campo }}">
+  <div {% if cambia %}x-show="!editando" @click="editando = true; $nextTick(() => $refs.valor.focus())" class="group/dato flex cursor-text items-start gap-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800" title="Pulsa para cambiarlo"{% endif %}>
+    {% if campo == "titulo" %}<h2 class="text-xl font-semibold">{{ tarea.titulo }}</h2>
+    {% elif campo == "estado" %}<span>{{ tarea.get_estado_display }}</span>
+    {% elif campo == "limite" %}<span>{{ tarea.limite|date:"l d/m/Y"|default:"—" }}</span>
+    {% else %}<p class="whitespace-pre-line text-sm">{{ tarea.descripcion|default:"—" }}</p>{% endif %}
+    {% if cambia %}<button type="button" class="text-sm text-slate-400 opacity-60 group-hover/dato:opacity-100 hover:text-marca" aria-label="Cambiar">✎</button>{% endif %}
+  </div>
+  {% if cambia %}
+    <form x-show="editando" x-cloak hx-post="{% url 'proyectos:tarea_campo' tarea.pk %}" hx-target="#campo-de-tarea-{{ campo }}" hx-swap="outerHTML"
+          @keydown.escape="editando = false; $el.reset()" class="flex flex-wrap items-start gap-2">
+      {% csrf_token %}<input type="hidden" name="campo" value="{{ campo }}">
+      {% if campo == "titulo" %}
+        <input type="text" name="valor" value="{{ tarea.titulo }}" maxlength="200" required x-ref="valor" aria-label="Título" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-lg font-semibold dark:border-slate-700 dark:bg-slate-900">
+      {% elif campo == "estado" %}
+        <select name="valor" x-ref="valor" aria-label="Estado" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+          {% for codigo, nombre in estados %}<option value="{{ codigo }}" {% if codigo == tarea.estado %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+        </select>
+      {% elif campo == "limite" %}
+        <input type="date" name="valor" value="{{ tarea.limite|date:'Y-m-d' }}" x-ref="valor" aria-label="Fecha límite" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+      {% else %}
+        <textarea name="valor" rows="3" x-ref="valor" aria-label="Descripción" class="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900">{{ tarea.descripcion }}</textarea>
+      {% endif %}
+      <button type="submit" class="rounded bg-marca px-2 py-1 text-sm font-medium text-white">Guardar</button>
+      <button type="button" @click="editando = false; $el.form.reset()" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700">Cancelar</button>
+    </form>
+    {% if error %}<p class="mt-1 text-sm text-red-700 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% endif %}
+</div>

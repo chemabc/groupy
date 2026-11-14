@@ -24,5 +24,7 @@ urlpatterns = [
     # Lista de personas (JSON) para elegir responsable y colaboradoras de una tarea.
     path("tareas/personas/", views.personas_para_tarea, name="personas_para_tarea"),
     path("tareas/<int:pk>/", views.tarea, name="tarea"),
+    # Cambia un solo dato de una tarea desde su ficha, sobre lo ya escrito (lo pide htmx).
+    path("tareas/<int:pk>/campo/", views.tarea_campo, name="tarea_campo"),
     path("tareas/mover/", views.mover_tarea, name="mover_tarea"),
 ]

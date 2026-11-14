@@ -715,3 +715,22 @@ sirve aquí y dónde se usa.
 - **Subconsultas en lugar de dos viajes.** Para «las solicitudes de mis grupos», en vez de pedir primero
   mis grupos y luego las solicitudes, se escribe `grupo_id__in=Contencion.objects.filter(...).values(...)`:
   Django lo convierte en una sola consulta con una subconsulta dentro.
+
+## 33. Cambiar un dato sin recargar la página: htmx y un trozo de plantilla (14 de noviembre de 2026)
+
+- **La idea.** En la ficha de una tarea, cada dato ya escrito es un pequeño formulario escondido. Alpine
+  (`x-data="{ editando: false }"`) solo decide si se ve el dato o su cuadro. Al guardar, **htmx** manda ese
+  formulario al servidor (`hx-post`) y sustituye el trozo de la página por lo que el servidor devuelve
+  (`hx-target` y `hx-swap="outerHTML"`): el mismo trozo, ya con el valor nuevo.
+
+  *Ejemplo: Nutria pulsa «Pendiente», elige «En curso» y pulsa Intro; solo cambia esa línea de la ficha.*
+- **Una sola plantilla para pintar y para responder.** `proyectos/_campo_de_tarea.html` la incluye la ficha
+  al pintarse y la devuelve la vista `tarea_campo` al guardar. Así el dato se ve siempre igual, antes y
+  después de cambiarlo.
+- **Los errores también vuelven en el trozo.** Si el valor no vale (un título vacío), la vista devuelve el
+  trozo abierto y con el error, para corregirlo ahí mismo.
+- **Las mismas reglas que el formulario grande.** La vista valida el dato con el campo del propio
+  formulario (`FormularioDeTarea.base_fields[campo].clean(...)`, que es lo que Django hace por dentro con
+  cada campo) y lo guarda con el mismo servicio, `editar_tarea`. No hay dos maneras de guardar una tarea.
+- **`form.reset()`** devuelve cada cuadro de un formulario a su valor de partida: es lo que hace
+  «Cancelar».

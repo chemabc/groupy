@@ -1628,6 +1628,24 @@ jerarquía… han de aparecer en árbol»; «Árbol de proyectos: cada árbol en
 - Estados: pendiente, en curso, bloqueada, hecha (las columnas del kanban). Se bloquea y desbloquea sola
   según sus dependencias; no se permiten dependencias en círculo.
 
+**Ficha de una tarea (14 de noviembre de 2026, [A-44], punto 4 de la persona usuaria).**
+- **Camino:** «Tareas › Huerto › Riego › la tarea», con los proyectos de los que viene en violeta
+  (`miga-de-proyecto`), para que se distingan del resto del camino. En una tarea suelta, su grupo (en
+  verde, como en los árboles de proyectos); en una personal, «Personales».
+- **Lo ya escrito se cambia encima:** el título, el estado, la fecha límite y la descripción. Se pulsa el
+  dato (o ✎), se convierte en su cuadro con el valor de ahora, Intro o «Guardar» lo guarda sin recargar la
+  página (htmx manda solo ese dato a `proyectos:tarea_campo`, que devuelve el trozo ya cambiado o con el
+  error) y Escape o «Cancelar» lo deja como estaba. Es `proyectos/_campo_de_tarea.html`, con Alpine solo
+  para abrir y cerrar.
+- **Lo que no está escrito, en el desplegable** («Completar o cambiar todo», antes «Cambiar»), que
+  enseña todos los valores de ahora para cambiarlos sobre ellos. Las personas y las dependencias, que
+  necesitan el selector o las casillas, se cambian también ahí: su ✎ abre el desplegable.
+- Guardar un dato hace las mismas comprobaciones que el formulario (dependencias, quién ve el proyecto,
+  avisos a la nueva responsable): llama al mismo servicio, `editar_tarea`. La ficha pasa de 8 a 10
+  consultas por el camino.
+  - *Descartado:* guardar al salir del cuadro (sin pulsar nada): un clic fuera por error cambiaría la
+    tarea.
+
 ### 14.3 Limpieza (módulo `limpieza`)
 
 - El superadmin configura, **por cada tipo de elemento** (proyecto, tarea, evento, debate, consulta,

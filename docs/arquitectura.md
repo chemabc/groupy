@@ -688,6 +688,8 @@ flowchart LR
   pro --> cerca
   pro --> bas
   selp -- "/proyectos/tareas/personas/ (JSON)" --> pro
+  htmx["htmx<br/>[Librería JS]"]:::libjs
+  htmx -- "/proyectos/tareas/N/campo/<br/>(un dato de la tarea)" --> pro
   pro -. "FuenteDeCalendario proyectos y tareas" .-> cal
   pro -. "Limpiable proyecto y tarea" .-> lim
   pro ==> com

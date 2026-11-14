@@ -451,13 +451,62 @@ def tarea(request, pk):
             return redirect("proyectos:tarea", tarea.pk)
     contexto = {
         "tarea": tarea,
+        "camino": _camino_de_la_tarea(usuario, tarea),
+        "cambia": cambia,
         "colaboradores": colaboradores,
         "espera_a": espera_a,
         "desbloquea": list(tarea.desbloquea.order_by("titulo")),
         "formulario": formulario,
         "abrir": accion == "guardar",
+        "estados": Tarea.ESTADOS,
     }
     return render(request, "proyectos/tarea.html", contexto)
+
+
+# Los proyectos de los que viene una tarea, del principal al suyo, para el camino de su ficha («Tareas ›
+# Huerto › Riego › la tarea»): pares (proyecto, si quien mira lo ve). Vacío si la tarea no está en un
+# proyecto. Dos consultas.
+#   - usuario: quien mira.
+#   - tarea: la tarea, con su proyecto cargado.
+def _camino_de_la_tarea(usuario, tarea):
+    if not tarea.proyecto_id:
+        return []
+    entero = servicios.arbol_entero(tarea.proyecto)
+    visibles = set(servicios.visibles(usuario).filter(raiz_id=tarea.proyecto.raiz_id).values_list("pk", flat=True))
+    proyectos = [*servicios.antecesores(tarea.proyecto, entero), entero.get(tarea.proyecto_id, tarea.proyecto)]
+    return [(proyecto, proyecto.pk in visibles) for proyecto in proyectos]
+
+
+# Datos de una tarea que se cambian sobre lo ya escrito, en su ficha (los demás, en el desplegable
+# «Completar o cambiar», con el selector de personas o las dependencias).
+CAMPOS_EN_SITIO = ("titulo", "descripcion", "limite", "estado")
+
+
+# Cambia un solo dato de una tarea desde su ficha: se pulsa el dato, se escribe encima y se guarda. Lo
+# pide htmx desde el fragmento «proyectos/_campo_de_tarea.html» y recibe el mismo fragmento, ya con el
+# valor nuevo (o con el error, y abierto para corregirlo). Cuesta unas 8 consultas.
+#   - pk: el número de la tarea.
+#   - POST «campo»: uno de CAMPOS_EN_SITIO.
+#   - POST «valor»: lo escrito.
+@require_POST
+def tarea_campo(request, pk):
+    usuario = request.user
+    tarea = get_object_or_404(Tarea.objects.select_related("proyecto"), pk=pk)
+    if not servicios.tareas_visibles(usuario).filter(pk=tarea.pk).exists():
+        raise SinPermiso("Esta tarea no es para ti.")
+    if not servicios.puede_cambiar(usuario, tarea):
+        raise SinPermiso("Solo quien se encarga de la tarea, quien colabora o quien gestiona el proyecto pueden cambiarla.")
+    campo = request.POST.get("campo", "")
+    if campo not in CAMPOS_EN_SITIO:
+        raise Http404("Ese dato no se cambia desde aquí.")
+    error = ""
+    try:
+        valor = FormularioDeTarea.base_fields[campo].clean(request.POST.get("valor", ""))
+        servicios.editar_tarea(usuario, tarea, {campo: valor})
+    except ValidationError as excepcion:
+        error = " ".join(excepcion.messages)
+        tarea.refresh_from_db()
+    return render(request, "proyectos/_campo_de_tarea.html", {"tarea": tarea, "campo": campo, "cambia": True, "error": error, "estados": Tarea.ESTADOS})
 
 
 # Mueve una tarea en el kanban (lo llama la isla «kanban»). Recibe JSON {tarea, estado, orden} y responde

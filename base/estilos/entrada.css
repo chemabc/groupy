@@ -234,6 +234,10 @@
   .arbol-coordina {
     @apply inline-block rounded border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200;
   }
+  /* En el camino de una tarea, los proyectos de los que viene, en violeta (proyectos/tarea.html). */
+  .miga-de-proyecto {
+    @apply rounded bg-violet-50 px-1.5 font-medium text-violet-800 dark:bg-violet-950 dark:text-violet-200;
+  }
   .arbol-tareas {
     @apply mb-1 ml-2 border-l border-dashed border-slate-300 pl-3 dark:border-slate-700;
   }

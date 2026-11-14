@@ -569,3 +569,22 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2). No hace falta migrar.
   entero de Huerto comunitario, con Riego en un **recuadro rojo**. La leyenda explica también el rojo. Las
   listas de subproyectos y tareas siguen más abajo.
 - [ ] En el móvil, los recuadros van uno debajo de otro.
+
+## 30. Ficha de una tarea: camino y cambiar sobre lo escrito
+
+Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor. No hace falta migrar.
+
+- [ ] Como **Nutria**, abre una tarea de **Bomba solar** (dentro de Riego, dentro de Huerto comunitario).
+  Arriba: «Tareas › Huerto comunitario › Riego › Bomba solar › la tarea», con los tres proyectos en
+  violeta; cada uno lleva a su ficha.
+- [ ] Una tarea suelta de un grupo: el camino lleva el grupo, en verde. Una personal: «Personales».
+- [ ] Pulsa el **título**: se convierte en un cuadro con el título de ahora. Cámbialo y pulsa Intro: se
+  guarda sin recargar la página (el resto no parpadea). Recarga: sigue cambiado.
+- [ ] Lo mismo con el **estado** (un desplegable), la **fecha** (si la tiene) y la **descripción** (si la
+  tiene). Escape o «Cancelar» lo dejan como estaba.
+- [ ] Borra el título entero y guarda: sale un error en rojo y el cuadro sigue abierto.
+- [ ] El ✎ junto a la responsable (o a «Colaboran» o «Espera a») abre «Completar o cambiar todo» y baja
+  hasta él. Dentro, todos los valores de ahora ya escritos.
+- [ ] Una tarea sin fecha: «Para el» no sale arriba; se pone en el desplegable.
+- [ ] Como alguien que ve la tarea pero no puede cambiarla (ni es responsable, ni colabora, ni gestiona
+  el proyecto): los datos no se pueden pulsar y no sale el desplegable.

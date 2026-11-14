@@ -1,0 +1,6 @@
+{% comment %}
+  Botón ✎ junto a un dato de la ficha de una tarea que no se cambia encima (las personas, las dependencias):
+  abre el desplegable «Completar o cambiar todo» (id «cambiar-tarea») y lo lleva a la vista.
+{% endcomment %}
+<button type="button" x-data @click="const d = document.getElementById('cambiar-tarea'); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' })"
+        class="text-sm text-slate-400 hover:text-marca" aria-label="Cambiar en «Completar o cambiar todo»" title="Cambiar en «Completar o cambiar todo»">✎</button>

@@ -134,3 +134,69 @@ class PruebasDelSelectorDePersonasEnElNavegador(PruebaEnElNavegador):
         self.pagina.get_by_text("No está entre quienes ven esto: Zorro.").wait_for()
         self.assertFalse(Tarea.objects.exists())
         self.assertEqual(self.errores, [])
+
+
+class PruebasDeLaFichaDeTareaEnElNavegador(PruebaEnElNavegador):
+    """
+    La ficha de una tarea: el camino con los proyectos de los que viene, cambiar un dato sobre lo escrito
+    (htmx, sin recargar la página) y el ✎ de la responsable, que abre el desplegable con los valores.
+    Huerto ⊃ Riego; la tarea «Regar», del usuario de la prueba, está en Riego.
+    """
+
+    # Crea el grupo, los dos proyectos y la tarea, y abre su ficha.
+    def preparar(self):
+        _tajo, grupo = crear_organizacion("ORG Tajo", "GRU Tajo")
+        admitir(self.usuario, grupo)
+        generico = crear_tipologia("proyecto", "Genérico")
+        huerto = crear_proyecto(self.usuario, generico, {"titulo": "Huerto"}, grupo=grupo, visibilidad="grupo:0")
+        riego = crear_proyecto(self.usuario, generico, {"titulo": "Riego"}, grupo=grupo, visibilidad="grupo:0", padre=huerto)
+        self.tarea = crear_tarea(self.usuario, {"titulo": "Regar", "responsable": self.usuario, "descripcion": "Por la tarde"}, proyecto=riego)
+        self.abrir(f"/proyectos/tareas/{self.tarea.pk}/")
+
+    # El camino lleva los dos proyectos, en violeta. Al pulsar el título se escribe encima y, con Intro,
+    # se guarda sin recargar; Escape deja la descripción como estaba.
+    def test_cambiar_sobre_lo_escrito(self):
+        self.preparar()
+        migas = self.pagina.locator("nav .miga-de-proyecto")
+        self.assertEqual(migas.all_inner_texts(), ["Huerto", "Riego"])
+        self.pagina.locator("#campo-de-tarea-titulo h2").click()
+        cuadro = self.pagina.locator('#campo-de-tarea-titulo input[name="valor"]')
+        self.assertEqual(cuadro.input_value(), "Regar")
+        cuadro.fill("Regar los tomates")
+        with self.pagina.expect_response(lambda respuesta: "/campo/" in respuesta.url):
+            cuadro.press("Enter")
+        self.pagina.locator('#campo-de-tarea-titulo h2:has-text("Regar los tomates")').wait_for()
+        self.tarea.refresh_from_db()
+        self.assertEqual(self.tarea.titulo, "Regar los tomates")
+        # La descripción: se abre, se escribe y Escape lo deshace sin guardar.
+        self.pagina.locator("#campo-de-tarea-descripcion p").click()
+        caja = self.pagina.locator('#campo-de-tarea-descripcion textarea[name="valor"]')
+        caja.fill("Otra cosa")
+        caja.press("Escape")
+        self.pagina.locator("#campo-de-tarea-descripcion p:has-text('Por la tarde')").wait_for()
+        self.tarea.refresh_from_db()
+        self.assertEqual(self.tarea.descripcion, "Por la tarde")
+        self.assertEqual(self.errores, [])
+
+    # Un título vacío no se guarda: vuelve el fragmento abierto con el error.
+    def test_error(self):
+        self.preparar()
+        self.pagina.locator("#campo-de-tarea-titulo h2").click()
+        cuadro = self.pagina.locator('#campo-de-tarea-titulo input[name="valor"]')
+        cuadro.evaluate("cuadro => cuadro.removeAttribute('required')")
+        cuadro.fill("")
+        cuadro.press("Enter")
+        self.pagina.locator('#campo-de-tarea-titulo [role="alert"]').wait_for()
+        self.tarea.refresh_from_db()
+        self.assertEqual(self.tarea.titulo, "Regar")
+
+    # El ✎ de la responsable abre «Completar o cambiar todo», con los valores de ahora ya escritos.
+    def test_abrir_el_desplegable(self):
+        self.preparar()
+        desplegable = self.pagina.locator("#cambiar-tarea")
+        self.assertIsNone(desplegable.get_attribute("open"))
+        self.pagina.get_by_role("button", name="Cambiar en «Completar o cambiar todo»").first.click()
+        self.pagina.locator("#cambiar-tarea[open]").wait_for()
+        self.assertEqual(desplegable.locator('input[name="titulo"]').input_value(), "Regar")
+        self.assertEqual(desplegable.locator('textarea[name="descripcion"]').input_value().strip(), "Por la tarde")
+        self.assertEqual(self.errores, [])

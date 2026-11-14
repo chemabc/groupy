@@ -162,6 +162,15 @@ proyecto sale arriba su árbol, con ese proyecto en un recuadro rojo.
 Si tu organización no enseña la lista de miembros, la ventana te pide el alias exacto. Solo se puede elegir
 a quien ve la tarea.
 
+### Cambiar una tarea
+
+En la ficha de la tarea, pulsa el dato que quieras cambiar (el título, el estado, la fecha o la
+descripción): se convierte en un cuadro con lo que pone ahora. Escribe encima y pulsa **Intro** (o
+**Guardar**); **Escape** lo deja como estaba. Para lo que aún no está escrito (una fecha, una descripción,
+quién colabora, a qué espera) abre **Completar o cambiar todo**, donde salen todos los valores.
+
+Arriba, el camino dice de qué proyectos viene la tarea (en violeta): pulsa uno para ir a él.
+
 ### Mover una tarea de estado
 
 En «Tareas y proyectos → Tareas» (o en el kanban de un proyecto), arrastra la tarjeta a otra columna: pendiente,
