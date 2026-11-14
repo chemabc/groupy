@@ -95,7 +95,7 @@ python manage.py ejemplos crear
 ```
 
 Los usuarios de ejemplo son animales y árboles (Lince, Nutria, Encina, Roble…). El superadmin es
-**superadmin**. Todos tienen la contraseña `M3n0sL3ctiv4s`, y cada cual puede cambiarla en «Mi cuenta →
+**superadmin**. Todos tienen la contraseña `M3n0sL3ctiv4s`, y cada cual puede cambiarla en «Configuración de mi cuenta →
 Contraseña». Al entrar da igual escribir el alias con o sin tildes y mayúsculas («buho» entra en
 «Búho»). Los datos de ejemplo también se crean y se borran desde **Desarrollo y mantenimiento →
 Pruebas → Datos de ejemplo**; borrarlos no toca al superadmin.

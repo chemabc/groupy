@@ -49,7 +49,6 @@ class LugaresConfig(ModuloConfig):
             url="lugares:mi_lugar",
             icono="⌖",
             color="#065f46",
-            orden=250,
             otras_rutas=("lugares:lugar",),
             subsecciones=(
                 EntradaDeMenu(
@@ -67,10 +66,10 @@ class LugaresConfig(ModuloConfig):
                 ),
             ),
         ),
-        # «Configuración → Lugares», colgada de la sección de «tipologias».
+        # «Configuración → Lugares», colocada dentro de «Configuración» en config/menu.py.
         EntradaDeMenu(
             codigo="lugares.configuracion", nombre="Lugares", url="lugares:configuracion", icono="⌗", color="#3f6212",
-            permiso="lugares.configurar", dentro_de="tipologias.configuracion", orden=60,
+            permiso="lugares.configurar",
             vistas=(Vista("Qué se muestra", "lugares:configuracion"),),
         ),
     )

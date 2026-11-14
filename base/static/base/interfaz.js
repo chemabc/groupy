@@ -1,5 +1,5 @@
 // Comportamiento común de la interfaz, con Alpine.js: preferencias (tema, letra, densidad), menú
-// izquierdo plegable que conserva su posición y marca de la sección actual.
+// izquierdo plegable que conserva su posición, marca de la sección actual y panel de ayuda de la derecha.
 //
 // La plantilla general (base/templates/base/pagina.html) carga este fichero ANTES que Alpine, para que
 // los componentes estén registrados cuando Alpine arranque.
@@ -153,6 +153,177 @@ document.addEventListener("alpine:init", () => {
     // Apunta hasta dónde se ha bajado en el menú. Se llama al desplazarlo.
     apuntarDesplazamiento() {
       guardar("menu.desplazamiento", this.$el.scrollTop);
+    },
+  }));
+
+  // Componente del panel de ayuda de la derecha (base/templates/base/pagina.html). Abre páginas de ayuda
+  // sin dejar la pantalla en la que se está: como está fuera de la zona central, navegar con el menú no lo
+  // toca ni lo vuelve a pintar. Recuerda en el navegador si está abierto, qué página tenía y su ancho, y
+  // así sigue igual al recargar (el script de la cabecera ya lo aplica antes de pintar).
+  //   - Se abre con el evento «abrir-ayuda» ({ direccion }), que lanza el menú del botón «?» rojo de la
+  //     cabecera (el «?» gris de cada sección no: abre su miniayuda en una ventana emergente). Pide la
+  //     página con htmx al propio panel, y el servidor la manda con base/panel.html (sin cabecera de
+  //     sección ni menús).
+  //   - Los enlaces que se pulsan dentro: las anclas («#titulo») bajan hasta el título dentro del panel;
+  //     las páginas de la ayuda (data-direcciones) se abren en el panel; las demás, y las que llevan
+  //     data-fuera-del-panel, siguen su camino normal (htmx las lleva a la zona principal).
+  //   - El ancho es la variable de CSS --ancho-del-panel de <html>: se cambia arrastrando la línea de
+  //     separación (o con las flechas del teclado sobre ella) y vuelve al de partida con doble clic.
+  //   - Los botones − y + cambian el tamaño de la letra del panel (solo del panel), y se recuerda.
+  Alpine.data("panelDeAyuda", () => ({
+    // Dirección de la página que se ve en el panel (con su «#ancla», si la tiene).
+    direccion: "",
+    // Si se está arrastrando la línea de separación.
+    arrastrando: false,
+    // Tamaño de la letra del panel: 1 es el normal; 1.2, un 20 % más grande. Se aplica con «zoom».
+    letra: leerGuardado("ayuda.letra", 1),
+
+    // Al arrancar: si se dejó abierto, vuelve a cargar la página que tenía.
+    init() {
+      this.direcciones = (this.$root.dataset.direcciones || "").split(" ").filter(Boolean);
+      const guardado = leerGuardado("ayuda.panel", {}) || {};
+      if (guardado.abierto && guardado.direccion) this.abrir(guardado.direccion);
+    },
+
+    // Abre el panel (si estaba cerrado) con una página. Si la dirección lleva «#ancla», baja hasta ella.
+    //   - direccion: por ejemplo «/ayuda/tutorial/» o «/ayuda/tutorial/#htmx».
+    async abrir(direccion) {
+      this.direccion = direccion;
+      document.documentElement.dataset.panelDeAyuda = "abierto";
+      guardar("ayuda.panel", { abierto: true, direccion });
+      const contenido = this.$refs.contenido;
+      await htmxListo();
+      await htmx.ajax("GET", direccion.split("#")[0], { target: contenido, swap: "innerHTML" });
+      const ancla = direccion.split("#")[1];
+      if (ancla) this.bajarHasta(ancla);
+      else this.$refs.desplazable.scrollTop = 0;
+    },
+
+    // Cierra el panel. La zona principal vuelve a ocupar todo el ancho.
+    cerrar() {
+      document.documentElement.dataset.panelDeAyuda = "cerrado";
+      guardar("ayuda.panel", { abierto: false, direccion: this.direccion });
+    },
+
+    // Baja, dentro del panel, hasta el elemento con ese id (un título del documento). Se busca dentro
+    // del panel porque la zona principal puede tener el mismo documento, con los mismos ids.
+    //   - ancla: el id, sin «#».
+    bajarHasta(ancla) {
+      const destino = this.$refs.contenido.querySelector(`[id="${CSS.escape(decodeURIComponent(ancla))}"]`);
+      if (destino) destino.scrollIntoView({ block: "start" });
+    },
+
+    // Decide qué hacer con un clic dentro del panel (se escucha «en captura», antes de que llegue al
+    // enlace y htmx lo siga). Ver la explicación del componente.
+    //   - evento: el clic.
+    alPulsar(evento) {
+      const enlace = evento.target.closest("a[href]");
+      if (!enlace || !this.$refs.contenido.contains(enlace)) return;
+      if (evento.button !== 0 || evento.ctrlKey || evento.metaKey || evento.shiftKey || enlace.target === "_blank") return;
+      if (enlace.hasAttribute("data-fuera-del-panel")) return;
+      const escrito = enlace.getAttribute("href");
+      if (escrito.startsWith("#")) {
+        evento.preventDefault();
+        evento.stopPropagation();
+        this.bajarHasta(escrito.slice(1));
+        return;
+      }
+      const destino = new URL(enlace.href, window.location.href);
+      if (destino.origin !== window.location.origin || !this.direcciones.includes(destino.pathname)) return;
+      evento.preventDefault();
+      evento.stopPropagation();
+      this.abrir(destino.pathname + destino.hash);
+    },
+
+    // Agranda o achica la letra del panel un paso (de TAMANOS_DE_LETRA_DEL_PANEL) y lo guarda. La usan los
+    // botones + y −.
+    //   - pasos: 1 para agrandar, -1 para achicar.
+    cambiarLetra(pasos) {
+      const actual = TAMANOS_DE_LETRA_DEL_PANEL.indexOf(this.letra);
+      const posicion = Math.min(Math.max((actual === -1 ? TAMANOS_DE_LETRA_DEL_PANEL.indexOf(1) : actual) + pasos, 0), TAMANOS_DE_LETRA_DEL_PANEL.length - 1);
+      this.letra = TAMANOS_DE_LETRA_DEL_PANEL[posicion];
+      guardar("ayuda.letra", this.letra);
+    },
+
+    // Si se puede achicar más la letra (para desactivar el botón −).
+    sePuedeAchicar() {
+      return this.letra > TAMANOS_DE_LETRA_DEL_PANEL[0];
+    },
+
+    // Si se puede agrandar más la letra (para desactivar el botón +).
+    sePuedeAgrandar() {
+      return this.letra < TAMANOS_DE_LETRA_DEL_PANEL.at(-1);
+    },
+
+    // Empieza a arrastrar la línea de separación: desde ahora, el ratón (o el dedo) mueve la línea aunque
+    // salga de ella (setPointerCapture), y no se selecciona texto al arrastrar.
+    //   - evento: el «pointerdown» sobre la línea.
+    empezarAArrastrar(evento) {
+      if (evento.button !== 0) return;
+      this.arrastrando = true;
+      evento.target.setPointerCapture(evento.pointerId);
+      document.body.style.userSelect = "none";
+    },
+
+    // Mientras se arrastra: el panel ocupa desde la línea hasta el borde derecho de la ventana.
+    //   - evento: el «pointermove».
+    arrastrar(evento) {
+      if (this.arrastrando) this.ponerAncho(window.innerWidth - evento.clientX);
+    },
+
+    // Al soltar: deja de arrastrar y guarda el ancho.
+    soltar(evento) {
+      if (!this.arrastrando) return;
+      this.arrastrando = false;
+      evento.target.releasePointerCapture(evento.pointerId);
+      document.body.style.userSelect = "";
+      guardar("ayuda.ancho", this.anchoActual());
+    },
+
+    // Ensancha (o estrecha, con un número negativo) el panel unos píxeles y lo guarda. Lo usan las flechas.
+    //   - pixeles: cuánto.
+    ensanchar(pixeles) {
+      this.ponerAncho(this.anchoActual() + pixeles);
+      guardar("ayuda.ancho", this.anchoActual());
+    },
+
+    // Vuelve al ancho de partida (doble clic en la línea) y olvida el guardado.
+    anchoDePartida() {
+      this.ponerAncho(anchoDePartidaDelPanel());
+      guardar("ayuda.ancho", 0);
+    },
+
+    // Ancho actual del panel, en píxeles (el de la variable --ancho-del-panel).
+    anchoActual() {
+      return parseInt(getComputedStyle(document.documentElement).getPropertyValue("--ancho-del-panel"), 10) || anchoDePartidaDelPanel();
+    },
+
+    // Pone el ancho del panel, sin pasar de unos límites: al menos 260 píxeles y dejando al menos 320
+    // para el resto de la pantalla.
+    //   - pixeles: el ancho pedido.
+    ponerAncho(pixeles) {
+      const ancho = Math.round(Math.min(Math.max(pixeles, 260), window.innerWidth - 320));
+      document.documentElement.style.setProperty("--ancho-del-panel", `${ancho}px`);
+    },
+  }));
+
+  // Componente del índice de un documento de la ayuda (ayuda/templates/ayuda/documento.html): lo pliega y
+  // lo despliega con su botón, y recuerda en el navegador cómo se dejó. En el panel de ayuda (estrecho) se
+  // recuerda aparte y, de entrada, sale plegado; en la zona principal, desplegado.
+  Alpine.data("indice", () => ({
+    plegado: false,
+
+    // Al arrancar: mira si está en el panel y lee cómo se dejó.
+    init() {
+      const enElPanel = Boolean(this.$root.closest("#panel-de-ayuda"));
+      this.clave = enElPanel ? "indice.plegado.panel" : "indice.plegado";
+      this.plegado = leerGuardado(this.clave, enElPanel);
+    },
+
+    // Pliega o despliega el índice y lo guarda.
+    alternar() {
+      this.plegado = !this.plegado;
+      guardar(this.clave, this.plegado);
     },
   }));
 
@@ -502,21 +673,24 @@ document.addEventListener("alpine:init", () => {
           cola = cola.then(() => this.dibujar(codigo, numero));
         }
       }, {
-        // La página no se desplaza entera sino su parte central (#desplazable, en base/pagina.html): se
-        // vigila contra ella, una pantalla por arriba y por abajo.
-        root: document.getElementById("desplazable"),
+        // La página no se desplaza entera sino su parte central (#desplazable, en base/pagina.html) o el
+        // panel de ayuda: se vigila contra la que contiene el documento (marcada con data-desplaza), una
+        // pantalla por arriba y por abajo.
+        root: this.$root.closest("[data-desplaza]") || document.getElementById("desplazable"),
         rootMargin: "100% 0px",
       });
       for (const codigo of bloques) vigilante.observe(codigo.parentElement);
       this.dejarDeVigilar = () => vigilante.disconnect();
     },
 
-    // Activa las casillas: recupera las marcadas de esta página, guarda cada cambio y pone al día el
-    // recuento. Si el navegador no deja guardar (modo privado), funcionan igual, sin recordarse.
+    // Activa las casillas: recupera las marcadas de este documento, guarda cada cambio y pone al día el
+    // recuento. Se recuerdan por la dirección del documento (data-direccion), no por la de la página, para
+    // que sean las mismas en la zona principal y en el panel de ayuda. Si el navegador no deja guardar
+    // (modo privado), funcionan igual, sin recordarse.
     casillas() {
       const todas = [...this.$root.querySelectorAll("input[data-casilla]")];
       if (!todas.length) return;
-      const clave = `casillas:${window.location.pathname}`;
+      const clave = `casillas:${this.$root.dataset.direccion || window.location.pathname}`;
       let marcadas = [];
       try {
         marcadas = JSON.parse(localStorage.getItem(clave) || "[]");
@@ -730,6 +904,26 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 });
+
+// Devuelve una promesa que se cumple cuando htmx ya está cargado. Hace falta porque Alpine arranca antes
+// de que se ejecute htmx.min.js (va detrás en base/cabeza.html): si un componente quiere usar htmx al
+// arrancar (el panel de ayuda, al recargar con el panel abierto), espera al final de la carga de la página
+// (DOMContentLoaded), cuando ya se han ejecutado todos los scripts.
+function htmxListo() {
+  if (window.htmx) return Promise.resolve();
+  return new Promise((resolver) => document.addEventListener("DOMContentLoaded", resolver, { once: true }));
+}
+
+// Tamaños de letra del panel de ayuda, de menor a mayor (1 es el normal). Los botones − y + van de uno a
+// otro. La usa el componente panelDeAyuda.
+const TAMANOS_DE_LETRA_DEL_PANEL = [0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.4, 1.6];
+
+// Ancho de partida del panel de ayuda, en píxeles: un tercio largo de la pantalla, entre 320 y 720. El
+// script de la cabecera (base/templates/base/cabeza.html) hace el mismo cálculo antes de pintar. La usa
+// el componente panelDeAyuda.
+function anchoDePartidaDelPanel() {
+  return Math.round(Math.min(Math.max(window.innerWidth * 0.35, 320), 720));
+}
 
 // Ficheros (scripts u hojas de estilo) ya pedidos, para no cargarlos dos veces: {dirección: promesa}.
 const ficherosCargados = {};

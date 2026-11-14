@@ -58,8 +58,14 @@ class RegistroDeModulos:
         self.repartidor_de_avisos = ""
         # Datos de ejemplo de cada módulo, por su etiqueta.
         self.datos_de_ejemplo = {}
-        # Secciones del menú izquierdo, ya ordenadas.
+        # Secciones del menú izquierdo, ya colocadas (con sus subsecciones dentro) según la disposición.
         self.menu = []
+        # Todas las entradas del menú tal como las declaran los módulos (secciones y subsecciones, a
+        # cualquier profundidad), por su código. Sirve para colocarlas y para preguntar por una concreta.
+        self.entradas = {}
+        # La entrada de la ayuda (la que lleva panel_de_ayuda), ya colocada con sus subsecciones, o None.
+        # La usa el botón «?» rojo de la cabecera (base/contexto.py).
+        self.entrada_de_ayuda = None
         # Textos de ayuda, por código de sección.
         self.ayuda = {}
         # Camino del menú de cada dirección web: del nombre de la ruta («base:inicio») a la tupla de
@@ -75,7 +81,10 @@ class RegistroDeModulos:
     #   - configuraciones: las AppConfig de Django (todas, también las de Django y de librerías).
     #   - raiz: carpeta del proyecto. Una app de esa carpeta que no use ModuloConfig es un error,
     #     porque todo módulo del proyecto debe declarar su contrato. Si no se indica, no se comprueba.
-    def cargar(self, configuraciones, raiz=None):
+    #   - disposicion: dónde va cada entrada del menú (la DISPOSICION de config/menu.py). Si no se
+    #     indica (las pruebas con módulos de mentira), el menú sale como lo declaran los módulos, en el
+    #     orden en que se cargan.
+    def cargar(self, configuraciones, raiz=None, disposicion=None):
         self._vaciar()
         for config in configuraciones:
             if isinstance(config, ModuloConfig):
@@ -85,13 +94,13 @@ class RegistroDeModulos:
                     f"El módulo «{config.label}» es del proyecto pero su apps.py no hereda de "
                     "ModuloConfig, así que no declara su contrato."
                 )
-        self._colgar_subsecciones()
+        if disposicion is not None:
+            self.menu = self._disponer(disposicion)
+        self._buscar_la_entrada_de_ayuda()
         self._conectar_avisos()
         self._comprobar_escuchas()
         self._comprobar_ayuda()
         self._comprobar_permisos()
-        # Ordena el menú por su número de orden y, a igualdad, por nombre.
-        self.menu.sort(key=lambda entrada: (entrada.orden, entrada.nombre))
         for entrada in self.menu:
             self._apuntar_rutas(entrada, ())
         self.cargado = True
@@ -123,10 +132,14 @@ class RegistroDeModulos:
             self.repartidor_de_avisos = config.reparte_avisos
         if config.datos_de_ejemplo is not None:
             self.datos_de_ejemplo[etiqueta] = config.datos_de_ejemplo
-        # Menú: se comprueba el prefijo de cada entrada y de sus subsecciones.
+        # Menú: se comprueba el prefijo de cada entrada y de sus subsecciones, y se apuntan todas por su
+        # código (para colocarlas después según la disposición).
         for entrada in config.menu:
-            for codigo in _codigos_de_menu(entrada):
-                self._comprobar_prefijo(etiqueta, "menu", codigo)
+            for declarada in _entradas_y_subsecciones(entrada):
+                self._comprobar_prefijo(etiqueta, "menu", declarada.codigo)
+                if declarada.codigo in self.entradas:
+                    self.errores.append(f"«{declarada.codigo}» está declarado dos veces en «menu».")
+                self.entradas[declarada.codigo] = declarada
             self.menu.append(entrada)
         # Ayuda: un texto por sección.
         for ayuda in config.ayuda:
@@ -148,18 +161,53 @@ class RegistroDeModulos:
                 escucha = Escucha(aviso.evento, self.repartidor_de_avisos, Modo.ASINCRONO, extra=(("aviso", aviso.codigo),))
                 self.escuchas.setdefault(aviso.evento, []).append(escucha)
 
-    # Cuelga cada entrada con «dentro_de» en la subsecciones de la entrada indicada (que puede ser de otro
-    # módulo) y la quita de las secciones principales. Como las entradas no se pueden modificar
-    # (frozen), se crea una copia de la madre con sus subsecciones nuevas, ordenadas por «orden».
-    def _colgar_subsecciones(self):
-        colgadas = [entrada for entrada in self.menu if entrada.dentro_de]
-        self.menu = [entrada for entrada in self.menu if not entrada.dentro_de]
-        for hija in colgadas:
-            nuevo, colgada = _colgar(self.menu, hija)
-            if colgada:
-                self.menu = nuevo
+    # Coloca las entradas del menú según la disposición (config/menu.py) y devuelve las secciones
+    # principales, cada una con sus subsecciones dentro. Las subsecciones que declaraba cada módulo se
+    # descartan: manda la disposición. Una entrada declarada que la disposición no nombra es un error (se
+    # pone al final del menú, sin subsecciones, para que no desaparezca sin más).
+    #   - disposicion: tupla de elementos; cada uno es un código («usuarios.cuenta») o un par (código,
+    #     tupla de elementos) para una entrada con subsecciones.
+    def _disponer(self, disposicion):
+        colocadas = set()
+        menu = self._colocar(disposicion, colocadas)
+        for codigo, entrada in self.entradas.items():
+            if codigo not in colocadas:
+                self.errores.append(f"La entrada del menú «{codigo}» no está colocada en la disposición del menú (config/menu.py).")
+                menu.append(replace(entrada, subsecciones=()))
+        return menu
+
+    # Convierte un nivel de la disposición en una lista de entradas, con sus subsecciones ya colocadas
+    # (se llama a sí misma para cada nivel de más abajo). La usa _disponer.
+    #   - elementos: los elementos de este nivel (ver _disponer).
+    #   - colocadas: conjunto de códigos ya colocados, que se va rellenando (para avisar de repetidos).
+    def _colocar(self, elementos, colocadas):
+        entradas = []
+        for elemento in elementos:
+            if isinstance(elemento, str):
+                codigo, hijos = elemento, ()
+            elif isinstance(elemento, tuple) and len(elemento) == 2 and isinstance(elemento[1], tuple):
+                codigo, hijos = elemento
             else:
-                self.errores.append(f"«{hija.codigo}» quiere ir dentro de «{hija.dentro_de}», pero esa entrada del menú no existe.")
+                self.errores.append(f"En la disposición del menú, «{elemento}» está mal escrito: va un código o un par (código, (subsecciones…)).")
+                continue
+            entrada = self.entradas.get(codigo)
+            if entrada is None:
+                self.errores.append(f"La disposición del menú nombra «{codigo}», pero ningún módulo declara esa entrada.")
+                continue
+            if codigo in colocadas:
+                self.errores.append(f"«{codigo}» está dos veces en la disposición del menú.")
+                continue
+            colocadas.add(codigo)
+            entradas.append(replace(entrada, subsecciones=tuple(self._colocar(hijos, colocadas))))
+        return entradas
+
+    # Busca, ya colocado el menú, la entrada de la ayuda (la que lleva panel_de_ayuda) y la guarda en
+    # self.entrada_de_ayuda. Si hay más de una, es un error.
+    def _buscar_la_entrada_de_ayuda(self):
+        de_ayuda = [entrada for seccion in self.menu for entrada in _entradas_y_subsecciones(seccion) if entrada.panel_de_ayuda]
+        if len(de_ayuda) > 1:
+            self.errores.append(f"Hay varias entradas del menú con panel_de_ayuda: {', '.join(entrada.codigo for entrada in de_ayuda)}. Solo puede haber una.")
+        self.entrada_de_ayuda = de_ayuda[0] if de_ayuda else None
 
     # Apunta un error si un código no empieza por la etiqueta del módulo que lo declara. Así se sabe
     # siempre de qué módulo es cada cosa y dos módulos no pueden chocar.
@@ -209,35 +257,18 @@ class RegistroDeModulos:
 
     # Apunta un error por cada texto de ayuda de una sección que no existe en el menú.
     def _comprobar_ayuda(self):
-        secciones = {codigo for entrada in self.menu for codigo in _codigos_de_menu(entrada)}
+        secciones = {entrada.codigo for seccion in self.menu for entrada in _entradas_y_subsecciones(seccion)}
         for seccion in self.ayuda:
             if seccion not in secciones:
                 self.errores.append(f"Hay un texto de ayuda para «{seccion}», pero esa sección no está en el menú.")
 
 
-# Busca, entre unas entradas y sus subsecciones, la entrada en la que va «hija» (hija.dentro_de) y le
-# añade «hija» a sus subsecciones. Devuelve la lista de entradas nueva y si la encontró. La usa
-# RegistroDeModulos._colgar_subsecciones.
-def _colgar(entradas, hija):
-    nuevas, colgada = [], False
-    for entrada in entradas:
-        if not colgada and entrada.codigo == hija.dentro_de:
-            subsecciones = sorted((*entrada.subsecciones, hija), key=lambda sub: sub.orden)
-            entrada, colgada = replace(entrada, subsecciones=tuple(subsecciones)), True
-        elif not colgada and entrada.subsecciones:
-            subsecciones, colgada = _colgar(entrada.subsecciones, hija)
-            if colgada:
-                entrada = replace(entrada, subsecciones=tuple(subsecciones))
-        nuevas.append(entrada)
-    return nuevas, colgada
-
-
-# Devuelve el código de una entrada de menú y los de todas sus subsecciones, a cualquier profundidad.
-# La usan las comprobaciones de prefijo y de ayuda.
-def _codigos_de_menu(entrada):
-    yield entrada.codigo
+# Devuelve una entrada de menú y todas sus subsecciones, a cualquier profundidad. La usa el registro al
+# apuntar las entradas, al buscar la de la ayuda y al comprobar los textos de ayuda.
+def _entradas_y_subsecciones(entrada):
+    yield entrada
     for subseccion in entrada.subsecciones:
-        yield from _codigos_de_menu(subseccion)
+        yield from _entradas_y_subsecciones(subseccion)
 
 
 # Dice si una ruta de carpeta está dentro de otra. Se usa para saber si una app es del proyecto (está

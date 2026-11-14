@@ -42,7 +42,6 @@ class TalentosConfig(ModuloConfig):
             url="talentos:mis_talentos",
             icono="✿",
             color="#c2410c",
-            orden=300,
             otras_rutas=("talentos:peticion",),
             subsecciones=(
                 EntradaDeMenu(

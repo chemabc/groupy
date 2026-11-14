@@ -623,3 +623,46 @@ sirve aquí y dónde se usa.
 - **Ver una entrada del menú sin el permiso.** `EntradaDeMenu.tambien_si` apunta a una función que
   recibe el usuario: si dice que sí, la entrada se ve aunque falte el permiso. Así las guías se abren a
   todo el mundo en desarrollo sin tocar los permisos de nadie.
+
+## 30. Un menú que se ordena en un solo sitio y un panel que no se vuelve a pintar (14 de noviembre de 2026)
+
+- **Datos en lugar de números.** Antes cada módulo decía `orden=850` y `dentro_de="tipologias.configuracion"`:
+  para mover algo había que buscar en veinte ficheros y encontrar un número libre. Ahora `config/menu.py`
+  es una tupla de códigos que dibuja el árbol del menú tal cual se ve. El registro la recorre con una
+  función que se llama a sí misma para cada nivel (`_colocar`) y, como las fichas son inmutables
+  (`frozen=True`), crea copias con sus subsecciones nuevas (`dataclasses.replace`). Lo que no cuadra
+  (una entrada sin colocar, un código que no existe) se apunta como error y lo enseña `manage.py check`.
+- **Lo que está fuera de la zona no se toca.** htmx solo sustituye `#zona`; el menú izquierdo y el panel
+  de ayuda están fuera, así que siguen igual al navegar. Para llenar el panel se usa `htmx.ajax("GET",
+  direccion, { target, swap: "innerHTML" })`: htmx manda la cabecera `HX-Target` con el id del destino y
+  el servidor (`base/contexto.py`) elige con ella qué marco pintar (`zona.html` o `panel.html`). Las
+  vistas no se enteran: heredan de `interfaz.plantilla`.
+- **Escuchar «en captura».** Un clic baja primero desde `<html>` hasta el enlace (fase de captura) y luego
+  sube (burbuja). Con `@click.capture` el panel ve el clic antes que el propio enlace, que es donde htmx
+  escucha; si es una página de la ayuda, `preventDefault()` y `stopPropagation()` lo frenan y el panel la
+  abre él mismo. Si no, lo deja pasar y htmx lo lleva a la zona principal.
+- **Arrastrar con eventos de puntero.** `pointerdown`, `pointermove` y `pointerup` sirven igual para
+  ratón, dedo y lápiz. `setPointerCapture` hace que la línea siga recibiendo los movimientos aunque el
+  puntero se salga de ella (lo normal al arrastrar deprisa). El ancho es una variable de CSS
+  (`--ancho-del-panel`) en `<html>`, y la clase `md:w-(--ancho-del-panel)` la usa.
+- **Que no salte al recargar.** El script de la cabecera lee del navegador si el panel estaba abierto y su
+  ancho, y lo pone en `<html>` antes de pintar nada (`data-panel-de-ayuda` y la variable). Tailwind tiene
+  una variante propia, `panel-abierto:`, que se activa con ese atributo (igual que `plegado:` con el
+  menú).
+- **Tamaño según la caja, no según la pantalla.** `lg:` mira el ancho de la ventana; `@3xl:` (consultas de
+  contenedor) mira el de la caja con clase `@container`. Así el mismo documento pone el índice al lado en
+  la zona ancha y encima en el panel estrecho, sin plantillas distintas.
+- **Esperar a htmx.** Los scripts con `defer` se ejecutan en orden, pero Alpine arranca en cuanto se
+  ejecuta el suyo, antes que htmx. Si un componente necesita htmx al arrancar, espera a
+  `DOMContentLoaded` (`htmxListo()`).
+- **Markdown deja pasar el HTML.** Un «`<script>`» escrito fuera de las comillas de código llegaba a la
+  página como etiqueta de verdad. Se quitan las dos piezas de Python-Markdown que lo permiten
+  (`html_block` y `html`) y entonces se escapa: `&lt;script&gt;`.
+- **Agrandar solo una parte de la pantalla.** Las clases de Tailwind miden en `rem` (la letra de `<html>`),
+  así que cambiar la letra de una caja no las agranda. `zoom` de CSS sí: agranda todo lo de dentro y
+  vuelve a repartir las líneas en el ancho que hay. Pero si algo dentro es más ancho que la caja (un
+  código largo sin espacios, una rejilla que crece con su contenido), se sale de lado: se arregla en su
+  origen (`grid-cols-[minmax(0,1fr)]`, `overflow-wrap: anywhere`), no compensando el ancho del zoom.
+- **Un filtro con argumento no perdona.** `{{ a|default:b.c }}` falla si `b` es `None` (el argumento de
+  un filtro no se resuelve «en silencio» como una variable suelta), y la página salía con la zona vacía.
+  `{% firstof a b.c "Asambleas" %}` hace lo mismo sin fallar.

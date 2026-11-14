@@ -1,8 +1,9 @@
 {% extends "base/zona.html" %}
 {% comment %}
-  Página entera: cabecera, menú izquierdo (ordenador), barra inferior (móvil) y, en medio, la zona
-  central de base/zona.html. Se manda al cargar la página por primera vez o al recargarla; después, la
-  navegación con htmx solo pide la zona central.
+  Página entera: cabecera, menú izquierdo (ordenador), barra inferior (móvil), en medio la zona central
+  de base/zona.html y, a la derecha, el panel de ayuda. Se manda al cargar la página por primera vez o al
+  recargarla; después, la navegación con htmx solo pide la zona central, así que ni el menú ni el panel de
+  ayuda se vuelven a pintar.
 {% endcomment %}
 {% block documento %}{% include "base/cabeza.html" %}
 {# hx-boost: los enlaces y formularios de la página se siguen con htmx, que pide solo la zona central y #}
@@ -13,7 +14,7 @@
 <div class="flex h-full flex-col">
 
   {# Cabecera: botón para plegar el menú, nombre de la aplicación, alias (lleva a «Mi cuenta»), botón #}
-  {# del tema y botón para salir #}
+  {# de la ayuda, botón del tema y botón para salir #}
   <header class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900">
     <button type="button" class="hidden rounded px-1 text-slate-500 hover:bg-slate-100 md:block dark:hover:bg-slate-800"
             title="Plegar o desplegar el menú" aria-label="Plegar o desplegar el menú"
@@ -21,6 +22,34 @@
     <a href="{% url 'base:inicio' %}" class="font-semibold text-marca">Asambleas</a>
     <a href="{% url 'usuarios:preferencias' %}" class="ml-auto text-xs text-slate-500 hover:text-marca"
        title="Mi cuenta">{{ interfaz.alias }}</a>
+    {# Botón «?» rojo: despliega las subsecciones de la ayuda (y las pestañas de las que tienen varias). #}
+    {# Al elegir una, se abre en el panel de la derecha (evento «abrir-ayuda», que escucha panelDeAyuda). #}
+    {% if interfaz.ayuda_lateral %}
+      <div x-data="{ abierto: false }" class="relative" @click.outside="abierto = false" @keydown.escape="abierto = false">
+        <button type="button" id="boton-de-ayuda"
+                class="grid size-6 place-items-center rounded-full border-2 border-red-600 text-sm font-bold text-red-600 hover:bg-red-50 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-950"
+                title="Ayuda (se abre en un panel a la derecha)" aria-label="Ayuda" aria-haspopup="menu"
+                :aria-expanded="abierto" @click="abierto = !abierto">?</button>
+        <div x-show="abierto" x-cloak x-transition.opacity role="menu" aria-labelledby="boton-de-ayuda"
+             class="absolute right-0 z-50 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          {% for subseccion in interfaz.ayuda_lateral %}
+            <button type="button" role="menuitem" data-direccion="{% url subseccion.url %}"
+                    class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                    @click="$dispatch('abrir-ayuda', { direccion: $el.dataset.direccion }); abierto = false">
+              <span class="grid size-6 shrink-0 place-items-center rounded bg-(--icono)/15 text-sm text-(--icono) dark:bg-(--icono)/25 dark:text-[color-mix(in_oklab,var(--icono)_65%,white)]" style="--icono: {{ subseccion.color }}" aria-hidden="true">{{ subseccion.icono|default:subseccion.nombre|first }}&#xFE0E;</span>
+              {{ subseccion.nombre }}
+            </button>
+            {% if subseccion.vistas|length > 1 %}
+              {% for vista in subseccion.vistas %}
+                <button type="button" role="menuitem" data-direccion="{% url vista.url %}"
+                        class="block w-full rounded py-1 pl-10 pr-2 text-left text-xs text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        @click="$dispatch('abrir-ayuda', { direccion: $el.dataset.direccion }); abierto = false">{{ vista.nombre }}</button>
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
     <button type="button" class="rounded px-1 hover:bg-slate-100 dark:hover:bg-slate-800"
             title="Cambiar de tema: claro, día (más contraste) u oscuro" aria-label="Cambiar de tema"
             x-data @click="$store.preferencias.siguienteTema()">
@@ -43,10 +72,54 @@
       {% for entrada in interfaz.menu %}{% include "base/entrada_de_menu.html" %}{% endfor %}
     </nav>
 
-    {# Parte central, la que se desplaza. El hueco de abajo deja sitio a la barra del móvil. #}
-    <div id="desplazable" class="min-w-0 flex-1 overflow-y-auto pb-16 md:pb-0">
+    {# Parte central, la que se desplaza (también de lado, si con el panel de ayuda abierto no cabe). El #}
+    {# hueco de abajo deja sitio a la barra del móvil. data-desplaza: aquí se desplaza el contenido (lo #}
+    {# usa la isla «documento» para saber cuándo un diagrama está a punto de verse). #}
+    <div id="desplazable" data-desplaza class="min-w-0 flex-1 overflow-auto pb-16 md:pb-0">
       {% block zona %}{{ block.super }}{% endblock %}
     </div>
+
+    {# Panel de ayuda (componente panelDeAyuda de interfaz.js). Está fuera de la zona central, así que #}
+    {# navegar con el menú no lo toca. Se ve si <html> lleva data-panel-de-ayuda="abierto" (variante #}
+    {# «panel-abierto:» de entrada.css), que el script de la cabecera pone antes de pintar si se dejó #}
+    {# abierto: así no salta al recargar. En el ordenador ocupa el ancho --ancho-del-panel, que se cambia #}
+    {# arrastrando la línea de separación; en el móvil, toda la pantalla. #}
+    {# data-direcciones: las páginas que, pulsadas dentro del panel, se abren en él (las de la ayuda). #}
+    <aside id="panel-de-ayuda" x-data="panelDeAyuda" data-direcciones="{{ interfaz.direcciones_de_la_ayuda }}"
+           @abrir-ayuda.window="abrir($event.detail.direccion)" @click.capture="alPulsar($event)"
+           class="fixed inset-0 z-40 hidden bg-white panel-abierto:flex md:static md:z-auto md:w-(--ancho-del-panel) md:shrink-0 dark:bg-slate-900"
+           aria-label="Panel de ayuda">
+      {# Línea de separación: se arrastra con el ratón (o con las flechas del teclado) para cambiar el #}
+      {# ancho; doble clic, vuelve al ancho de partida. #}
+      <div role="separator" aria-orientation="vertical" aria-label="Ancho del panel de ayuda" tabindex="0"
+           title="Arrastra para cambiar el ancho (doble clic: ancho de partida)"
+           class="hidden w-1.5 shrink-0 cursor-col-resize touch-none border-l border-slate-200 bg-slate-100 hover:bg-marca/40 focus:bg-marca/40 focus:outline-none md:block dark:border-slate-800 dark:bg-slate-800"
+           :class="arrastrando && 'bg-marca/60'"
+           @pointerdown="empezarAArrastrar($event)" @pointermove="arrastrar($event)" @pointerup="soltar($event)"
+           @dblclick="anchoDePartida()" @keydown.left.prevent="ensanchar(24)" @keydown.right.prevent="ensanchar(-24)"></div>
+      <div class="flex min-w-0 flex-1 flex-col">
+        <div class="flex items-center gap-2 border-b border-slate-200 px-3 py-1.5 dark:border-slate-800">
+          <span class="grid size-5 place-items-center rounded-full border-2 border-red-600 text-xs font-bold text-red-600 dark:border-red-400 dark:text-red-400" aria-hidden="true">?</span>
+          <span class="text-sm font-semibold">Ayuda</span>
+          {# Tamaño de la letra del panel (solo del panel; se recuerda en el navegador). #}
+          <div class="ml-auto flex items-center gap-1 text-sm" role="group" aria-label="Tamaño de la letra de la ayuda">
+            <button type="button" class="grid size-6 place-items-center rounded border border-slate-300 font-semibold hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
+                    title="Letra más pequeña" aria-label="Letra más pequeña" :disabled="!sePuedeAchicar()" @click="cambiarLetra(-1)">−</button>
+            <span class="w-10 text-center text-xs tabular-nums text-slate-500" x-text="`${Math.round(letra * 100)} %`" aria-live="polite">100 %</span>
+            <button type="button" class="grid size-6 place-items-center rounded border border-slate-300 font-semibold hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
+                    title="Letra más grande" aria-label="Letra más grande" :disabled="!sePuedeAgrandar()" @click="cambiarLetra(1)">+</button>
+          </div>
+          <button type="button" class="rounded px-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  title="Cerrar el panel de ayuda" aria-label="Cerrar el panel de ayuda" @click="cerrar()">✕</button>
+        </div>
+        {# La caja que se desplaza y, dentro, la página de ayuda. El tamaño de la letra se aplica a la página #}
+        {# con «zoom» de CSS, que agranda todo a la vez (texto, tablas, diagramas) y vuelve a repartir las #}
+        {# líneas en el ancho del panel. #}
+        <div id="panel-de-ayuda-desplazable" x-ref="desplazable" data-desplaza class="min-h-0 flex-1 overflow-y-auto">
+          <div id="panel-de-ayuda-contenido" x-ref="contenido" :style="`zoom: ${letra}`"></div>
+        </div>
+      </div>
+    </aside>
   </div>
 
   {# Barra inferior con las secciones (solo en el móvil). Si no caben, se desliza de lado. #}

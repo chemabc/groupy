@@ -134,26 +134,22 @@ python manage.py tareas_diarias
 
 - [ ] **¿Ya está el servidor?** http://localhost:8000 abre la entrada. **Si no:**
   `python manage.py runserver 0.0.0.0:8000` (se reinicia solo al cambiar el código).
-- [ ] **Pruebas:** `python manage.py test --parallel 4` termina con `OK` (unas 370). Si dice
+- [ ] **Pruebas:** `python manage.py test --parallel 4` termina con `OK` (unas 375). Si dice
   `skipped=` con muchas, falta Chromium para las pruebas en el navegador:
   `python -m playwright install --with-deps chromium`.
 
 ---
 
-## 1. Desarrollo y mantenimiento, trastienda y guías
+## 1. Desarrollo y mantenimiento y trastienda
 
-- [ ] Como **superadmin**: «Desarrollo y mantenimiento» tiene cuatro subsecciones (Guías de desarrollo,
-  Ayuda y documentación, Pruebas, Trastienda).
-- [ ] «Ayuda y documentación»: una pestaña por documento, con el índice a la izquierda; un enlace de un
-  documento a otro abre su pestaña.
+(Las guías de desarrollo y la documentación están ahora en «Ayuda»: ver la sección 24.)
+
+- [ ] Como **superadmin**: «Desarrollo y mantenimiento» es la última sección del menú y tiene dos
+  subsecciones (Pruebas y Trastienda).
 - [ ] «Trastienda»: el botón lleva al panel de Django; las fichas tienen Guardar, Guardar y continuar,
   Cancelar y Eliminar.
-- [ ] Como **Nutria**: ve «Desarrollo y mantenimiento» con **solo** «Guías de desarrollo» (en
-  producción no la verá). Entrar a mano en `/mantenimiento/trastienda/` da la pantalla 403 que explica.
-- [ ] «Guías de desarrollo → Arquitectura»: los diagramas se dibujan; los botones + y − acercan y
-  alejan, ⤢ ajusta, ⛶ pone la pantalla completa (Esc para salir), doble clic acerca y se mueve
-  arrastrando. La caja se alarga tirando de su esquina inferior.
-- [ ] En esta guía, las casillas se marcan, el recuento de arriba cambia y siguen marcadas al recargar.
+- [ ] Como **Nutria**: no ve «Desarrollo y mantenimiento» (ni siquiera en desarrollo). Entrar a mano en
+  `/mantenimiento/trastienda/` da la pantalla 403 que explica.
 
 ## 2. Audiencias (quién ve cada cosa)
 
@@ -360,3 +356,58 @@ python manage.py tareas_diarias
 - [ ] Nuevo proyecto de «Preparación de acción» con la casilla «Crear las 3 tareas modelo» marcada: las
   tres se crean con fecha límite, la primera pendiente y las otras dos bloqueadas en cadena. Sin la
   casilla, no se crea ninguna.
+
+## 24. Menú en un solo fichero, sección «Ayuda» y panel de ayuda
+
+Antes: `npm run construir` (hay clases nuevas: ver 0.2; si `static/generado/estilos.css` no contiene
+`panel-abierto`, no está hecho) y reiniciar el servidor (hay un módulo nuevo, `ayuda`; no tiene tablas).
+
+- [ ] Como **superadmin**: las tres últimas secciones del menú son «Ayuda», «Configuración de mi cuenta»
+  (antes «Mi cuenta») y «Desarrollo y mantenimiento». Como **Nutria**: «Ayuda» es la penúltima y
+  «Configuración de mi cuenta», la última.
+- [ ] «Ayuda» tiene, por este orden, «How to?», «Documentación de la plataforma» (pestañas Tutorial,
+  Arquitectura, Arranque y tests, Registro y validación) y «Guía de desarrollo» (Comprobaciones pendientes,
+  Diseño y decisiones).
+- [ ] Mover una entrada del menú: en `config/menu.py`, cambia de sitio una línea (por ejemplo, sube
+  `"usuarios.cuenta"` al principio), guarda y recarga: el menú cambia. Escribe mal un código y
+  `python manage.py check` dice qué pasa. Déjalo como estaba.
+- [ ] Arriba a la derecha, junto al ☀/☾, hay un **?** rojo. Al pulsarlo salen las subsecciones de la ayuda
+  y, debajo de las que tienen varias, sus pestañas.
+- [ ] Elige «Tutorial»: se abre un panel a la derecha y la pantalla principal se estrecha. En el panel,
+  arriba, las pestañas de la documentación y «Abrir en grande ↗».
+- [ ] Con el panel abierto, navega con el menú de la izquierda y con las pestañas de arriba: solo cambia
+  la pantalla principal; el panel se queda donde estaba (no vuelve arriba ni parpadea).
+- [ ] En el panel, pulsa otra pestaña (Arquitectura): cambia el panel y no la pantalla principal. Los
+  diagramas se dibujan dentro del panel.
+- [ ] Arrastra la línea que separa el panel: cambia el ancho y la pantalla principal se adapta. Si lo
+  ensanchas mucho, la pantalla principal no se estrecha más y sale una barra de desplazamiento abajo.
+  Doble clic en la línea: vuelve al ancho de partida. Con la línea seleccionada (tabulador), las flechas
+  ← y → también lo cambian.
+- [ ] Recarga la página: el panel sigue abierto, con la misma página y el mismo ancho, sin saltos. Ciérralo
+  con ✕ y recarga: sigue cerrado.
+- [ ] El **?** gris junto al título de una sección sigue abriendo su **ventana emergente** (no el panel).
+  En «Ayuda → How to?», la ventana trae además un recuadro «Ejemplo».
+- [ ] En el panel, los botones **−** y **+** achican y agrandan la letra del panel (no la de la pantalla
+  principal), del 70 % al 160 %; nada se sale de lado (prueba con «Tutorial», que tiene rutas largas).
+  Se recuerda al recargar.
+- [ ] «Abrir en grande ↗» lleva la página del panel a la pantalla principal.
+- [ ] En un documento, el botón **▸ Índice** pliega y despliega el índice, y se recuerda al recargar. En
+  el panel sale plegado de entrada; en la pantalla principal, desplegado. Con el panel abierto y la
+  pantalla principal estrecha, el índice del documento principal se pone encima del texto.
+- [ ] En el panel, pulsar un título del índice baja hasta él dentro del panel.
+- [ ] Las casillas de «Comprobaciones pendientes» son las mismas en el panel y en la pantalla principal
+  (marcadas antes de este cambio puede que salgan sin marcar: cambió la dirección de la página).
+- [ ] En el móvil (o con la ventana muy estrecha), el panel ocupa toda la pantalla y se cierra con ✕.
+- [ ] En el tutorial, el apartado de los mapas muestra «`<script>`» como texto (antes se colaba como
+  etiqueta).
+- [ ] Como en producción: para el servidor (Ctrl+C) y arráncalo así; entra como **Nutria**: el ? rojo
+  solo ofrece «How to?» y `/ayuda/tutorial/` da la pantalla 403 que explica. Al terminar, vuelve a
+  arrancarlo como siempre.
+
+```bash
+# Arranca el servidor como en producción solo para la ayuda (sin abrir la documentación a todo el mundo)
+#     DJANGO_GUIAS_PARA_TODOS=0: la documentación de la plataforma y la guía de desarrollo, solo para el superadmin
+#     runserver: servidor web de Django para desarrollo
+#     0.0.0.0:8000: escucha en todas las direcciones del contenedor, en el puerto 8000
+DJANGO_GUIAS_PARA_TODOS=0 python manage.py runserver 0.0.0.0:8000
+```

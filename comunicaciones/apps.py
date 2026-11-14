@@ -49,7 +49,6 @@ class ComunicacionesConfig(ModuloConfig):
             url="comunicaciones:notificaciones",
             icono="☏",
             color="#9333ea",
-            orden=100,
             subsecciones=(
                 EntradaDeMenu(
                     codigo="comunicaciones.notificaciones",
@@ -93,7 +92,7 @@ class ComunicacionesConfig(ModuloConfig):
                 ),
             ),
         ),
-        # «Configuración → Niveles de aviso», colgada de la sección de «tipologias».
+        # «Configuración → Niveles de aviso», colocada dentro de «Configuración» en config/menu.py.
         EntradaDeMenu(
             codigo="comunicaciones.niveles",
             nombre="Niveles de aviso",
@@ -101,8 +100,6 @@ class ComunicacionesConfig(ModuloConfig):
             icono="◐",
             color="#a16207",
             permiso="comunicaciones.niveles",
-            dentro_de="tipologias.configuracion",
-            orden=40,
             vistas=(Vista("Niveles", "comunicaciones:niveles"),),
         ),
     )

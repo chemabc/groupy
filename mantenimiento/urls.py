@@ -5,18 +5,10 @@ Direcciones del módulo «mantenimiento», que cuelgan de /mantenimiento/ (ver c
 from django.urls import path
 
 from . import views
-from .documentos import DOCUMENTOS, GUIAS, nombre_de_ruta
 
 app_name = "mantenimiento"
 
 urlpatterns = [
-    # Ayuda y documentación: una página por documento, cada una con su nombre de ruta.
-    *(
-        path(f"documentacion/{clave}/", views.documentacion, {"nombre": clave}, name=nombre_de_ruta(clave))
-        for clave, _fichero, _titulo in DOCUMENTOS
-    ),
-    # Guías de desarrollo (comprobaciones pendientes y arquitectura), igual que los documentos.
-    *(path(f"guias/{clave}/", views.guia, {"nombre": clave}, name=nombre_de_ruta(clave)) for clave, _fichero, _titulo in GUIAS),
     # Pruebas: importar grupos y usuarios, sus plantillas y el interruptor del alta masiva.
     path("pruebas/grupos/", views.importar_grupos, name="importar_grupos"),
     path("pruebas/grupos/plantilla.ods", views.plantilla_grupos, name="plantilla_grupos"),

@@ -19,6 +19,7 @@ from django.db import connections
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 
+from .apps import disposicion_del_menu
 from .contrato import Capa, ModuloConfig
 from .registro import registro
 
@@ -42,7 +43,7 @@ def modulo_falso(etiqueta, **apartados):
 def contratos_de_prueba(*modulos_falsos):
     # Copia de todo lo que contiene el registro, para restaurarlo al final.
     copia = dict(registro.__dict__)
-    registro.cargar([*apps.get_app_configs(), *modulos_falsos])
+    registro.cargar([*apps.get_app_configs(), *modulos_falsos], disposicion=disposicion_del_menu())
     try:
         yield registro
     finally:

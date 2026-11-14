@@ -40,8 +40,10 @@ urlpatterns = [
     path("configuracion/visibilidad/", include("audiencias.urls")),
     # Módulo «etiquetas»: sugerencias del selector de etiquetas.
     path("etiquetas/", include("etiquetas.urls")),
-    # Módulo «mantenimiento»: documentación del proyecto y entrada a la trastienda.
+    # Módulo «mantenimiento»: pruebas (importaciones y datos de ejemplo) y entrada a la trastienda.
     path("mantenimiento/", include("mantenimiento.urls")),
+    # Módulo «ayuda»: «How to?», la documentación de la plataforma y la guía de desarrollo.
+    path("ayuda/", include("ayuda.urls")),
     # Módulo «base»: la portada y el escaparate de componentes.
     path("", include("base.urls")),
 ]

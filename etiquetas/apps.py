@@ -27,7 +27,7 @@ class EtiquetasConfig(ModuloConfig):
         ),
     )
     datos_de_ejemplo = DatosDeEjemplo(crear="etiquetas.ejemplos.crear", borrar="etiquetas.ejemplos.borrar")
-    # «Configuración → Etiquetas» (13 de noviembre de 2026), colgada de la sección de «tipologias».
+    # «Configuración → Etiquetas» (13 de noviembre de 2026), colocada dentro de «Configuración» en config/menu.py.
     menu = (
         EntradaDeMenu(
             codigo="etiquetas.etiquetas",
@@ -36,8 +36,6 @@ class EtiquetasConfig(ModuloConfig):
             icono="#",
             color="#be185d",
             permiso="etiquetas.ordenar",
-            dentro_de="tipologias.configuracion",
-            orden=30,
             vistas=(Vista("Lista", "etiquetas:etiquetas"),),
         ),
     )

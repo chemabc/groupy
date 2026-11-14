@@ -1,6 +1,7 @@
 """
-Pruebas del módulo «mantenimiento»: solo lo ve el superadmin (menú y pantallas) salvo las guías de
-desarrollo (abiertas a todos en desarrollo), el menú de tres niveles, los documentos, las plantillas y las importaciones de grupos y usuarios.
+Pruebas del módulo «mantenimiento»: solo lo ve el superadmin (menú y pantallas), el menú de tres
+niveles, las plantillas y las importaciones de grupos y usuarios. Los documentos y las guías de
+desarrollo están en el módulo «ayuda» (ayuda/tests).
 """
 
 
@@ -12,7 +13,6 @@ from base.hojas import Hoja, crear_ods, leer_filas
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
 from grupos.models import AdminDeOrganizacion, Grupo, Organizacion, Pertenencia
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
-from mantenimiento.documentos import DOCUMENTOS, GUIAS
 from mantenimiento.importacion import aplicar_grupos, aplicar_usuarios, revisar_grupos, revisar_usuarios
 from mantenimiento.models import AjustesDeMantenimiento
 
@@ -37,31 +37,19 @@ class PruebasComoSuperadmin(PruebaDePantalla):
     def setUpTestData(cls):
         cls.usuario = crear_usuario_de_prueba("Águila", es_superadmin=True)
 
-    # El menú tiene la sección con sus tres subsecciones; en «Pruebas», arriba, las dos importaciones.
+    # El menú tiene la sección con sus dos subsecciones; en «Pruebas», arriba, las dos importaciones.
     def test_menu(self):
         respuesta = self.client.get("/mantenimiento/pruebas/grupos/")
-        for texto in ["Desarrollo y mantenimiento", "Ayuda y documentación", "Pruebas", "Importar grupos", "Importar usuarios"]:
+        for texto in ["Desarrollo y mantenimiento", "Trastienda", "Pruebas", "Importar grupos", "Importar usuarios"]:
             self.assertContains(respuesta, texto)
         self.assertEqual(respuesta.context["interfaz"]["codigos"], ["mantenimiento.desarrollo", "mantenimiento.pruebas"])
 
     # Cada pantalla cuesta pocas consultas y no tiene listas que crezcan.
     def test_consultas(self):
-        for clave, _fichero, _titulo in DOCUMENTOS:
-            with self.subTest(documento=clave):
-                self.comprobar_consultas(f"/mantenimiento/documentacion/{clave}/", 1, None)
         self.comprobar_consultas("/mantenimiento/trastienda/", 1, None)
         self.comprobar_consultas("/mantenimiento/pruebas/grupos/", 1, None)
         self.comprobar_consultas("/mantenimiento/pruebas/usuarios/", 2, None)
         self.comprobar_consultas("/mantenimiento/pruebas/ejemplos/", 4, None)
-
-    # Los documentos se convierten con tablas e índice, y sus enlaces llevan a sus páginas; cada uno es
-    # una pestaña del menú superior.
-    def test_documentos(self):
-        respuesta = self.client.get("/mantenimiento/documentacion/diseno/")
-        self.assertContains(respuesta, "<table>")
-        self.assertContains(respuesta, 'class="toc"')
-        self.assertContains(respuesta, 'href="/mantenimiento/documentacion/registro-y-validacion/"')
-        self.assertContains(respuesta, 'aria-current="page">Diseño y decisiones</a>')
 
     # Las plantillas se descargan como .ods y se pueden volver a leer.
     def test_plantillas(self):
@@ -119,39 +107,15 @@ class PruebasComoSuperadmin(PruebaDePantalla):
         self.assertContains(respuesta, "Sube un fichero .ods (LibreOffice) o .csv.")
 
 
-@override_settings(GUIAS_DE_DESARROLLO_PARA_TODOS=False)
 class PruebasComoUsuario(PruebaDePantalla):
-    """Una persona sin el permiso no ve la sección ni puede entrar (en producción: guías cerradas)."""
+    """Una persona sin el permiso no ve la sección ni puede entrar (ni siquiera en desarrollo)."""
 
     # No sale en su menú, y si escribe la dirección, sale la explicación de lo que falta.
     def test_sin_permiso(self):
         self.assertNotContains(self.client.get("/"), "Desarrollo y mantenimiento")
-        for direccion in ["/mantenimiento/documentacion/diseno/", "/mantenimiento/pruebas/grupos/", "/mantenimiento/guias/arquitectura/"]:
+        for direccion in ["/mantenimiento/pruebas/grupos/", "/mantenimiento/trastienda/"]:
             respuesta = self.client.get(direccion)
             self.assertContains(respuesta, "hace falta el permiso «mantenimiento.ver»", status_code=403)
-
-
-@override_settings(GUIAS_DE_DESARROLLO_PARA_TODOS=True)
-class PruebasDeLasGuias(PruebaDePantalla):
-    """En desarrollo, cualquiera ve las guías de desarrollo, pero nada más de la sección."""
-
-    # El menú muestra la sección con solo «Guías de desarrollo»; las guías se abren y las demás
-    # pantallas siguen cerradas.
-    def test_guias_para_todos(self):
-        respuesta = self.client.get("/mantenimiento/guias/comprobaciones/")
-        self.assertContains(respuesta, "Guías de desarrollo")
-        ocultas = respuesta.context["interfaz"]["ocultas"]
-        self.assertEqual(ocultas & {"mantenimiento.guias", "mantenimiento.documentacion", "mantenimiento.pruebas", "mantenimiento.trastienda"},
-                         {"mantenimiento.documentacion", "mantenimiento.pruebas", "mantenimiento.trastienda"})
-        self.assertContains(respuesta, 'data-casilla disabled aria-label="Hecho"')
-        self.assertContains(self.client.get("/mantenimiento/guias/arquitectura/"), 'class="language-mermaid"')
-        self.assertEqual(self.client.get("/mantenimiento/trastienda/").status_code, 403)
-
-    # Cada guía cuesta lo mismo que un documento.
-    def test_consultas(self):
-        for clave, _fichero, _titulo in GUIAS:
-            with self.subTest(guia=clave):
-                self.comprobar_consultas(f"/mantenimiento/guias/{clave}/", 1, None)
 
 
 class PruebasDeImportarGrupos(TestCase):

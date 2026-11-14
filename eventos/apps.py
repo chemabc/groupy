@@ -86,7 +86,6 @@ class EventosConfig(ModuloConfig):
             url="eventos:proximos",
             icono="✷",
             color="#e11d78",
-            orden=120,
             otras_rutas=("eventos:evento", "eventos:editar", "eventos:cartel", "eventos:serie"),
             subsecciones=(
                 EntradaDeMenu(

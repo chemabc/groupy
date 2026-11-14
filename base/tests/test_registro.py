@@ -22,49 +22,89 @@ class PruebasDelRegistro(SimpleTestCase):
             "alfa",
             permisos=(Permiso("alfa.crear", "Crear alfas"),),
             emite=(Emision("alfa.creado", "Se ha creado un alfa"),),
-            menu=(EntradaDeMenu("alfa.inicio", "Alfa", url="alfa:inicio", orden=20),),
+            menu=(EntradaDeMenu("alfa.inicio", "Alfa", url="alfa:inicio"),),
             ayuda=(Ayuda("alfa.inicio", "Alfa", "Para qué sirve alfa."),),
         )
         beta = modulo_falso(
             "beta",
             escucha=(Escucha("alfa.creado", "beta.receptores.al_crear_alfa"),),
-            menu=(EntradaDeMenu("beta.inicio", "Beta", url="beta:inicio", orden=10),),
+            menu=(EntradaDeMenu("beta.inicio", "Beta", url="beta:inicio"),),
         )
         nuevo = RegistroDeModulos()
         nuevo.cargar([alfa, beta])
         self.assertEqual(nuevo.errores, [])
         self.assertIn("alfa.crear", nuevo.permisos)
         self.assertEqual(len(nuevo.escuchas["alfa.creado"]), 1)
-        # El menú sale ordenado por «orden», no por el orden de carga.
-        self.assertEqual([entrada.codigo for entrada in nuevo.menu], ["beta.inicio", "alfa.inicio"])
+        # Sin disposición, el menú sale en el orden de carga.
+        self.assertEqual([entrada.codigo for entrada in nuevo.menu], ["alfa.inicio", "beta.inicio"])
+        self.assertEqual(set(nuevo.entradas), {"alfa.inicio", "beta.inicio"})
 
-    # Una entrada con «dentro_de» se cuelga en la sección de otro módulo, ordenada por «orden», y deja de
-    # ser sección principal; si la sección no existe, es un error.
-    def test_subsecciones_de_otro_modulo(self):
+    # La disposición decide el orden y dentro de qué sección va cada entrada, también las de otro módulo,
+    # a cualquier profundidad; las subsecciones que declaraba el módulo no cuentan.
+    def test_disposicion(self):
         alfa = modulo_falso(
             "alfa",
             menu=(
                 EntradaDeMenu(
                     "alfa.ajustes", "Ajustes", url="alfa:a",
-                    subsecciones=(EntradaDeMenu("alfa.uno", "Uno", url="alfa:uno", orden=10),),
+                    subsecciones=(EntradaDeMenu("alfa.uno", "Uno", url="alfa:uno"),),
                 ),
             ),
         )
         beta = modulo_falso(
             "beta",
             menu=(
-                EntradaDeMenu("beta.dos", "Dos", url="beta:dos", dentro_de="alfa.ajustes", orden=20),
-                EntradaDeMenu("beta.cero", "Cero", url="beta:cero", dentro_de="alfa.ajustes", orden=5),
+                EntradaDeMenu("beta.inicio", "Beta", url="beta:inicio"),
+                EntradaDeMenu("beta.dos", "Dos", url="beta:dos"),
+                EntradaDeMenu("beta.cero", "Cero", url="beta:cero"),
             ),
         )
+        disposicion = (
+            "beta.inicio",
+            ("alfa.ajustes", ("beta.cero", ("alfa.uno", ("beta.dos",)))),
+        )
         nuevo = RegistroDeModulos()
-        nuevo.cargar([alfa, beta])
+        nuevo.cargar([alfa, beta], disposicion=disposicion)
         self.assertEqual(nuevo.errores, [])
-        self.assertEqual([entrada.codigo for entrada in nuevo.menu], ["alfa.ajustes"])
-        self.assertEqual([sub.codigo for sub in nuevo.menu[0].subsecciones], ["beta.cero", "alfa.uno", "beta.dos"])
-        self.assertEqual(nuevo.rutas["beta:dos"][0].codigo, "alfa.ajustes")
-        nuevo.cargar([modulo_falso("beta", menu=(EntradaDeMenu("beta.dos", "Dos", url="beta:dos", dentro_de="alfa.nada"),))])
-        self.assertIn("esa entrada del menú no existe", nuevo.errores[0])
+        self.assertEqual([entrada.codigo for entrada in nuevo.menu], ["beta.inicio", "alfa.ajustes"])
+        ajustes = nuevo.menu[1]
+        self.assertEqual([sub.codigo for sub in ajustes.subsecciones], ["beta.cero", "alfa.uno"])
+        self.assertEqual([sub.codigo for sub in ajustes.subsecciones[1].subsecciones], ["beta.dos"])
+        self.assertEqual([entrada.codigo for entrada in nuevo.rutas["beta:dos"]], ["alfa.ajustes", "alfa.uno", "beta.dos"])
+
+    # Errores de la disposición: una entrada sin colocar (sale al final para no perderse), un código que
+    # nadie declara, uno repetido y un elemento mal escrito.
+    def test_errores_de_la_disposicion(self):
+        alfa = modulo_falso(
+            "alfa",
+            menu=(EntradaDeMenu("alfa.uno", "Uno", url="alfa:uno"), EntradaDeMenu("alfa.dos", "Dos", url="alfa:dos")),
+        )
+        nuevo = RegistroDeModulos()
+        nuevo.cargar([alfa], disposicion=("alfa.uno", "alfa.nada", "alfa.uno", ("alfa.uno", "alfa.dos")))
+        errores = " ".join(nuevo.errores)
+        self.assertIn("«alfa.dos» no está colocada", errores)
+        self.assertIn("nombra «alfa.nada», pero ningún módulo", errores)
+        self.assertIn("«alfa.uno» está dos veces", errores)
+        self.assertIn("está mal escrito", errores)
+        self.assertEqual([entrada.codigo for entrada in nuevo.menu], ["alfa.uno", "alfa.dos"])
+
+    # La entrada con panel_de_ayuda queda apuntada (ya con sus subsecciones colocadas); dos es un error.
+    def test_entrada_de_ayuda(self):
+        ayuda = EntradaDeMenu("alfa.ayuda", "Ayuda", url="alfa:a", panel_de_ayuda=True)
+        hija = EntradaDeMenu("alfa.hija", "Hija", url="alfa:h")
+        nuevo = RegistroDeModulos()
+        nuevo.cargar([modulo_falso("alfa", menu=(ayuda, hija))], disposicion=(("alfa.ayuda", ("alfa.hija",)),))
+        self.assertEqual(nuevo.entrada_de_ayuda.codigo, "alfa.ayuda")
+        self.assertEqual([sub.codigo for sub in nuevo.entrada_de_ayuda.subsecciones], ["alfa.hija"])
+        otra = EntradaDeMenu("alfa.otra", "Otra", url="alfa:o", panel_de_ayuda=True)
+        nuevo.cargar([modulo_falso("alfa", menu=(ayuda, otra))])
+        self.assertIn("varias entradas del menú con panel_de_ayuda", nuevo.errores[0])
+
+    # El menú real: «Ayuda» va antes que «Configuración de mi cuenta», y «Desarrollo y mantenimiento», al
+    # final (a petición de la persona usuaria, 14 de noviembre de 2026).
+    def test_final_del_menu_real(self):
+        self.assertEqual([entrada.codigo for entrada in registro.menu[-3:]], ["ayuda.ayuda", "usuarios.cuenta", "mantenimiento.desarrollo"])
+        self.assertEqual(registro.entrada_de_ayuda.codigo, "ayuda.ayuda")
 
     # Un código que no empieza por la etiqueta del módulo es un error.
     def test_avisa_del_prefijo_equivocado(self):

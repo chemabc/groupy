@@ -48,7 +48,6 @@ class SolicitudesConfig(ModuloConfig):
             url="solicitudes:pendientes",
             icono="☛",
             color="#7c2d12",
-            orden=150,
             otras_rutas=("solicitudes:solicitud",),
             subsecciones=(
                 EntradaDeMenu(
@@ -78,7 +77,7 @@ class SolicitudesConfig(ModuloConfig):
                 ),
             ),
         ),
-        # «Configuración → Solicitudes», colgada de la sección de «tipologias».
+        # «Configuración → Solicitudes», colocada dentro de «Configuración» en config/menu.py.
         EntradaDeMenu(
             codigo="solicitudes.ajustes",
             nombre="Solicitudes",
@@ -86,8 +85,6 @@ class SolicitudesConfig(ModuloConfig):
             icono="⚖",
             color="#6b21a8",
             permiso="solicitudes.ajustar",
-            dentro_de="tipologias.configuracion",
-            orden=50,
             vistas=(Vista("Apoyos y plazos", "solicitudes:ajustes"),),
         ),
     )

@@ -27,7 +27,7 @@ siguientes. Hay tres formas de llegar a tener un alias, según la fase del proye
 |---|---|---|---|
 | 1 | Superadmin | Crea el alias con su contraseña, sus grupos y su asamblea base: uno a uno o de golpe con «Desarrollo y mantenimiento → Pruebas → Importar usuarios» | Cuando entra alguien nuevo |
 | 2 | Superadmin | Le da a la persona, en mano o por un canal seguro, su alias y su contraseña | Justo después |
-| 3 | Persona | Entra con su alias y cambia la contraseña en «Mi cuenta → Contraseña» | La primera vez que entra |
+| 3 | Persona | Entra con su alias y cambia la contraseña en «Configuración de mi cuenta → Contraseña» | La primera vez que entra |
 
 ### B. Alta provisional en la bóveda *(fase 1, hecho: Usuarios → Bóveda)*
 

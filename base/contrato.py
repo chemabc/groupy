@@ -385,6 +385,10 @@ class Vista:
 class EntradaDeMenu:
     """
     Una sección o subsección del menú izquierdo, con las vistas que salen arriba cuando se elige.
+
+    El módulo dice qué entradas aporta (y puede anidarlas en «subsecciones»), pero dónde va cada una
+    (en qué orden y dentro de qué sección) lo decide un solo fichero, config/menu.py: así reordenar o
+    agrupar el menú es mover una línea (ver docs/diseno.md, apartado 4, «Disposición del menú»).
     """
 
     # Código único, empezando por la etiqueta del módulo. También identifica su texto de ayuda «?».
@@ -400,8 +404,6 @@ class EntradaDeMenu:
     # mismo color, muy claro. Tampoco puede repetirse (13 de noviembre de 2026, a petición de la persona
     # usuaria: cada entrada se reconoce de un vistazo).
     color: str = "#64748b"
-    # Posición en el menú: los números más bajos salen antes.
-    orden: int = 100
     # Permiso que hace falta para verla. Vacío: la ve cualquier persona que haya iniciado sesión.
     permiso: str = ""
     # Ruta de una función que recibe el usuario y dice si puede verla aunque no tenga el permiso (por
@@ -409,7 +411,8 @@ class EntradaDeMenu:
     tambien_si: str = ""
     # Vistas de la sección, para el menú superior.
     vistas: tuple[Vista, ...] = ()
-    # Subsecciones que cuelgan de ella en el menú izquierdo.
+    # Subsecciones que cuelgan de ella en el menú izquierdo. Las que declara el módulo solo sirven para
+    # agrupar su contrato: el registro las vuelve a colgar donde diga config/menu.py.
     subsecciones: tuple["EntradaDeMenu", ...] = ()
     # Otras direcciones que pertenecen a esta entrada sin salir en el menú superior (por ejemplo, la
     # ficha de un grupo). Al visitarlas, el menú marca esta entrada y la cabecera muestra su nombre.
@@ -419,17 +422,18 @@ class EntradaDeMenu:
     # en cada página): lo normal es que guarde el resultado en la caché. Ejemplo:
     # «grupos.contadores.invitaciones_pendientes».
     contador: str = ""
-    # Código de la entrada de otro módulo dentro de la cual se cuelga esta como subsección (por ejemplo,
-    # «tipologias.configuracion» para poner «Etiquetas» dentro de «Configuración»). Vacío: es una
-    # sección principal (o ya va en las subsecciones de su madre, si es del mismo módulo). Las
-    # subsecciones se ordenan por «orden».
-    dentro_de: str = ""
+    # Si es la entrada de la ayuda: sus subsecciones salen también en el botón «?» rojo de la cabecera,
+    # que las abre en el panel de ayuda de la derecha (ver base/templates/base/pagina.html). Solo puede
+    # haber una. La declara el módulo «ayuda».
+    panel_de_ayuda: bool = False
 
 
 @dataclass(frozen=True)
 class Ayuda:
     """
-    Texto de la ayuda «?» de una sección: explica para qué sirve y qué significa cada dato.
+    Texto de la miniayuda «?» de una sección: la ventana emergente que sale al pulsar el «?» gris junto
+    a su título. Explica qué es la sección y para qué se usa, y puede traer un ejemplo. (La ayuda larga,
+    paso a paso, está en la sección «Ayuda» y en el panel del «?» rojo.)
     """
 
     # Código de la sección del menú a la que acompaña.
@@ -438,6 +442,9 @@ class Ayuda:
     titulo: str
     # Explicación en lenguaje llano.
     texto: str
+    # Un ejemplo de uso, opcional («Lince convoca la asamblea de los jueves…»). Sale aparte, debajo del
+    # texto. Vacío: sin ejemplo.
+    ejemplo: str = ""
 
 
 class ModuloConfig(AppConfig):

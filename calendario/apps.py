@@ -42,7 +42,6 @@ class CalendarioConfig(ModuloConfig):
             url="calendario:calendario",
             icono="▦",
             color="#0e7490",
-            orden=125,
             otras_rutas=("calendario:recordatorio",),
             subsecciones=(
                 EntradaDeMenu(

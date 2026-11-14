@@ -7,7 +7,7 @@ from base.contrato import Ayuda, Capa, DatosDeEjemplo, EntradaDeMenu, ModuloConf
 
 class UsuariosConfig(ModuloConfig):
     """
-    Contrato del módulo «usuarios». Aporta la sección «Mi cuenta» (preferencias y contraseña) y los
+    Contrato del módulo «usuarios». Aporta la sección «Configuración de mi cuenta» (preferencias y contraseña) y los
     usuarios de ejemplo.
     """
 
@@ -22,11 +22,10 @@ class UsuariosConfig(ModuloConfig):
     menu = (
         EntradaDeMenu(
             codigo="usuarios.cuenta",
-            nombre="Mi cuenta",
+            nombre="Configuración de mi cuenta",
             url="usuarios:preferencias",
             icono="✦",
             color="#db2777",
-            orden=900,
             vistas=(
                 Vista("Preferencias", "usuarios:preferencias"),
                 Vista("Contraseña", "usuarios:contrasena"),
@@ -36,7 +35,7 @@ class UsuariosConfig(ModuloConfig):
     ayuda = (
         Ayuda(
             seccion="usuarios.cuenta",
-            titulo="Mi cuenta",
+            titulo="Configuración de mi cuenta",
             texto=(
                 "Aquí cambias lo que es solo tuyo.\n\n"
                 "«Preferencias»: el tema (claro, día u oscuro), el tamaño de la letra y la densidad. Se "

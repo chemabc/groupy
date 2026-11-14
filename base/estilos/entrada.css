@@ -24,6 +24,12 @@
    botón ☰ (interfaz.js) y, al cargar, el script de la cabecera de la página. Ejemplo: «w-60 plegado:w-14». */
 @custom-variant plegado (&:where([data-menu="plegado"] *));
 
+/* Panel de ayuda abierto: las clases «panel-abierto:…» se aplican cuando <html> tiene
+   data-panel-de-ayuda="abierto". Lo ponen el componente panelDeAyuda (interfaz.js) y, al cargar, el script
+   de la cabecera. Ejemplo: «hidden panel-abierto:flex» (el panel) o «md:panel-abierto:min-w-[32rem]» (la
+   zona central, que no se estrecha más y saca una barra de desplazamiento). */
+@custom-variant panel-abierto (&:where([data-panel-de-ayuda="abierto"] *));
+
 /* Colores y medidas propios de la aplicación. «@theme» crea a la vez la variable de CSS y las clases de
    Tailwind: --color-marca da text-marca, bg-marca, border-marca… Una organización podrá cambiar su color
    redefiniendo la variable. */
@@ -132,14 +138,19 @@
   .documento strong {
     @apply font-semibold text-slate-900 dark:text-white;
   }
+  /* overflow-wrap: anywhere: un código largo sin espacios dentro del texto (una ruta, una orden) se parte
+     para no salirse de la caja (sobre todo en el panel de ayuda, estrecho). Los bloques (pre) no: tienen
+     su propia barra de desplazamiento. */
   .documento code {
     @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.85em] dark:bg-slate-800;
+    overflow-wrap: anywhere;
   }
   .documento pre {
     @apply my-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100;
   }
   .documento pre code {
     @apply bg-transparent p-0 text-inherit;
+    overflow-wrap: normal;
   }
   .documento blockquote {
     @apply my-4 border-l-4 border-marca bg-slate-50 px-4 py-2 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300;

@@ -55,7 +55,7 @@ flowchart LR
     htmx["htmx 2.0<br/>[Librería JS]"]:::libjs
     alpine["Alpine.js 3<br/>[Librería JS]"]:::libjs
     css["Tailwind CSS 4<br/>(estilos compilados)<br/>[Librería JS]"]:::libjs
-    islas["Islas: menú, tabla, copiar,<br/>selector de palabras, ordenar,<br/>mapa, calendario, kanban, documento<br/>[Isla JS]"]:::capabase
+    islas["Islas: menú, panel de ayuda, índice,<br/>tabla, copiar, selector de palabras, ordenar,<br/>mapa, calendario, kanban, documento<br/>[Isla JS]"]:::capabase
     sortable["SortableJS<br/>[Librería JS]"]:::libjs
     fullcal["FullCalendar 6<br/>[Librería JS]"]:::libjs
     leaflet["Leaflet + markercluster<br/>[Librería JS]"]:::libjs
@@ -79,12 +79,12 @@ flowchart LR
       cache["Caché (RedisCache)<br/>[Núcleo de Django]"]:::django
       contrib["auth · contenttypes · sessions · messages<br/>staticfiles · postgres · admin (trastienda)<br/>[Contrib de Django]"]:::django
     end
-    config["config: settings, urls,<br/>enrutador de la bóveda, trastienda<br/>[Configuración]"]:::django
+    config["config: settings, urls, menú (disposición),<br/>enrutador de la bóveda, trastienda<br/>[Configuración]"]:::django
     subgraph CAPAS["Nuestros módulos, por capas"]
       direction TB
       subgraph FUN["Funcional"]
         direction LR
-        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza<br/>administracion · mantenimiento<br/>[Módulo · Funcional]"]:::capafun
+        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza<br/>administracion · mantenimiento · ayuda<br/>[Módulo · Funcional]"]:::capafun
       end
       subgraph ORG["Organización"]
         direction LR
@@ -154,7 +154,7 @@ flowchart TB
   classDef capaiden fill:#dcfce7,stroke:#16a34a,color:#14532d
   classDef capaorg fill:#fef9c3,stroke:#ca8a04,color:#713f12
   classDef capafun fill:#fce7f3,stroke:#db2777,color:#831843
-  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, administracion, mantenimiento"]:::capafun
+  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, administracion, mantenimiento, ayuda"]:::capafun
   O["Organización<br/>grupos, permisos, audiencias, etiquetas,<br/>tipologias, solicitudes, lugares, talentos"]:::capaorg
   I["Identidad<br/>boveda, usuarios"]:::capaiden
   B["Base<br/>base, eventos_sw, ejemplos"]:::capabase
@@ -212,8 +212,11 @@ flowchart LR
   comprob["base/comprobaciones.py<br/>manage.py check<br/>[Componente]"]:::capabase
   ready["BaseConfig.ready()<br/>[Núcleo de Django]"]:::django
   usos["menú y ayuda · permisos · calendario · avisos<br/>solicitudes · tareas diarias · limpieza · ejemplos"]:::modulo
+  menu["config/menu.py: DISPOSICION<br/>(orden y agrupación del menú)<br/>[Configuración]"]:::django
   apps -- "rellena las fichas" --> contrato
   ready -- "al arrancar, una vez" --> registro
+  ready -- "DISPOSICION_DEL_MENU (settings)" --> menu
+  registro -. "coloca las EntradaDeMenu<br/>según la disposición" .-> menu
   registro -- "lee" --> apps
   comprob -- "revisa funciones, modelos,<br/>direcciones, iconos, limpiables" --> registro
   usos -- "preguntan al registro" --> registro
@@ -223,6 +226,11 @@ Cada módulo dice en su `apps.py` qué permisos, cometidos, anclas, fuentes del 
 solicitudes, tareas diarias, elementos limpiables, menús y ayudas aporta. Las funciones se nombran como
 texto (`"proyectos.limpieza.tareas"`) y el registro las carga con `import_string`. Así `calendario` junta
 las fechas de `eventos` y `proyectos` sin importarlos.
+
+El menú es la excepción a «cada módulo lo declara todo»: el módulo declara sus entradas (`EntradaDeMenu`:
+nombre, dirección, icono, permiso, vistas), pero **dónde va cada una** (el orden y dentro de qué sección)
+lo decide un solo fichero, `config/menu.py`. El registro rehace el árbol del menú con esa disposición y
+avisa si falta una entrada, si sobra o si se repite.
 
 ### 5.2 Los eventos_sw y el trabajador [Módulo · Base]
 
@@ -329,7 +337,7 @@ flowchart LR
 
 ### 6.5 usuarios [Módulo · Identidad]
 
-El usuario de la aplicación (`Usuario`, con alias y sin datos personales), entrar y salir, «Mi cuenta» y
+El usuario de la aplicación (`Usuario`, con alias y sin datos personales), entrar y salir, «Configuración de mi cuenta» y
 la capa intermedia `EntradaObligatoria` (nada se ve sin sesión). Contraseñas con Argon2.
 
 ```mermaid
@@ -429,12 +437,12 @@ flowchart LR
   per["permisos"]:::otro
   base["base: selector de palabras<br/>[Componente]"]:::otro
   pro["proyectos"]:::otro
-  conf["Configuración (menú de tipologias)"]:::otro
+  conf["Configuración (sección del menú;<br/>la colocación, en config/menu.py)"]:::otro
   eti --> gru
   eti --> per
   eti --> base
   pro -- "CampoDeEtiquetas, etiquetar, EtiquetaDe" --> eti
-  eti -. "dentro_de" .-> conf
+  eti -. "su entrada del menú va dentro<br/>(config/menu.py)" .-> conf
 ```
 
 ### 6.10 tipologias [Módulo · Organización]
@@ -676,8 +684,31 @@ flowchart LR
 
 ### 6.20 mantenimiento [Módulo · Funcional]
 
-«Desarrollo y mantenimiento»: guías de desarrollo (estas), documentación de `docs/`, pruebas
-(importaciones y datos de ejemplo) y la entrada a la trastienda.
+«Desarrollo y mantenimiento» (solo el superadmin): pruebas (importaciones y datos de ejemplo) y la
+entrada a la trastienda. La documentación pasó al módulo `ayuda` (14 de noviembre de 2026).
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  man["mantenimiento<br/>[Módulo · Funcional]"]:::yo
+  ej["ejemplos"]:::otro
+  hojas["base: hojas .ods/.csv"]:::otro
+  gru["grupos y usuarios (importar)"]:::otro
+  perm["permisos: requiere_permiso"]:::otro
+  man --> ej
+  man --> hojas
+  man --> gru
+  man --> perm
+```
+
+### 6.21 ayuda [Módulo · Funcional]
+
+La sección «Ayuda»: «How to?» (para todo el mundo), «Documentación de la plataforma» y «Guía de
+desarrollo» (en desarrollo, todo el mundo; en producción, quien tiene `ayuda.ver_documentacion`). Cada
+documento de `docs/` es una pestaña; la lista está en `ayuda/documentos.py`. Su entrada del menú lleva
+`panel_de_ayuda`: el botón «?» rojo de la cabecera ofrece sus subsecciones y las abre en el panel de la
+derecha.
 
 ```mermaid
 flowchart LR
@@ -685,25 +716,26 @@ flowchart LR
   classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
   classDef libpy fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
   classDef libjs fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
-  man["mantenimiento<br/>[Módulo · Funcional]"]:::yo
+  ayu["ayuda<br/>[Módulo · Funcional]"]:::yo
   md["Markdown<br/>[Librería Python]"]:::libpy
   docs["docs/*.md"]:::otro
-  isla["isla «documento»<br/>(casillas y diagramas)<br/>[Isla JS]"]:::libjs
+  base["base: contrato, registro<br/>(puede_ver_entrada), panel.html"]:::otro
+  perm["permisos: SinPermiso,<br/>explicar_falta"]:::otro
+  isla["islas «documento» e «indice»<br/>[Isla JS]"]:::libjs
+  panel["isla «panelDeAyuda»<br/>[Isla JS]"]:::libjs
   mer["Mermaid + svg-pan-zoom<br/>[Librería JS]"]:::libjs
-  ej["ejemplos"]:::otro
-  hojas["base: hojas .ods/.csv"]:::otro
-  gru["grupos y usuarios (importar)"]:::otro
-  man --> md --> docs
-  man --> isla --> mer
-  man --> ej
-  man --> hojas
-  man --> gru
+  ayu --> md --> docs
+  ayu --> base
+  ayu --> perm
+  ayu --> isla --> mer
+  ayu -. "panel_de_ayuda en su EntradaDeMenu" .-> panel
 ```
 
-### 6.21 config [Configuración]
+### 6.22 config [Configuración]
 
 Los ajustes (`settings.py`: apps, bases de datos, caché, cookies, guías de desarrollo), las direcciones
-(`urls.py`), el enrutador que separa la bóveda y la trastienda (el admin de Django con nuestro aspecto).
+(`urls.py`), la disposición del menú (`menu.py`: el orden y la agrupación de todas las entradas), el
+enrutador que separa la bóveda y la trastienda (el admin de Django con nuestro aspecto).
 
 ```mermaid
 flowchart LR
@@ -712,6 +744,7 @@ flowchart LR
   classDef servicio fill:#ffedd5,stroke:#ea580c,color:#7c2d12
   conf["config<br/>[Configuración]"]:::yo
   env["variables de entorno<br/>(docker-compose)"]:::otro
+  reg["base: registro<br/>(lee la disposición del menú)"]:::otro
   urls["urls de cada módulo"]:::otro
   pg[("PostgreSQL x2<br/>[Servicio]")]:::servicio
   redis[("Redis<br/>[Servicio]")]:::servicio
@@ -719,6 +752,7 @@ flowchart LR
   conf --> urls
   conf --> pg
   conf --> redis
+  reg -- "config/menu.py" --> conf
 ```
 
 ## 7. Componente a componente
@@ -729,9 +763,13 @@ flowchart LR
 flowchart LR
   classDef comp fill:#ede9fe,stroke:#7c3aed,color:#3b0764
   classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
-  pagina["pagina.html / zona.html<br/>[Componente]"]:::comp
-  contexto["contexto.py: interfaz()<br/>menú, vistas, ayuda, título<br/>[Componente]"]:::comp
-  registro["registro: menú, rutas, ayuda"]:::otro
+  pagina["pagina.html / zona.html / panel.html<br/>[Componente]"]:::comp
+  contexto["contexto.py: interfaz()<br/>menú, vistas, ayuda, título,<br/>ayuda lateral, plantilla (zona o panel)<br/>[Componente]"]:::comp
+  registro["registro: menú (ya colocado),<br/>rutas, ayuda, entrada_de_ayuda"]:::otro
+  disposicion["config/menu.py<br/>[Configuración]"]:::otro
+  panelAyuda["isla «panelDeAyuda»<br/>(abrir, arrastrar, letra − +, recordar)<br/>[Isla JS]"]:::comp
+  miniayuda["zona.html: miniayuda «?»<br/>(ventana emergente con texto y ejemplo)<br/>[Componente]"]:::comp
+  paginasAyuda["páginas de la ayuda<br/>(módulo ayuda)"]:::otro
   permisos["permisos: qué entradas se ven<br/>(o tambien_si)"]:::otro
   contadores["contadores de los módulos<br/>(en caché)"]:::otro
   menuLateral["isla «menuLateral»<br/>(plegar, recordar)<br/>[Isla JS]"]:::comp
@@ -741,8 +779,17 @@ flowchart LR
   contexto --> contadores
   pagina --> contexto
   pagina --> menuLateral
+  pagina --> panelAyuda
+  panelAyuda -- "htmx.ajax al panel<br/>(HX-Target: panel-de-ayuda-contenido)" --> paginasAyuda
+  pagina --> miniayuda
+  miniayuda -. "Ayuda del contrato<br/>(registro.ayuda)" .-> registro
+  registro --> disposicion
   htmx --> pagina
 ```
+
+El panel de ayuda está fuera de `#zona`: navegar con el menú solo cambia la zona central, así que el
+panel no se vuelve a pintar. Lo que se abre en él se pide con htmx y el servidor lo pinta con
+`base/panel.html` en lugar de `zona.html` (lo decide `contexto.py` por la cabecera `HX-Target`).
 
 ### 7.2 Tabla filtrable, botón «copiar» y selector de palabras [Componente de base]
 
@@ -778,13 +825,17 @@ flowchart LR
   kanban["kanban<br/>(tareas)"]:::isla
   mapa["mapa<br/>(lugares)"]:::isla
   calendario["calendario"]:::isla
-  documento["documento<br/>(guías: casillas y diagramas)"]:::isla
+  documento["documento<br/>(ayuda: casillas y diagramas)"]:::isla
+  indice["indice<br/>(plegar el índice)"]:::isla
+  panelAyuda["panelDeAyuda<br/>(panel de la derecha)"]:::isla
+  htmxlib["htmx"]:::libjs
   sortable["SortableJS"]:::libjs
   leaflet["Leaflet"]:::libjs
   fc["FullCalendar"]:::libjs
   mer["Mermaid + svg-pan-zoom"]:::libjs
   srv["Servidor: /configuracion/tipologias/ordenar/ · /proyectos/tareas/mover/<br/>/calendario/datos/ · /calendario/mover/"]:::otro
-  alp --> ordenable & kanban & mapa & calendario & documento
+  alp --> ordenable & kanban & mapa & calendario & documento & indice & panelAyuda
+  panelAyuda --> htmxlib
   ordenable --> sortable
   kanban --> sortable
   mapa --> leaflet

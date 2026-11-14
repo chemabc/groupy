@@ -27,7 +27,7 @@ class AudienciasConfig(ModuloConfig):
         ),
     )
 
-    # «Configuración → Visibilidad» (13 de noviembre de 2026), colgada de la sección de «tipologias».
+    # «Configuración → Visibilidad» (13 de noviembre de 2026), colocada dentro de «Configuración» en config/menu.py.
     menu = (
         EntradaDeMenu(
             codigo="audiencias.visibilidad",
@@ -36,8 +36,6 @@ class AudienciasConfig(ModuloConfig):
             icono="◎",
             color="#0369a1",
             permiso="audiencias.configurar",
-            dentro_de="tipologias.configuracion",
-            orden=20,
             vistas=(Vista("Por organización", "audiencias:visibilidad"),),
         ),
     )

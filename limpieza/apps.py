@@ -45,7 +45,6 @@ class LimpiezaConfig(ModuloConfig):
             url="limpieza:archivados",
             icono="⌸",
             color="#44403c",
-            orden=190,
             subsecciones=(
                 EntradaDeMenu(
                     codigo="limpieza.archivados", nombre="Archivados", url="limpieza:archivados", icono="⊟", color="#713f12",
@@ -64,8 +63,6 @@ class LimpiezaConfig(ModuloConfig):
             icono="♺",
             color="#115e59",
             permiso="limpieza.configurar",
-            dentro_de="tipologias.configuracion",
-            orden=80,
             vistas=(Vista("Plazos", "limpieza:plazos"),),
         ),
     )

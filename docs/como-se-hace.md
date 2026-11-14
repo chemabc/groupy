@@ -1,0 +1,148 @@
+# How to? Cómo se hace cada cosa
+
+Guías cortas, paso a paso, para las tareas de cada día. Los caminos se escriben como en el menú:
+«Eventos → Mis eventos» quiere decir «en el menú de la izquierda, la sección Eventos y, dentro, Mis
+eventos».
+
+Cada sección tiene además su miniayuda: el botón **?** gris que hay junto a su título abre una ventana
+rápida que explica qué es esa sección y para qué se usa (a veces, con un ejemplo).
+
+## Usar la ayuda mientras trabajas
+
+### Abrir la ayuda en el panel de la derecha
+
+1. Pulsa el **?** rojo de arriba a la derecha, junto al botón del tema (☀/☾).
+2. Elige qué quieres leer: «How to?», o una pestaña de la documentación.
+3. Se abre un panel a la derecha. Puedes seguir usando el menú de la izquierda: lo de la derecha no se
+   mueve ni se vuelve a cargar.
+
+
+### Cambiar el ancho del panel
+
+- Arrastra la línea que separa el panel de la pantalla principal.
+- Con el teclado: pulsa la línea (o llega a ella con el tabulador) y usa las flechas ← y →.
+- Doble clic en la línea: vuelve al ancho de partida.
+
+Si la pantalla principal no cabe, sale una barra de desplazamiento abajo.
+
+### Cambiar el tamaño de la letra de la ayuda
+
+Arriba del panel, los botones **−** y **+** achican o agrandan la letra del panel (solo la del panel; la
+de la pantalla principal se cambia en «Configuración de mi cuenta → Preferencias»). Se recuerda.
+
+### Ver el índice de un documento
+
+El índice está a la izquierda del texto (o encima, si no hay sitio). El botón **▸ Índice** lo pliega y lo
+despliega; se recuerda cómo lo dejaste, por separado en el panel y en la pantalla principal.
+
+### Ver una página de la ayuda en grande
+
+En el panel, pulsa **Abrir en grande ↗**: la misma página se abre en la pantalla principal.
+
+## Tu cuenta
+
+### Cambiar el tema, la letra o la densidad
+
+1. Ve a «Configuración de mi cuenta → Preferencias».
+2. Elige el tema (claro, día u oscuro), el tamaño de la letra y la densidad.
+
+Se guardan en tu cuenta: te siguen al móvil o a otro ordenador. El botón ☀/◐/☾ de la cabecera cambia el
+tema en un clic.
+
+### Cambiar la contraseña
+
+1. Ve a «Configuración de mi cuenta → Contraseña».
+2. Escribe la actual y la nueva (dos veces, para evitar erratas).
+
+### Elegir qué notificaciones te llegan
+
+1. Ve a «Comunicaciones → Preferencias de aviso».
+2. Desmarca los tipos que no te interesen. Los que ya tienes se quedan.
+
+## Grupos
+
+### Ver mis grupos
+
+Ve a «Organizaciones y grupos → Mis grupos». Los grupos en gris contienen a uno de los tuyos: también eres
+miembro de ellos, por herencia. Pulsa uno para ver su ficha.
+
+### Pedir entrar en un grupo
+
+1. Ve a «Solicitudes → Mis solicitudes» y pulsa **Pedir algo**.
+2. Elige «Entrar en un grupo», el grupo y explica por qué.
+3. La solicitud necesita el sí de la administración del grupo y el apoyo de miembros del grupo (o el sí
+   del superadmin). Su estado se ve en «Mis solicitudes».
+
+### Apoyar o rechazar una solicitud
+
+1. Ve a «Solicitudes → Pendientes». El número del menú son las que esperan algo de ti.
+2. Pulsa **Apoyar** o **Rechazar**. Puedes retirar tu respuesta mientras siga pendiente.
+
+## Eventos y calendario
+
+### Convocar un evento
+
+1. Ve a «Eventos → Mis eventos» y pulsa **Convocar**.
+2. Elige el tipo (reunión, acción…): algunos piden datos extra.
+3. Elige quién lo ve (de entrada, nadie más que tú y quien tenga un cometido) y rellena dónde y cuándo.
+4. Si se repite, elige cada cuánto (cada semana, cada mes…).
+
+Una reunión necesita apoyos: queda pendiente hasta que la apoyan 2 personas de tu grupo (5 si es para el
+grupo padre, 10 para el abuelo).
+
+### Decir si voy a ir
+
+Abre el evento (desde «Eventos → Próximos» o desde el calendario) y responde **¿Vas a ir?**. Cuántas
+personas van lo ve todo el mundo; quiénes, solo quien convoca y quien tiene un cometido.
+
+### Ver el calendario en el móvil
+
+1. Ve a «Calendario → Suscripción» y copia la dirección secreta.
+2. Añádela como calendario suscrito en el programa de calendario del móvil.
+
+No la compartas: quien la tenga ve tus fechas. Si se te escapa, cámbiala allí mismo.
+
+### Apuntar un recordatorio
+
+En «Calendario → Ver el calendario», pulsa un hueco del día. Decide si lo ves solo tú o tu grupo.
+
+## Proyectos y tareas
+
+### Crear un proyecto
+
+1. Ve a «Proyectos → Proyectos» y pulsa **Nuevo proyecto**.
+2. Elige si es de un grupo o personal. Los personales solo los ves tú.
+3. Dentro de su ficha puedes crear subproyectos, tareas y recursos.
+
+### Mover una tarea de estado
+
+En «Proyectos → Mis tareas» (o en el kanban de un proyecto), arrastra la tarjeta a otra columna: pendiente,
+en curso, bloqueada o hecha.
+
+### Rescatar algo archivado
+
+Lo terminado hace tiempo pasa a «Archivo → Archivados». Si debe quedarse, pulsa **Conservar**: no se
+borrará solo.
+
+## Talentos y lugares
+
+### Compartir lo que puedo aportar
+
+1. Ve a «Talentos → Mis talentos» y añade los tuyos (recursos o habilidades).
+2. Marca con qué grupos compartes cada uno. En esos grupos solo se ve cuántas personas lo comparten, nunca
+   quiénes.
+
+### Elegir mi lugar de trabajo
+
+Ve a «Lugares → Mi lugar» y elígelo de la lista. Si no está, propón uno nuevo. Solo lo ves tú y el
+superadmin.
+
+## Hablar con la administración
+
+### Escribir a la administración de mi grupo
+
+1. Ve a «Comunicaciones → Con la administración».
+2. Pulsa **Escribir a la administración** y elige a cuál (la de tu grupo, la de tu organización o el
+   superadmin).
+
+La atienden todos sus admins. Los mensajes nuevos aparecen solos.

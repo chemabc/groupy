@@ -132,7 +132,6 @@ class GruposConfig(ModuloConfig):
             url="grupos:mis_grupos",
             icono="⬢",
             color="#16a34a",
-            orden=200,
             otras_rutas=("grupos:grupo", "grupos:organizacion"),
             subsecciones=(
                 EntradaDeMenu(

@@ -17,8 +17,8 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{{ interfaz.titulo }}</title>
   <script>
-    // Aplica el tema, la letra, la densidad y el plegado del menú ANTES de pintar la página, para que no
-    // se vea un destello claro ni un salto del menú al cargar. Va aquí, dentro de la página, porque
+    // Aplica el tema, la letra, la densidad, el plegado del menú y el panel de ayuda (abierto o no, y su
+    // ancho) ANTES de pintar la página, para que no se vea un destello claro ni un salto al cargar. Va aquí, dentro de la página, porque
     // tiene que ejecutarse antes de que exista el cuerpo. Manda lo que ya venga en <html> (las
     // preferencias de la cuenta); si falta algo, se usa lo guardado en el navegador y, para el tema,
     // el del sistema operativo.
@@ -34,6 +34,11 @@
       raiz.dataset.letra = raiz.dataset.letra || leer("letra", "normal");
       raiz.dataset.densidad = raiz.dataset.densidad || leer("densidad", "comoda");
       raiz.dataset.menu = leer("menu.plegado", false) ? "plegado" : "desplegado";
+      // Panel de ayuda: si se dejó abierto y su ancho (el mismo cálculo de partida que anchoDePartidaDelPanel
+      // en interfaz.js: un tercio largo de la pantalla, entre 320 y 720 píxeles).
+      raiz.dataset.panelDeAyuda = (leer("ayuda.panel", {}) || {}).abierto ? "abierto" : "cerrado";
+      var ancho = leer("ayuda.ancho", 0) || Math.round(Math.min(Math.max(window.innerWidth * 0.35, 320), 720));
+      raiz.style.setProperty("--ancho-del-panel", ancho + "px");
     })();
   </script>
   <link rel="stylesheet" href="{% static 'generado/estilos.css' %}">

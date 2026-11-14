@@ -14,6 +14,7 @@ comunicaciones e información pública. Rehecha desde cero con lo aprendido en l
 - `docs/tutorial.md`: lo que se explica para aprender, paso a paso.
 - `docs/arranque.md`: cómo arrancar y probar.
 - `docs/comprobaciones.md` y `docs/arquitectura.md`: las **guías de desarrollo** (ver abajo).
+- `docs/como-se-hace.md`: «How to?», guías cortas de uso para todo el mundo.
 
 No se usa Google Drive. Al tomar una decisión nueva, añádela a `docs/diseno.md` (con la fecha, el motivo
 y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutorial.md`.
@@ -32,8 +33,11 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 
 ## Guías de desarrollo (mantenerlas al día en cada pieza)
 
-Se ven en «Desarrollo y mantenimiento → Guías de desarrollo»: en desarrollo, cualquier persona con
-sesión; en producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`).
+Se ven en «Ayuda → Guía de desarrollo» (comprobaciones) y «Ayuda → Documentación de la plataforma»
+(arquitectura), también en el panel de ayuda (? rojo): en desarrollo, cualquier persona con sesión; en
+producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documento va en qué subsección:
+`ayuda/documentos.py`. Al añadir algo que se usa a diario, añade su guía corta a `docs/como-se-hace.md`
+(«Ayuda → How to?», para todo el mundo).
 
 - **`docs/comprobaciones.md`** («Comprobaciones pendientes»): al terminar cada pieza, añade su sección al
   final, con casillas `- [ ]`, diciendo dónde entrar (menú, con qué usuario de ejemplo) y en qué fijarse.
@@ -47,7 +51,7 @@ sesión; en producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`).
   Python], [Librería JS], [Servicio], [Servicio externo], [Herramienta], [Configuración], [Módulo · capa],
   [Componente], [Isla JS]) y cada flecha su tipo (`-->` importa, `-.->` contrato, `==>` eventos_sw).
   Las relaciones se sacan del código (imports y contratos), no de memoria.
-- Los diagramas son bloques `mermaid`; la prueba `mantenimiento/tests/test_navegador.py` comprueba que
+- Los diagramas son bloques `mermaid`; la prueba `ayuda/tests/test_navegador.py` comprueba que
   todos se dibujan sin errores.
 
 ## Normas de código
@@ -67,7 +71,7 @@ sesión; en producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`).
   Identidad (`boveda`, `usuarios`) → Organización (`lugares`, `grupos`, `permisos`, `audiencias`,
   `etiquetas`, `tipologias`, `solicitudes`, `moderacion`) → Funcional (`eventos`, `proyectos`, `debates`,
   `consultas`, `documentos`, `decisiones`, `calendario`, `comunicaciones`, `publico`, `limpieza`,
-  `mantenimiento`). **Un módulo funcional nunca importa otro**: se relacionan con anclas y
+  `mantenimiento`, `ayuda`). **Un módulo funcional nunca importa otro**: se relacionan con anclas y
   eventos_sw.
 - Cada módulo declara todo lo que aporta en una sola clase (contrato de módulo).
 - Visibilidad con audiencias (`audiencia_id`) y permisos precalculados en Redis.
@@ -79,7 +83,8 @@ sesión; en producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`).
   concreto (portavoz, coordinación, facilitación, toma de acta…).
 - Nada es público por defecto: todo nace privado.
 - Menú: al menos dos niveles a la izquierda (sección y subsección) y el tercer nivel arriba (las vistas
-  de la subsección). Si no está claro en qué nivel va algo, se pregunta.
+  de la subsección). Si no está claro en qué nivel va algo, se pregunta. El orden y la agrupación de
+  todas las entradas se decide solo en `config/menu.py` (cada entrada nueva se coloca allí).
 - El modelo de usuario es `usuarios.Usuario` (su nombre visible es el alias). Nada se ve sin sesión.
 
 ## Estado
@@ -132,6 +137,10 @@ sesión; en producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`).
   grupo (filtran la lista) y tareas modelo de cada tipología de proyecto (se crean al crear el proyecto).
   **Fase 4 cerrada** (la documentación por bloques irá con `documentos`; el chat, con el tiempo real).
 - 13 de noviembre de 2026: **guías de desarrollo** («Comprobaciones pendientes» y «Arquitectura», con
-  diagramas Mermaid ampliables) en «Desarrollo y mantenimiento». Siguiente: fase 5 (`documentos` y
-  `decisiones`), pendiente de las preguntas de [A-30].
+  diagramas Mermaid ampliables) en «Desarrollo y mantenimiento».
+- 14 de noviembre de 2026: **menú en un solo fichero y ayuda** ([A-31]): `config/menu.py` decide el orden
+  y la agrupación del menú (se quitan `orden` y `dentro_de`); módulo `ayuda` (sección «Ayuda»: How to?,
+  Documentación de la plataforma, Guía de desarrollo) con los documentos de docs/; ? rojo en la cabecera
+  y panel de ayuda a la derecha (no se vuelve a pintar al navegar, separador arrastrable, se recuerda) e
+  índice plegable. Siguiente: fase 5 (`documentos` y `decisiones`), pendiente de las preguntas de [A-30].
   Recuerda `migrate --database=boveda`.

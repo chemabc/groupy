@@ -13,6 +13,9 @@ from base.registro import RegistroDeModulos
 # Cabeceras que manda htmx al navegar con el menú (ver base/contexto.py).
 CABECERAS_DE_HTMX = {"HX-Request": "true", "HX-Target": "zona"}
 
+# Cabeceras que manda htmx al pedir una página para el panel de ayuda (ver panelDeAyuda en interfaz.js).
+CABECERAS_DEL_PANEL = {"HX-Request": "true", "HX-Target": "panel-de-ayuda-contenido"}
+
 
 class PruebasDeLaPlantilla(PruebaDePantalla):
     """Comprueba las pantallas de «Inicio» y lo que pinta la plantilla general."""
@@ -33,7 +36,25 @@ class PruebasDeLaPlantilla(PruebaDePantalla):
         self.assertContains(respuesta, 'aria-label="Secciones"')
         self.assertContains(respuesta, 'id="zona"', count=1)
         self.assertContains(respuesta, "<title>Estructura · Inicio · Asambleas</title>", count=1)
+        # La miniayuda «?» de la sección, en su ventana emergente; arriba, el «?» rojo y el panel de ayuda.
         self.assertContains(respuesta, 'role="dialog"')
+        self.assertContains(respuesta, "Esta es la portada provisional")
+        self.assertContains(respuesta, 'id="boton-de-ayuda"', count=1)
+        self.assertContains(respuesta, 'id="panel-de-ayuda"', count=1)
+        self.assertContains(respuesta, 'data-direccion="/ayuda/como-se-hace/"')
+
+    # El panel de ayuda recibe la página sin título de pestaña, sin zona ni menús, con sus pestañas y
+    # «Abrir en grande»; cuesta lo mismo que la página entera.
+    def test_pagina_para_el_panel(self):
+        # Visita de calentamiento: lo que se guarda en la caché tras la primera no cuenta.
+        self.client.get("/componentes/", headers=CABECERAS_DEL_PANEL)
+        with self.assertNumQueries(1):
+            respuesta = self.client.get("/componentes/", headers=CABECERAS_DEL_PANEL)
+        self.assertNotContains(respuesta, "<title>")
+        self.assertNotContains(respuesta, 'id="zona"')
+        self.assertNotContains(respuesta, 'aria-label="Secciones"')
+        self.assertContains(respuesta, "Abrir en grande")
+        self.assertContains(respuesta, 'aria-current="page">Componentes</a>')
 
     # La navegación con htmx recibe solo el título y la zona central, sin cabecera ni menús.
     def test_solo_la_zona_para_htmx(self):

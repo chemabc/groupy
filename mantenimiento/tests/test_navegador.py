@@ -1,12 +1,9 @@
 """
 Pruebas de «mantenimiento» en un navegador de verdad (ver base/pruebas_navegador.py): el menú de tres
 niveles y las importaciones de grupos y usuarios de principio a fin (subir el fichero con htmx, ver la
-vista previa y confirmar).
+vista previa y confirmar). Las de los documentos (diagramas y casillas) están en ayuda/tests.
 """
 
-import re
-
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import override_settings
 
@@ -30,7 +27,7 @@ class PruebasDeMantenimientoEnElNavegador(PruebaEnElNavegador):
         self.abrir("/mantenimiento/pruebas/grupos/")
         menu = self.pagina.locator('nav[aria-label="Secciones"]').first
         self.assertTrue(menu.get_by_text("Pruebas", exact=True).is_visible())
-        self.assertTrue(menu.get_by_text("Ayuda y documentación").is_visible())
+        self.assertTrue(menu.get_by_text("Trastienda", exact=True).is_visible())
         self.pagina.locator("#zona nav a", has_text="Importar usuarios").click()
         self.pagina.wait_for_selector("text=Alta masiva de usuarios")
         self.assertTrue(self.pagina.url.endswith("/mantenimiento/pruebas/usuarios/"))
@@ -102,63 +99,3 @@ class PruebasDeMantenimientoEnElNavegador(PruebaEnElNavegador):
         self.assertIn("bg-marca/10", subseccion.get_attribute("class"))
         self.assertNotIn("bg-marca/10", seccion.get_attribute("class"))
         self.assertIn("text-marca", seccion.get_attribute("class"))
-
-
-
-@override_settings(GUIAS_DE_DESARROLLO_PARA_TODOS=True)
-class PruebasDeLasGuiasEnElNavegador(PruebaEnElNavegador):
-    """Las guías de desarrollo, como una persona cualquiera (en desarrollo las ve todo el mundo)."""
-
-    # «Arquitectura»: todos los bloques «mermaid» del documento son diagramas correctos (Mermaid los lee sin
-    # error), el primero se dibuja al abrir y el último al bajar hasta él; los botones acercan (cambia la
-    # transformación del dibujo).
-    def test_diagramas(self):
-        with open(settings.BASE_DIR / "docs" / "arquitectura.md", encoding="utf-8") as fichero:
-            textos = re.findall(r"```mermaid\n(.*?)```", fichero.read(), re.DOTALL)
-        self.assertGreater(len(textos), 20)
-        self.abrir("/mantenimiento/guias/arquitectura/")
-        self.pagina.wait_for_function("window.mermaid !== undefined", timeout=60000)
-        malos = self.pagina.evaluate(
-            """async (textos) => {
-                const malos = [];
-                for (const [numero, texto] of textos.entries()) {
-                    try { await window.mermaid.parse(texto); } catch (error) { malos.push(`${numero}: ${error.message}`); }
-                }
-                return malos;
-            }""",
-            textos,
-        )
-        self.assertEqual(malos, [])
-        primero = self.pagina.locator(".diagrama").first
-        primero.locator("svg").wait_for(timeout=60000)
-        vista = primero.locator("svg g.svg-pan-zoom_viewport")
-        antes = vista.get_attribute("transform")
-        primero.get_by_role("button", name="Acercar").click()
-        self.pagina.wait_for_timeout(300)
-        self.assertNotEqual(vista.get_attribute("transform"), antes)
-        primero.get_by_role("button", name="Ajustar a la caja").click()
-        # Baja hasta el final de la parte central de la página: el último diagrama se dibuja al acercarse.
-        self.pagina.evaluate("document.getElementById('desplazable').scrollTo(0, 1e9)")
-        self.pagina.wait_for_function(
-            "(() => { const todos = document.querySelectorAll('.documento > :is(pre, .diagrama)');"
-            " return todos[todos.length - 1].matches('.diagrama'); })()", timeout=60000,
-        )
-        self.assertEqual(self.pagina.locator("text=Este diagrama tiene un error").count(), 0)
-        self.assertEqual(self.errores, [])
-
-    # «Comprobaciones pendientes»: las casillas se marcan, el recuento cambia y siguen marcadas al volver.
-    def test_casillas(self):
-        self.abrir("/mantenimiento/guias/comprobaciones/")
-        casillas = self.pagina.locator("input[data-casilla]")
-        casillas.first.wait_for()
-        total = casillas.count()
-        self.assertGreater(total, 10)
-        recuento = self.pagina.locator(".recuento-de-casillas")
-        self.assertIn(f"0 de {total}", recuento.inner_text())
-        casillas.nth(1).check()
-        self.assertIn(f"1 de {total}", recuento.inner_text())
-        self.pagina.reload()
-        self.pagina.locator("input[data-casilla]").first.wait_for()
-        self.assertTrue(self.pagina.locator("input[data-casilla]").nth(1).is_checked())
-        self.assertFalse(self.pagina.locator("input[data-casilla]").first.is_checked())
-        self.assertEqual(self.errores, [])

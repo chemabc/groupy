@@ -76,7 +76,6 @@ class ProyectosConfig(ModuloConfig):
             url="proyectos:proyectos",
             icono="◆",
             color="#4338ca",
-            orden=110,
             otras_rutas=("proyectos:proyecto", "proyectos:editar", "proyectos:kanban", "proyectos:tarea"),
             subsecciones=(
                 EntradaDeMenu(

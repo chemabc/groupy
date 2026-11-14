@@ -30,11 +30,15 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 # carga la barra de depuración y la caché va en memoria.
 PROBANDO = sys.argv[1:2] == ["test"]
 
-# Si las guías de desarrollo («Desarrollo y mantenimiento → Guías de desarrollo»: comprobaciones
-# pendientes y arquitectura) las ve cualquier persona con sesión. De entrada, solo en desarrollo; en
-# producción, solo quien tiene «mantenimiento.ver» (el superadmin). Se puede forzar con la variable de
-# entorno DJANGO_GUIAS_PARA_TODOS («1» o «0»).
+# Si la documentación técnica («Ayuda → Documentación de la plataforma» y «Ayuda → Guía de desarrollo»)
+# la ve cualquier persona con sesión. De entrada, solo en desarrollo; en producción, solo quien tiene
+# «ayuda.ver_documentacion» (el superadmin). «Ayuda → How to?» la ve siempre todo el mundo. Se puede
+# forzar con la variable de entorno DJANGO_GUIAS_PARA_TODOS («1» o «0»).
 GUIAS_DE_DESARROLLO_PARA_TODOS = os.environ.get("DJANGO_GUIAS_PARA_TODOS", "1" if DEBUG else "0") == "1"
+
+# Dónde está la disposición del menú izquierdo: el orden de las entradas y dentro de qué sección va cada
+# una (ver config/menu.py). Lo lee el registro de módulos al arrancar (base/apps.py).
+DISPOSICION_DEL_MENU = "config.menu.DISPOSICION"
 
 # Si se muestra la barra de depuración (django-debug-toolbar): en desarrollo sí, en las pruebas no.
 USAR_BARRA_DE_DEPURACION = DEBUG and not PROBANDO
@@ -81,6 +85,7 @@ INSTALLED_APPS = [
     "talentos.apps.TalentosConfig",
     # Capa funcional
     "mantenimiento.apps.MantenimientoConfig",
+    "ayuda.apps.AyudaConfig",
     "administracion.apps.AdministracionConfig",
     "comunicaciones.apps.ComunicacionesConfig",
     "eventos.apps.EventosConfig",

@@ -1,0 +1,29 @@
+{% comment %}
+  Una página dentro del panel de ayuda de la derecha (ver base/pagina.html): título, pestañas de la
+  subsección (si las tiene), un enlace para abrirla en la zona principal y el contenido de la página.
+
+  Se usa cuando el componente panelDeAyuda (interfaz.js) pide una página con htmx al elemento
+  «panel-de-ayuda-contenido» (base/contexto.py, pide_el_panel). Las páginas no tienen que hacer nada:
+  heredan de «interfaz.plantilla» y rellenan su bloque «contenido», igual que en la zona principal.
+
+  No toca nada de fuera del panel: ni el título de la pestaña del navegador, ni la sección marcada en el
+  menú, ni los contadores. Las pestañas de arriba se abren en el mismo panel (lo decide panelDeAyuda);
+  «Abrir en grande» lleva data-fuera-del-panel para ir a la zona principal.
+{% endcomment %}{% block documento %}{% block zona %}
+<div class="border-b border-slate-200 px-3 pt-2 dark:border-slate-800">
+  <div class="flex items-center gap-2">
+    <h2 class="truncate font-semibold">{% firstof titulo_de_la_pagina interfaz.seccion.nombre "Ayuda" %}</h2>
+    <a href="{{ request.get_full_path }}" data-fuera-del-panel
+       class="ml-auto shrink-0 whitespace-nowrap rounded px-1 text-xs text-slate-500 hover:bg-slate-100 hover:text-marca dark:hover:bg-slate-800"
+       title="Abrir esta página en la zona principal">Abrir en grande ↗</a>
+  </div>
+  <nav class="-mb-px mt-2 flex gap-4 overflow-x-auto text-sm" aria-label="Pestañas de la ayuda">
+    {% for elemento in interfaz.vistas %}
+      <a href="{% url elemento.vista.url %}"
+         class="whitespace-nowrap border-b-2 pb-2 {% if elemento.activa %}border-marca font-medium text-marca{% else %}border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200{% endif %}"
+         {% if elemento.activa %}aria-current="page"{% endif %}>{{ elemento.vista.nombre }}</a>
+    {% endfor %}
+  </nav>
+</div>
+<div class="p-3">{% block contenido %}{% endblock %}</div>
+{% endblock %}{% endblock %}

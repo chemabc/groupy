@@ -34,7 +34,6 @@ class AdministracionConfig(ModuloConfig):
             url="administracion:personas",
             icono="☺",
             color="#2563eb",
-            orden=800,
             permiso="administracion.usuarios",
             subsecciones=(
                 EntradaDeMenu(

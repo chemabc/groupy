@@ -64,5 +64,5 @@ class PruebasDeLaVisibilidad(PruebaDePantalla):
         nutria = crear_usuario_de_prueba("Nutria")
         admitir(nutria, self.henares)
         self.client.force_login(nutria)
-        self.assertNotContains(self.client.get("/"), "Configuración")
+        self.assertNotContains(self.client.get("/"), 'data-codigo="tipologias.configuracion"')
         self.assertContains(self.client.get("/configuracion/visibilidad/"), "audiencias.configurar", status_code=403)

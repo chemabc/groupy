@@ -4,10 +4,11 @@ Datos comunes que reciben todas las plantillas («procesador de contexto» de Dj
 Django llama a interfaz() en cada página que se pinta (está en TEMPLATES, en config/settings.py) y
 añade lo que devuelve a los datos de la plantilla. Aquí se decide todo lo que la plantilla general solo
 tiene que pintar: el menú, la sección y la vista en las que se está, su ayuda y si se manda la página
-entera o solo la zona central. No hace ninguna consulta propia: el menú sale del registro, que está en
+entera, solo la zona central o una página para el panel de ayuda de la derecha. No hace ninguna consulta propia: el menú sale del registro, que está en
 memoria, y el alias y las preferencias, del usuario que Django ya ha cargado para la petición.
 """
 
+from django.urls import reverse
 from django.utils.module_loading import import_string
 
 from .preferencias import CLAVES
@@ -44,13 +45,21 @@ def interfaz(request):
         if not entrada.subsecciones or any(sub.codigo not in ocultas for sub in entrada.subsecciones)
     ]
     solo_la_zona = pide_solo_la_zona(request)
+    en_el_panel = pide_el_panel(request)
+    # Plantilla de la que heredan las páginas: la página entera, solo la zona central (navegación con htmx)
+    # o la página dentro del panel de ayuda.
+    if en_el_panel:
+        plantilla = "base/panel.html"
+    elif solo_la_zona:
+        plantilla = "base/zona.html"
+    else:
+        plantilla = "base/pagina.html"
     # Título de la pestaña: «Vista · Sección · Asambleas», con lo que haya.
     partes = [vista_activa.nombre if vista_activa else "", seccion.nombre if seccion else "", NOMBRE_DE_LA_APLICACION]
     return {
         "interfaz": {
-            # Plantilla de la que heredan las páginas: la página entera, o solo la zona central si la
-            # pide la navegación con htmx.
-            "plantilla": "base/zona.html" if solo_la_zona else "base/pagina.html",
+            # Plantilla de la que heredan las páginas (ver arriba).
+            "plantilla": plantilla,
             # Si se manda solo la zona central. Entonces la zona lleva también los contadores del menú,
             # para ponerlos al día sin volver a pintar el menú (ver base/zona.html).
             "solo_la_zona": solo_la_zona,
@@ -65,6 +74,13 @@ def interfaz(request):
             "codigos": [entrada.codigo for entrada in camino],
             "vistas": vistas,
             "ayuda": registro.ayuda.get(seccion.codigo) if seccion else None,
+            # Subsecciones de la ayuda que puede ver, para el botón «?» rojo de la cabecera, que las abre
+            # en el panel de la derecha. Lista vacía: no hay botón.
+            "ayuda_lateral": _ayuda_lateral(menu, ocultas) if conectado else [],
+            # Direcciones que se abren dentro del panel de ayuda al pulsarlas allí (las de la sección de
+            # ayuda); las demás van a la zona principal. Es una función: solo se calcula si la plantilla
+            # la usa (la página entera, no al navegar).
+            "direcciones_de_la_ayuda": _direcciones_de_la_ayuda,
             "titulo": " · ".join(parte for parte in partes if parte),
             # Si hay alguien con la sesión iniciada, y su alias (arriba, en la cabecera).
             "conectado": conectado,
@@ -74,6 +90,47 @@ def interfaz(request):
             "preferencias": {clave: getattr(usuario, clave, "") for clave in CLAVES} if conectado else {},
         }
     }
+
+
+# Devuelve las subsecciones de la entrada de la ayuda (registro.entrada_de_ayuda) que la persona puede
+# ver, o una lista vacía si no puede ver la propia entrada. La usa interfaz() para el botón «?» rojo.
+#   - menu: las secciones principales que puede ver.
+#   - ocultas: códigos de las subsecciones que no puede ver (ya calculados).
+def _ayuda_lateral(menu, ocultas):
+    entrada = registro.entrada_de_ayuda
+    if entrada is None or not _a_la_vista(menu, ocultas, entrada.codigo):
+        return []
+    return [subseccion for subseccion in entrada.subsecciones if subseccion.codigo not in ocultas]
+
+
+# Dice si una entrada está en el menú que ve la persona (en las secciones principales visibles o en
+# alguna subsección no oculta, a cualquier profundidad). La usa _ayuda_lateral.
+#   - entradas: las entradas por las que se busca.
+#   - ocultas: códigos de las subsecciones que no puede ver.
+#   - codigo: el código buscado.
+def _a_la_vista(entradas, ocultas, codigo):
+    for entrada in entradas:
+        if entrada.codigo in ocultas:
+            continue
+        if entrada.codigo == codigo or _a_la_vista(entrada.subsecciones, ocultas, codigo):
+            return True
+    return False
+
+
+# Devuelve, separadas por espacios, las direcciones de la sección de ayuda (la de cada subsección y las
+# de sus pestañas), como «/ayuda/como-se-hace/ /ayuda/tutorial/ …». El panel de ayuda las usa para saber
+# qué enlaces abrir dentro de él (ver panelDeAyuda en interfaz.js).
+def _direcciones_de_la_ayuda():
+    entrada = registro.entrada_de_ayuda
+    if entrada is None:
+        return ""
+    rutas = {entrada.url}
+    pendientes = [entrada]
+    while pendientes:
+        actual = pendientes.pop()
+        rutas.update([actual.url, *(vista.url for vista in actual.vistas)])
+        pendientes.extend(actual.subsecciones)
+    return " ".join(sorted(reverse(ruta) for ruta in rutas))
 
 
 # Recorre una entrada del menú y sus subsecciones: apunta en «ocultas» las subsecciones que la persona
@@ -104,3 +161,16 @@ def pide_solo_la_zona(request):
         and cabeceras.get("HX-Target") == "zona"
         and "HX-History-Restore-Request" not in cabeceras
     )
+
+
+# Identificador del elemento del panel de ayuda (en base/pagina.html) donde se ponen las páginas que se
+# abren en él. htmx lo manda en la cabecera HX-Target al pedirlas.
+DESTINO_DEL_PANEL = "panel-de-ayuda-contenido"
+
+
+# Dice si la petición es para el panel de ayuda de la derecha: entonces la página se pinta sin cabecera
+# de sección ni menús, con base/panel.html. La hace el componente panelDeAyuda de interfaz.js con htmx,
+# que manda HX-Target con el identificador del panel.
+def pide_el_panel(request):
+    cabeceras = request.headers
+    return cabeceras.get("HX-Request") == "true" and cabeceras.get("HX-Target") == DESTINO_DEL_PANEL

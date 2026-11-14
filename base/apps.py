@@ -4,6 +4,7 @@ Configuración y contrato del módulo «base».
 
 from django.apps import apps
 from django.conf import settings
+from django.utils.module_loading import import_string
 
 from .contrato import Ayuda, Capa, EntradaDeMenu, ModuloConfig, Vista
 
@@ -28,7 +29,6 @@ class BaseConfig(ModuloConfig):
             url="base:inicio",
             icono="⌂",
             color="#0284c7",
-            orden=0,
             vistas=(
                 Vista("Estructura", "base:inicio"),
                 Vista("Componentes", "base:componentes"),
@@ -54,4 +54,11 @@ class BaseConfig(ModuloConfig):
         from . import comprobaciones  # noqa: F401
         from .registro import registro
 
-        registro.cargar(apps.get_app_configs(), raiz=settings.BASE_DIR)
+        registro.cargar(apps.get_app_configs(), raiz=settings.BASE_DIR, disposicion=disposicion_del_menu())
+
+
+# Devuelve la disposición del menú (config/menu.py), que dice el orden de las entradas y dentro de qué
+# sección va cada una. Se busca por el ajuste DISPOSICION_DEL_MENU porque «base» no debe importar nada de
+# fuera directamente. La usan BaseConfig.ready y las pruebas (base/pruebas.py, contratos_de_prueba).
+def disposicion_del_menu():
+    return import_string(settings.DISPOSICION_DEL_MENU)

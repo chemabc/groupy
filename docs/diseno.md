@@ -118,7 +118,8 @@ El funcionamiento de la identidad está explicado aparte, en [registro-y-validac
 | Funcional | `publico` | Portada y banco de recursos públicos por organización |
 | Funcional | `limpieza` | Archivado y borrado programados y configurables |
 | Funcional | `administracion` | Pantallas del superadmin que juntan varios módulos: «Usuarios» (personas de la bóveda, dominios permitidos y alias); más adelante, organizaciones y tipologías |
-| Funcional | `mantenimiento` | Sección «Desarrollo y mantenimiento» del superadmin: documentación de `docs/` convertida en páginas, entrada a la trastienda y, más adelante, la salud del sistema |
+| Funcional | `mantenimiento` | Sección «Desarrollo y mantenimiento» del superadmin: pruebas (importaciones y datos de ejemplo), entrada a la trastienda y, más adelante, la salud del sistema |
+| Funcional | `ayuda` | Sección «Ayuda»: «How to?», documentación de la plataforma y guía de desarrollo (los documentos de `docs/` convertidos en páginas), también en el panel de ayuda de la derecha |
 
 **Regla de dependencias:** Base no depende de nada. Identidad depende de Base. Organización depende de
 Base y del modelo de usuario (`get_user_model()`). Funcional depende de Base y Organización, y **nunca de
@@ -132,7 +133,9 @@ el resultado al registro, y `comunicaciones` avisa a quienes votaron. Ninguno im
 Cada módulo declara **en una sola clase** (en su `apps.py`) todo lo que aporta: permisos y cometidos,
 anclas, huecos en fichas, eventos con fecha para el calendario, eventos_sw que emite y que escucha, grupos
 de etiquetas, tipos de elemento que se pueden limpiar, datos de ejemplo, entradas de menú y textos de
-ayuda «?». El registro se lee **una vez al arrancar**. Nada de buscar ficheros por su nombre.
+ayuda «?». El registro se lee **una vez al arrancar**. Nada de buscar ficheros por su nombre. La única
+excepción es **dónde va cada entrada del menú**: lo decide un solo fichero, `config/menu.py` (apartado 4,
+«Disposición del menú»).
 
 **Cómo se declara (12 de noviembre de 2026).**
 - El contrato **es la propia configuración del módulo**: la clase de `apps.py` hereda de
@@ -349,7 +352,9 @@ JavaScript y una posible aplicación móvil.
 - **Móvil:** barra inferior con las secciones y, bajo la cabecera, una fila de pestañas deslizable con
   las vistas de la sección.
 - **Arriba, en pequeño**, en todas las pantallas: el alias del usuario que ha iniciado sesión.
-- **Ayuda «?»** en la cabecera de cada sección. Los textos los declara cada módulo en su contrato.
+- **Ayuda «?»** en la cabecera de cada sección. Los textos los declara cada módulo en su contrato. Es una
+  **miniayuda en ventana emergente**: qué es la sección, para qué se usa y, si lo trae, un ejemplo
+  (`Ayuda.ejemplo`, 14 de noviembre de 2026). No tiene nada que ver con el panel de ayuda del «?» rojo.
 - **Tema claro u oscuro**, con un icono arriba a la derecha en todas las vistas. Cada persona elige el
   tipo de letra, el tamaño, el color del tema y la densidad (compacta o cómoda). El admin_org puede
   adaptar los colores a su organización.
@@ -414,12 +419,91 @@ su sección se abre sola en el menú izquierdo. Cuando no esté claro en qué ni
 La entrada en la que se está lleva fondo; la sección que la contiene, solo el texto en color (más
 discreto, a petición de la persona usuaria).
 
-**Subsecciones de otro módulo (13 de noviembre de 2026).** Una entrada con `dentro_de` se cuelga dentro
+**Subsecciones de otro módulo (13 de noviembre de 2026; sustituido el 14 de noviembre por la «Disposición
+del menú», abajo: ya no existen `dentro_de` ni `orden`).** Una entrada con `dentro_de` se cuelga dentro
 de la sección de otro módulo (así `audiencias` y `etiquetas` ponen «Visibilidad» y «Etiquetas» dentro de
 «Configuración», que es de `tipologias`), ordenada por `orden`. La sección «Configuración» ya no pide
 permiso: una sección se oculta si todas sus subsecciones están ocultas. *(Limitación: el enlace de la
 sección lleva a «Tipologías»; quien solo pudiera ver otra subsección recibiría un 403 al pulsarla. Hoy los
 tres permisos los tiene el mismo rol, admin de la organización.)*
+
+**Disposición del menú (14 de noviembre de 2026, decisión 2B de la persona usuaria).** El orden de las
+entradas del menú y dentro de qué sección va cada una se decide en **un solo fichero**, `config/menu.py`
+(`DISPOSICION`), escrito con los códigos de las entradas: `"usuarios.cuenta"` es una entrada sin
+subsecciones y `("ayuda.ayuda", ("ayuda.como_se_hace", …))`, una con sus subsecciones, a cualquier
+profundidad. Los módulos siguen declarando en su contrato qué entradas aportan (nombre, dirección, icono,
+color, permiso, vistas); las subsecciones que declaran solo agrupan su contrato.
+- *Motivo:* la persona usuaria quiere cambiar y agrupar el menú a menudo; así es mover una línea y se ve
+  todo el menú de un vistazo.
+- El registro (`base/registro.py`) rehace el árbol con la disposición al arrancar. Avisa (con
+  `manage.py check`) si una entrada declarada no está colocada (y la pone al final para que no
+  desaparezca), si se nombra una que nadie declara, si una sale dos veces o si un elemento está mal escrito.
+- Quién ve cada entrada sigue en su contrato (`permiso`, `tambien_si`); una sección cuyas subsecciones
+  están todas ocultas no se muestra.
+- Se quitan `EntradaDeMenu.orden` y `EntradaDeMenu.dentro_de` (había dos formas de decir lo mismo).
+- El final del menú es, por este orden: «Ayuda», «Configuración de mi cuenta» (antes «Mi cuenta») y
+  «Desarrollo y mantenimiento» (solo el superadmin). Para quien no es superadmin, «Ayuda» es la penúltima
+  y «Configuración de mi cuenta», la última: «Ayuda» siempre va antes que la cuenta.
+- *Descartado:* seguir con un número `orden` en cada contrato (el orden queda repartido por veinte
+  ficheros y hay que buscar números libres).
+- *Mejora futura (2C):* editar la disposición desde la interfaz, guardada en la base de datos. Como la
+  disposición ya es solo datos (una tupla de códigos), bastaría un modelo que guarde ese mismo árbol y que
+  el registro lo use antes que `config/menu.py`, con las mismas comprobaciones; la pantalla sería un árbol
+  que se ordena arrastrando (como los campos de las tipologías). Haría falta volver a colocar el menú al
+  guardar en todos los procesos (por ejemplo, con una versión en la caché). Ahora no hace falta.
+
+**Sección «Ayuda» y panel de ayuda (14 de noviembre de 2026, a petición de la persona usuaria).**
+- **Módulo `ayuda`** (capa funcional), que se queda con los documentos de `docs/` (antes en
+  `mantenimiento`). Su sección «Ayuda» tiene tres subsecciones, cada una con sus documentos como pestañas
+  arriba:
+  - **How to?** (`docs/como-se-hace.md`): guías cortas, paso a paso, para las tareas de cada día. La ve
+    todo el mundo. Se escribe a mano y se amplía en cada pieza.
+  - **Documentación de la plataforma**: Tutorial, Arquitectura, Arranque y tests, Registro y validación.
+  - **Guía de desarrollo**: Comprobaciones pendientes, Diseño y decisiones.
+  - Estas dos últimas: en desarrollo, todo el mundo; en producción, quien tiene `ayuda.ver_documentacion`
+    (de entrada, solo el superadmin). Lo decide `GUIAS_DE_DESARROLLO_PARA_TODOS`, como antes.
+  - Qué documento va en qué subsección es una línea de `ayuda/documentos.py` (`DOCUMENTOS`, con su
+    «apartado»). Quién puede ver un documento lo decide su subsección del menú, con la misma regla que la
+    muestra u oculta (`puede_ver_entrada`).
+  - *Descartado para «How to?»:* juntar solas las ayudas «?» de todas las secciones (no habría que
+    mantenerlo, pero explica secciones, no tareas).
+- **Botón «?» rojo** arriba a la derecha, junto al del tema. Despliega las subsecciones de la ayuda (y las
+  pestañas de las que tienen varias). Sale de la entrada del menú que lleva `panel_de_ayuda=True` (solo
+  puede haber una), así que si se cambia la ayuda en `config/menu.py`, el botón la sigue.
+- **Panel de ayuda a la derecha.** Al elegir algo, se abre en un panel que estrecha la zona principal.
+  - **No se vuelve a pintar al navegar:** está fuera de `#zona`, igual que el menú izquierdo, y la
+    navegación con htmx solo cambia `#zona`.
+  - Lo que se abre en él se pide con htmx al propio panel (`HX-Target: panel-de-ayuda-contenido`) y
+    `base/contexto.py` elige entonces la plantilla `base/panel.html` (título, pestañas, «Abrir en grande» y
+    el contenido, sin cabecera de sección ni menús). Las páginas no tienen que hacer nada. Cuesta lo mismo
+    que la página en la zona principal.
+  - Dentro del panel, las anclas del índice bajan dentro del panel; las páginas de la ayuda se abren en
+    el panel; las demás, y «Abrir en grande», van a la zona principal.
+  - **Línea de separación arrastrable** (con el ratón, con las flechas del teclado; doble clic, ancho de
+    partida: un tercio largo de la pantalla, entre 320 y 720 píxeles). La zona principal no baja de 32rem
+    (512 px) con el panel abierto: si no cabe, sale una barra de desplazamiento abajo. En el móvil, el
+    panel ocupa toda la pantalla.
+  - Se recuerda en el navegador si está abierto, qué página tenía y su ancho. El script de la cabecera lo
+    aplica antes de pintar (`data-panel-de-ayuda` en `<html>`, variante `panel-abierto:` de Tailwind, y la
+    variable `--ancho-del-panel`), así que no salta al recargar.
+  - **Botones − y +** en la cabecera del panel: cambian el tamaño de la letra **solo del panel** (del 70 %
+    al 160 %, por pasos), y se recuerda en el navegador. Se aplica con `zoom` de CSS a la página del
+    panel, que agranda todo a la vez (también tablas y diagramas) y reparte las líneas en el ancho que
+    hay. *Descartado:* cambiar el tamaño de la letra base (las clases de Tailwind van en `rem`, que mira
+    la letra de `<html>`, y cambiaría toda la pantalla). Para que nada se salga de lado, la columna del
+    documento no puede crecer (`grid-cols-[minmax(0,1fr)]`) y el código dentro del texto se parte
+    (`overflow-wrap: anywhere`).
+  - El **«?» gris de cada sección no va al panel**: sigue siendo su ventana emergente (corrección de la
+    persona usuaria, 14 de noviembre de 2026; durante un rato se abrió en el panel y no era lo querido).
+  - *Descartado:* un panel de ancho fijo (la persona usuaria prefería poder arrastrarlo, y no era
+    complejo) y un `<iframe>` (cargaría otra vez toda la página, con sus menús).
+- **Índice plegable** en los documentos: un botón «Índice» lo pliega y lo despliega, y se recuerda en el
+  navegador (aparte en el panel, donde sale plegado de entrada). Se coloca a la izquierda o encima según
+  el **ancho de su caja** y no el de la pantalla (consultas de contenedor de Tailwind, `@container`), así
+  que en el panel estrecho va encima.
+- **Sin HTML escrito a mano en los documentos:** la conversión de Markdown escapa cualquier etiqueta que
+  no esté en un bloque de código. *Motivo:* el tutorial mencionaba «`<script>`» sin comillas de código y se colaba en la página
+  como etiqueta de verdad (salió en las pruebas del panel). Ningún documento usaba HTML a propósito.
 
 **Iconos de colores (13 de noviembre de 2026, a petición de la persona usuaria).** Cada sección y cada
 subsección lleva un icono distinto y un color distinto (`EntradaDeMenu.icono` y `EntradaDeMenu.color`),
@@ -850,7 +934,9 @@ para emergencias, debe entenderse la jerarquía:
   Las listas de casillas (los permisos de un rol) ocupan todo el ancho, una opción por línea, agrupadas
   por módulo y con el código aparte (`base/static/trastienda/trastienda.css`).
 
-**Sección «Desarrollo y mantenimiento» (13 de noviembre de 2026, a petición de la persona usuaria).** Es la
+**Sección «Desarrollo y mantenimiento» (13 de noviembre de 2026, a petición de la persona usuaria; el 14
+de noviembre la documentación y las guías pasaron a la sección «Ayuda», módulo `ayuda`, ver apartado 4, y
+aquí quedan «Pruebas» y «Trastienda», solo para el superadmin).** Es la
 «Ayuda y referencias» del apartado 5.1, con otro nombre. Módulo `mantenimiento` (capa funcional, porque
 usa `permisos`), con el permiso `mantenimiento.ver`, que de entrada solo tiene el superadmin.
 - **Documentación:** los documentos de `docs/` convertidos en páginas con Python-Markdown 3.11.2

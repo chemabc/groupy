@@ -1,6 +1,6 @@
 """
-Pantallas del módulo «mantenimiento»: la documentación del proyecto, la importación masiva de grupos y
-usuarios y la entrada a la trastienda. Solo para quien tiene el permiso «mantenimiento.ver» (de entrada,
+Pantallas del módulo «mantenimiento»: la importación masiva de grupos y usuarios, los datos de ejemplo y
+la entrada a la trastienda. Solo para quien tiene el permiso «mantenimiento.ver» (de entrada,
 el superadmin).
 """
 
@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import IntegrityError
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
@@ -17,9 +17,7 @@ from base.registro import registro
 from ejemplos.servicios import borrar_todos, crear_todos, modulos_con_ejemplos
 from grupos.models import Grupo, Organizacion
 from permisos.decoradores import requiere_permiso
-from permisos.servicios import SinPermiso, explicar_falta, puede
 
-from .documentos import documento, guias_abiertas
 from .importacion import (
     COLUMNAS_DE_GRUPOS,
     COLUMNAS_DE_USUARIOS,
@@ -31,26 +29,6 @@ from .importacion import (
     revisar_usuarios,
 )
 from .models import AjustesDeMantenimiento
-
-
-# Pantalla «Ayuda y documentación»: un documento de docs/ convertido en página, con su índice a la
-# izquierda. Cada documento es una pestaña del menú superior.
-#   - nombre: el documento («diseno», «tutorial»…), que pone la dirección.
-@requiere_permiso("mantenimiento.ver")
-def documentacion(request, nombre):
-    convertido = documento(nombre)
-    if convertido is None:
-        raise Http404("No existe ese documento.")
-    return render(request, "mantenimiento/documentacion.html", {"documento": convertido})
-
-
-# Pantalla «Guías de desarrollo»: una guía (comprobaciones pendientes, arquitectura) con su índice, sus
-# casillas y sus diagramas. En desarrollo la ve cualquiera con sesión; si no, hace falta «mantenimiento.ver».
-#   - nombre: la guía («comprobaciones», «arquitectura»), que pone la dirección.
-def guia(request, nombre):
-    if not (guias_abiertas(request.user) or puede(request.user, "mantenimiento.ver")):
-        raise SinPermiso(explicar_falta("mantenimiento.ver"))
-    return render(request, "mantenimiento/documentacion.html", {"documento": documento(nombre)})
 
 
 # Pantalla «Trastienda»: explica qué es y lleva a ella con un botón.
