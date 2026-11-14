@@ -6,7 +6,6 @@ que las bloquean y desbloquean solas) y los recursos (con su petición de talent
 (proyectos/views.py) y el calendario (proyectos/calendario.py) llaman a estas funciones.
 """
 
-from dataclasses import dataclass
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
@@ -60,36 +59,6 @@ def tareas_visibles(usuario):
 
 
 # ── El árbol de un proyecto ──────────────────────────────────────────────────────────────────────────
-
-
-@dataclass
-class Rama:
-    """Un proyecto dentro de un árbol, con su nivel (0 el principal) para sangrarlo al pintarlo."""
-
-    proyecto: Proyecto
-    nivel: int
-
-
-# Ordena una lista de proyectos como árbol: cada uno seguido de sus subproyectos (por título), con su
-# nivel. Los que tienen el padre fuera de la lista (porque no se ve) salen como principales.
-#   - proyectos: lista de proyectos (sin consultas: se usan padre_id y raiz_id).
-def en_arbol(proyectos):
-    ids = {proyecto.pk for proyecto in proyectos}
-    hijos = {}
-    for proyecto in sorted(proyectos, key=lambda p: (p.titulo.lower(), p.pk)):
-        padre = proyecto.padre_id if proyecto.padre_id in ids else None
-        hijos.setdefault(padre, []).append(proyecto)
-    resultado = []
-
-    # Añade un proyecto y, debajo, sus subproyectos, un nivel más adentro.
-    def anadir(proyecto, nivel):
-        resultado.append(Rama(proyecto, nivel))
-        for hijo in hijos.get(proyecto.pk, []):
-            anadir(hijo, nivel + 1)
-
-    for principal in hijos.get(None, []):
-        anadir(principal, 0)
-    return resultado
 
 
 # Todo el árbol de un proyecto (desde su raíz), como diccionario {id: proyecto}. Una consulta.

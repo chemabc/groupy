@@ -135,7 +135,7 @@ def _cometidos_para_pintar(de_cometidos, usuario):
 
 
 # Ficha de un proyecto: su lugar en el árbol (antecesores, con el nombre solo de los que se ven), sus
-# datos, sus subproyectos (en árbol), sus tareas y sus cometidos. Quien lo gestiona cambia el estado,
+# datos, su árbol entero arriba (con sus subproyectos y sus tareas plegadas) y sus cometidos. Quien lo gestiona cambia el estado,
 # da cometidos, crea subproyectos, apunta recursos (y los pide con una petición de talentos) y lo borra
 # desde aquí.
 #   - POST «accion»: «estado» (con «estado»), «apuntar» o «desapuntar» (con «cometido» y, para otra
@@ -187,10 +187,7 @@ def proyecto(request, pk):
     except ValidationError as excepcion:
         error = " ".join(excepcion.messages)
     visibles_del_arbol = set(servicios.visibles(usuario).filter(raiz_id=proyecto.raiz_id).values_list("pk", flat=True))
-    debajo = servicios.subarbol(proyecto, entero) - {proyecto.pk}
-    subproyectos = servicios.en_arbol([entero[pk] for pk in debajo if pk in visibles_del_arbol])
     camino = [(p, p.pk in visibles_del_arbol) for p in servicios.antecesores(proyecto, entero)]
-    tareas = list(proyecto.tareas.select_related("responsable").order_by("estado", "orden", "pk"))
     recursos = list(proyecto.recursos.all())
     etiquetas = [] if proyecto.personal else etiquetas_de((servicios.ANCLA, proyecto.pk))
     de_cometidos = [] if proyecto.personal else servicios.cometidos(proyecto)
@@ -202,8 +199,6 @@ def proyecto(request, pk):
         # Un proyecto se archiva con todo su árbol: lo dice su proyecto principal.
         "archivado": entero[proyecto.raiz_id].archivado if proyecto.raiz_id in entero else None,
         "camino": camino,
-        "subproyectos": subproyectos,
-        "tareas": tareas,
         "recursos": recursos,
         "etiquetas": etiquetas,
         "nuevo_recurso": nuevo_recurso,

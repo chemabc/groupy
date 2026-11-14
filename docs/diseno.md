@@ -1617,8 +1617,9 @@ jerarquía… han de aparecer en árbol»; «Árbol de proyectos: cada árbol en
 - **Colores (2A):** con fondo amarillo, los proyectos en los que participas (los creaste, tienes un
   cometido o tienes una tarea en ellos); con recuadro rojo, el que miras (en su ficha sale arriba su árbol
   entero); en gris, los finalizados. *Descartado (2B):* amarillo solo para los que coordinas o creaste.
-- **En la ficha** se mantienen el camino («Proyectos › Huerto › Riego») y las listas de subproyectos y de
-  tareas que ya había; el árbol va encima.
+- **En la ficha** se mantiene el camino («Proyectos › Huerto › Riego») y el árbol va encima. Las listas de
+  subproyectos y de tareas que había debajo se quitan porque repetían el árbol (decisión de la persona
+  usuaria tras [A-45]); «+ Tarea» pasa junto a «Kanban». La ficha cuesta 10 consultas.
 - **Cómo está hecho:** `proyectos/arboles.py` (`arboles_de_proyectos`, 2 consultas sean cuantos sean los
   proyectos y las tareas; `en_los_que_participa`, que usa también la tarjeta de Inicio) y las plantillas
   `proyectos/arboles.html`, `nodo_de_proyecto.html` (se incluye a sí misma) y `_titulo_en_arbol.html`.

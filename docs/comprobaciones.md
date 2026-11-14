@@ -566,8 +566,8 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2). No hace falta migrar.
 - [ ] Las etiquetas (#Barrio…) siguen saliendo y filtran la lista.
 - [ ] «Personales»: los proyectos personales, también en recuadros, con la etiqueta «Personal» arriba.
 - [ ] Ficha de **Riego**: arriba, el camino («Proyectos › Huerto comunitario › Riego») y debajo el árbol
-  entero de Huerto comunitario, con Riego en un **recuadro rojo**. La leyenda explica también el rojo. Las
-  listas de subproyectos y tareas siguen más abajo.
+  entero de Huerto comunitario, con Riego en un **recuadro rojo**. La leyenda explica también el rojo. Ya
+  no hay listas aparte de subproyectos y de tareas (lo dice el árbol); «+ Tarea» está junto a «Kanban».
 - [ ] En el móvil, los recuadros van uno debajo de otro.
 
 ## 30. Ficha de una tarea: camino y cambiar sobre lo escrito

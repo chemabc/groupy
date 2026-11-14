@@ -16,6 +16,8 @@ comunicaciones e información pública. Rehecha desde cero con lo aprendido en l
 - `docs/comprobaciones.md` y `docs/arquitectura.md`: las **guías de desarrollo** (ver abajo).
 - `docs/como-se-hace.md`: «How to?», guías cortas de uso para todo el mundo.
 
+`docs/todo.md` es un boceto de la persona usuaria: no se sigue ni se toma como encargo.
+
 No se usa Google Drive. Al tomar una decisión nueva, añádela a `docs/diseno.md` (con la fecha, el motivo
 y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutorial.md`.
 

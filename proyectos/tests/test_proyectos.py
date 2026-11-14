@@ -444,7 +444,7 @@ class PruebasDeConsultas(PruebaDeProyectos):
             anadir_recurso(self.nutria, huerto, {"nombre": "Mangueras", "cantidad": "3", "origen": "Ferretería"})
 
         mas()
-        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 11, mas)
+        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 10, mas)
         self.comprobar_consultas(f"/proyectos/{huerto.pk}/kanban/", 6, mas)
 
     # Mis tareas, su kanban y la ficha de una tarea.
