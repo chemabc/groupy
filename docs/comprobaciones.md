@@ -431,3 +431,26 @@ Antes: `npm run construir` (hay clases nuevas: ver 0.2; si `static/generado/esti
 #     0.0.0.0:8000: escucha en todas las direcciones del contenedor, en el puerto 8000
 DJANGO_GUIAS_PARA_TODOS=0 python manage.py runserver 0.0.0.0:8000
 ```
+
+## 25. Selector de personas en las tareas
+
+Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor.
+
+- [ ] Como **Nutria**, «Proyectos → Proyectos → Huerto comunitario» → nueva tarea. En «Responsable», pulsa
+  **Elegir…**: sale «Elegir una persona» con «Aquí: GRU Henares» (Lince con «admin», Nutria con «tú»)
+  desplegado y con más color, y debajo los bloques más lejanos, plegados y más suaves, cada uno con su
+  número de personas.
+- [ ] Nadie de ORG Ebro sale nunca, ni nadie de un grupo que no vea el proyecto.
+- [ ] Escribe en el buscador parte de un alias o de un grupo (prueba «sorbe» o «garz», sin tildes): filtra
+  al momento, despliega los bloques con coincidencias y oculta el resto. Sin coincidencias, lo dice.
+- [ ] Pulsa una persona: la ventana se cierra y queda su pastilla en «Responsable». La × la quita.
+- [ ] En «Colaboran», marca dos personas: abajo pone «2 elegidas»; «Listo» las deja como pastillas.
+  Crea la tarea y en su ficha salen la responsable y las colaboradoras.
+- [ ] En la ficha de una tarea, al cambiarla, el selector sale con las personas que ya tenía.
+- [ ] Una tarea suelta nueva («Mis tareas → Nueva» en un grupo): cambia «Quién la ve» a «Hasta el grupo
+  padre» y vuelve a abrir el selector: aparece el bloque «Un nivel por encima».
+- [ ] Como **Lince**, en «Organizaciones y grupos → Árbol», pulsa ORG Tajo y desmarca «Los miembros ven la
+  lista de miembros de sus grupos». Como **Nutria**, el selector ya no enseña la lista: pide el alias exacto. Escribe uno de otra
+  organización (por ejemplo, «Zorro») y crea: dice «No está entre quienes ven esto: Zorro.» (el mismo
+  mensaje que con un alias que no existe). Como Lince, sigue viendo la lista. Vuelve a dejarlo como estaba.
+

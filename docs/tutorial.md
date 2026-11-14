@@ -666,3 +666,25 @@ sirve aquí y dónde se usa.
 - **Un filtro con argumento no perdona.** `{{ a|default:b.c }}` falla si `b` es `None` (el argumento de
   un filtro no se resuelve «en silencio» como una variable suelta), y la página salía con la zona vacía.
   `{% firstof a b.c "Asambleas" %}` hace lo mismo sin fallar.
+
+## 31. Elegir personas: cercanía con la tabla de cierre y no dar pistas (14 de noviembre de 2026)
+
+- **La tabla de cierre responde «¿qué tan lejos?» con una consulta.** `Contencion` guarda cada pareja
+  antecesor–descendiente con su distancia. Para saber a qué distancia está el grupo de una persona del grupo
+  de referencia, basta con mirar qué grupos de encima del de referencia (también él mismo) lo contienen:
+  si lo contiene el propio grupo, es un subgrupo; si no, manda el antecesor común más bajo. Todo con tres
+  consultas (los de encima, las pertenencias y sus contenedores), sean 10 personas o 1000
+  (`audiencias/cercania.py`).
+- **Pedir la lista solo al abrirla.** La ventana pide la lista en JSON (`fetch`) la primera vez que se abre,
+  y otra vez solo si cambia lo que la condiciona (la visibilidad elegida). Abrir el formulario no cuesta
+  nada de más.
+- **Filtrar en el navegador.** Con la lista ya en la página, el buscador no hace peticiones: `normalizar()`
+  quita tildes y mayúsculas y cada palabra escrita tiene que aparecer en el alias, el grupo o la marca.
+- **El mismo error para todo.** Si al escribir un alias que no ves la respuesta fuera «no existe» unas
+  veces y «no ve esto» otras, cualquiera podría averiguar qué alias existen en otras organizaciones. Por eso
+  el mensaje es siempre el mismo: «No está entre quienes ven esto».
+- **Comprobar solo al guardar.** El campo recibe una **función** (`permitidas`) en lugar de la lista de ids:
+  así solo se calcula si se envía el formulario, no cada vez que se pinta.
+- **Las clases de Tailwind, en la plantilla.** Tailwind solo genera las clases que encuentra en las
+  plantillas. Para elegir el color por nivel desde Alpine se escribe la lista de clases en la propia
+  plantilla (`:class="['border-marca bg-marca/10', …][nivel]"`), no en `interfaz.js`, que Tailwind no lee.

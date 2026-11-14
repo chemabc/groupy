@@ -7,7 +7,7 @@ y la que esperaba aparece desbloqueada.
 
 from base.pruebas import crear_usuario_de_prueba
 from base.pruebas_navegador import PruebaEnElNavegador
-from grupos.servicios import admitir, crear_organizacion
+from grupos.servicios import admitir, crear_grupo, crear_organizacion
 from proyectos.models import Tarea
 from proyectos.servicios import crear_proyecto, crear_tarea
 from tipologias.servicios import crear_tipologia
@@ -66,3 +66,69 @@ class PruebasDelKanbanEnElNavegador(PruebaEnElNavegador):
             y = caja["y"] + caja["height"] / 2 + (meta["y"] + 20 - caja["y"] - caja["height"] / 2) * paso / 20
             raton.move(x, y)
         raton.up()
+
+
+class PruebasDelSelectorDePersonasEnElNavegador(PruebaEnElNavegador):
+    """
+    El selector de personas en el formulario de una tarea nueva: GRU Tajo ⊃ GRU Henares ⊃ GRU Sorbe. El
+    usuario de la prueba y Lince están en Henares, Garza en Sorbe y Zorro en Tajo. El proyecto se ve en
+    Henares (y sus subgrupos), así que Zorro no sale.
+    """
+
+    # Crea los grupos, las personas y el proyecto, y abre el formulario de tarea nueva.
+    def preparar(self):
+        self.tajo, raiz = crear_organizacion("ORG Tajo", "GRU Tajo")
+        henares = crear_grupo(self.tajo, "GRU Henares", padre=raiz)
+        sorbe = crear_grupo(self.tajo, "GRU Sorbe", padre=henares)
+        self.garza, lince, zorro = (crear_usuario_de_prueba(alias) for alias in ("Garza", "Lince", "Zorro"))
+        admitir(self.usuario, henares)
+        admitir(lince, henares)
+        admitir(self.garza, sorbe)
+        admitir(zorro, raiz)
+        self.huerto = crear_proyecto(self.usuario, crear_tipologia("proyecto", "Genérico"), {"titulo": "Huerto"}, grupo=henares, visibilidad="grupo:0")
+        self.abrir(f"/proyectos/tareas/nueva/?proyecto={self.huerto.pk}")
+        self.pagina.locator('input[name="titulo"]').fill("Comprar semillas")
+
+    # Responsable: la ventana enseña los bloques por cercanía (sin Zorro); el buscador filtra mientras se
+    # escribe; al pulsar a Garza se cierra y queda su pastilla. Colaboran: se eligen dos. Al crear, se
+    # guardan.
+    def test_elegir(self):
+        self.preparar()
+        self.pagina.locator("#id_responsable").click()
+        ventana = self.pagina.get_by_role("dialog", name="Elegir una persona")
+        ventana.get_by_text("Aquí: GRU Henares").wait_for()
+        self.assertTrue(ventana.get_by_text("En sus subgrupos").is_visible())
+        self.assertEqual(ventana.get_by_text("Zorro").count(), 0)
+        ventana.get_by_placeholder("Buscar por alias o por grupo…").fill("gar")
+        self.assertFalse(ventana.get_by_role("radio", name="Lince").is_visible())
+        ventana.get_by_role("radio", name="Garza").click()
+        ventana.wait_for(state="hidden")
+        self.pagina.locator('input[type="hidden"][name="responsable"][value="Garza"]').wait_for(state="attached")
+        self.pagina.locator("#id_colaboradores").click()
+        varias = self.pagina.get_by_role("dialog", name="Elegir personas")
+        varias.get_by_role("checkbox", name="Lince").click()
+        varias.get_by_role("checkbox", name="Prueba").click()
+        self.assertIn("2 elegidas", varias.inner_text())
+        varias.get_by_role("button", name="Listo").click()
+        self.pagina.get_by_role("button", name="Crear").click()
+        self.pagina.wait_for_url(f"**/proyectos/{self.huerto.pk}/")
+        tarea = Tarea.objects.get(titulo="Comprar semillas")
+        self.assertEqual(tarea.responsable, self.garza)
+        self.assertEqual(sorted(p.alias for p in tarea.colaboradores.all()), ["Lince", "Prueba"])
+        self.assertEqual(self.errores, [])
+
+    # Si la organización cierra la lista de miembros, la ventana solo deja escribir el alias exacto; uno
+    # que no ve el proyecto da error al guardar, sin más pistas.
+    def test_lista_cerrada(self):
+        self.preparar()
+        self.tajo.miembros_ven_miembros = False
+        self.tajo.save()
+        self.pagina.locator("#id_responsable").click()
+        ventana = self.pagina.get_by_role("dialog", name="Elegir una persona")
+        ventana.get_by_text("Tu organización no enseña la lista").wait_for()
+        ventana.get_by_label("Alias exacto").fill("Zorro")
+        ventana.get_by_role("button", name="Añadir").click()
+        self.pagina.get_by_role("button", name="Crear").click()
+        self.pagina.get_by_text("No está entre quienes ven esto: Zorro.").wait_for()
+        self.assertFalse(Tarea.objects.exists())
+        self.assertEqual(self.errores, [])

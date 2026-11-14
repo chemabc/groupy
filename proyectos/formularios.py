@@ -3,9 +3,8 @@ Formularios del módulo «proyectos».
 """
 
 from django import forms
-from django.contrib.auth import get_user_model
-from django.db.models import Q
 
+from base.formularios import CampoDePersonas
 from etiquetas.formularios import CampoDeEtiquetas
 
 from .models import Proyecto, Recurso, Tarea
@@ -59,26 +58,19 @@ class FormularioDeProyecto(forms.ModelForm):
         return {campo: self.cleaned_data[campo] for campo in self.Meta.fields}
 
 
-class CampoDeAlias(forms.CharField):
-    """Cuadro donde se escribe el alias de una persona; devuelve la persona (o error si no existe)."""
-
-    # Busca la persona por su alias (sin distinguir mayúsculas).
-    def clean(self, valor):
-        valor = super().clean(valor)
-        if not valor:
-            return None
-        persona = get_user_model().objects.filter(alias__iexact=valor.strip()).first()
-        if persona is None:
-            raise forms.ValidationError(f"No hay nadie con el alias «{valor}».")
-        return persona
-
-
 class FormularioDeTarea(forms.ModelForm):
-    """Datos de una tarea: qué, para cuándo, quién se encarga y quién colabora (por alias)."""
+    """
+    Datos de una tarea: qué, para cuándo, quién se encarga y quién colabora. Las personas se eligen con el
+    selector de personas (base/formularios.py), que solo ofrece y solo acepta a quienes ven la tarea.
+    """
 
-    responsable = CampoDeAlias(label="Responsable", help_text="El alias de quien se encarga. Vacío: tú.", required=False)
-    colaboradores = forms.CharField(
-        label="Colaboran", required=False, help_text="Alias de quienes ayudan, separados por comas. Opcional."
+    responsable = CampoDePersonas(
+        label="Responsable", required=False, vacio="Tú (si no eliges a nadie)",
+        help_text="Quien se encarga. Pulsa «Elegir…»: salen quienes ven la tarea, de los más cercanos a los más lejanos. Si no eliges a nadie, tú.",
+    )
+    colaboradores = CampoDePersonas(
+        label="Colaboran", varias=True, required=False, vacio="Nadie",
+        help_text="Quienes ayudan, si hay alguien. Se eligen igual que la responsable.",
     )
     visibilidad = forms.ChoiceField(label="Quién la ve", required=False, help_text="Solo en las tareas sueltas de un grupo.")
     espera_a = forms.ModelMultipleChoiceField(
@@ -96,7 +88,9 @@ class FormularioDeTarea(forms.ModelForm):
     #   - personal: si es personal (sin responsable ni colaboradores que elegir).
     #   - candidatas: tareas del mismo árbol a las que puede esperar (consulta), o None si no está en un
     #     proyecto (entonces no hay dependencias).
-    def __init__(self, *args, visibilidades=None, personal=False, candidatas=None, **kwargs):
+    #   - personas: (dirección de la lista, función con los ids que se pueden elegir, campos de los que
+    #     depende la lista) para el selector de personas; None en las personales.
+    def __init__(self, *args, visibilidades=None, personal=False, candidatas=None, personas=None, **kwargs):
         super().__init__(*args, **kwargs)
         if candidatas is None:
             del self.fields["espera_a"]
@@ -110,27 +104,18 @@ class FormularioDeTarea(forms.ModelForm):
         else:
             self.fields["visibilidad"].choices = visibilidades
             self.fields["visibilidad"].required = True
-        if personal:
+        if personal or personas is None:
             del self.fields["responsable"]
             del self.fields["colaboradores"]
-        elif self.instance.pk:
+            return
+        url, permitidas, parametros = personas
+        for nombre in ("responsable", "colaboradores"):
+            self.fields[nombre].permitidas = permitidas
+            self.fields[nombre].widget.url_de_la_lista = url
+            self.fields[nombre].widget.parametros = tuple(parametros)
+        if self.instance.pk:
             self.initial.setdefault("responsable", self.instance.responsable.alias)
-            self.initial.setdefault("colaboradores", ", ".join(p.alias for p in self.instance.colaboradores.all()))
-
-    # Convierte la lista de alias de quienes colaboran en personas (sin distinguir mayúsculas). Una
-    # consulta.
-    def clean_colaboradores(self):
-        alias = [a.strip() for a in self.cleaned_data.get("colaboradores", "").split(",") if a.strip()]
-        if not alias:
-            return []
-        condicion = Q()
-        for uno in alias:
-            condicion |= Q(alias__iexact=uno)
-        personas = {p.alias.lower(): p for p in get_user_model().objects.filter(condicion)}
-        faltan = [a for a in alias if a.lower() not in personas]
-        if faltan:
-            raise forms.ValidationError(f"No hay nadie con estos alias: {', '.join(faltan)}.")
-        return list(personas.values())
+            self.initial.setdefault("colaboradores", [p.alias for p in self.instance.colaboradores.all()])
 
     # Los datos de la tarea para el servicio. Sin responsable escrita, quien la crea (o la que tenía).
     #   - usuario: quien rellena el formulario.

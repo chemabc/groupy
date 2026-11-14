@@ -55,7 +55,7 @@ flowchart LR
     htmx["htmx 2.0<br/>[Librería JS]"]:::libjs
     alpine["Alpine.js 3<br/>[Librería JS]"]:::libjs
     css["Tailwind CSS 4<br/>(estilos compilados)<br/>[Librería JS]"]:::libjs
-    islas["Islas: menú, panel de ayuda, índice,<br/>tabla, copiar, selector de palabras, ordenar,<br/>mapa, calendario, kanban, documento<br/>[Isla JS]"]:::capabase
+    islas["Islas: menú, panel de ayuda, índice,<br/>tabla, copiar, selectores de palabras y de personas,<br/>ordenar, mapa, calendario, kanban, documento<br/>[Isla JS]"]:::capabase
     sortable["SortableJS<br/>[Librería JS]"]:::libjs
     fullcal["FullCalendar 6<br/>[Librería JS]"]:::libjs
     leaflet["Leaflet + markercluster<br/>[Librería JS]"]:::libjs
@@ -412,7 +412,8 @@ flowchart LR
 
 Quién ve cada cosa: privada, grupos con subgrupos, organización o pública (y lo personal, que no ve ni el
 superadmin). El selector de visibilidad y la regla dura entre organizaciones. Lo que ve cada persona se
-calcula con 2 consultas y se guarda en Redis.
+calcula con 2 consultas y se guarda en Redis. `audiencias/cercania.py` da las personas que ven algo,
+ordenadas por cercanía al grupo de referencia, para el selector de personas (y quién puede ver esa lista).
 
 ```mermaid
 flowchart LR
@@ -424,10 +425,15 @@ flowchart LR
   per["permisos"]:::otro
   redis[("Redis<br/>[Servicio]")]:::servicio
   usan["eventos · proyectos · calendario<br/>limpieza (filtrar_visibles, puede_ver,<br/>audiencia_de, personas_de)"]:::otro
+  cerca["cercania.py: cercania, ids_que_ven,<br/>ve_la_lista<br/>[Componente]"]:::otro
+  acceso["grupos.acceso: ve_miembros"]:::otro
   aud --> gru
   aud --> per
   aud --> redis
   usan --> aud
+  cerca --> acceso
+  pro2["proyectos (selector de personas<br/>de las tareas)"]:::otro
+  pro2 --> cerca
 ```
 
 ### 6.9 etiquetas [Módulo · Organización]
@@ -635,6 +641,9 @@ flowchart LR
   tal["talentos (peticiones)"]:::otro
   kan["isla «kanban»<br/>[Isla JS]"]:::libjs
   sor["SortableJS<br/>[Librería JS]"]:::libjs
+  selp["isla «selectorDePersonas»<br/>[Isla JS]"]:::libjs
+  cerca["audiencias.cercania"]:::otro
+  bas["base: CampoDePersonas"]:::otro
   cal["calendario"]:::otro
   lim["limpieza"]:::otro
   com["comunicaciones"]:::otro
@@ -645,6 +654,9 @@ flowchart LR
   pro --> tal
   kan -- "/proyectos/tareas/mover/" --> pro
   kan --> sor
+  pro --> cerca
+  pro --> bas
+  selp -- "/proyectos/tareas/personas/ (JSON)" --> pro
   pro -. "FuenteDeCalendario proyectos y tareas" .-> cal
   pro -. "Limpiable proyecto y tarea" .-> lim
   pro ==> com
@@ -798,7 +810,7 @@ El panel de ayuda está fuera de `#zona`: navegar con el menú solo cambia la zo
 panel no se vuelve a pintar. Lo que se abre en él se pide con htmx y el servidor lo pinta con
 `base/panel.html` en lugar de `zona.html` (lo decide `contexto.py` por la cabecera `HX-Target`).
 
-### 7.2 Tabla filtrable, botón «copiar» y selector de palabras [Componente de base]
+### 7.2 Tabla filtrable, botón «copiar» y selectores de palabras y de personas [Componente de base]
 
 ```mermaid
 flowchart LR
@@ -808,6 +820,8 @@ flowchart LR
   tablaLocal["isla «tablaLocal»<br/>(filtro sin recargar)<br/>[Isla JS]"]:::comp
   copiar["isla «copiar»<br/>[Isla JS]"]:::comp
   selector["SelectorDePalabras + CampoDePalabras<br/>+ isla «selectorDePalabras»<br/>[Componente]"]:::comp
+  personas["SelectorDePersonas + CampoDePersonas<br/>+ isla «selectorDePersonas»<br/>[Componente]"]:::comp
+  usan4["proyectos (responsable y colaboran)<br/>con la lista de audiencias.cercania"]:::otro
   usan1["administracion · grupos · lugares"]:::otro
   usan2["calendario (suscripción) · …"]:::otro
   usan3["etiquetas (CampoDeEtiquetas) → proyectos"]:::otro
@@ -815,6 +829,7 @@ flowchart LR
   usan1 --> tablas
   usan2 --> copiar
   usan3 --> selector
+  usan4 --> personas
 ```
 
 ### 7.3 Islas de JavaScript [Isla JS]

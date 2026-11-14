@@ -505,6 +505,41 @@ color, permiso, vistas); las subsecciones que declaran solo agrupan su contrato.
   no esté en un bloque de código. *Motivo:* el tutorial mencionaba «`<script>`» sin comillas de código y se colaba en la página
   como etiqueta de verdad (salió en las pruebas del panel). Ningún documento usaba HTML a propósito.
 
+**Selector de personas (14 de noviembre de 2026, decisiones 1A, 2, 3A, 4A con buscador y 5 de la persona
+usuaria).** Para elegir personas (de entrada, la responsable y quienes colaboran en una tarea) ya no se
+escribe el alias a ciegas: un componente común abre una ventana con quienes ven aquello, de lo más cercano
+a lo más lejano.
+- *Motivo:* antes había que saberse el alias, y el campo aceptaba **cualquier alias de la plataforma**, también de
+  otra organización (rompía la regla dura entre organizaciones y dejaba averiguar si un alias existía).
+- **Cercanía respecto al grupo de referencia** (1A): el que coordina el proyecto, o el de la tarea suelta.
+  Bloques: «Aquí» (el propio grupo), «En sus subgrupos», «Un nivel por encima: GRU Jarama» (el resto del
+  padre y sus subgrupos), «Dos niveles por encima…», «Más lejos» y «Otras personas que lo ven». Son los
+  mismos niveles que la visibilidad («grupo:0», «grupo:1»…). Cada persona sale una vez, en su bloque más
+  cercano, bajo su grupo. Lo cercano sale desplegado y con más color; lo lejano, plegado y más suave. Junto
+  al alias, «admin» y «tú».
+  - *Descartado (1B):* medir desde los grupos de quien elige (ambiguo con varios grupos y podía enseñar a
+    quien no ve el proyecto).
+- **Solo salen las personas que lo ven** (2), y solo se aceptan esas al guardar. En un proyecto privado,
+  solo quienes ya lo ven. En una tarea suelta aún «privada», las del propio grupo y sus subgrupos (todavía no
+  tiene personas). Las cuentas desactivadas no salen. El error al guardar es el mismo exista o no el alias
+  («No está entre quienes ven esto: X»), para no dar pistas de quién hay fuera.
+- **Respeta la lista de miembros cerrada** (3A): la lista solo la ve quien puede ver los miembros del grupo
+  de referencia (quien lo administra y, si la organización no la ha cerrado, sus miembros: la regla de
+  `grupos/acceso.py`). Si no, la ventana solo deja escribir el alias exacto, que se comprueba igual.
+  - *Descartado (3B):* enseñar siempre la lista (se saltaba la decisión de la organización).
+- **Ventana con buscador** (4A): el buscador filtra mientras se escribe, sin peticiones, por palabras del
+  alias, del grupo o de la marca, sin tildes ni mayúsculas, y despliega los bloques donde hay coincidencias.
+  Responsable: una persona (al elegirla se cierra); colaboran: varias (casillas y «Listo»). Las elegidas
+  quedan como pastillas con ×.
+  - *Descartado (4B):* solo un buscador con sugerencias (no da la vista de quién está cerca y quién lejos).
+- **Componente común** (5): `SelectorDePersonas` y `CampoDePersonas` en `base/formularios.py`, la isla
+  `selectorDePersonas` en `interfaz.js` y el cálculo en `audiencias/cercania.py` (`cercania`,
+  `ids_que_ven`, `ve_la_lista`). El módulo que lo usa da la dirección de la lista (JSON) y la función con
+  los ids que se pueden elegir. La lista se pide al abrir la ventana (no cuesta nada si no se abre) y otra
+  vez si cambia un campo del que depende (la visibilidad de una tarea suelta nueva). Cuesta 5 consultas en
+  `audiencias` y 6 la dirección de `proyectos`, haya las personas que haya. Servirá también para los
+  cometidos de los eventos, los avisos a personas, etc.
+
 **Iconos de colores (13 de noviembre de 2026, a petición de la persona usuaria).** Cada sección y cada
 subsección lleva un icono distinto y un color distinto (`EntradaDeMenu.icono` y `EntradaDeMenu.color`),
 para reconocerlas de un vistazo. El icono es un símbolo de texto de un solo color («⇄», «✉»), pintado

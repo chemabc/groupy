@@ -9,15 +9,17 @@ import json
 
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from audiencias.cercania import cercania, ids_que_ven
 from audiencias.selector import clave_de, opciones
 from etiquetas.servicios import etiquetas_de
 from base.registro import registro
 from grupos.models import Grupo
-from permisos.servicios import SinPermiso, explicar_falta, permisos_de
+from permisos.servicios import SinPermiso, explicar_falta, permisos_de, puede
 from tipologias.models import Tipologia
 from tipologias.servicios import a_json, arbol, campos_de, formulario_de, tareas_modelo_de
 
@@ -324,7 +326,17 @@ def nueva_tarea(request):
     visibilidades = opciones(grupo) if grupo else None
     datos = request.POST if request.method == "POST" else None
     candidatas = _candidatas(proyecto) if proyecto else None
-    formulario = FormularioDeTarea(datos, visibilidades=visibilidades, personal=personal, candidatas=candidatas, initial={"visibilidad": "grupo:0"})
+    if personal:
+        personas = None
+    elif proyecto:
+        personas = _personas(f"proyecto={proyecto.pk}", proyecto.grupo, audiencia=proyecto.audiencia)
+    else:
+        clave = (datos or {}).get("visibilidad", "grupo:0")
+        clave = clave if clave in dict(visibilidades) else "grupo:0"
+        personas = _personas(f"grupo={grupo.pk}", grupo, clave=clave, parametros=("visibilidad",))
+    formulario = FormularioDeTarea(
+        datos, visibilidades=visibilidades, personal=personal, candidatas=candidatas, personas=personas, initial={"visibilidad": "grupo:0"}
+    )
     if request.method == "POST" and formulario.is_valid():
         try:
             tarea = servicios.crear_tarea(
@@ -338,6 +350,49 @@ def nueva_tarea(request):
             return redirect("proyectos:proyecto", proyecto.pk) if proyecto else redirect("proyectos:tarea", tarea.pk)
     contexto = {"formulario": formulario, "proyecto": proyecto, "personal": personal, "grupos": grupos, "grupo": grupo}
     return render(request, "proyectos/nueva_tarea.html", contexto)
+
+
+# Lo que necesita el selector de personas del formulario de una tarea: la dirección de la lista, la función
+# con los ids de quienes se pueden elegir (solo se llama al guardar) y los campos de los que depende.
+#   - consulta: lo que se añade a la dirección de la lista para saber de qué tarea se trata
+#     («proyecto=7», «tarea=12», «grupo=3»).
+#   - grupo: el grupo de referencia (de donde se mide la cercanía).
+#   - audiencia, clave: quién ve la tarea (la audiencia del proyecto, o la opción de visibilidad).
+#   - parametros: campos del formulario que cambian la lista (en una tarea suelta nueva, «visibilidad»).
+def _personas(consulta, grupo, audiencia=None, clave=None, parametros=()):
+    url = f"{reverse('proyectos:personas_para_tarea')}?{consulta}"
+    return url, lambda: ids_que_ven(grupo, audiencia=audiencia, clave=clave), parametros
+
+
+# Lista de personas para elegir responsable y colaboradoras de una tarea, en JSON, por cercanía (ver
+# audiencias/cercania.py). La pide el selector de personas al abrirse. 6 consultas, haya las personas que haya.
+#   - GET «proyecto»: una tarea nueva en ese proyecto (hay que verlo).
+#   - GET «tarea»: una tarea que ya existe (hay que verla).
+#   - GET «grupo» y «visibilidad»: una tarea suelta nueva en ese grupo (hay que poder crear allí).
+def personas_para_tarea(request):
+    usuario, parametros = request.user, request.GET
+    if parametros.get("proyecto", "").isdigit():
+        proyecto = get_object_or_404(Proyecto.objects.select_related("grupo__organizacion", "audiencia"), pk=parametros["proyecto"])
+        if proyecto.personal or not servicios.ve(usuario, proyecto):
+            raise Http404
+        datos = cercania(usuario, proyecto.grupo, audiencia=proyecto.audiencia)
+    elif parametros.get("tarea", "").isdigit():
+        tarea = get_object_or_404(Tarea.objects.select_related("proyecto__audiencia", "grupo__organizacion"), pk=parametros["tarea"])
+        if tarea.personal or not servicios.tareas_visibles(usuario).filter(pk=tarea.pk).exists():
+            raise Http404
+        if tarea.proyecto_id:
+            datos = cercania(usuario, tarea.grupo, audiencia=tarea.proyecto.audiencia)
+        else:
+            datos = cercania(usuario, tarea.grupo, clave=tarea.visibilidad)
+    elif parametros.get("grupo", "").isdigit():
+        grupo = get_object_or_404(Grupo.objects.select_related("organizacion"), pk=parametros["grupo"])
+        if not puede(usuario, "proyectos.crear", grupo=grupo):
+            raise Http404
+        clave = parametros.get("visibilidad", "grupo:0")
+        datos = cercania(usuario, grupo, clave=clave if clave in dict(opciones(grupo)) else "grupo:0")
+    else:
+        raise Http404
+    return JsonResponse(datos.como_datos())
 
 
 # Tareas a las que puede esperar una tarea de un proyecto: las de todo su árbol (consulta), salvo ella.
@@ -365,9 +420,15 @@ def tarea(request, pk):
     espera_a = list(tarea.espera_a.order_by("titulo"))
     if cambia:
         candidatas = _candidatas(tarea.proyecto, tarea) if tarea.proyecto_id else None
+        if tarea.personal:
+            personas = None
+        elif tarea.proyecto_id:
+            personas = _personas(f"tarea={tarea.pk}", tarea.grupo, audiencia=tarea.proyecto.audiencia)
+        else:
+            personas = _personas(f"tarea={tarea.pk}", tarea.grupo, clave=tarea.visibilidad)
         formulario = FormularioDeTarea(
             request.POST if accion == "guardar" else None, instance=tarea, personal=tarea.personal, candidatas=candidatas,
-            initial={"espera_a": [otra.pk for otra in espera_a]},
+            personas=personas, initial={"espera_a": [otra.pk for otra in espera_a]},
         )
     if accion == "borrar":
         servicios.borrar_tarea(usuario, tarea)

@@ -21,6 +21,8 @@ urlpatterns = [
     path("tareas/", views.tareas, name="tareas"),
     path("tareas/kanban/", views.tareas_kanban, name="tareas_kanban"),
     path("tareas/nueva/", views.nueva_tarea, name="nueva_tarea"),
+    # Lista de personas (JSON) para elegir responsable y colaboradoras de una tarea.
+    path("tareas/personas/", views.personas_para_tarea, name="personas_para_tarea"),
     path("tareas/<int:pk>/", views.tarea, name="tarea"),
     path("tareas/mover/", views.mover_tarea, name="mover_tarea"),
 ]

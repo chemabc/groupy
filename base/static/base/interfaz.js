@@ -521,6 +521,159 @@ document.addEventListener("alpine:init", () => {
   // Componente del botón «copiar» que acompaña a cada campo de formulario (base/templates/base/campo.html).
   // Copia el valor del campo (en un desplegable, el texto de la opción elegida) para pegarlo en otro sitio,
   // y durante un momento muestra ✓.
+  // Componente del selector de personas (base/templates/base/selector_de_personas.html; ver
+  // SelectorDePersonas en base/formularios.py). Guarda los alias elegidos (uno o varios) y, al abrir la
+  // ventana, pide la lista de quienes ven aquello (JSON de audiencias/cercania.py) en bloques por cercanía.
+  // La lista se pide la primera vez que se abre y otra vez si cambia algún campo del formulario del que
+  // depende (data-parametros, por ejemplo «visibilidad»). El buscador filtra sin peticiones.
+  Alpine.data("selectorDePersonas", () => ({
+    // Alias elegidos.
+    elegidas: [],
+    // Nombre de los campos ocultos (el del campo del formulario).
+    nombre: "",
+    // Si se pueden elegir varias personas o solo una.
+    varias: false,
+    // Si la ventana está abierta.
+    abierta: false,
+    // La lista recibida: bloques por cercanía, y si se puede ver (si no, solo se escribe el alias).
+    bloques: [],
+    veLaLista: true,
+    // Estado de la petición.
+    cargando: false,
+    error: "",
+    // Dirección (con sus parámetros) de la última lista pedida, para no pedirla dos veces.
+    pedida: "",
+    // Lo escrito en el buscador y en el cuadro del alias exacto.
+    texto: "",
+    aliasEscrito: "",
+    // Posiciones de los bloques que se han abierto o cerrado a mano: {posición: abierto}.
+    plegado: {},
+
+    // Al arrancar: lo que ya tenía el campo.
+    init() {
+      this.elegidas = JSON.parse(this.$root.dataset.valores || "[]");
+      this.nombre = this.$root.dataset.nombre;
+      this.varias = this.$root.dataset.varias === "1";
+    },
+
+    // Abre la ventana, pide la lista si hace falta y pone el cursor en el buscador.
+    async abrir() {
+      this.abierta = true;
+      this.texto = "";
+      const direccion = this.direccion();
+      if (direccion !== this.pedida) await this.cargar(direccion);
+      this.$nextTick(() => (this.$refs.buscador || this.$refs.alias)?.focus());
+    },
+
+    // Cierra la ventana.
+    cerrar() {
+      this.abierta = false;
+    },
+
+    // Dirección de la lista, con el valor actual de los campos del formulario de los que depende.
+    direccion() {
+      const base = this.$root.dataset.url;
+      const formulario = this.$root.closest("form");
+      const parametros = new URLSearchParams();
+      for (const nombre of (this.$root.dataset.parametros || "").split(" ").filter(Boolean)) {
+        const campo = formulario?.elements.namedItem(nombre);
+        if (campo && campo.value) parametros.set(nombre, campo.value);
+      }
+      const extra = parametros.toString();
+      return extra ? `${base}${base.includes("?") ? "&" : "?"}${extra}` : base;
+    },
+
+    // Pide la lista al servidor. Si falla, lo dice en la ventana.
+    //   - direccion: la dirección completa.
+    async cargar(direccion) {
+      this.cargando = true;
+      this.error = "";
+      try {
+        const respuesta = await fetch(direccion, { headers: { Accept: "application/json" } });
+        if (!respuesta.ok) throw new Error();
+        const datos = await respuesta.json();
+        this.bloques = datos.bloques;
+        this.veLaLista = datos.ve_la_lista;
+        this.plegado = {};
+        this.pedida = direccion;
+      } catch {
+        this.bloques = [];
+        this.error = "No se ha podido cargar la lista. Prueba otra vez.";
+      } finally {
+        this.cargando = false;
+      }
+    },
+
+    // Dice si un alias está elegido (sin distinguir mayúsculas).
+    esta(alias) {
+      return this.elegidas.some((elegida) => elegida.toLowerCase() === alias.toLowerCase());
+    },
+
+    // Elige una persona. Si son varias, la pone o la quita; si es una sola, la deja como la elegida y
+    // cierra la ventana.
+    elegir(alias) {
+      if (!this.varias) {
+        this.elegidas = [alias];
+        this.cerrar();
+      } else if (this.esta(alias)) {
+        this.quitar(alias);
+      } else {
+        this.elegidas.push(alias);
+      }
+    },
+
+    // Quita una persona elegida (la × de su pastilla).
+    quitar(alias) {
+      this.elegidas = this.elegidas.filter((elegida) => elegida.toLowerCase() !== alias.toLowerCase());
+    },
+
+    // Añade el alias escrito a mano (cuando no se puede ver la lista). Se comprueba al guardar.
+    anadirEscrito() {
+      const alias = this.aliasEscrito.trim();
+      if (alias && !this.esta(alias)) this.elegir(alias);
+      this.aliasEscrito = "";
+    },
+
+    // Dice si una persona coincide con lo buscado: cada palabra escrita debe estar en su alias, en su
+    // grupo o en su marca, sin importar tildes ni mayúsculas.
+    //   - persona: {alias, marca}.
+    //   - grupo: {nombre}.
+    coincide(persona, grupo) {
+      const palabras = normalizar(this.texto).split(/\s+/).filter(Boolean);
+      if (!palabras.length) return true;
+      const donde = normalizar(`${persona.alias} ${grupo.nombre} ${persona.marca}`);
+      return palabras.every((palabra) => donde.includes(palabra));
+    },
+
+    // Cuántas personas de un grupo coinciden con lo buscado.
+    cuantasDelGrupo(grupo) {
+      return grupo.personas.filter((persona) => this.coincide(persona, grupo)).length;
+    },
+
+    // Cuántas personas de un bloque coinciden con lo buscado.
+    cuantasDelBloque(bloque) {
+      return bloque.grupos.reduce((total, grupo) => total + this.cuantasDelGrupo(grupo), 0);
+    },
+
+    // Si alguna persona coincide con lo buscado (si no, se dice que nadie).
+    hayCoincidencias() {
+      return this.bloques.some((bloque) => this.cuantasDelBloque(bloque) > 0);
+    },
+
+    // Si un bloque se ve desplegado: mientras se busca, todos; si no, los dos más cercanos, salvo que se
+    // hayan abierto o cerrado a mano.
+    //   - numero: posición del bloque.
+    estaAbierto(numero) {
+      if (this.texto.trim()) return true;
+      return numero in this.plegado ? this.plegado[numero] : this.bloques[numero]?.nivel <= 1;
+    },
+
+    // Abre o cierra un bloque a mano.
+    alternar(numero) {
+      this.plegado = { ...this.plegado, [numero]: !this.estaAbierto(numero) };
+    },
+  }));
+
   Alpine.data("copiar", () => ({
     copiado: false,
 

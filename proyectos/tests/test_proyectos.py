@@ -147,8 +147,10 @@ class PruebasDeTareas(PruebaDeProyectos):
         self.assertEqual((tarea.responsable, list(tarea.colaboradores.all())), (self.garza, [self.lince]))
         procesar_bandeja()
         self.assertEqual(Notificacion.objects.get(tipo="proyectos.tarea_asignada").usuario, self.garza)
-        self.assertContains(self.client.post(f"/proyectos/tareas/nueva/?proyecto={huerto.pk}", {"titulo": "X", "estado": "pendiente", "responsable": "Erizo"}), "no ve el proyecto")
-        self.assertContains(self.client.post(f"/proyectos/tareas/nueva/?proyecto={huerto.pk}", {"titulo": "X", "estado": "pendiente", "responsable": "Nadie"}), "No hay nadie con el alias")
+        # Erizo (de otra organización) y un alias que no existe dan el mismo error: no se da ninguna pista
+        # de quién hay fuera.
+        self.assertContains(self.client.post(f"/proyectos/tareas/nueva/?proyecto={huerto.pk}", {"titulo": "X", "estado": "pendiente", "responsable": "Erizo"}), "No está entre quienes ven esto: Erizo.")
+        self.assertContains(self.client.post(f"/proyectos/tareas/nueva/?proyecto={huerto.pk}", {"titulo": "X", "estado": "pendiente", "responsable": "Nadie"}), "No está entre quienes ven esto: Nadie.")
         privado = self.proyecto("Privado", visibilidad="privado")
         crear_tarea(self.nutria, {"titulo": "Algo", "responsable": self.zorro}, proyecto=privado)
         self.como(self.zorro)
@@ -215,6 +217,57 @@ class PruebasDeTareas(PruebaDeProyectos):
         self.assertEqual(self.client.get(f"/proyectos/tareas/{personal.pk}/").status_code, 403)
         self.como(self.zorro)
         self.assertEqual(self.client.get(f"/proyectos/tareas/{suelta.pk}/").status_code, 403)
+
+
+class PruebasDelSelectorDePersonas(PruebaDeProyectos):
+    """La lista de personas para elegir responsable y colaboradoras (ver audiencias/cercania.py)."""
+
+    # Lista de una tarea nueva en un proyecto de GRU Henares: Henares y, en sus subgrupos, Sorbe; nadie de
+    # GRU Tajo (no ve el proyecto) ni de ORG Ebro.
+    def test_lista_del_proyecto(self):
+        huerto = self.proyecto()
+        datos = self.client.get(f"/proyectos/tareas/personas/?proyecto={huerto.pk}").json()
+        self.assertTrue(datos["ve_la_lista"])
+        resumen = [(b["titulo"], [p["alias"] for g in b["grupos"] for p in g["personas"]]) for b in datos["bloques"]]
+        self.assertEqual(resumen, [("Aquí: GRU Henares", ["Lince", "Nutria"]), ("En sus subgrupos", ["Garza"])])
+
+    # Una tarea suelta nueva: la lista cambia con la visibilidad elegida (hasta el padre entra Zorro); al
+    # guardar, solo se acepta a quien la vería.
+    def test_tarea_suelta(self):
+        datos = self.client.get(f"/proyectos/tareas/personas/?grupo={self.henares.pk}&visibilidad=grupo:1").json()
+        self.assertIn("Zorro", json.dumps(datos))
+        self.assertNotIn("Zorro", json.dumps(self.client.get(f"/proyectos/tareas/personas/?grupo={self.henares.pk}&visibilidad=grupo:0").json()))
+        base = {"titulo": "Barrer", "descripcion": "", "limite": "", "estado": "pendiente", "colaboradores": ["Zorro"]}
+        respuesta = self.client.post(f"/proyectos/tareas/nueva/?grupo={self.henares.pk}", {**base, "visibilidad": "grupo:0"})
+        self.assertContains(respuesta, "No está entre quienes ven esto: Zorro.")
+        self.client.post(f"/proyectos/tareas/nueva/?grupo={self.henares.pk}", {**base, "visibilidad": "grupo:1"})
+        self.assertEqual(list(Tarea.objects.get(titulo="Barrer").colaboradores.all()), [self.zorro])
+
+    # Quien no ve el proyecto (Erizo, de otra organización) no recibe la lista; tampoco sin decir de qué.
+    def test_sin_acceso(self):
+        huerto = self.proyecto()
+        self.como(self.erizo)
+        self.assertEqual(self.client.get(f"/proyectos/tareas/personas/?proyecto={huerto.pk}").status_code, 404)
+        self.assertEqual(self.client.get(f"/proyectos/tareas/personas/?grupo={self.henares.pk}").status_code, 404)
+        self.assertEqual(self.client.get("/proyectos/tareas/personas/").status_code, 404)
+
+    # La ficha de una tarea abre el selector con quien ya está elegida, y su lista sale de la tarea.
+    def test_editar(self):
+        huerto = self.proyecto()
+        tarea = crear_tarea(self.nutria, {"titulo": "Regar", "responsable": self.garza}, colaboradores=[self.lince], proyecto=huerto)
+        respuesta = self.client.get(f"/proyectos/tareas/{tarea.pk}/")
+        self.assertContains(respuesta, 'data-valores="[&quot;Garza&quot;]"')
+        self.assertContains(respuesta, f"/proyectos/tareas/personas/?tarea={tarea.pk}")
+        self.assertIn("Garza", json.dumps(self.client.get(f"/proyectos/tareas/personas/?tarea={tarea.pk}").json()))
+
+    # La lista cuesta lo mismo con más personas en el grupo.
+    def test_consultas(self):
+        huerto = self.proyecto()
+        cuantas = iter(range(100))
+        self.comprobar_consultas(
+            f"/proyectos/tareas/personas/?proyecto={huerto.pk}", 6,
+            lambda: [admitir(crear_usuario_de_prueba(f"Nueva {next(cuantas)}"), self.henares) for _vez in range(5)],
+        )
 
 
 class PruebasDeDependencias(PruebaDeProyectos):

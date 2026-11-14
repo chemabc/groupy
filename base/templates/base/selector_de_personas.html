@@ -1,0 +1,110 @@
+{% comment %}
+  Selector de personas (base/formularios.py, SelectorDePersonas), movido por el componente
+  «selectorDePersonas» de interfaz.js. Las personas elegidas se ven como pastillas con una × y se envían
+  en campos ocultos con el nombre del campo. «Elegir…» abre una ventana que pide la lista (JSON de
+  audiencias/cercania.py) y la pinta en bloques por cercanía: el más cercano, con el color más intenso y
+  desplegado; los lejanos, más suaves y plegados. El buscador filtra mientras se escribe, por palabras del
+  alias o del grupo, sin importar tildes ni mayúsculas, y despliega los bloques donde hay coincidencias.
+  Si quien elige no puede ver la lista, la ventana solo deja escribir el alias exacto.
+  Recibe «widget» (name, attrs, valores_json, url, varias, parametros y vacio).
+{% endcomment %}
+<div x-data="selectorDePersonas" data-nombre="{{ widget.name }}" data-url="{{ widget.url }}" data-valores="{{ widget.valores_json }}"
+     data-varias="{% if widget.varias %}1{% endif %}" data-parametros="{{ widget.parametros }}">
+  {# Las elegidas y el botón que abre la ventana #}
+  <div class="flex flex-wrap items-center gap-1 rounded border border-slate-300 bg-white px-1 py-1 dark:border-slate-700 dark:bg-slate-900">
+    <template x-for="alias in elegidas" :key="alias">
+      <span class="inline-flex items-center gap-1 rounded-full bg-marca/10 py-0.5 pr-1 pl-2 text-sm text-marca">
+        <span x-text="alias"></span>
+        <button type="button" class="rounded-full px-1 hover:bg-marca/20" :aria-label="'Quitar a ' + alias" @click="quitar(alias)">×</button>
+        <input type="hidden" :name="nombre" :value="alias">
+      </span>
+    </template>
+    <span x-show="!elegidas.length" class="px-1 text-sm text-slate-500">{{ widget.vacio }}</span>
+    <button type="button" id="{{ widget.attrs.id }}" aria-describedby="{{ widget.attrs.id }}_helptext" aria-haspopup="dialog"
+            class="ml-auto rounded border border-slate-300 px-2 py-0.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+            @click="abrir()">Elegir…</button>
+  </div>
+
+  {# Ventana para elegir #}
+  <div x-show="abierta" x-cloak x-transition.opacity class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+       @click.self="cerrar()" @keydown.escape.stop.prevent="cerrar()">
+    <div role="dialog" aria-modal="true" :aria-label="varias ? 'Elegir personas' : 'Elegir una persona'"
+         class="flex max-h-[85vh] w-full max-w-xl flex-col rounded-lg bg-white shadow-xl dark:bg-slate-900">
+      <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+        <h2 class="font-semibold" x-text="varias ? 'Elegir personas' : 'Elegir una persona'"></h2>
+        <button type="button" class="ml-auto rounded px-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="Cerrar" @click="cerrar()">✕</button>
+      </div>
+
+      {# Con lista: buscador y bloques por cercanía #}
+      <template x-if="veLaLista">
+        <div class="flex min-h-0 flex-1 flex-col">
+          <div class="px-4 pt-3">
+            <input type="search" x-ref="buscador" x-model="texto" autocomplete="off" aria-label="Buscar por alias o por grupo"
+                   placeholder="Buscar por alias o por grupo…"
+                   class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <p class="mt-1 text-xs text-slate-500">Solo salen las personas que ven esto, de las más cercanas a las más lejanas.</p>
+          </div>
+          <div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+            <p x-show="cargando" class="text-sm text-slate-500">Cargando…</p>
+            <p x-show="error" x-text="error" class="text-sm text-red-700 dark:text-red-400" role="alert"></p>
+            <template x-for="(bloque, numero) in bloques" :key="numero">
+              <section x-show="cuantasDelBloque(bloque)" class="rounded border-l-4 pl-3"
+                       :class="['border-marca bg-marca/10', 'border-marca/70 bg-marca/5', 'border-marca/40', 'border-slate-300 dark:border-slate-700'][Math.min(bloque.nivel, 3)]">
+                <button type="button" class="flex w-full items-center gap-2 py-1.5 pr-2 text-left" :aria-expanded="estaAbierto(numero)" @click="alternar(numero)">
+                  <span class="inline-block text-xs text-slate-500 transition-transform" :class="estaAbierto(numero) && 'rotate-90'" aria-hidden="true">▸</span>
+                  <span class="font-medium" x-text="bloque.titulo"></span>
+                  <span class="rounded-full bg-white/70 px-1.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300" x-text="bloque.cercania"></span>
+                  <span class="ml-auto text-xs tabular-nums text-slate-500" x-text="cuantasDelBloque(bloque)"></span>
+                </button>
+                <div x-show="estaAbierto(numero)" class="pb-2">
+                  <p class="mb-1 text-xs text-slate-500" x-text="bloque.explicacion"></p>
+                  <template x-for="grupo in bloque.grupos" :key="grupo.nombre">
+                    <div x-show="cuantasDelGrupo(grupo)" class="mb-1">
+                      <p x-show="grupo.nombre" class="text-xs font-semibold text-slate-600 dark:text-slate-300" x-text="grupo.nombre"></p>
+                      <ul class="grid grid-cols-2 gap-x-2 sm:grid-cols-3">
+                        <template x-for="persona in grupo.personas" :key="persona.alias">
+                          <li x-show="coincide(persona, grupo)">
+                            <button type="button" :role="varias ? 'checkbox' : 'radio'" :aria-checked="esta(persona.alias)"
+                                    class="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-white dark:hover:bg-slate-800"
+                                    :class="esta(persona.alias) && 'font-medium text-marca'" @click="elegir(persona.alias)">
+                              <span class="grid size-4 shrink-0 place-items-center border border-slate-400 text-[0.65rem] leading-none"
+                                    :class="[varias ? 'rounded-sm' : 'rounded-full', esta(persona.alias) ? 'border-marca bg-marca text-white' : '']"
+                                    aria-hidden="true" x-text="esta(persona.alias) ? '✓' : ''"></span>
+                              <span class="truncate" x-text="persona.alias"></span>
+                              <span x-show="persona.marca" class="rounded bg-slate-200 px-1 text-[0.65rem] text-slate-600 dark:bg-slate-700 dark:text-slate-300" x-text="persona.marca"></span>
+                            </button>
+                          </li>
+                        </template>
+                      </ul>
+                    </div>
+                  </template>
+                </div>
+              </section>
+            </template>
+            <p x-show="!cargando && !error && !hayCoincidencias()" class="text-sm text-slate-500"
+               x-text="texto ? `Nadie de la lista coincide con «${texto}».` : 'No hay nadie más que lo vea.'"></p>
+          </div>
+        </div>
+      </template>
+
+      {# Sin lista (la organización la ha cerrado): escribir el alias exacto #}
+      <template x-if="!veLaLista">
+        <div class="space-y-2 px-4 py-3 text-sm">
+          <p class="text-slate-600 dark:text-slate-300">Tu organización no enseña la lista de miembros a todo el mundo. Escribe el alias exacto de la persona; al guardar se comprueba que vea esto.</p>
+          <div class="flex gap-2">
+            <input type="text" x-ref="alias" x-model="aliasEscrito" autocomplete="off" aria-label="Alias exacto" placeholder="Alias exacto"
+                   class="flex-1 rounded border border-slate-300 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900"
+                   @keydown.enter.prevent="anadirEscrito()">
+            <button type="button" class="rounded border border-marca px-3 py-1.5 text-marca" @click="anadirEscrito()">Añadir</button>
+          </div>
+        </div>
+      </template>
+
+      <div class="flex items-center gap-2 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+        <span class="text-xs text-slate-500" x-text="varias ? `${elegidas.length} elegidas` : (elegidas[0] ? `Elegida: ${elegidas[0]}` : 'Nadie elegido')"></span>
+        <button type="button" class="ml-auto rounded bg-marca px-3 py-1.5 text-sm text-white" @click="cerrar()">Listo</button>
+      </div>
+    </div>
+  </div>
+</div>

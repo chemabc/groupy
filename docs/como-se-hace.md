@@ -114,6 +114,19 @@ En «Calendario → Ver el calendario», pulsa un hueco del día. Decide si lo v
 2. Elige si es de un grupo o personal. Los personales solo los ves tú.
 3. Dentro de su ficha puedes crear subproyectos, tareas y recursos.
 
+### Encargar una tarea a alguien
+
+1. Al crear o cambiar la tarea, en «Responsable» (o en «Colaboran»), pulsa **Elegir…**.
+2. Sale una ventana con las personas que ven la tarea: primero las de tu grupo («Aquí»), después las de sus
+   subgrupos y, más abajo y plegadas, las de los grupos de más arriba. Junto a cada alias, «admin» si
+   administra su grupo y «tú» si eres tú.
+3. Escribe en el buscador parte del alias o del grupo para encontrar a alguien al momento.
+4. Responsable: pulsa a la persona y la ventana se cierra. Colaboran: marca a varias y pulsa **Listo**.
+5. Las personas elegidas quedan en el formulario; la × quita a una. Si no eliges responsable, eres tú.
+
+Si tu organización no enseña la lista de miembros, la ventana te pide el alias exacto. Solo se puede elegir
+a quien ve la tarea.
+
 ### Mover una tarea de estado
 
 En «Proyectos → Mis tareas» (o en el kanban de un proyecto), arrastra la tarjeta a otra columna: pendiente,

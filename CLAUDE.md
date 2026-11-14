@@ -142,5 +142,7 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   y la agrupación del menú (se quitan `orden` y `dentro_de`); módulo `ayuda` (sección «Ayuda»: How to?,
   Documentación de la plataforma, Guía de desarrollo) con los documentos de docs/; ? rojo en la cabecera
   y panel de ayuda a la derecha (no se vuelve a pintar al navegar, separador arrastrable, se recuerda) e
-  índice plegable. Siguiente: fase 5 (`documentos` y `decisiones`), pendiente de las preguntas de [A-30].
+  índice plegable. Y selector de personas común ([A-35]: `base` SelectorDePersonas/CampoDePersonas, isla
+  `selectorDePersonas`, `audiencias/cercania.py`), de entrada en la responsable y colaboran de las tareas.
+  Siguiente: fase 5 (`documentos` y `decisiones`), pendiente de las preguntas de [A-30].
   Recuerda `migrate --database=boveda`.
