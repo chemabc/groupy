@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «talentos».
 """
 
-from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, Vista
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, Vista, TarjetaDeInicio
 
 
 class TalentosConfig(ModuloConfig):
@@ -34,6 +34,10 @@ class TalentosConfig(ModuloConfig):
         Permiso("talentos.pedir", "Pedir talentos al grupo (cuáles y cuántos) y ver quién se ofrece", roles=("admin_grupo", "admin_org")),
         # Sin roles por defecto: solo el superadmin.
         Permiso("talentos.catalogo", "Ordenar el catálogo de talentos: renombrar, poner relacionadas y fusionar repetidos"),
+    )
+    # Sus recuadros de la portada (Inicio); dónde sale cada uno lo decide config/inicio.py.
+    tarjetas_de_inicio = (
+        TarjetaDeInicio("talentos.mios", "Mis talentos", "talentos.inicio.mios", icono="❀", color="#86198f"),
     )
     menu = (
         # Las entradas de talentos van en sitios distintos (ver config/menu.py): los míos, en «Configuración de

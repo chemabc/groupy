@@ -522,3 +522,32 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2). No hace falta migrar.
   el camino hasta él, con el recuadro rojo.
 - [ ] Con el tema oscuro (☾), los colores se siguen leyendo (amarillo, violeta y rojo más apagados).
 - [ ] En el móvil (o la ventana estrecha), los árboles van uno debajo de otro.
+
+## 28. Inicio: Panel y Mis datos
+
+Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor (hay ficheros nuevos que
+se leen al arrancar: `config/inicio.py` y los `inicio.py` de los módulos). No hace falta migrar.
+
+- [ ] Como **Nutria**, «Inicio → Panel»: arriba, dos recuadros, «Comunicaciones» y «Solicitudes»; cada uno
+  partido en «Recibidas» y «Enviadas». Debajo, «Mis proyectos abiertos» con Riego, Huerto comunitario y
+  Bomba solar, su estado, su grupo y, si tiene, «hasta el …». Pulsa uno: va a su ficha.
+- [ ] Como **Garza**, pide entrar en GRU Henares («Comunicaciones → Solicitudes → Enviadas → Pedir
+  algo»). En el panel de Garza sale en «Solicitudes → Enviadas»; en el de **Nutria**, en «Recibidas, para
+  apoyar (1)», con un punto de color. Al apoyarla, desaparece de su panel.
+- [ ] Como **Nutria**, escribe a la administración de GRU Henares: sale en «Comunicaciones → Enviadas, sin
+  resolver». Como **Lince**, contéstala desde «Administrar → Buzón de la administración». Como **Nutria**:
+  ahora sale en «Recibidas» («respuesta de la administración», con punto) y ya no en «Enviadas».
+- [ ] Cada recuadro tiene arriba su botón («Ir a comunicaciones», «Ir a solicitudes», «Ir a proyectos»).
+  Si un apartado tiene más de 5 (8 en proyectos), sale «Ver todas (N)».
+- [ ] «Inicio → Mis datos»: «Datos públicos» (alias y fecha), «Mis talentos», «Datos privados» (correo,
+  cómo se creó la cuenta y el tema, la letra y la densidad) junto a «Mi lugar», y «Mis grupos» con el
+  árbol (asamblea base en amarillo, rol junto a cada grupo). Cada recuadro con «Editar»; el de los grupos,
+  «Pedir entrar en un grupo».
+- [ ] «Editar» de los datos lleva a «Configuración de mi cuenta → Mis datos → Datos» (antes vacía): una tabla
+  con cada dato, su valor, quién lo ve y cómo se cambia. Cambia el correo alternativo y guarda: sale
+  «Guardado.» y el correo nuevo aparece en Inicio → Mis datos. Un correo mal escrito da un error.
+- [ ] El «?» gris de «Mis datos» (en Configuración de mi cuenta) explica sus tres pestañas.
+- [ ] En el móvil, los recuadros van uno debajo de otro.
+- [ ] Mover un recuadro: en `config/inicio.py`, pon `"lugares.mi_lugar"` en la primera fila de
+  `"mis_datos"`, reinicia el servidor y mira el cambio. Déjalo como estaba. Si dejas una tarjeta sin
+  colocar, `python manage.py check` da el error `base.E007`.

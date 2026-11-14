@@ -14,6 +14,7 @@ from base.contrato import (
     Limpiable,
     ModuloConfig,
     Permiso,
+    TarjetaDeInicio,
     TipoDeAviso,
     Vista,
 )
@@ -68,6 +69,10 @@ class ProyectosConfig(ModuloConfig):
     fuentes_de_calendario = (
         FuenteDeCalendario("proyectos.proyectos", "Proyectos", "proyectos.calendario.proyectos", color="#4338ca", mover="proyectos.calendario.mover_proyecto"),
         FuenteDeCalendario("proyectos.tareas", "Tareas", "proyectos.calendario.tareas", color="#0f766e", mover="proyectos.calendario.mover_tarea"),
+    )
+    # Sus recuadros de la portada (Inicio); dónde sale cada uno lo decide config/inicio.py.
+    tarjetas_de_inicio = (
+        TarjetaDeInicio("proyectos.abiertos", "Mis proyectos abiertos", "proyectos.inicio.abiertos", icono="❏", color="#6d28d9"),
     )
     menu = (
         # «Tareas y proyectos». La ficha de una tarea pertenece a «Tareas» y la de un proyecto a «Proyectos»,

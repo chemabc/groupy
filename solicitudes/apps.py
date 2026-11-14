@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «solicitudes».
 """
 
-from base.contrato import Ayuda, Capa, Emision, EntradaDeMenu, ModuloConfig, Permiso, TareaDiaria, TipoDeAviso, Vista
+from base.contrato import Ayuda, Capa, Emision, EntradaDeMenu, ModuloConfig, Permiso, TareaDiaria, TipoDeAviso, Vista, TarjetaDeInicio
 
 
 class SolicitudesConfig(ModuloConfig):
@@ -40,6 +40,10 @@ class SolicitudesConfig(ModuloConfig):
             "Ajustar cuántos apoyos y cuántos días tiene cada tipo de solicitud en la organización",
             roles=("admin_org",),
         ),
+    )
+    # Sus recuadros de la portada (Inicio); dónde sale cada uno lo decide config/inicio.py.
+    tarjetas_de_inicio = (
+        TarjetaDeInicio("solicitudes.pendientes", "Solicitudes", "solicitudes.inicio.pendientes", icono="☛", color="#7c2d12"),
     )
     menu = (
         # «Solicitudes», con sus pestañas (enviadas, para apoyar, histórico… y las peticiones de talentos):

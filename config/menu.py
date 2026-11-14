@@ -82,7 +82,7 @@ DISPOSICION = (
         ("usuarios.cuenta", (
             "usuarios.usabilidad",
             Pestanas("usuarios.mis_datos", (
-                "proximamente.datos_de_cuenta",
+                "usuarios.datos",
                 "talentos.mios",
                 "lugares.mi_lugar",
             )),

@@ -52,8 +52,9 @@ class BaseConfig(ModuloConfig):
                 "Tu portada.\n\n"
                 "«Panel»: lo pendiente (comunicaciones y solicitudes, enviadas y recibidas) y los proyectos "
                 "abiertos en los que participas.\n\n"
-                "«Mis datos»: un resumen de tu cuenta, con un botón para editar cada parte.\n\n"
-                "Los dos están aún por hacer."
+                "«Mis datos»: un resumen de tu cuenta (datos públicos, talentos, datos privados, lugar y el árbol "
+                "de tus grupos), con un botón para editar cada parte.\n\n"
+                "Todo se puede pulsar: cada línea lleva a su sitio."
             ),
             ejemplo="Al entrar por la mañana, el panel te dice que tienes una solicitud por apoyar y dos tareas de un proyecto.",
         ),

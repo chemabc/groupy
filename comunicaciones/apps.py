@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «comunicaciones».
 """
 
-from base.contrato import Ayuda, Capa, EntradaDeMenu, Limpiable, ModuloConfig, Permiso, Vista
+from base.contrato import Ayuda, Capa, EntradaDeMenu, Limpiable, ModuloConfig, Permiso, Vista, TarjetaDeInicio
 
 
 class ComunicacionesConfig(ModuloConfig):
@@ -41,6 +41,10 @@ class ComunicacionesConfig(ModuloConfig):
             "comunicaciones.notificacion_sin_ver", "comunicaciones.Notificacion", "Notificaciones sin ver (días desde que llegaron)",
             borrar="comunicaciones.limpieza.borrar_sin_ver", borrar_a=365,
         ),
+    )
+    # Sus recuadros de la portada (Inicio); dónde sale cada uno lo decide config/inicio.py.
+    tarjetas_de_inicio = (
+        TarjetaDeInicio("comunicaciones.pendientes", "Comunicaciones", "comunicaciones.inicio.pendientes", icono="☏", color="#9333ea"),
     )
     menu = (
         # Las entradas de «Comunicaciones». Dónde va cada una (también las de administrar y la de las

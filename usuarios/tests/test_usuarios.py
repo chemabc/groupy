@@ -174,3 +174,29 @@ class PruebasDeLosEjemplos(TestCase):
     def test_solo_en_desarrollo(self):
         with self.assertRaises(CommandError):
             call_command("ejemplos", "crear")
+
+
+class PruebasDeMisDatos(PruebaDePantalla):
+    """«Configuración de mi cuenta → Mis datos → Datos»: cada dato con quién lo ve, y el correo se cambia."""
+
+    # Crea a Nutria, con la sesión iniciada.
+    @classmethod
+    def setUpTestData(cls):
+        cls.usuario = crear_usuario_de_prueba("Nutria")
+
+    # La pantalla enseña los datos y quién ve cada uno, con 1 consulta (el usuario de la sesión).
+    def test_ver(self):
+        respuesta = self.comprobar_consultas("/cuenta/datos/", 1, None)
+        self.assertContains(respuesta, "Quién lo ve")
+        self.assertContains(respuesta, "Nutria")
+
+    # El correo alternativo se cambia y se puede quitar; uno mal escrito no se guarda.
+    def test_cambiar_el_correo(self):
+        respuesta = self.client.post("/cuenta/datos/", {"correo_alternativo": "nutria@example.org"})
+        self.assertRedirects(respuesta, "/cuenta/datos/?guardado=1")
+        self.usuario.refresh_from_db()
+        self.assertEqual(self.usuario.correo_alternativo, "nutria@example.org")
+        self.assertContains(self.client.post("/cuenta/datos/", {"correo_alternativo": "no-es-un-correo"}), "Introduzca una dirección")
+        self.client.post("/cuenta/datos/", {"correo_alternativo": ""})
+        self.usuario.refresh_from_db()
+        self.assertEqual(self.usuario.correo_alternativo, "")

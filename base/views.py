@@ -1,30 +1,30 @@
 """
-Pantallas del módulo «base»: la portada de cada cuenta («Inicio»: Panel y Mis datos, aún por hacer) y la
+Pantallas del módulo «base»: la portada de cada cuenta («Inicio»: Panel y Mis datos, con las tarjetas de los módulos) y la
 demostración de la plantilla general («Desarrollo y mantenimiento → Componentes»: Estructura y Componentes).
 """
 
 from django.shortcuts import render
 
 from .demostracion import FormularioDeDemostracion, tabla_de_demostracion
+from .inicio import filas_de
 
 
 # Pantalla «Inicio → Panel»: la portada de cada cuenta, adonde se va al iniciar sesión y al pulsar el
-# nombre de la aplicación. Aún por hacer: tendrá lo pendiente y los proyectos abiertos.
+# nombre de la aplicación. Un dashboard que resume otras secciones: arriba, las comunicaciones y las
+# solicitudes pendientes (recibidas y enviadas); debajo, los proyectos abiertos en los que participas.
+# Cada recuadro lo aporta su módulo (TarjetaDeInicio) y su sitio lo decide config/inicio.py. Cuesta la
+# suma de las consultas de sus tarjetas (unas 13), haya lo que haya.
 def inicio(request):
-    descripcion = (
-        "Tu panel: arriba, las comunicaciones y solicitudes pendientes (las que has enviado y las que has "
-        "recibido); debajo, los proyectos en los que participas que siguen abiertos. Todo se podrá pulsar."
-    )
-    return render(request, "base/proximamente.html", {"descripcion": descripcion})
+    contexto = {"filas": filas_de("panel", request), "pantalla": "panel"}
+    return render(request, "base/portada.html", contexto)
 
 
-# Pantalla «Inicio → Mis datos»: resumen de los datos de la cuenta. Aún por hacer.
+# Pantalla «Inicio → Mis datos»: los datos de la cuenta de un vistazo, cada recuadro con su botón
+# «Editar» (que lleva a «Configuración de mi cuenta → Mis datos» o a la sección de cada cosa): datos
+# públicos, talentos, datos privados y lugar, y el árbol de tus grupos con tu rol en cada uno.
 def mis_datos(request):
-    descripcion = (
-        "Tus datos de un vistazo: tu alias y lo que ven los demás, tus talentos, lo que solo ves tú (tu lugar…) "
-        "y el árbol de tus grupos con tu rol en cada uno. Cada panel con un botón para editarlo."
-    )
-    return render(request, "base/proximamente.html", {"descripcion": descripcion})
+    contexto = {"filas": filas_de("mis_datos", request), "pantalla": "mis_datos"}
+    return render(request, "base/portada.html", contexto)
 
 
 # Pantalla «Desarrollo y mantenimiento → Componentes → Estructura»: explica las partes de la plantilla.

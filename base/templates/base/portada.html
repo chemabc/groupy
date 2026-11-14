@@ -1,0 +1,59 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantallas «Inicio → Panel» e «Inicio → Mis datos» (base/views.py, inicio y mis_datos). Solo pinta: cada
+  recuadro lo aporta un módulo (TarjetaDeInicio) y su sitio lo decide config/inicio.py. Recibe:
+    - filas: lista de filas; cada fila, una lista de TarjetaPintada (tarjeta: título, icono y color; resumen:
+      sus apartados con sus líneas y el botón; html: su plantilla propia ya pintada, si tiene).
+    - pantalla: «panel» o «mis_datos».
+  Cada fila reparte su ancho entre sus tarjetas (una debajo de otra en el móvil).
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-4">
+  {% for fila in filas %}
+    <div class="grid gap-4 {% if fila|length == 2 %}lg:grid-cols-2{% elif fila|length >= 3 %}lg:grid-cols-3{% endif %}">
+      {% for pintada in fila %}
+        {% with tarjeta=pintada.tarjeta resumen=pintada.resumen %}
+          <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" aria-label="{{ tarjeta.titulo }}">
+            <header class="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 class="flex items-center gap-2 font-semibold">
+                {% if tarjeta.icono %}<span class="grid size-6 place-items-center rounded bg-(--icono)/15 text-sm text-(--icono) dark:bg-(--icono)/25 dark:text-[color-mix(in_oklab,var(--icono)_65%,white)]" style="--icono: {{ tarjeta.color }}" aria-hidden="true">{{ tarjeta.icono }}&#xFE0E;</span>{% endif %}
+                {{ tarjeta.titulo }}
+              </h2>
+              {% if resumen.enlace %}<a href="{{ resumen.enlace }}" class="rounded border border-slate-300 px-2 py-0.5 text-sm text-marca hover:border-marca dark:border-slate-700">{{ resumen.boton }}</a>{% endif %}
+            </header>
+            <div class="{% if resumen.apartados|length > 1 %}grid gap-4 sm:grid-cols-2{% endif %}">
+              {% for apartado in resumen.apartados %}
+                <div class="min-w-0">
+                  {% if apartado.titulo %}<h3 class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{{ apartado.titulo }}{% if apartado.total %} ({{ apartado.total }}){% endif %}</h3>{% endif %}
+                  {% if apartado.filas %}
+                    <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+                      {% for fila_de_resumen in apartado.filas %}
+                        <li class="py-1.5">
+                          {% if fila_de_resumen.enlace %}<a href="{{ fila_de_resumen.enlace }}" class="block rounded px-1 hover:bg-slate-50 dark:hover:bg-slate-800">{% else %}<div class="px-1">{% endif %}
+                            <span class="{% if fila_de_resumen.destacada %}font-semibold{% endif %}">{% if fila_de_resumen.destacada %}<span class="mr-1 inline-block size-2 rounded-full bg-marca align-middle" aria-label="pendiente"></span>{% endif %}{{ fila_de_resumen.texto }}</span>
+                            {% if fila_de_resumen.detalle or fila_de_resumen.fecha %}
+                              <span class="block text-xs text-slate-500">{{ fila_de_resumen.detalle }}{% if fila_de_resumen.detalle and fila_de_resumen.fecha %} · {% endif %}{% if fila_de_resumen.fecha %}hace {{ fila_de_resumen.fecha|timesince }}{% endif %}</span>
+                            {% endif %}
+                          {% if fila_de_resumen.enlace %}</a>{% else %}</div>{% endif %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                    {% if apartado.enlace and apartado.total > apartado.filas|length %}
+                      <a href="{{ apartado.enlace }}" class="mt-1 inline-block text-sm text-marca hover:underline">Ver todas ({{ apartado.total }})</a>
+                    {% endif %}
+                  {% else %}
+                    <p class="px-1 text-sm text-slate-500">{{ apartado.vacio }}</p>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+            {% if pintada.html %}{{ pintada.html }}{% endif %}
+          </section>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% empty %}
+    <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">Aún no hay nada que enseñar aquí.</p>
+  {% endfor %}
+</div>
+{% endblock %}

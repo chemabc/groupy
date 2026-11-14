@@ -18,6 +18,8 @@ urlpatterns = [
     path("preferencias/", views.preferencias, name="preferencias"),
     # Guarda una preferencia (la llama interfaz.js).
     path("preferencias/guardar/", views.guardar_preferencia, name="guardar_preferencia"),
+    # Configuración de mi cuenta → Mis datos → Datos.
+    path("datos/", views.datos, name="datos"),
     # Configuración de mi cuenta → Contraseña.
     path("contrasena/", views.contrasena, name="contrasena"),
 ]

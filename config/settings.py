@@ -40,6 +40,10 @@ GUIAS_DE_DESARROLLO_PARA_TODOS = os.environ.get("DJANGO_GUIAS_PARA_TODOS", "1" i
 # una (ver config/menu.py). Lo lee el registro de módulos al arrancar (base/apps.py).
 DISPOSICION_DEL_MENU = "config.menu.DISPOSICION"
 
+# Dónde está la disposición de la portada, «Inicio»: qué tarjetas salen en cada pantalla, en qué fila y
+# en qué orden (ver config/inicio.py). La lee base/inicio.py.
+DISPOSICION_DEL_INICIO = "config.inicio.DISPOSICION"
+
 # Si se muestra la barra de depuración (django-debug-toolbar): en desarrollo sí, en las pruebas no.
 USAR_BARRA_DE_DEPURACION = DEBUG and not PROBANDO
 

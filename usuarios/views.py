@@ -1,17 +1,17 @@
 """
-Pantallas del módulo «usuarios»: entrar, salir, preferencias y contraseña.
+Pantallas del módulo «usuarios»: entrar, salir, preferencias, mis datos y contraseña.
 """
 
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from base.preferencias import PREFERENCIAS, es_valida
 
-from .formularios import FormularioDeEntrada
+from .formularios import FormularioDeCorreo, FormularioDeEntrada
 from .models import Usuario
 
 
@@ -58,3 +58,23 @@ def contrasena(request):
         cambiada = True
         formulario = PasswordChangeForm(request.user)
     return render(request, "usuarios/contrasena.html", {"formulario": formulario, "cambiada": cambiada})
+
+
+# Pantalla «Configuración de mi cuenta → Mis datos → Datos»: cada dato de la cuenta, con quién lo ve y, si
+# se puede, el formulario para cambiarlo (de momento, solo el correo alternativo; el alias lo cambia la
+# administración). Es la que abre el botón «Editar» de «Inicio → Mis datos». Cuesta 1 consulta al guardar
+# y ninguna al mirar.
+#   - POST «correo_alternativo»: el correo nuevo (o vacío, para quitarlo).
+def datos(request):
+    usuario = request.user
+    formulario = FormularioDeCorreo(request.POST or None, instance=usuario)
+    if request.method == "POST" and formulario.is_valid():
+        formulario.save()
+        return redirect(f"{request.path}?guardado=1")
+    filas = [
+        {"dato": "Alias", "valor": usuario.alias, "quien": "Las personas de tus grupos y quien administra tus grupos.", "cambiar": "Lo cambia la administración: pídelo en «Comunicaciones → Conversaciones → Con la administración»."},
+        {"dato": "En la plataforma desde", "valor": f"{usuario.activado_el:%d/%m/%Y}", "quien": "Las personas de tus grupos.", "cambiar": "No se cambia."},
+        {"dato": "Cómo se creó la cuenta", "valor": usuario.get_origen_display(), "quien": "Tú y el superadmin.", "cambiar": "No se cambia."},
+        {"dato": "Correo alternativo", "valor": usuario.correo_alternativo or "—", "quien": "Tú y el superadmin (para ayudarte a recuperar la cuenta).", "cambiar": "Aquí abajo."},
+    ]
+    return render(request, "usuarios/datos.html", {"filas": filas, "formulario": formulario, "guardado": "guardado" in request.GET})

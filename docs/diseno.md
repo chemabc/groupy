@@ -534,8 +534,9 @@ propio va separado de lo que se hace por otras personas.
 - **Herramientas que aún no existen** (módulo `proximamente`): cada una tiene su entrada, con su sitio en
   el menú, y al pulsarla dice que está vacía y qué hará. Son: conversaciones con grupos y con personas,
   grafo de grupos, datos de la cuenta, debates, consultas, órdenes del día y actas, decisiones, miembros,
-  eventos de los grupos que administro, moderación y web pública. «Inicio → Panel» y «Mis datos» también
-  dicen que están vacíos. Cuando se construye una, se cambia su código en `config/menu.py`.
+  eventos de los grupos que administro, moderación y web pública. Cuando se construye una, se cambia su
+  código en `config/menu.py`. (Ya hechas: «Inicio → Panel» y «Mis datos», y los datos de la cuenta; ver
+  «Inicio» más abajo.)
 - **Separaciones que han hecho falta:**
   - Las conversaciones: las propias, en «Comunicaciones»; las que se atienden, en «Administrar → Buzón de
     la administración» (con su número aparte).
@@ -551,6 +552,40 @@ propio va separado de lo que se hace por otras personas.
 - *Pendiente:* las tipologías y las etiquetas comunes las cambia el superadmin desde «Administrar → Mi
   organización» (es la misma pantalla que la de cada organización); si se quiere, se puede separar en
   «Plataforma → Catálogos comunes».
+
+**Inicio: Panel y Mis datos (14 de noviembre de 2026, [A-40], decisiones 1 y 2 de la persona usuaria;
+lo pedido en docs/todo.md, «Reorganización de menús», 1).** La portada de cada cuenta.
+- **«Panel» es un dashboard:** resume lo que ya está en otras secciones, sin datos nuevos, y todo lleva a
+  su sitio.
+  - Fila 1: «Comunicaciones» (recibidas: notificaciones sin ver y respuestas de la administración sin
+    leer; enviadas: las conversaciones que empezaste y siguen sin resolver) y «Solicitudes» (recibidas:
+    las que puedes apoyar y aún no has respondido; enviadas: las tuyas pendientes).
+  - Fila 2: «Mis proyectos abiertos»: los que no están terminados ni archivados y en los que participas
+    (los creaste, tienes un cometido o eres responsable o colaboras en una de sus tareas), primero los que
+    tienen fecha límite.
+  - Cada apartado enseña lo más reciente (5; 8 proyectos) y «Ver todas (N)» si hay más.
+  - Lo que se hace como admin (buzón, «Por aprobar») no sale: está en «Administrar».
+  - «Enviadas» de comunicaciones son las **sin resolver** y no «las que esperan respuesta»: no se guarda
+    quién escribió el último mensaje, solo si cada parte tiene algo sin leer.
+- **«Mis datos»: Inicio enseña y «Configuración de mi cuenta → Mis datos» edita** (decisión 1). Filas:
+  datos públicos (alias, desde cuándo); talentos; datos privados (correo alternativo, cómo se creó la
+  cuenta, preferencias) y mi lugar; y el **árbol de mis grupos** con el rol en cada uno (decisión 2: el
+  mismo componente de «Árboles de grupos», apartado 8.1). Cada recuadro con su botón «Editar»; el de los
+  grupos, «Pedir entrar en un grupo».
+  - *Descartado (1B):* una sola pantalla editable en Inicio (habría dos sitios para lo mismo).
+- **«Configuración de mi cuenta → Mis datos → Datos»** (antes vacía): cada dato con quién lo ve y cómo se
+  cambia; aquí se cambia el correo alternativo. El alias lo cambia la administración.
+- **Cómo está hecho:** pieza nueva del contrato, `TarjetaDeInicio` (título, icono, color y la función que
+  hace el resumen: devuelve un `ResumenDeTarjeta` con `ApartadoDeTarjeta` y `FilaDeResumen`, o una
+  plantilla propia, o None si no toca). Cada módulo pone su función en su `inicio.py`. **Dónde va cada
+  tarjeta lo decide `config/inicio.py`**, como el menú en `config/menu.py`; `manage.py check` avisa si
+  sobra, falta o se repite una (`base.E007`). `base/inicio.py` las junta sin importar los módulos.
+  - *Motivo:* `base` es la capa de abajo y no puede importar `comunicaciones`, `solicitudes` ni
+    `proyectos`; así, cuando existan debates o consultas, añaden su tarjeta sin tocar `base`.
+  - Los totales de lo recibido son los mismos números del menú (ya en la caché), así que no cuestan
+    consultas. El panel cuesta 10 consultas y «Mis datos», 6, haya lo que haya.
+  - *Descartado:* tarjetas que solo enseñen los números del menú (no dicen qué hay pendiente ni separan
+    lo enviado de lo recibido).
 
 **Selector de personas (14 de noviembre de 2026, decisiones 1A, 2, 3A, 4A con buscador y 5 de la persona
 usuaria).** Para elegir personas (de entrada, la responsable y quienes colaboran en una tarea) ya no se

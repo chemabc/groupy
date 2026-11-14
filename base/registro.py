@@ -26,6 +26,7 @@ APARTADOS_CON_CODIGO = {
     "anclas": "tipo",
     "huecos": "codigo",
     "fuentes_de_calendario": "codigo",
+    "tarjetas_de_inicio": "codigo",
     "emite": "nombre",
     "grupos_de_etiquetas": "codigo",
     "limpiables": "codigo",

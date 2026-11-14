@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «grupos».
 """
 
-from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, TipoDeSolicitud, Vista
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, TipoDeSolicitud, Vista, TarjetaDeInicio
 
 
 class GruposConfig(ModuloConfig):
@@ -125,6 +125,10 @@ class GruposConfig(ModuloConfig):
     datos_de_ejemplo = DatosDeEjemplo(crear="grupos.ejemplos.crear", borrar="grupos.ejemplos.borrar")
     # Sección «Organizaciones y grupos» (13 de noviembre de 2026): la ven todas las personas; «Árbol», solo
     # quien administra algo. Las fichas de grupo y de organización cuelgan de la sección principal.
+    # Sus recuadros de la portada (Inicio); dónde sale cada uno lo decide config/inicio.py.
+    tarjetas_de_inicio = (
+        TarjetaDeInicio("grupos.mis_grupos", "Mis grupos", "grupos.inicio.mis_grupos", icono="◉", color="#059669"),
+    )
     menu = (
         EntradaDeMenu(
             codigo="grupos.organizaciones",

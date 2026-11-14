@@ -1,0 +1,37 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Configuración de mi cuenta → Mis datos → Datos» (usuarios/views.py, datos). Recibe «filas»
+  (cada dato con su valor, quién lo ve y cómo se cambia), «formulario» (FormularioDeCorreo) y «guardado»
+  (verdadero justo después de guardar).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  {% if guardado %}
+    <p class="rounded border border-green-300 bg-green-50 p-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300" role="status">Guardado.</p>
+  {% endif %}
+  <section class="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-left text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+        <tr><th class="px-3 py-2">Dato</th><th class="px-3 py-2">Valor</th><th class="px-3 py-2">Quién lo ve</th><th class="px-3 py-2">Cómo se cambia</th></tr>
+      </thead>
+      <tbody>
+        {% for fila in filas %}
+          <tr class="border-t border-slate-200 dark:border-slate-800">
+            <td class="px-3 py-2 font-medium">{{ fila.dato }}</td>
+            <td class="px-3 py-2">{{ fila.valor }}</td>
+            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ fila.quien }}</td>
+            <td class="px-3 py-2 text-slate-600 dark:text-slate-300">{{ fila.cambiar }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <form method="post" class="max-w-md rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h2 class="mb-2 font-semibold">Cambiar el correo alternativo</h2>
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+  </form>
+  <p class="text-sm text-slate-600 dark:text-slate-300">Tus talentos y tu lugar están en las pestañas de al lado. Tus grupos, en <a href="{% url 'grupos:mis_grupos' %}" class="text-marca hover:underline">«Organizaciones y grupos → Mis grupos»</a>; para entrar en otro, <a href="{% url 'solicitudes:nueva' %}" class="text-marca hover:underline">pide entrar en un grupo</a>. Cómo ves la plataforma (tema, letra y densidad), en <a href="{% url 'usuarios:preferencias' %}" class="text-marca hover:underline">«Usabilidad»</a>.</p>
+</div>
+{% endblock %}

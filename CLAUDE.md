@@ -151,7 +151,9 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   grupos con colores y grafo, proyectos (rejilla, migas de pan y tarea editable) y eventos. Después, fase 5
   (`documentos` y `decisiones`), pendiente de las preguntas de [A-30].
   Y los **árboles de grupos** ([A-40]: `grupos/arboles.py`, en «Mis grupos → Árboles» y arriba de la ficha de
-  cada grupo; asamblea base en amarillo, organización en violeta, grupo que se mira en rojo). Sigue Inicio
-  (Panel = dashboard que resume otras secciones, y Mis datos: Inicio enseña y «Configuración de mi cuenta →
-  Mis datos» edita, con el árbol de grupos).
+  cada grupo; asamblea base en amarillo, organización en violeta, grupo que se mira en rojo). E **Inicio**
+  ([A-40]): Panel (dashboard que resume comunicaciones, solicitudes y proyectos abiertos) y Mis datos
+  (Inicio enseña y «Configuración de mi cuenta → Mis datos → Datos» edita), con `TarjetaDeInicio` en el
+  contrato, la función en el `inicio.py` de cada módulo y la colocación en `config/inicio.py`. Siguen los
+  árboles de proyectos y el grafo, proyectos (rejilla, migas de pan y tarea editable) y eventos.
   Recuerda `migrate --database=boveda`.

@@ -54,6 +54,19 @@ En el panel, pulsa **Abrir en grande ↗**: la misma página se abre en la panta
 
 ## Tu cuenta
 
+### Ver lo pendiente de un vistazo
+
+Entra en «Inicio → Panel». Arriba, tus comunicaciones y tus solicitudes, separadas en recibidas y enviadas
+(lo que espera algo de ti lleva un punto de color). Debajo, los proyectos abiertos en los que participas.
+Pulsa cualquier línea para ir a su sitio, o «Ver todas» para la lista completa.
+
+### Ver y cambiar mis datos
+
+En «Inicio → Mis datos» ves un resumen de tu cuenta: tus datos públicos, tus talentos, tus datos privados,
+tu lugar y el árbol de tus grupos, con tu rol en cada uno. Cada recuadro tiene un botón «Editar» que lleva a
+donde se cambia. Tu correo alternativo se cambia en «Configuración de mi cuenta → Mis datos → Datos», que
+también dice quién ve cada dato.
+
 ### Cambiar el tema, la letra o la densidad
 
 1. Ve a «Configuración de mi cuenta → Usabilidad».

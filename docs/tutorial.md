@@ -688,3 +688,30 @@ sirve aquí y dónde se usa.
 - **Las clases de Tailwind, en la plantilla.** Tailwind solo genera las clases que encuentra en las
   plantillas. Para elegir el color por nivel desde Alpine se escribe la lista de clases en la propia
   plantilla (`:class="['border-marca bg-marca/10', …][nivel]"`), no en `interfaz.js`, que Tailwind no lee.
+
+## 32. Una portada que junta módulos sin importarlos (14 de noviembre de 2026)
+
+- **El problema.** «Inicio → Panel» enseña comunicaciones, solicitudes y proyectos, pero la pantalla vive en
+  `base`, la capa de abajo, que no puede importar módulos de más arriba (la regla de dependencias lo
+  prohíbe y la prueba `base/tests/test_dependencias.py` falla si alguien lo hace).
+- **La solución: que cada módulo traiga lo suyo.** Igual que las fuentes del calendario, cada módulo
+  declara en su contrato una `TarjetaDeInicio` con la **ruta de una función como texto**
+  (`"solicitudes.inicio.pendientes"`). `base/inicio.py` la carga con `import_string` (una función de Django
+  que convierte el texto «paquete.modulo.funcion» en la función de verdad) y la llama. `base` nunca escribe
+  `import solicitudes`.
+
+  *Ejemplo: cuando exista «debates», bastará con que declare su tarjeta «Debates abiertos» y la coloque en
+  `config/inicio.py`; la pantalla de Inicio no cambia.*
+- **Datos, no HTML.** La función devuelve datos (`ResumenDeTarjeta` → `ApartadoDeTarjeta` → `FilaDeResumen`:
+  texto, enlace, detalle, fecha) y una sola plantilla, `base/portada.html`, los pinta todos igual. Si una
+  tarjeta necesita un dibujo propio (el árbol de grupos), da su plantilla y `base` la pinta con
+  `render_to_string` (la función de Django que convierte una plantilla y sus datos en texto HTML).
+- **El orden, en un solo sitio.** `config/inicio.py` dice qué tarjeta va en qué fila, como `config/menu.py`
+  con el menú. Y `python manage.py check` (la orden de Django que revisa el proyecto antes de arrancar) avisa
+  si una tarjeta está sin colocar o colocada dos veces.
+- **No contar dos veces.** Los totales de lo recibido («Recibidas (3)») son los mismos números que salen en
+  el menú, y el menú ya los ha guardado en la caché (Redis) al pintar la página: la tarjeta los pide a la
+  misma función y no cuestan consultas.
+- **Subconsultas en lugar de dos viajes.** Para «las solicitudes de mis grupos», en vez de pedir primero
+  mis grupos y luego las solicitudes, se escribe `grupo_id__in=Contencion.objects.filter(...).values(...)`:
+  Django lo convierte en una sola consulta con una subconsulta dentro.

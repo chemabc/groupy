@@ -35,8 +35,9 @@ class PruebasDeComprobarConsultas(PruebaDePantalla):
         with self.assertRaisesMessage(AssertionError, "el presupuesto es de 15"):
             self.comprobar_consultas("/cara/", 16, None)
 
-    # Con las direcciones reales de la aplicación, la portada se mide sin problemas (1 consulta: el
-    # usuario de la sesión).
+    # Con las direcciones reales de la aplicación, una pantalla real se mide sin problemas («Mis datos →
+    # Datos»: 1 consulta, el usuario de la sesión). Antes se medía la portada, pero ahora junta las tarjetas
+    # de los módulos y se mide en sus pruebas (proyectos/tests/test_inicio.py).
     @override_settings(ROOT_URLCONF="config.urls")
-    def test_portada_real(self):
-        self.comprobar_consultas("/", 1, None)
+    def test_pantalla_real(self):
+        self.comprobar_consultas("/cuenta/datos/", 1, None)

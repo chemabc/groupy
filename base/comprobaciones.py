@@ -12,6 +12,7 @@ from django.core import checks
 from django.urls import NoReverseMatch, URLPattern, URLResolver, get_resolver, reverse
 from django.utils.module_loading import import_string
 
+from .inicio import problemas_de_la_disposicion
 from .registro import registro
 
 
@@ -27,16 +28,18 @@ def comprobar_contrato(app_configs=None, **kwargs):
     errores += _comprobar_direcciones()
     errores += _comprobar_iconos()
     errores += _comprobar_limpiables()
+    errores += [checks.Error(texto, id="base.E007") for texto in problemas_de_la_disposicion()]
     return errores
 
 
 # Comprueba que existen todas las funciones que los módulos indican como texto (receptores de
-# eventos_sw, fuentes del calendario, preparación de avisos, contadores del menú y datos de ejemplo). Importarlas aquí, una vez al arrancar, evita
+# eventos_sw, fuentes del calendario, tarjetas de Inicio, preparación de avisos, contadores del menú y datos de ejemplo). Importarlas aquí, una vez al arrancar, evita
 # descubrir la errata el día que se emite el eventos_sw.
 def _comprobar_funciones():
     rutas = [escucha.receptor for lista in registro.escuchas.values() for escucha in lista]
     rutas += [fuente.funcion for fuente in registro.fuentes_de_calendario.values()]
     rutas += [fuente.mover for fuente in registro.fuentes_de_calendario.values() if fuente.mover]
+    rutas += [tarjeta.funcion for tarjeta in registro.tarjetas_de_inicio.values()]
     rutas += [aviso.preparar for aviso in registro.avisos.values()]
     rutas += [tipo.resolver for tipo in registro.solicitudes.values()]
     rutas += [tarea.funcion for tarea in registro.tareas_diarias.values()]

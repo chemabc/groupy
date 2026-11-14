@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «usuarios».
 """
 
-from base.contrato import Ayuda, Capa, DatosDeEjemplo, EntradaDeMenu, ModuloConfig, Vista
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, EntradaDeMenu, ModuloConfig, Vista, TarjetaDeInicio
 
 
 class UsuariosConfig(ModuloConfig):
@@ -19,6 +19,11 @@ class UsuariosConfig(ModuloConfig):
         "y preferencias de presentación. La identidad real no está aquí, sino en la bóveda."
     )
     datos_de_ejemplo = DatosDeEjemplo(crear="usuarios.ejemplos.crear", borrar="usuarios.ejemplos.borrar")
+    # Sus recuadros de la portada (Inicio); dónde sale cada uno lo decide config/inicio.py.
+    tarjetas_de_inicio = (
+        TarjetaDeInicio("usuarios.datos_publicos", "Datos públicos", "usuarios.inicio.datos_publicos", icono="☉", color="#9f1240"),
+        TarjetaDeInicio("usuarios.datos_privados", "Datos privados", "usuarios.inicio.datos_privados", icono="✦", color="#db2777"),
+    )
     menu = (
         # «Configuración de mi cuenta» y sus subsecciones de la izquierda. Otros módulos ponen las suyas
         # dentro (avisos que recibo, archivo…) y «Mis datos» junta en pestañas los datos, los talentos y el
@@ -41,9 +46,17 @@ class UsuariosConfig(ModuloConfig):
         EntradaDeMenu(
             codigo="usuarios.mis_datos",
             nombre="Mis datos",
-            url="proximamente:datos_de_cuenta",
+            url="usuarios:datos",
             icono="☉",
             color="#9f1240",
+        ),
+        # Pestaña «Datos» de «Mis datos»: cada dato de la cuenta, quién lo ve y, si se puede, cambiarlo.
+        EntradaDeMenu(
+            codigo="usuarios.datos",
+            nombre="Datos",
+            url="usuarios:datos",
+            icono="ⓘ",
+            color="#3730a3",
         ),
         EntradaDeMenu(
             codigo="usuarios.contrasena",
@@ -54,6 +67,17 @@ class UsuariosConfig(ModuloConfig):
         ),
     )
     ayuda = (
+        Ayuda(
+            seccion="usuarios.mis_datos",
+            titulo="Mis datos",
+            texto=(
+                "Donde se cambian tus datos. «Datos»: cada dato de tu cuenta, quién lo ve y cómo se cambia (aquí "
+                "puedes cambiar tu correo alternativo). «Talentos»: lo que tienes o sabes hacer y con qué grupos lo "
+                "compartes. «Lugar»: dónde trabajas, que solo ves tú.\n\n"
+                "Para verlo todo de un vistazo, ve a «Inicio → Mis datos»."
+            ),
+            ejemplo="Nutria apunta su correo alternativo para poder recuperar la cuenta si olvida la contraseña.",
+        ),
         Ayuda(
             seccion="usuarios.cuenta",
             titulo="Configuración de mi cuenta",

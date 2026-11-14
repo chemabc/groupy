@@ -38,10 +38,6 @@ PENDIENTES = (
         "Todas tus organizaciones y sus grupos dibujados como un grafo, cada organización con su árbol y tus grupos resaltados.",
         "⌘", "#9d174d",
     ),
-    Pendiente(
-        "datos_de_cuenta", "Datos",
-        "Tus datos, con quién puede ver cada uno, y los que puedes cambiar desde aquí.", "ⓘ", "#3730a3",
-    ),
     Pendiente("participacion", "Participación", "Debates, consultas, órdenes del día, actas y decisiones de tus grupos.", "⚘", "#be123d"),
     Pendiente("debates", "Debates", "Debates de los grupos, con facilitación y moderación.", "❞", "#a21caf"),
     Pendiente("consultas", "Consultas", "Votaciones y consultas de los grupos, con sus resultados.", "☷", "#0369a2"),

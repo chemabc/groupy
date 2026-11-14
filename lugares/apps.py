@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «lugares».
 """
 
-from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, Vista
+from base.contrato import Ayuda, Capa, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TipoDeAviso, Vista, TarjetaDeInicio
 
 
 class LugaresConfig(ModuloConfig):
@@ -41,6 +41,10 @@ class LugaresConfig(ModuloConfig):
             "lugares.configurar", "Decidir qué ven de los lugares los miembros de la organización y si se publica el mapa",
             roles=("admin_org",),
         ),
+    )
+    # Sus recuadros de la portada (Inicio); dónde sale cada uno lo decide config/inicio.py.
+    tarjetas_de_inicio = (
+        TarjetaDeInicio("lugares.mi_lugar", "Mi lugar", "lugares.inicio.mi_lugar", icono="⊙", color="#be123c"),
     )
     menu = (
         # Van en sitios distintos (ver config/menu.py): mi lugar, en «Configuración de mi cuenta → Mis datos»;

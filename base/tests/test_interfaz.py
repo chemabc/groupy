@@ -19,12 +19,14 @@ CABECERAS_DEL_PANEL = {"HX-Request": "true", "HX-Target": "panel-de-ayuda-conten
 
 
 class PruebasDeLaPlantilla(PruebaDePantalla):
-    """Comprueba las pantallas de «Inicio» y lo que pinta la plantilla general."""
+    """Comprueba lo que pinta la plantilla general."""
 
-    # «Inicio → Panel» hace una sola consulta, la que carga el usuario de la sesión (la sesión está
-    # en la caché). El menú y la ayuda salen del registro, en memoria.
-    def test_consultas_de_inicio(self):
-        self.comprobar_consultas("/", 1, None)
+    # La plantilla general no añade consultas: «Configuración de mi cuenta → Mis datos → Datos» hace una
+    # sola, la que carga el usuario de la sesión (la sesión está en la caché). El menú y la ayuda salen del
+    # registro, en memoria. (Inicio junta las tarjetas de los módulos y se mide en sus pruebas:
+    # proyectos/tests/test_inicio.py.)
+    def test_consultas_de_la_plantilla(self):
+        self.comprobar_consultas("/cuenta/datos/", 1, None)
 
     # «Desarrollo y mantenimiento → Componentes», igual.
     def test_consultas_de_componentes(self):

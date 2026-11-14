@@ -13,7 +13,7 @@ Cada apartado se declara con una de las «fichas» de este fichero (clases peque
 inmutables (frozen=True): una vez leídas al arrancar, nadie puede cambiarlas por accidente.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 
 from django.apps import AppConfig
@@ -171,6 +171,84 @@ class FechaDeCalendario:
     lugar: str = ""
     # Si esta persona puede arrastrarla para cambiarle la fecha (la fuente necesita «mover»).
     se_puede_mover: bool = False
+
+
+@dataclass(frozen=True)
+class TarjetaDeInicio:
+    """
+    Un recuadro que el módulo aporta a la portada, «Inicio» (el panel o «Mis datos»): un resumen de lo
+    suyo, con un botón que lleva a su sección. Inicio no importa el módulo: pide el resumen a la función
+    indicada. Dónde sale cada tarjeta (en qué pantalla, en qué fila y en qué orden) lo decide un solo
+    fichero, config/inicio.py.
+    """
+
+    # Código único, empezando por la etiqueta del módulo. Ejemplo: «solicitudes.pendientes».
+    codigo: str
+    # Título del recuadro: «Solicitudes».
+    titulo: str
+    # Ruta de la función que hace el resumen, como texto. Recibe el usuario y devuelve un
+    # ResumenDeTarjeta, o None si a esa persona no le toca ver la tarjeta. Debe hacer siempre las mismas
+    # consultas, haya lo que haya.
+    funcion: str
+    # Icono y color del título, como en el menú (un símbolo de texto y un color de CSS).
+    icono: str = ""
+    color: str = "#64748b"
+
+
+@dataclass(frozen=True)
+class FilaDeResumen:
+    """
+    Una línea de una tarjeta de Inicio: una solicitud, una notificación, un proyecto, un dato…
+    """
+
+    # Lo principal, en pocas palabras: «Entrar en GRU Henares», «Huerto del barrio».
+    texto: str
+    # Dirección (ya resuelta) a la que lleva al pulsarla. Vacía: no se pulsa.
+    enlace: str = ""
+    # Una aclaración más pequeña, a la derecha o debajo: «1 de 2 apoyos», «Empezado».
+    detalle: str = ""
+    # Fecha u hora de la que se habla, si la hay (se pinta como «hace 2 días»).
+    fecha: object = None
+    # Si pide atención (algo sin ver, o que espera respuesta de quien mira): sale resaltada.
+    destacada: bool = False
+
+
+@dataclass(frozen=True)
+class ApartadoDeTarjeta:
+    """
+    Una parte de una tarjeta de Inicio, con su título pequeño: por ejemplo, «Recibidas» y «Enviadas»
+    dentro de «Solicitudes». Una tarjeta sencilla tiene uno solo, sin título.
+    """
+
+    # Título pequeño del apartado: «Recibidas». Vacío: sin título.
+    titulo: str = ""
+    # Las líneas que se enseñan (lo normal: las 5 más recientes).
+    filas: tuple[FilaDeResumen, ...] = ()
+    # Cuántas hay en total; si son más que las filas, sale «Ver todas (N)».
+    total: int = 0
+    # Dirección (ya resuelta) de la lista completa, para «Ver todas».
+    enlace: str = ""
+    # Lo que se dice si no hay nada: «Nada pendiente.».
+    vacio: str = "Nada por aquí."
+
+
+@dataclass(frozen=True)
+class ResumenDeTarjeta:
+    """
+    Lo que devuelve la función de una TarjetaDeInicio: sus apartados y adónde lleva su botón. Si la tarjeta
+    necesita un dibujo propio (por ejemplo, el árbol de grupos), da una plantilla y su contexto en lugar
+    de (o además de) los apartados.
+    """
+
+    # Las partes de la tarjeta.
+    apartados: tuple[ApartadoDeTarjeta, ...] = ()
+    # Dirección (ya resuelta) del botón del título: la sección donde se ve todo o donde se cambia.
+    enlace: str = ""
+    # Texto de ese botón: «Ir», «Editar»…
+    boton: str = "Ir"
+    # Plantilla propia que se pinta debajo de los apartados, con su contexto. Vacía: ninguna.
+    plantilla: str = ""
+    contexto: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -481,6 +559,8 @@ class ModuloConfig(AppConfig):
     huecos: tuple[Hueco, ...] = ()
     # Lo que aporta al calendario común.
     fuentes_de_calendario: tuple[FuenteDeCalendario, ...] = ()
+    # Sus recuadros de la portada («Inicio → Panel» y «Mis datos»).
+    tarjetas_de_inicio: tuple[TarjetaDeInicio, ...] = ()
     # Los eventos_sw que emite.
     emite: tuple[Emision, ...] = ()
     # Los eventos_sw que escucha, con su función.

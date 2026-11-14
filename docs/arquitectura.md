@@ -79,7 +79,7 @@ flowchart LR
       cache["Caché (RedisCache)<br/>[Núcleo de Django]"]:::django
       contrib["auth · contenttypes · sessions · messages<br/>staticfiles · postgres · admin (trastienda)<br/>[Contrib de Django]"]:::django
     end
-    config["config: settings, urls, menú (disposición),<br/>enrutador de la bóveda, trastienda<br/>[Configuración]"]:::django
+    config["config: settings, urls, menú (disposición),<br/>Inicio (disposición), enrutador de la bóveda,<br/>trastienda<br/>[Configuración]"]:::django
     subgraph CAPAS["Nuestros módulos, por capas"]
       direction TB
       subgraph FUN["Funcional"]
@@ -207,7 +207,7 @@ flowchart LR
   classDef modulo fill:#fce7f3,stroke:#db2777,color:#831843
   classDef django fill:#e5e7eb,stroke:#6b7280,color:#111827
   apps["apps.py de cada módulo<br/>(ModuloConfig)<br/>[Módulo]"]:::modulo
-  contrato["base/contrato.py<br/>fichas: Permiso, Cometido, Ancla, FuenteDeCalendario,<br/>Emision, Escucha, TipoDeAviso, TipoDeSolicitud,<br/>TareaDiaria, Limpiable, EntradaDeMenu, Ayuda…<br/>[Componente]"]:::capabase
+  contrato["base/contrato.py<br/>fichas: Permiso, Cometido, Ancla, FuenteDeCalendario,<br/>Emision, Escucha, TipoDeAviso, TipoDeSolicitud,<br/>TareaDiaria, Limpiable, EntradaDeMenu, Ayuda,<br/>TarjetaDeInicio…<br/>[Componente]"]:::capabase
   registro["base/registro.py<br/>registro único, en memoria<br/>[Componente]"]:::capabase
   comprob["base/comprobaciones.py<br/>manage.py check<br/>[Componente]"]:::capabase
   ready["BaseConfig.ready()<br/>[Núcleo de Django]"]:::django
@@ -222,6 +222,13 @@ flowchart LR
   registro -- "lee" --> apps
   comprob -- "revisa funciones, modelos,<br/>direcciones, iconos, limpiables" --> registro
   usos -- "preguntan al registro" --> registro
+  inicio["base/inicio.py: filas_de<br/>(Inicio → Panel · Mis datos)<br/>[Componente]"]:::capabase
+  dispini["config/inicio.py: DISPOSICION<br/>(qué tarjeta va en qué fila)<br/>[Configuración]"]:::django
+  tarjetas["comunicaciones · solicitudes · proyectos<br/>usuarios · talentos · lugares · grupos<br/>(su inicio.py)"]:::modulo
+  inicio -- "DISPOSICION_DEL_INICIO (settings)" --> dispini
+  inicio -- "lee las TarjetaDeInicio" --> registro
+  inicio -. "llama a la función de cada tarjeta<br/>(ResumenDeTarjeta)" .-> tarjetas
+  comprob -- "revisa la disposición (base.E007)" --> inicio
 ```
 
 Cada módulo dice en su `apps.py` qué permisos, cometidos, anclas, fuentes del calendario, avisos,
@@ -236,6 +243,13 @@ lo decide un solo fichero, `config/menu.py`, escrito con dos piezas de `base/dis
 entrada cuyas subsecciones salen arriba, aunque sean de módulos distintos). El registro rehace el árbol del
 menú con esa disposición (`registro.bloques` y `registro.menu`) y avisa si falta una entrada, si sobra o si
 se repite.
+
+La portada, **Inicio**, funciona igual: cada módulo declara sus recuadros (`TarjetaDeInicio`: título,
+icono y la función que hace su resumen) en su `apps.py`, y su función vive en el `inicio.py` del módulo
+(por ejemplo, `solicitudes/inicio.py`). Qué recuadro va en qué pantalla («Panel» o «Mis datos»), en qué
+fila y en qué orden lo decide un solo fichero, `config/inicio.py`. `base/inicio.py` los junta: pide a cada
+tarjeta su `ResumenDeTarjeta` (apartados con líneas y un botón, o una plantilla propia como el árbol de
+grupos) sin importar el módulo.
 
 ### 5.2 Los eventos_sw y el trabajador [Módulo · Base]
 
@@ -265,7 +279,8 @@ En cada diagrama, el módulo del que se habla va en el centro y con borde grueso
 ### 6.1 base [Módulo · Base]
 
 El cimiento: contrato y registro, plantilla general con los dos menús, componentes comunes y ayudas para
-las pruebas. No depende de ningún otro módulo nuestro.
+las pruebas, y la portada, «Inicio» (Panel y Mis datos), que junta las tarjetas de los módulos. No depende
+de ningún otro módulo nuestro.
 
 ```mermaid
 flowchart LR
@@ -279,6 +294,8 @@ flowchart LR
   dj["Django: plantillas, caché,<br/>contexto, middleware<br/>[Núcleo de Django]"]:::django
   todos -- "importan contrato, registro,<br/>formularios, tablas, pruebas" --> base
   permisos -. "le presta la comprobación de permisos<br/>(registrar_comprobador_de_permisos)" .-> base
+  tarjetas["comunicaciones · solicitudes · proyectos<br/>usuarios · talentos · lugares · grupos"]:::otro
+  tarjetas -. "TarjetaDeInicio<br/>(Inicio → Panel · Mis datos)" .-> base
   base --> dj
 ```
 
