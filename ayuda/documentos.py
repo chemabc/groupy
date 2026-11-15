@@ -47,6 +47,7 @@ DOCUMENTOS = (
     Documento("arquitectura", "arquitectura.md", "Arquitectura", "ayuda.plataforma"),
     Documento("arranque", "arranque.md", "Arranque y tests", "ayuda.plataforma"),
     Documento("registro-y-validacion", "registro-y-validacion.md", "Registro y validación", "ayuda.plataforma"),
+    Documento("seguridad-y-privacidad", "seguridad-y-privacidad.md", "Seguridad y privacidad", "ayuda.plataforma"),
     Documento("comprobaciones", "comprobaciones.md", "Comprobaciones pendientes", "ayuda.guias"),
     Documento("diseno", "diseno.md", "Diseño y decisiones", "ayuda.guias"),
 )

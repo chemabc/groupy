@@ -11,6 +11,9 @@ comunicaciones e información pública. Rehecha desde cero con lo aprendido en l
   rediscute salvo que lo pida la persona usuaria.
 - `docs/registro-y-validacion.md`: cómo funcionan la bóveda, el pase con firma ciega y los sistemas de
   validación.
+- `docs/seguridad-y-privacidad.md`: las medidas de seguridad y privacidad que hay, el riesgo que queda en
+  cada una y cómo resolverlo más adelante. **Cada pieza que guarde datos de personas, cuente votos o abra una
+  puerta hacia fuera añade (o pone al día) su entrada.**
 - `docs/tutorial.md`: lo que se explica para aprender, paso a paso.
 - `docs/arranque.md`: cómo arrancar y probar.
 - `docs/comprobaciones.md` y `docs/arquitectura.md`: las **guías de desarrollo** (ver abajo).
