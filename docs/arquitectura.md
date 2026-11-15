@@ -496,7 +496,9 @@ flowchart LR
   usan --> aud
   cerca --> acceso
   pro2["proyectos (selector de personas<br/>de las tareas)"]:::otro
+  com2["comunicaciones (escribir a una persona:<br/>Cercania, Bloque, GrupoCercano)"]:::otro
   pro2 --> cerca
+  com2 --> cerca
 ```
 
 ### 6.9 etiquetas [Módulo · Organización]
@@ -611,21 +613,36 @@ flowchart LR
 ### 6.14 comunicaciones [Módulo · Funcional]
 
 Notificaciones en la web (reparte los avisos de todos), avisos y conversaciones con la administración,
-niveles de aviso y preferencias. Borra sus notificaciones viejas cuando se lo pide `limpieza`.
+niveles de aviso y preferencias. Además, la **sala de cada grupo** (`con_grupos.py`, solo sus miembros) y
+las **conversaciones de dos en dos** con bloqueo (`con_personas.py`, con quien comparte grupo; el bloqueo
+emite `comunicaciones.bloqueo`, que el propio módulo convierte en un aviso para el superadmin). Borra sus
+notificaciones viejas cuando se lo pide `limpieza`.
 
 ```mermaid
 flowchart LR
   classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
   classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
   com["comunicaciones<br/>[Módulo · Funcional]"]:::yo
+  salas["con_grupos.py: salas<br/>[Componente]"]:::otro
+  pers["con_personas.py: de dos en dos,<br/>bloqueos<br/>[Componente]"]:::otro
   emisores["grupos · solicitudes · lugares · talentos<br/>eventos · proyectos · limpieza<br/>(TipoDeAviso + preparar)"]:::otro
-  gru["grupos (a quién llega cada administración)"]:::otro
+  gru["grupos (a quién llega cada administración,<br/>pertenencias, acceso.ve_miembros)"]:::otro
+  aud["audiencias.cercania<br/>(forma de la lista del selector)"]:::otro
+  sw["eventos_sw (emitir)"]:::otro
   lim["limpieza"]:::otro
-  base["base (contador del menú)"]:::otro
+  base["base (contadores del menú,<br/>CampoDePersonas)"]:::otro
   emisores ==> com
+  com --> salas
+  com --> pers
   com --> gru
+  salas --> gru
+  pers --> gru
+  pers --> aud
+  pers --> sw
+  sw ==> com
+  com --> base
   com -. "Limpiable: notificaciones vistas / sin ver" .-> lim
-  com -. "contador «Notificaciones (N)»" .-> base
+  com -. "contadores «Notificaciones», «Con grupos», «Con personas»" .-> base
 ```
 
 ### 6.15 eventos [Módulo · Funcional]
@@ -1039,7 +1056,7 @@ flowchart LR
   copiar["isla «copiar»<br/>[Isla JS]"]:::comp
   selector["SelectorDePalabras + CampoDePalabras<br/>+ isla «selectorDePalabras»<br/>[Componente]"]:::comp
   personas["SelectorDePersonas + CampoDePersonas<br/>+ isla «selectorDePersonas»<br/>[Componente]"]:::comp
-  usan4["proyectos (responsable y colaboran)<br/>con la lista de audiencias.cercania"]:::otro
+  usan4["proyectos (responsable y colaboran)<br/>con la lista de audiencias.cercania<br/>· comunicaciones (escribir a una persona)"]:::otro
   usan1["administracion · grupos · lugares"]:::otro
   usan2["calendario (suscripción) · …"]:::otro
   usan3["etiquetas (CampoDeEtiquetas) → proyectos"]:::otro

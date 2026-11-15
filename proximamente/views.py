@@ -12,7 +12,7 @@ from .apps import POR_CLAVE
 
 # Pantalla de una herramienta pendiente: dice que aún está vacía y qué hará. Quién puede abrirla lo decide
 # su entrada del menú, con la misma regla que la muestra u oculta allí.
-#   - clave: la herramienta («con_grupos»), que pone la dirección.
+#   - clave: la herramienta («moderacion»), que pone la dirección.
 def pendiente(request, clave):
     pendiente = POR_CLAVE[clave]
     entrada = registro.entradas[f"proximamente.{clave}"]

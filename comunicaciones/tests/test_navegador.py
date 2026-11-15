@@ -1,7 +1,8 @@
 """
 Pruebas de «Comunicaciones → Notificaciones» en un navegador de verdad (ver base/pruebas_navegador.py):
 el número del menú baja al marcar como vista sin recargar la página, la papelera borra una y «Limpiar las
-vistas» pide confirmación y borra solo las vistas.
+vistas» pide confirmación y borra solo las vistas. También la sala de un grupo y las conversaciones entre
+personas (elegir con el selector y bloquear).
 """
 
 from django.core.cache import cache
@@ -67,4 +68,56 @@ class PruebasDeConversacionesEnElNavegador(PruebaEnElNavegador):
         self.pagina.wait_for_selector("text=Las tengo yo.", timeout=15000)
         self.assertTrue(self.pagina.locator("text=Admin de GRU Tajo (Lince)").is_visible())
         self.assertEqual(self.pagina.locator('textarea[name="texto"]').input_value(), "Escribiendo…")
+        self.assertEqual(self.errores, [])
+
+
+class PruebasDeConversarEnElNavegador(PruebaEnElNavegador):
+    """La sala de un grupo y las conversaciones entre personas, en el navegador ([A-56])."""
+
+    # Prepara GRU Tajo con el usuario de la prueba y Lince. Devuelve (grupo, lince).
+    def preparar(self):
+        from base.pruebas import crear_usuario_de_prueba
+        from grupos.servicios import admitir, crear_organizacion
+
+        _tajo, grupo = crear_organizacion("ORG Tajo", "GRU Tajo")
+        lince = crear_usuario_de_prueba("Lince")
+        admitir(lince, grupo)
+        admitir(self.usuario, grupo)
+        return grupo, lince
+
+    # Con la sala abierta, lo que escribe Lince aparece solo (htmx vuelve a pedir la lista cada 10
+    # segundos) sin perder lo que se está escribiendo.
+    def test_sala(self):
+        from comunicaciones.con_grupos import escribir
+
+        grupo, lince = self.preparar()
+        self.abrir(f"/comunicaciones/grupos/{grupo.pk}/")
+        self.pagina.get_by_text("Aún no ha escrito nadie").wait_for()
+        self.pagina.locator('textarea[name="texto"]').fill("Escribiendo…")
+        escribir(grupo, lince, "¿Quién abre el sábado?")
+        self.pagina.wait_for_selector("text=¿Quién abre el sábado?", timeout=15000)
+        self.assertEqual(self.pagina.locator('textarea[name="texto"]').input_value(), "Escribiendo…")
+        self.assertEqual(self.errores, [])
+
+    # Escribir a una persona eligiéndola en el selector (sale Lince, de GRU Tajo); después, bloquearla
+    # aceptando la confirmación: el formulario desaparece y sale «Desbloquear a Lince».
+    def test_escribir_y_bloquear(self):
+        from comunicaciones.models import Bloqueo
+
+        _grupo, lince = self.preparar()
+        self.abrir("/comunicaciones/personas/escribir/")
+        self.pagina.locator("#id_persona").click()
+        ventana = self.pagina.get_by_role("dialog", name="Elegir una persona")
+        ventana.get_by_text("Personas de tus grupos").wait_for()
+        ventana.get_by_role("radio", name="Lince").click()
+        ventana.wait_for(state="hidden")
+        self.pagina.locator('textarea[name="texto"]').fill("¡Hola, Lince!")
+        self.pagina.get_by_role("button", name="Enviar").click()
+        self.pagina.get_by_role("heading", name="Con Lince").wait_for()
+        self.assertTrue(self.pagina.get_by_text("¡Hola, Lince!").is_visible())
+        self.pagina.once("dialog", lambda dialogo: dialogo.accept())
+        self.pagina.get_by_role("button", name="Bloquear").click()
+        self.pagina.get_by_role("button", name="Desbloquear a Lince").wait_for()
+        self.assertEqual(self.pagina.locator('textarea[name="texto"]').count(), 0)
+        self.assertTrue(Bloqueo.objects.filter(quien=self.usuario, a_quien=lince).exists())
         self.assertEqual(self.errores, [])

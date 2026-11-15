@@ -5,6 +5,8 @@ Formularios de la sección «Comunicaciones» y de «Plataforma → Catálogos c
 from django import forms
 from django.contrib.auth import get_user_model
 
+from base.formularios import CampoDePersonas
+
 from .models import NivelDeAviso
 
 
@@ -78,3 +80,35 @@ class FormularioDeNivel(forms.ModelForm):
         model = NivelDeAviso
         fields = ["nombre", "descripcion", "color", "orden"]
         widgets = {"color": forms.TextInput(attrs={"type": "color"})}
+
+
+class FormularioDeSala(forms.Form):
+    """Mensaje en la sala de un grupo."""
+
+    texto = forms.CharField(
+        label="Mensaje", max_length=4000, widget=forms.Textarea(attrs={"rows": 2}), help_text="Lo lee todo el grupo."
+    )
+
+
+class FormularioAPersona(forms.Form):
+    """Primer mensaje (o uno más) a una persona, elegida con el selector de personas."""
+
+    persona = CampoDePersonas(
+        label="A", vacio="Nadie todavía", error_fuera="No compartes grupo con esta persona (o hay un bloqueo)",
+        help_text="Alguien que comparte algún grupo contigo. Si su organización no enseña la lista, escribe su alias exacto.",
+    )
+    texto = forms.CharField(label="Mensaje", max_length=4000, widget=forms.Textarea(attrs={"rows": 4}), help_text="Solo lo leerá esa persona.")
+
+    # Prepara el selector: la dirección de la lista y quién se puede elegir.
+    #   - url_de_la_lista: dirección que devuelve la lista (comunicaciones:personas_para_escribir).
+    #   - permitidas: función que devuelve los ids de las personas a las que se puede escribir.
+    def __init__(self, *args, url_de_la_lista, permitidas, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["persona"].permitidas = permitidas
+        self.fields["persona"].widget.url_de_la_lista = url_de_la_lista
+
+
+class FormularioDeMensajeAPersona(forms.Form):
+    """Mensaje en una conversación entre dos personas."""
+
+    texto = forms.CharField(label="Mensaje", max_length=4000, widget=forms.Textarea(attrs={"rows": 2}), help_text="Solo lo lee la otra persona.")

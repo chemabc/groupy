@@ -166,11 +166,16 @@ class CampoDePersonas(forms.Field):
     #   - permitidas: función sin parámetros que devuelve los ids de las personas que se pueden elegir. Es
     #     una función para que solo se calcule al comprobar lo enviado. La pone el formulario del módulo.
     #   - url_de_la_lista, parametros, vacio: para el selector.
-    def __init__(self, *args, varias=False, permitidas=None, url_de_la_lista="", parametros=(), vacio="Nadie", **kwargs):
+    #   - error_fuera: el principio del error si alguien no se puede elegir (le siguen los alias).
+    def __init__(
+        self, *args, varias=False, permitidas=None, url_de_la_lista="", parametros=(), vacio="Nadie",
+        error_fuera="No está entre quienes ven esto", **kwargs,
+    ):
         kwargs.setdefault("widget", SelectorDePersonas(url_de_la_lista, varias=varias, parametros=parametros, vacio=vacio))
         super().__init__(*args, **kwargs)
         self.varias = varias
         self.permitidas = permitidas
+        self.error_fuera = error_fuera
 
     # Convierte la lista de alias recibida en personas, sin repetidas. Una consulta (más la de permitidas).
     def to_python(self, value):
@@ -194,7 +199,7 @@ class CampoDePersonas(forms.Field):
         permitidas = self.permitidas() if self.permitidas is not None else None
         fuera = [uno for uno in alias if uno.lower() not in encontradas or (permitidas is not None and encontradas[uno.lower()].pk not in permitidas)]
         if fuera:
-            raise forms.ValidationError(f"No está entre quienes ven esto: {', '.join(fuera)}.")
+            raise forms.ValidationError(f"{self.error_fuera}: {', '.join(fuera)}.")
         personas = [encontradas[uno.lower()] for uno in alias]
         return personas if self.varias else personas[0]
 

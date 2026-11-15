@@ -860,3 +860,19 @@ sirve aquí y dónde se usa.
   mínimo: `max(min(candidatos), minimo)`. El formulario comprueba además que nadie suba por encima del de la
   plataforma.
 
+
+## 39. Contar lo no leído sin una consulta por fila, y parejas sin repetir (15 de noviembre de 2026)
+
+- **Subconsultas dentro de la consulta (`Subquery` y `OuterRef`).** En «Con grupos» cada grupo enseña
+  cuántos mensajes nuevos tiene. En vez de preguntar grupo a grupo, la consulta de los grupos lleva dentro
+  otra pequeña: «cuenta los mensajes de *este* grupo (`OuterRef("pk")`) con número mayor que el último que
+  leí». PostgreSQL la resuelve para cada fila en una sola ida y vuelta.
+- **Leer hasta un número, no mensaje a mensaje.** Para saber qué es nuevo en una sala basta con guardar el
+  número del último mensaje visto (`LecturaDeSala.ultimo_leido`): todo lo que tenga un número mayor es
+  nuevo. Una fila por persona y sala, haya los mensajes que haya.
+- **Una pareja, una fila.** Una conversación entre Lince y Nutria es la misma que entre Nutria y Lince. Se
+  guarda siempre con el número más bajo primero, y la base lo exige con una restricción (`CheckConstraint`
+  `primera < segunda`) y otra de unicidad: así nunca hay dos conversaciones de la misma pareja.
+- **Números del menú en la caché, con versión.** Cada mensaje en una sala sube un número de «versión» en
+  Redis; la clave de cada recuento lleva esa versión, así que los recuentos viejos dejan de usarse solos sin
+  tener que buscarlos uno a uno para borrarlos.

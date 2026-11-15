@@ -1,0 +1,31 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Comunicaciones → Conversaciones → Con personas» (comunicaciones/views.py, con_personas_lista).
+  Recibe «conversaciones», cada una con «otra» (la otra persona), «pendiente» (algo sin leer),
+  «bloqueada» y «la_bloqueo_yo». Borde azul, para distinguirlas de las de la administración (violeta) y
+  de las salas de grupo (verde azulado).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-3">
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <a href="{% url 'comunicaciones:escribir_a_persona' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Escribir a una persona</a>
+    <span class="text-slate-500">Solo las leéis las dos personas.</span>
+  </div>
+  <section class="rounded-lg border border-blue-300 bg-white p-4 dark:border-blue-800 dark:bg-slate-900">
+    <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+      {% for conversacion in conversaciones %}
+        <li class="flex items-center gap-3 py-2" data-conversacion="{{ conversacion.pk }}">
+          <span class="size-2 shrink-0 rounded-full {% if conversacion.pendiente %}bg-blue-600{% else %}bg-transparent{% endif %}" aria-hidden="true"></span>
+          <div class="min-w-0 flex-1">
+            <a href="{% url 'comunicaciones:con_persona' conversacion.pk %}" class="{% if conversacion.pendiente %}font-semibold{% endif %} hover:text-marca hover:underline">{{ conversacion.otra }}</a>
+            <p class="text-xs text-slate-500">{{ conversacion.actualizada|date:"d/m/Y H:i" }}{% if conversacion.pendiente %} · <span class="text-blue-700 dark:text-blue-300">sin leer</span>{% endif %}</p>
+          </div>
+          {% if conversacion.bloqueada %}<span class="shrink-0 rounded bg-red-100 px-1.5 text-xs text-red-800 dark:bg-red-950 dark:text-red-300">{% if conversacion.la_bloqueo_yo %}La has bloqueado{% else %}Bloqueada{% endif %}</span>{% endif %}
+        </li>
+      {% empty %}
+        <li class="py-1.5 text-slate-500">Aún no has hablado con nadie.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

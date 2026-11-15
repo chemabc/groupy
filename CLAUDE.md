@@ -214,5 +214,9 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   **inactividad** («Sin actividad (más de N días)»; plazo en cascada `LimiteDeInactividad`: superadmin pone el de
   partida y el mínimo, 30 días los dos; organización y grupo solo bajan; día de actividad en
   `Usuario.ultima_actividad` con `usuarios.middleware.ApuntarActividad`). La tabla común admite celdas con
-  plantilla propia (`Columna.plantilla`) y clase por fila (`_clase`). Queda de [A-37]: conversaciones con
-  grupos y personas.
+  plantilla propia (`Columna.plantilla`) y clase por fila (`_clase`).
+- 15 de noviembre de 2026 ([A-56]): **conversaciones con grupos y con personas** (lo último de [A-37]):
+  una **sala por grupo**, solo para sus miembros (`comunicaciones/con_grupos.py`; quizá hilos más adelante),
+  y conversaciones **de dos en dos** con quien compartes grupo, sin petición, con **bloqueo que avisa al
+  superadmin** (`comunicaciones/con_personas.py`). Mensajes nuevos cada 10 s. Sin herramientas de «lo
+  propio» en `proximamente`. Después, fase 8.

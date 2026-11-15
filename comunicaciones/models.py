@@ -10,6 +10,10 @@ Tablas del módulo «comunicaciones» (ver docs/diseno.md, apartado 17):
   con su color. Los edita el superadmin.
 - AvisoDeAdministracion: un aviso que manda una administración (la de un grupo, la de una organización
   o el superadmin) a grupos o personas. Crea una notificación para cada destinatario.
+- Conversacion y Mensaje: conversaciones de una persona con una administración.
+- MensajeDeGrupo y LecturaDeSala: la sala de cada grupo (su conversación, un solo hilo) y hasta dónde ha
+  leído cada persona.
+- ConversacionEntrePersonas, MensajeEntrePersonas y Bloqueo: conversaciones de dos en dos, con bloqueo.
 """
 
 from django.conf import settings
@@ -245,3 +249,157 @@ class Mensaje(models.Model):
     # Texto con el que se muestra: el principio del mensaje.
     def __str__(self):
         return self.texto[:60]
+
+
+# ── Conversaciones con grupos y con personas (15 de noviembre de 2026, [A-56]) ─────────────────────────
+
+
+class MensajeDeGrupo(models.Model):
+    """
+    Un mensaje en la sala de un grupo: la conversación de todo el grupo, un solo hilo donde escriben sus
+    miembros (como el chat del grupo). Solo leen y escriben las personas que están en el grupo; nadie de
+    fuera, tampoco el superadmin si no es miembro. Se ve en «Comunicaciones → Conversaciones → Con grupos».
+    """
+
+    grupo = models.ForeignKey(
+        "grupos.Grupo", on_delete=models.CASCADE, related_name="+", verbose_name="grupo", help_text="Grupo en cuya sala se escribió."
+    )
+    autor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="autor", help_text="Quién lo escribió."
+    )
+    firma = models.CharField("firma", max_length=150, help_text="El alias de quien lo escribió, tal como se ve en la sala.")
+    texto = models.TextField("texto", help_text="El mensaje.")
+    creado = models.DateTimeField("escrito", auto_now_add=True, help_text="Cuándo se escribió.")
+
+    class Meta:
+        verbose_name = "mensaje de grupo"
+        verbose_name_plural = "mensajes de grupo"
+        ordering = ["pk"]
+        indexes = [models.Index(fields=["grupo", "-id"], name="mensaje_de_grupo_por_sala")]
+
+    # Texto con el que se muestra: el principio del mensaje.
+    def __str__(self):
+        return self.texto[:60]
+
+
+class LecturaDeSala(models.Model):
+    """
+    Hasta qué mensaje ha leído una persona la sala de un grupo. Sirve para marcar las salas con mensajes
+    nuevos y para el número del menú («Con grupos (2)»). Sin fila: no ha leído nada.
+    """
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+", verbose_name="usuario", help_text="Quién ha leído."
+    )
+    grupo = models.ForeignKey("grupos.Grupo", on_delete=models.CASCADE, related_name="+", verbose_name="grupo", help_text="La sala de qué grupo.")
+    ultimo_leido = models.PositiveBigIntegerField(
+        "último mensaje leído", default=0, help_text="Número del último mensaje de la sala que ha visto esta persona."
+    )
+
+    class Meta:
+        verbose_name = "lectura de sala"
+        verbose_name_plural = "lecturas de sala"
+        constraints = [models.UniqueConstraint(fields=["usuario", "grupo"], name="una_lectura_por_sala")]
+
+    # Texto con el que se muestra: «Nutria en GRU Henares: 12».
+    def __str__(self):
+        return f"{self.usuario} en {self.grupo}: {self.ultimo_leido}"
+
+
+class ConversacionEntrePersonas(models.Model):
+    """
+    Conversación de dos personas, por su alias. Se empieza con quien compartes algún grupo; cualquiera de
+    las dos puede bloquear a la otra (y el superadmin recibe un aviso). Solo la leen esas dos personas: ni
+    la administración ni el superadmin (ver docs/diseno.md, apartado 5.1). La pareja se guarda siempre con
+    el número más bajo primero, para que haya una sola conversación por pareja.
+    """
+
+    primera = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+", verbose_name="primera persona",
+        help_text="La de número más bajo de las dos.",
+    )
+    segunda = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+", verbose_name="segunda persona",
+        help_text="La de número más alto de las dos.",
+    )
+    iniciada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="iniciada por",
+        help_text="Quién escribió el primer mensaje.",
+    )
+    creada = models.DateTimeField("creada", auto_now_add=True, help_text="Cuándo empezó.")
+    actualizada = models.DateTimeField("último mensaje", auto_now_add=True, help_text="Cuándo se escribió el último mensaje.")
+    pendiente_primera = models.BooleanField("sin leer (primera)", default=False, help_text="Si la primera persona tiene algo sin leer.")
+    pendiente_segunda = models.BooleanField("sin leer (segunda)", default=False, help_text="Si la segunda persona tiene algo sin leer.")
+
+    class Meta:
+        verbose_name = "conversación entre personas"
+        verbose_name_plural = "conversaciones entre personas"
+        ordering = ["-actualizada", "-pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["primera", "segunda"], name="una_conversacion_por_pareja"),
+            models.CheckConstraint(condition=models.Q(primera__lt=models.F("segunda")), name="pareja_en_orden"),
+        ]
+
+    # Texto con el que se muestra: «Lince ↔ Nutria».
+    def __str__(self):
+        return f"{self.primera} ↔ {self.segunda}"
+
+    # La otra persona de la conversación, vista desde una de las dos (con las dos cargadas).
+    #   - usuario: una de las dos.
+    def la_otra(self, usuario):
+        return self.segunda if self.primera_id == usuario.pk else self.primera
+
+    # Si una de las dos personas tiene algo sin leer.
+    #   - usuario: una de las dos.
+    def pendiente_para(self, usuario):
+        return self.pendiente_primera if self.primera_id == usuario.pk else self.pendiente_segunda
+
+
+class MensajeEntrePersonas(models.Model):
+    """Un mensaje de una conversación entre dos personas."""
+
+    conversacion = models.ForeignKey(
+        ConversacionEntrePersonas, on_delete=models.CASCADE, related_name="mensajes", verbose_name="conversación",
+        help_text="Conversación a la que pertenece.",
+    )
+    autor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="autor", help_text="Quién lo escribió."
+    )
+    texto = models.TextField("texto", help_text="El mensaje.")
+    creado = models.DateTimeField("escrito", auto_now_add=True, help_text="Cuándo se escribió.")
+
+    class Meta:
+        verbose_name = "mensaje entre personas"
+        verbose_name_plural = "mensajes entre personas"
+        ordering = ["pk"]
+
+    # Texto con el que se muestra: el principio del mensaje.
+    def __str__(self):
+        return self.texto[:60]
+
+
+class Bloqueo(models.Model):
+    """
+    Una persona ha bloqueado a otra: ninguna de las dos puede escribir a la otra (ni empezar una
+    conversación) hasta que quien bloqueó lo quite. Al bloquear, el superadmin recibe un aviso, para poder
+    actuar si hay acoso (sin leer la conversación).
+    """
+
+    quien = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bloqueos", verbose_name="quien bloquea",
+        help_text="La persona que ha bloqueado.",
+    )
+    a_quien = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+", verbose_name="persona bloqueada",
+        help_text="La persona que ya no puede escribirle.",
+    )
+    creado = models.DateTimeField("bloqueado el", auto_now_add=True, help_text="Cuándo se bloqueó.")
+
+    class Meta:
+        verbose_name = "bloqueo"
+        verbose_name_plural = "bloqueos"
+        constraints = [models.UniqueConstraint(fields=["quien", "a_quien"], name="un_bloqueo_por_pareja")]
+
+    # Texto con el que se muestra: «Nutria bloquea a Lince».
+    def __str__(self):
+        return f"{self.quien} bloquea a {self.a_quien}"

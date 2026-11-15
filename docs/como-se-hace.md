@@ -85,6 +85,22 @@ tema en un clic.
 1. Ve a «Configuración de mi cuenta → Avisos que recibo».
 2. Desmarca los tipos que no te interesen. Los que ya tienes se quedan.
 
+## Conversaciones
+
+### Hablar con mi grupo
+«Comunicaciones → Conversaciones → Con grupos»: salen todos tus grupos, cada uno con su sala. Entra en una
+y escribe: lo lee todo el grupo, y solo el grupo. Los mensajes nuevos aparecen solos (cada 10 segundos) y
+el número del menú dice cuántas salas tienen algo nuevo.
+
+### Escribir a una persona
+«Comunicaciones → Conversaciones → Con personas → Escribir a una persona». Pulsa «Elegir…» y busca a
+alguien de tus grupos (o escribe su alias exacto). Solo lo leéis las dos personas.
+
+### Bloquear a alguien que me molesta
+En la conversación con esa persona, «Bloquear». Ninguna de las dos podrá escribir a la otra hasta que
+pulses «Desbloquear». El superadmin recibe un aviso de que la has bloqueado, sin ver lo que os habéis
+escrito.
+
 ## Grupos
 
 ### Ver mis grupos

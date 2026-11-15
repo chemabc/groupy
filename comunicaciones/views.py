@@ -6,6 +6,7 @@ Pantallas de la sección «Comunicaciones» (ver docs/diseno.md, apartado 17):
   las vistas».
 - Preferencias: qué tipos de aviso quiere recibir cada persona.
 - Conversaciones con la administración: las de cada persona y las de las administraciones que atiende.
+- Conversaciones con grupos (la sala de cada grupo) y con personas (de dos en dos, con bloqueo).
 - Avisos de la administración: enviar avisos a grupos o personas, y ver los enviados.
 - «Plataforma → Catálogos comunes → Niveles de aviso»: los niveles (Información, Atención, Problema…) con su color.
 
@@ -15,6 +16,7 @@ atiende (comunicaciones/administraciones.py).
 
 from django.core.exceptions import ValidationError
 from django.db.models import Count, ProtectedError, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -25,7 +27,7 @@ from grupos.models import Grupo
 from permisos.decoradores import requiere_permiso
 from permisos.servicios import SinPermiso, explicar_falta
 
-from . import servicios
+from . import con_grupos, con_personas, servicios
 from .administraciones import (
     Buzon,
     administraciones_de,
@@ -35,11 +37,21 @@ from .administraciones import (
     grupos_que_alcanza,
     puede_atender,
 )
-from .formularios import FormularioDeAviso, FormularioDeConversacion, FormularioDeMensaje, FormularioDeNivel
-from .models import AvisoDeAdministracion, Conversacion, NivelDeAviso, Notificacion
+from .formularios import (
+    FormularioAPersona,
+    FormularioDeAviso,
+    FormularioDeConversacion,
+    FormularioDeMensaje,
+    FormularioDeMensajeAPersona,
+    FormularioDeNivel,
+    FormularioDeSala,
+)
+from .models import AvisoDeAdministracion, Conversacion, ConversacionEntrePersonas, NivelDeAviso, Notificacion
 
 # Cuántas notificaciones se muestran de entrada; «Mostrar más» suma otras tantas.
 POR_PAGINA = 50
+# Cuántos mensajes de la sala de un grupo se muestran de entrada; «Ver anteriores» suma otros tantos.
+POR_PAGINA_DE_SALA = 100
 
 
 # Pantalla «Notificaciones». Cuesta 4 consultas, sea cual sea el número de notificaciones.
@@ -292,6 +304,125 @@ def conversacion(request, pk):
     if request.GET.get("fragmento") == "mensajes":
         return render(request, "comunicaciones/mensajes.html", contexto)
     return render(request, "comunicaciones/conversacion.html", contexto)
+
+
+# ── Conversaciones con grupos: la sala de cada grupo ([A-56]) ───────────────────────────────────────
+
+
+# Pantalla «Comunicaciones → Conversaciones → Con grupos»: los grupos de quien mira, cada uno con su sala,
+# los mensajes nuevos y el último mensaje. 3 consultas, tenga los grupos que tenga.
+def con_grupos_lista(request):
+    return render(request, "comunicaciones/con_grupos.html", {"salas": con_grupos.salas_de(request.user)})
+
+
+# Pantalla de la sala de un grupo: sus últimos mensajes y el formulario para escribir. Solo para las
+# personas del grupo. La lista de mensajes se vuelve a pedir cada 10 segundos (htmx, con
+# «?fragmento=mensajes»); verlos los marca como leídos.
+#   - pk: número del grupo.
+#   - GET «cuantos»: cuántos mensajes se muestran (100 de entrada; «Ver anteriores» suma 100).
+#   - POST: el texto del mensaje (FormularioDeSala).
+def sala(request, pk):
+    grupo = get_object_or_404(Grupo.objects.select_related("organizacion"), pk=pk)
+    if not con_grupos.es_miembro(request.user, grupo.pk):
+        raise SinPermiso("La sala de un grupo solo la leen y escriben las personas que están en él.")
+    formulario = FormularioDeSala(request.POST or None)
+    if request.method == "POST" and formulario.is_valid():
+        con_grupos.escribir(grupo, request.user, formulario.cleaned_data["texto"])
+        return redirect("comunicaciones:sala", grupo.pk)
+    cuantos = request.GET.get("cuantos", "")
+    cuantos = min(int(cuantos), 2000) if cuantos.isdigit() and int(cuantos) > 0 else POR_PAGINA_DE_SALA
+    mensajes = con_grupos.mensajes(grupo, cuantos + 1)
+    hay_anteriores = len(mensajes) > cuantos
+    mensajes = mensajes[-cuantos:]
+    con_grupos.marcar_leida(request.user, grupo, mensajes[-1].pk if mensajes else 0)
+    contexto = {
+        "grupo": grupo,
+        "mensajes": mensajes,
+        "formulario": formulario,
+        "cuantos": cuantos,
+        "hay_anteriores": hay_anteriores,
+        "mas": cuantos + POR_PAGINA_DE_SALA,
+    }
+    if request.GET.get("fragmento") == "mensajes":
+        return render(request, "comunicaciones/mensajes_de_sala.html", contexto)
+    return render(request, "comunicaciones/sala.html", contexto)
+
+
+# ── Conversaciones con personas, de dos en dos ([A-56]) ──────────────────────────────────────────────
+
+
+# Pantalla «Comunicaciones → Conversaciones → Con personas»: las conversaciones de quien mira, primero las
+# que tienen algo sin leer, con el botón para escribir a alguien. 3 consultas.
+def con_personas_lista(request):
+    return render(request, "comunicaciones/con_personas.html", {"conversaciones": con_personas.conversaciones_de(request.user)})
+
+
+# Pantalla «Escribir a una persona»: elegirla con el selector de personas (quien comparte algún grupo) y
+# escribir. Si ya teníais conversación, el mensaje se añade a ella. Con «?a=<alias>» sale ya elegida.
+#   - POST: los datos de FormularioAPersona.
+def escribir_a_persona(request):
+    usuario = request.user
+    formulario = FormularioAPersona(
+        request.POST or None,
+        initial={"persona": request.GET.get("a", "")[:150] or None},
+        url_de_la_lista=reverse("comunicaciones:personas_para_escribir"),
+        permitidas=lambda: con_personas.a_quien_puede_escribir(usuario),
+    )
+    if request.method == "POST" and formulario.is_valid():
+        try:
+            conversacion = con_personas.escribir(usuario, formulario.cleaned_data["persona"], formulario.cleaned_data["texto"])
+        except ValidationError as error:
+            formulario.add_error(None, error)
+        else:
+            return redirect("comunicaciones:con_persona", conversacion.pk)
+    return render(request, "comunicaciones/escribir_a_persona.html", {"formulario": formulario})
+
+
+# Lista de personas a las que se puede escribir, en JSON, para el selector de personas: las de los grupos
+# de quien escribe (sin las bloqueadas). La pide el selector al abrirse. Unas 4 consultas.
+def personas_para_escribir(request):
+    return JsonResponse(con_personas.lista_para_escribir(request.user).como_datos())
+
+
+# Pantalla de una conversación entre dos personas: sus mensajes, el formulario y el botón para bloquear o
+# desbloquear. Solo la ven esas dos personas (para cualquier otra, no existe). La lista de mensajes se
+# vuelve a pedir cada 10 segundos; abrirla la marca como leída.
+#   - pk: número de la conversación.
+#   - POST «accion»: escribir (con «texto»), bloquear o desbloquear.
+def con_persona(request, pk):
+    usuario = request.user
+    conversacion = get_object_or_404(
+        ConversacionEntrePersonas.objects.select_related("primera", "segunda").filter(Q(primera=usuario) | Q(segunda=usuario)), pk=pk
+    )
+    otra = conversacion.la_otra(usuario)
+    accion = request.POST.get("accion") if request.method == "POST" else None
+    formulario = FormularioDeMensajeAPersona(request.POST if accion == "escribir" else None)
+    if accion == "escribir" and formulario.is_valid():
+        try:
+            con_personas.escribir(usuario, otra, formulario.cleaned_data["texto"])
+        except ValidationError as error:
+            formulario.add_error(None, error)
+        else:
+            return redirect("comunicaciones:con_persona", conversacion.pk)
+    elif accion == "bloquear":
+        con_personas.bloquear(usuario, otra)
+        return redirect("comunicaciones:con_persona", conversacion.pk)
+    elif accion == "desbloquear":
+        con_personas.desbloquear(usuario, otra)
+        return redirect("comunicaciones:con_persona", conversacion.pk)
+    con_personas.marcar_leida(conversacion, usuario)
+    bloqueos = con_personas.bloqueos_entre(usuario, otra)
+    contexto = {
+        "conversacion": conversacion,
+        "otra": otra,
+        "mensajes": list(conversacion.mensajes.all()),
+        "formulario": formulario,
+        "bloqueada": bool(bloqueos),
+        "la_bloqueo_yo": usuario.pk in bloqueos,
+    }
+    if request.GET.get("fragmento") == "mensajes":
+        return render(request, "comunicaciones/mensajes_con_persona.html", contexto)
+    return render(request, "comunicaciones/con_persona.html", contexto)
 
 
 # ── Niveles de aviso ─────────────────────────────────────────────────────────────────────────────────

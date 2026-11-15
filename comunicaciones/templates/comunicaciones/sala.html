@@ -1,0 +1,22 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  La sala de un grupo (comunicaciones/views.py, sala). Recibe «grupo», «mensajes», «formulario»,
+  «cuantos», «hay_anteriores» y «mas» (cuántos mostrar con «Ver anteriores»).
+  La lista de mensajes (comunicaciones/mensajes_de_sala.html) se vuelve a pedir sola cada 10 segundos.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p><a href="{% url 'comunicaciones:con_grupos' %}" class="text-sm text-marca hover:underline">← Con grupos</a></p>
+  <header class="rounded-lg border border-teal-300 bg-white p-4 dark:border-teal-800 dark:bg-slate-900">
+    <h2 class="text-lg font-semibold">Sala de {{ grupo.nombre }}</h2>
+    <p class="text-xs text-slate-500">{{ grupo.organizacion.nombre }} · la leen todas las personas del grupo, y solo ellas · <a href="{% url 'grupos:grupo' grupo.pk %}" class="text-marca hover:underline">ficha del grupo</a></p>
+  </header>
+  {% if hay_anteriores %}<p class="text-center text-sm"><a href="?cuantos={{ mas }}" class="text-marca hover:underline">Ver anteriores</a></p>{% endif %}
+  {% include "comunicaciones/mensajes_de_sala.html" %}
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Enviar al grupo</button>
+  </form>
+</div>
+{% endblock %}

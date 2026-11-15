@@ -11,7 +11,7 @@ from base.contrato import Capa, EntradaDeMenu, ModuloConfig
 class Pendiente:
     """Una herramienta que aún no existe pero ya tiene su sitio en el menú."""
 
-    # Nombre en la dirección y final del código («con_grupos» → «proximamente.con_grupos»).
+    # Nombre en la dirección y final del código («moderacion» → «proximamente.moderacion»).
     clave: str
     # Nombre en el menú.
     nombre: str
@@ -26,13 +26,6 @@ class Pendiente:
 
 # Las herramientas pendientes. Dónde sale cada una lo decide config/menu.py, como el resto del menú.
 PENDIENTES = (
-    # Lo propio
-    Pendiente("con_grupos", "Con grupos", "Conversaciones con un grupo entero (con todas sus personas), en tiempo real.", "⚇", "#0f766f"),
-    Pendiente(
-        "con_personas", "Con personas",
-        "Mensajes entre dos personas, por su alias. Antes hay que decidir cómo se cuida la privacidad y cómo se evita el acoso.",
-        "⚉", "#1d4ed8",
-    ),
     # Administrar
     Pendiente(
         "moderacion", "Moderación", "Avisos sobre contenido y ocultación provisional, en los grupos que administras.",

@@ -1,0 +1,39 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Una conversación entre dos personas (comunicaciones/views.py, con_persona). Recibe «conversacion»,
+  «otra» (la otra persona), «mensajes», «formulario», «bloqueada» (si hay un bloqueo entre las dos) y
+  «la_bloqueo_yo» (si quien mira ha bloqueado a la otra: puede quitarlo).
+  La lista de mensajes (comunicaciones/mensajes_con_persona.html) se vuelve a pedir sola cada 10 segundos.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p><a href="{% url 'comunicaciones:con_personas' %}" class="text-sm text-marca hover:underline">← Con personas</a></p>
+  <header class="flex flex-wrap items-center gap-2 rounded-lg border border-blue-300 bg-white p-4 dark:border-blue-800 dark:bg-slate-900">
+    <div class="min-w-0 flex-1">
+      <h2 class="text-lg font-semibold">Con {{ otra }}</h2>
+      <p class="text-xs text-slate-500">Solo la leéis las dos personas.</p>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      {% if la_bloqueo_yo %}
+        <button type="submit" name="accion" value="desbloquear" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700">Desbloquear a {{ otra }}</button>
+      {% else %}
+        <button type="submit" name="accion" value="bloquear" class="rounded border border-red-300 px-2 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-300"
+                onclick="return confirm('¿Bloquear a {{ otra|escapejs }}? Ninguna de las dos podrá escribir a la otra hasta que lo quites. El superadmin recibirá un aviso (sin ver la conversación).')">Bloquear</button>
+      {% endif %}
+    </form>
+  </header>
+  {% include "comunicaciones/mensajes_con_persona.html" %}
+  {% if bloqueada %}
+    <p class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+      {% if la_bloqueo_yo %}Has bloqueado a {{ otra }}: ninguna de las dos puede escribir a la otra hasta que lo quites.{% else %}Esta conversación está bloqueada: no se pueden enviar mensajes.{% endif %}
+    </p>
+  {% else %}
+    <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      {% csrf_token %}<input type="hidden" name="accion" value="escribir">
+      {{ formulario }}
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Enviar</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -93,16 +93,16 @@ python manage.py migrate --database=boveda
 > ser al azar) y se pierden las papeletas de los ejemplos. Rehaz los ejemplos (la orden de abajo) aunque la
 > comprobación diga `True True`.
 
-Los ejemplos crecen con cada pieza. Los últimos que se añadieron: el proyecto «Huerto comunitario» lleva
-dependencias, recursos y etiquetas, y el tipo «Preparación de acción» trae tareas modelo. Necesita el 0.3
-hecho.
+Los ejemplos crecen con cada pieza. Los últimos que se añadieron: mensajes en las salas de los grupos de
+Nutria y una conversación de Nutria con otra persona (antes, el proyecto «Huerto comunitario» con
+dependencias, recursos y etiquetas, y las tareas modelo de «Preparación de acción»). Necesita el 0.3 hecho.
 
 - [ ] **¿Ya está?** Esta orden escribe `True True`:
 
 ```bash
-# Pregunta a la base si están el huerto con recursos y las tareas modelo de ejemplo
+# Pregunta a la base si están el huerto con recursos y los mensajes de ejemplo de las salas
 #     shell -c: ejecuta una línea de Python con Django cargado
-python manage.py shell -c "from django.apps import apps; P=apps.get_model('proyectos','Proyecto'); T=apps.get_model('tipologias','TareaModelo'); print(P.objects.filter(titulo='Huerto comunitario', recursos__isnull=False).exists(), T.objects.exists())"
+python manage.py shell -c "from django.apps import apps; P=apps.get_model('proyectos','Proyecto'); M=apps.get_model('comunicaciones','MensajeDeGrupo'); print(P.objects.filter(titulo='Huerto comunitario', recursos__isnull=False).exists(), M.objects.exists())"
 ```
 
   **Si no** (borra y vuelve a crear los ejemplos; no toca al superadmin). Ojo: borra también lo que hayas
@@ -829,3 +829,23 @@ Antes: `python manage.py migrate` (tabla `LimiteDeInactividad` y campo `ultima_a
   mínimo. Como Lince, su grupo: no deja bajar del mínimo ni subir de los días de la plataforma. «Quitar»
   vuelve a lo de arriba.
 
+## 41. Conversaciones con grupos y con personas
+
+Antes: `python manage.py migrate` (tablas de las salas, conversaciones entre personas y bloqueos; ver 0.3) y
+rehacer los ejemplos (0.4). El trabajador debe estar en marcha para que llegue el aviso de un bloqueo.
+- [ ] Como **Nutria**, «Comunicaciones → Conversaciones → Con grupos»: sus grupos (GRU Henares, GRU
+  Lozoya…), con el último mensaje y un número verde si hay nuevos. El menú dice «Con grupos (N)».
+- [ ] Entra en la sala de GRU Henares: los mensajes propios a la derecha, en verde azulado. Escribe uno.
+- [ ] Abre la misma sala como **Lince** en otra ventana y escribe: en la de Nutria aparece solo, en unos
+  10 segundos, sin perder lo que estuviera escribiendo.
+- [ ] Como **Garza** (está en GRU Sorbe, no en GRU Henares), abre la dirección de la sala de GRU Henares:
+  no entra (403). Tampoco el **superadmin**.
+- [ ] Como **Nutria**, «Con personas → Escribir a una persona»: «Elegir…» enseña las personas de sus grupos,
+  agrupadas por grupo. Elige a una y escribe. Probando con el alias de alguien que no comparte grupo (por
+  ejemplo, Zorro), dice que no compartes grupo.
+- [ ] Como esa persona, el menú dice «Con personas (1)»; al abrir la conversación, baja.
+- [ ] Pulsa **Bloquear** (pide confirmación): desaparece el formulario y sale «Desbloquear a …». La otra
+  persona ve «Esta conversación está bloqueada» y no puede escribir; en su lista sale «Bloqueada».
+- [ ] Como **superadmin**, en «Notificaciones» (bandeja «Sistema»): «X ha bloqueado a Y en las
+  conversaciones entre personas». No hay forma de leer la conversación.
+- [ ] «Desbloquear»: vuelven a poder escribirse.

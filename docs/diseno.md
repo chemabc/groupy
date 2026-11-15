@@ -2142,6 +2142,30 @@ llegarán con el chat (más adelante).
   podrá reutilizar `Conversacion` y `Mensaje`).
 - *(Más adelante: temas o categorías de las conversaciones, y el chat.)*
 
+**Conversaciones con grupos y con personas (15 de noviembre de 2026, [A-56], respuestas 1A, 2A, 3B y 4A
+de la persona usuaria).** Lo último que quedaba de [A-37].
+- **Con grupos: una sala por grupo (1A).** Un solo hilo donde escriben todas las personas del grupo, como el
+  chat del grupo (`MensajeDeGrupo`, `comunicaciones/con_grupos.py`). «Con grupos» enseña todos los grupos de
+  la persona, con el último mensaje y cuántos nuevos tiene; hasta dónde ha leído cada cual se guarda en
+  `LecturaDeSala`. Más adelante quizá hilos o temas dentro de la sala, como en Telegram (lo dijo la persona
+  usuaria), pero aún no. *Descartado:* hilos con asunto (se parecen a «Debates») y las dos cosas a la vez.
+- **Solo sus miembros (2A):** quien tiene una pertenencia directa en el grupo. No entran los de los grupos de
+  encima, ni los admins de la organización, ni el superadmin si no son miembros. *Descartado:* que escriban
+  personas de fuera.
+- **Con personas: sin petición, con bloqueo (3B).** Se empieza una conversación con quien comparte algún
+  grupo (`ConversacionEntrePersonas`, una por pareja, `comunicaciones/con_personas.py`). Se elige con el
+  selector de personas común (bloque «Personas de tus grupos»; los grupos cuya organización cierra la lista
+  de miembros no salen, y a esas personas se les escribe con el alias exacto). Cualquiera de las dos
+  **bloquea** a la otra (`Bloqueo`): ninguna puede escribir hasta que quien bloqueó lo quite, y **el
+  superadmin recibe un aviso** (eventos_sw `comunicaciones.bloqueo`, bandeja «Sistema»), sin poder leer la
+  conversación. *Descartado:* petición que la otra persona acepta (3A) y lista de contactos (3C).
+- **Solo de dos en dos (4A).** Conversaciones de tres o más, más adelante si hace falta.
+- **Decidido por mí (reversible):** mensajes nuevos cada 10 s con htmx, como el buzón; una conversación que
+  ya existe sigue aunque dejéis de compartir grupo (para cortarla está el bloqueo); el bloqueado ve que la
+  conversación está bloqueada; colores propios: violeta la administración, verde azulado las salas y azul
+  las personas; los mensajes no se borran ni se editan todavía (con `moderacion`); las salas y las
+  conversaciones no se limpian solas todavía.
+
 ---
 
 ## 18. Forma de trabajar
@@ -2208,21 +2232,9 @@ llegarán con el chat (más adelante).
 3. **Cabecera y pie:** se eligen, como una plantilla.
 4. **Plantilla:** aspecto y texto de partida; puede llevar cualquier cosa.
 
-**Conversaciones con grupos y con personas** (15 de noviembre de 2026, [A-56]; lo último de [A-37]).
-Preguntado, sin contestar todavía:
-1. **«Con grupos», qué es:** (A, recomendada) una **sala por grupo**: un solo hilo donde escriben todos sus
-   miembros, como el chat del grupo; (B) **hilos con asunto** que abre cualquier miembro y responde el
-   grupo; (C) las dos cosas.
-2. **Quién escribe a un grupo:** (A, recomendada) solo sus miembros; (B) también personas de fuera, cuyo
-   mensaje llega como una conversación que atiende el grupo (como el buzón de la administración).
-3. **«Con personas», contra el acoso:** (A, recomendada) se puede escribir a quien comparte grupo contigo;
-   el primer mensaje llega como **petición** que la otra persona acepta o rechaza, y siempre puede
-   **bloquear**; (B) se escribe sin petición a quien comparte grupo, con bloqueo; (C) solo entre
-   personas que se han aceptado antes como contactos.
-4. **Grupos de varias personas** («con personas» para 3 o más, sin ser un grupo de la plataforma): (A,
-   recomendada) ahora no, solo de dos en dos; (B) sí, desde el principio.
-Decidido por mí (reversible): mensajes nuevos cada 10 s con htmx, como el buzón (Channels, con el chat);
-ni el superadmin ni la administración leen las conversaciones entre personas (5.1).
+**Conversaciones con grupos y con personas**, contestado el 15 de noviembre de 2026 ([A-56]); hecho en el
+apartado 17: una sala por grupo (1A), solo sus miembros (2A), con personas sin petición y con bloqueo que
+avisa al superadmin (3B), y solo de dos en dos (4A).
 
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.

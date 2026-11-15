@@ -2,14 +2,27 @@
 Configuración y contrato del módulo «comunicaciones».
 """
 
-from base.contrato import Ayuda, Capa, EntradaDeMenu, Limpiable, ModuloConfig, Permiso, Vista, TarjetaDeInicio
+from base.contrato import (
+    Ayuda,
+    Capa,
+    DatosDeEjemplo,
+    Emision,
+    EntradaDeMenu,
+    Limpiable,
+    ModuloConfig,
+    Permiso,
+    TarjetaDeInicio,
+    TipoDeAviso,
+    Vista,
+)
 
 
 class ComunicacionesConfig(ModuloConfig):
     """
     Contrato del módulo «comunicaciones»: reparte las notificaciones que declaran los demás módulos (sus
-    «avisos») y aporta la sección «Comunicaciones» de cada persona. Más adelante, mensajes,
-    conversaciones, chat, correo y Telegram.
+    «avisos») y aporta la sección «Comunicaciones» de cada persona: notificaciones, avisos y
+    conversaciones con la administración, la sala de cada grupo y conversaciones de dos en dos. Más
+    adelante, chat en tiempo real, correo y Telegram.
     """
 
     name = "comunicaciones"
@@ -28,6 +41,17 @@ class ComunicacionesConfig(ModuloConfig):
         ),
         # Sin roles por defecto: solo el superadmin.
         Permiso("comunicaciones.niveles", "Crear y cambiar los niveles de los avisos (nombre y color)"),
+    )
+    # Datos de ejemplo: unos mensajes en las salas y una conversación entre dos personas.
+    datos_de_ejemplo = DatosDeEjemplo(crear="comunicaciones.ejemplos.crear", borrar="comunicaciones.ejemplos.borrar")
+    emite = (
+        Emision("comunicaciones.bloqueo", "Una persona ha bloqueado a otra en las conversaciones entre personas. Datos: bloqueo_id."),
+    )
+    avisos = (
+        TipoDeAviso(
+            "comunicaciones.bloqueo", "Alguien ha bloqueado a otra persona (para el superadmin)", "sistema",
+            "comunicaciones.bloqueo", "comunicaciones.avisos.bloqueo",
+        ),
     )
     # El registro conecta esta función a cada tipo de aviso de cualquier módulo (ver base/registro.py).
     reparte_avisos = "comunicaciones.servicios.repartir"
@@ -85,6 +109,29 @@ class ComunicacionesConfig(ModuloConfig):
             vistas=(
                 Vista("Mis conversaciones", "comunicaciones:conversaciones"),
                 Vista("Escribir a la administración", "comunicaciones:nueva_conversacion"),
+            ),
+        ),
+        EntradaDeMenu(
+            codigo="comunicaciones.con_grupos",
+            nombre="Con grupos",
+            url="comunicaciones:con_grupos",
+            icono="⚇",
+            color="#0f766f",
+            contador="comunicaciones.con_grupos.salas_sin_leer",
+            otras_rutas=("comunicaciones:sala",),
+            vistas=(Vista("Mis grupos", "comunicaciones:con_grupos"),),
+        ),
+        EntradaDeMenu(
+            codigo="comunicaciones.con_personas",
+            nombre="Con personas",
+            url="comunicaciones:con_personas",
+            icono="⚉",
+            color="#1d4ed8",
+            contador="comunicaciones.con_personas.sin_leer",
+            otras_rutas=("comunicaciones:con_persona",),
+            vistas=(
+                Vista("Mis conversaciones", "comunicaciones:con_personas"),
+                Vista("Escribir a una persona", "comunicaciones:escribir_a_persona"),
             ),
         ),
         # Para administrar: lo que llega a las administraciones que se atienden y los avisos.
@@ -150,6 +197,28 @@ class ComunicacionesConfig(ModuloConfig):
                 "número del menú cuenta las que tienen una respuesta nueva para ti. Si atiendes alguna "
                 "administración, lo que le llega está aparte, en «Administrar → Buzón de la administración».\n\n"
                 "Con una conversación abierta, los mensajes nuevos aparecen solos (se mira cada 10 segundos)."
+            ),
+        ),
+        Ayuda(
+            seccion="comunicaciones.con_grupos",
+            titulo="Con grupos",
+            texto=(
+                "Cada grupo tiene su sala: una sola conversación donde escriben todas las personas del grupo, "
+                "como el chat del grupo. Solo la leen sus miembros (tampoco el superadmin, si no está en el "
+                "grupo). Aquí salen todos tus grupos; el punto y el número marcan los mensajes nuevos.\n\n"
+                "Con una sala abierta, los mensajes nuevos aparecen solos (se mira cada 10 segundos)."
+            ),
+            ejemplo="En la sala de GRU Henares, Lince pregunta quién trae la furgoneta el sábado y Nutria responde.",
+        ),
+        Ayuda(
+            seccion="comunicaciones.con_personas",
+            titulo="Con personas",
+            texto=(
+                "Conversaciones de dos en dos, por el alias. Puedes empezar una con cualquier persona que "
+                "comparte algún grupo contigo. Solo la leéis las dos: ni la administración ni el superadmin.\n\n"
+                "Si alguien te molesta, bloquéalo desde la conversación: ninguna de las dos podrá escribir "
+                "a la otra hasta que lo quites, y el superadmin recibe un aviso de que lo has bloqueado (sin "
+                "ver lo que os habéis escrito), por si tiene que actuar."
             ),
         ),
         Ayuda(

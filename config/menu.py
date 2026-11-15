@@ -44,8 +44,8 @@ DISPOSICION = (
             "comunicaciones.notificaciones",
             Pestanas("comunicaciones.conversar", (
                 "comunicaciones.conversaciones",
-                "proximamente.con_grupos",
-                "proximamente.con_personas",
+                "comunicaciones.con_grupos",
+                "comunicaciones.con_personas",
             )),
             Pestanas("solicitudes.solicitudes", (
                 "solicitudes.mias",

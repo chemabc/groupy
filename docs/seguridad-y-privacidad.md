@@ -223,6 +223,28 @@ Cada entrada tiene tres partes:
   del grupo.
 - **Para el futuro:** al borrar una cuenta, cambiar su alias por «persona que ya no está» en las autorías.
 
+### 6.4 Conversaciones entre personas y salas de grupo
+- **Qué se hace:**
+  - Una conversación entre dos personas **solo la leen esas dos**: para cualquier otra, la dirección no
+    existe (404), también para la administración y el superadmin. La sala de un grupo solo la leen sus
+    miembros directos (403 a los demás, también al superadmin si no es miembro).
+  - Solo se empieza a escribir a quien **comparte algún grupo**; a quien no, el error es el mismo exista o
+    no el alias.
+  - **Bloqueo:** cualquiera de las dos corta la conversación en los dos sentidos; el superadmin recibe un
+    aviso con los dos alias, nunca el texto. Las tablas no están en la trastienda.
+- **Riesgo que queda:**
+  - Los mensajes se guardan **en claro** en la base de la plataforma: quien tenga la base (o una copia) los
+    lee. Ni la administración ni el superadmin los ven desde la interfaz, pero sí quien administre el
+    servidor.
+  - Quien es bloqueado lo nota (la conversación dice que está bloqueada).
+  - El aviso al superadmin cuenta quién bloqueó a quién: es un dato sobre la relación entre dos personas.
+  - Quien conoce un alias que comparte grupo puede mandar un primer mensaje no deseado (no hay petición
+    previa: decisión 3B de [A-56]).
+- **Para el futuro:** cifrar los mensajes entre personas (de extremo a extremo, o al menos con una clave
+  aparte, como la biblioteca del editor); límite de mensajes a desconocidos por día; denunciar un mensaje
+  concreto con `moderacion` (el superadmin lo lee solo entonces, con registro y aviso, apartado 5.1 del
+  diseño).
+
 ---
 
 ## 7. Borrado y copias

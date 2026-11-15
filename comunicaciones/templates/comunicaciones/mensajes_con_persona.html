@@ -1,0 +1,17 @@
+{% comment %}
+  Los mensajes de una conversación entre dos personas. Se pinta dentro de comunicaciones/con_persona.html
+  y, cada 10 segundos, htmx lo vuelve a pedir («?fragmento=mensajes») y lo sustituye entero
+  (hx-target="this"). Recibe «conversacion», «otra» y «mensajes». Los propios van a la derecha, en azul.
+{% endcomment %}
+<div id="mensajes" class="space-y-2"
+     hx-get="{% url 'comunicaciones:con_persona' conversacion.pk %}?fragmento=mensajes"
+     hx-trigger="every 10s" hx-target="this" hx-swap="outerHTML">
+  {% for mensaje in mensajes %}
+    <div class="flex {% if mensaje.autor_id == request.user.pk %}justify-end{% endif %}">
+      <div class="max-w-[85%] rounded-lg px-3 py-2 text-sm {% if mensaje.autor_id == request.user.pk %}bg-blue-100 dark:bg-blue-950{% else %}border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900{% endif %}">
+        <p class="text-xs font-medium text-slate-500">{% if mensaje.autor_id == request.user.pk %}Tú{% else %}{{ otra }}{% endif %} · {{ mensaje.creado|date:"d/m/Y H:i" }}</p>
+        <p class="whitespace-pre-line">{{ mensaje.texto }}</p>
+      </div>
+    </div>
+  {% endfor %}
+</div>

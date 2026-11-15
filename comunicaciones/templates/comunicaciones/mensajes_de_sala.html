@@ -1,0 +1,20 @@
+{% comment %}
+  Los mensajes de la sala de un grupo. Se pinta dentro de comunicaciones/sala.html y, cada 10 segundos,
+  htmx lo vuelve a pedir («?fragmento=mensajes», con los mismos «cuantos») y lo sustituye entero
+  (hx-target="this"). Recibe «grupo», «mensajes» y «cuantos». Los propios van a la derecha, en verde
+  azulado.
+{% endcomment %}
+<div id="mensajes" class="space-y-2"
+     hx-get="{% url 'comunicaciones:sala' grupo.pk %}?fragmento=mensajes&cuantos={{ cuantos }}"
+     hx-trigger="every 10s" hx-target="this" hx-swap="outerHTML">
+  {% for mensaje in mensajes %}
+    <div class="flex {% if mensaje.autor_id == request.user.pk %}justify-end{% endif %}">
+      <div class="max-w-[85%] rounded-lg px-3 py-2 text-sm {% if mensaje.autor_id == request.user.pk %}bg-teal-100 dark:bg-teal-950{% else %}border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900{% endif %}">
+        <p class="text-xs font-medium text-slate-500">{{ mensaje.firma }} · {{ mensaje.creado|date:"d/m/Y H:i" }}</p>
+        <p class="whitespace-pre-line">{{ mensaje.texto }}</p>
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-sm text-slate-500">Aún no ha escrito nadie. Empieza tú.</p>
+  {% endfor %}
+</div>
