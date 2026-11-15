@@ -47,8 +47,11 @@ DISPOSICION_DEL_INICIO = "config.inicio.DISPOSICION"
 # Si se muestra la barra de depuración (django-debug-toolbar): en desarrollo sí, en las pruebas no.
 USAR_BARRA_DE_DEPURACION = DEBUG and not PROBANDO
 
-# Nombres de servidor desde los que se acepta la aplicación.
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+# Nombres de servidor desde los que se acepta la aplicación. «app» es el nombre del contenedor dentro de
+# Docker: el editor en tiempo real llama a la plataforma por http://app:8000/editor/… (pedir el texto,
+# guardar, comentarios); sin él, Django rechazaba esas llamadas (DisallowedHost) y el editor no podía abrir
+# ningún texto nuevo (arreglado el 15 de noviembre de 2026, [A-64]).
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,app").split(",")
 
 # Nombres propios para las cookies de la sesión y de la protección CSRF. Los navegadores reparten las
 # cookies por nombre de servidor (localhost), no por puerto, así que con los nombres de Django por

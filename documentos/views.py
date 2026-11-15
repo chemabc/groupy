@@ -37,11 +37,15 @@ MAXIMO = 500
 # Pantalla «Participación → Documentos»: todo lo que ve quien mira (textos, archivos y enlaces), filtrable
 # al momento por nombre, tipo, formato, de dónde cuelga, grupo, estado y rango de fechas. 2 consultas.
 def lista(request):
-    documentos = list(servicios.visibles(request.user).select_related("grupo")[:MAXIMO])
+    usuario = request.user
+    documentos = list(servicios.visibles(usuario).select_related("grupo")[:MAXIMO])
+    permisos = servicios.permisos_en_lista(usuario, documentos)
     filas = [
         {
             "pk": d.pk, "titulo": d.titulo, "tipo": d.get_tipo_display(), "formato": _formato(d), "cuelga": _cuelga_de(d.ancla_tipo),
             "grupo": d.grupo.nombre, "estado": _estado(d), "fecha": timezone.localtime(d.actualizado).date(),
+            # Lo que puede hacer quien mira (R U D), su texto para buscar y filtrar, y si puede cambiarlo.
+            "permisos": _letras(permisos[d.pk]), "cambia": "Sí" if permisos[d.pk].u else "No", "detalle": permisos[d.pk],
         }
         for d in documentos
     ]
@@ -55,6 +59,7 @@ def lista(request):
         columnas=[
             Columna("titulo", "Nombre", enlace="documentos:documento"), Columna("tipo", "Tipo"), Columna("formato", "Formato"),
             Columna("cuelga", "Cuelga de"), Columna("grupo", "Grupo"), Columna("estado", "Estado"), Columna("fecha", "Último cambio"),
+            Columna("permisos", "Puedo", ordenable=False, plantilla="documentos/_celda_de_permisos.html"),
         ],
         fuente=FuenteDeLista(filas, campos_de_busqueda=["titulo", "grupo", "formato"]),
         filtros=[
@@ -63,13 +68,23 @@ def lista(request):
             Filtro("cuelga", "Cuelga de", opciones=opciones_de("cuelga")),
             Filtro("grupo", "Grupo", opciones=opciones_de("grupo")),
             Filtro("estado", "Estado", opciones=opciones_de("estado")),
+            Filtro("cambia", "Puedo cambiarlo", opciones=(("Sí", "Sí"), ("No", "No"))),
         ],
         fechas=RangoDeFechas("fecha", "Último cambio"),
     )
     plantilla = tabla.plantilla_parcial()
     if plantilla:
         return render(request, plantilla, {"tabla": tabla})
-    return render(request, "documentos/lista.html", {"tabla": tabla})
+    # C (crear): en qué grupos puede crear documentos quien mira o, si en ninguno, por qué y a quién pedirlo.
+    donde_crea = grupos_donde_puede(usuario, "documentos.crear")
+    contexto = {"tabla": tabla, "donde_crea": donde_crea, "por_que_no_crea": "" if donde_crea else explicar_falta("documentos.crear")}
+    return render(request, "documentos/lista.html", contexto)
+
+
+# Las iniciales de lo que se puede hacer con un documento, para la celda «Puedo» (y para buscar en ella):
+# «R U D», «R» o «R U».
+def _letras(permisos):
+    return " ".join(letra for letra, si in (("R", permisos.r), ("U", permisos.u), ("D", permisos.d)) if si)
 
 
 # El formato de un documento, para la lista: «Markdown», «Typst», la extensión de un archivo («PDF») o
@@ -284,6 +299,7 @@ def documento(request, pk):
         "opciones": FormularioDeLimites(instance=servicios.fila_de_limites(documento_id=documento.pk)) if cambia_opciones else None,
         "elimina": servicios.puede_eliminar(usuario, documento),
         "congelado": servicios.congelado(documento),
+        "permisos": servicios.permisos_de(usuario, documento),
     }
     return render(request, "documentos/documento.html", contexto)
 
@@ -341,6 +357,7 @@ def _archivo_o_enlace(request, documento, accion):
         "nueva": nueva,
         "cambio": cambio,
         "error": error,
+        "permisos": servicios.permisos_de(usuario, documento),
     }
     return render(request, "documentos/archivo_o_enlace.html", contexto)
 

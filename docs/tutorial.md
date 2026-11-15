@@ -910,3 +910,15 @@ sirve aquí y dónde se usa.
 - **Un botón en la cabecera sin que la cabecera lo conozca.** El módulo lo declara en su contrato
   (`EnlaceDeCabecera`) y la plantilla general pinta lo que haya en el registro, como el menú.
 
+## 42. Un fallo que se disfrazaba: el nombre del servidor y los mensajes de error (15 de noviembre de 2026)
+
+- **ALLOWED_HOSTS.** Django solo responde a los nombres de servidor de esa lista (contra un ataque que
+  falsea la cabecera `Host`). Dentro de Docker, el editor llama a la plataforma por el nombre de su
+  contenedor, `app`, que no estaba: Django contestaba 400 (`DisallowedHost`) a cada petición del editor.
+- **Por qué parecía otra cosa.** El editor sí aceptaba el pase, pero al no recibir el texto cerraba la sala, y
+  el navegador solo sabía decir «el pase no vale o ha caducado». Ahora cada rechazo lleva su motivo
+  (`error.reason` en Hocuspocus) y el cliente lo explica.
+- **Cómo se encontró.** Probando paso a paso: el pase de Nutria se fabricaba bien; un cliente de prueba con
+  ese pase entraba («AUTENTICADO») pero no llegaba a sincronizar; y una petición a `http://app:8000` daba 400.
+- **Una prueba para que no vuelva:** `test_el_editor_llega_por_app` pide el texto con `Host: app:8000`.
+

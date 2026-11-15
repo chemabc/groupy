@@ -231,4 +231,8 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   (borrador en el editor, «Publicar» guarda una foto en HTML seguro; las ve el grupo y lo que cuelga de él),
   **publicación y consumo** entre grupos (propuesta y aceptada), novedades y el visor **«🌐 Webs»** sin menú
   lateral (botón de la cabecera, `EnlaceDeCabecera` en el contrato; barra de camino con desplegables y grafo
-  de la jerarquía). Después, fase 8 (chat, Telegram, bóveda real) y `moderacion`.
+  de la jerarquía).
+- 15 de noviembre de 2026 ([A-64]): **arreglado el editor que no abría textos** (`ALLOWED_HOSTS` sin «app»:
+  Django rechazaba las llamadas del editor; ahora el editor dice el motivo real de cada rechazo) y **«Lo que
+  puedes hacer»** en documentos (columna «Puedo» con R U D, C arriba, y en la ficha el motivo y a quién pedir
+  la redacción). Después, fase 8 (chat, Telegram, bóveda real) y `moderacion`.

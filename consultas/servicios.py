@@ -79,12 +79,12 @@ def abierta(consulta):
     return consulta.estado == Consulta.ACEPTADA and consulta.abre <= timezone.now() < consulta.cierra and consulta.cerrada_el is None
 
 
-# Dice si lo que cuelga de una consulta (sus documentos de contexto) está congelado: desde que se abre la
-# votación (también después de cerrarse), para que todo el mundo vote sobre lo mismo. La pregunta el
-# módulo «documentos» a través del contrato (Ancla.congela). Una consulta.
-#   - consulta_id: el número de la consulta.
-def congela(consulta_id):
-    return Consulta.objects.filter(pk=consulta_id, estado=Consulta.ACEPTADA, abre__lte=timezone.now()).exists()
+# De unas consultas, las que congelan lo que cuelga de ellas (sus documentos de contexto): las que ya se
+# han abierto (también después de cerrarse), para que todo el mundo vote sobre lo mismo. La pregunta el
+# módulo «documentos» a través del contrato (Ancla.congela). Una consulta, sean cuantas sean.
+#   - consultas: los números de las consultas.
+def congela(consultas):
+    return set(Consulta.objects.filter(pk__in=list(consultas), estado=Consulta.ACEPTADA, abre__lte=timezone.now()).values_list("pk", flat=True))
 
 
 # Pide al grupo los apoyos para abrir una consulta propuesta por un miembro. Desde entonces las preguntas ya

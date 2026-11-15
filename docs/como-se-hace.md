@@ -256,6 +256,11 @@ superadmin.
 
 ## Participación
 
+### Saber qué puedo hacer con un documento
+En «Participación → Documentos», la columna «Puedo»: R (leer), U (cambiar), D (eliminar); tachado, no
+puedes (pasa el ratón para ver por qué). Arriba, C (crear) dice en qué grupos puedes crear. En la ficha de
+cada documento, «Lo que puedes hacer» explica qué te falta y a quién pedirlo.
+
 ### Subir un PDF a un debate, una votación, un proyecto o una tarea
 En la ficha (del debate, la consulta, el proyecto o la tarea), recuadro «Cuelga de aquí» → «+ Documento,
 archivo o enlace» → pestaña «Subir un archivo». Lo verá quien ve aquello. No se admiten formatos de

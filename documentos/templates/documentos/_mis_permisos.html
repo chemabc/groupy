@@ -1,0 +1,28 @@
+{% comment %}
+  Recuadro «Lo que puedes hacer» de la ficha de un documento: R (leer), U (cambiar) y D (eliminar), y, si no
+  puede algo, por qué y qué puede hacer para conseguirlo (pedir la redacción a quien la tiene o a la
+  administración del grupo, o comentar). Recibe «documento», «permisos» (servicios.Permisos) y, en los
+  textos, «redaccion» (quién la tiene).
+{% endcomment %}
+<details class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900" {% if not permisos.u %}open{% endif %}>
+  <summary class="cursor-pointer font-semibold">Lo que puedes hacer:
+    <span class="font-mono text-xs">R{% if permisos.u %} U{% endif %}{% if permisos.d %} D{% endif %}</span>
+    <span class="text-xs font-normal text-slate-500">(R leer · U cambiar · D eliminar)</span></summary>
+  <ul class="mt-1 space-y-1">
+    <li>✔ <strong>Leer</strong>{% if permisos.comentar and not permisos.u %} y comentar (abajo){% endif %}.</li>
+    {% if permisos.u %}<li>✔ <strong>Cambiarlo</strong>{% if documento.tipo == "archivo" %} (subir otra versión o renombrarlo){% elif documento.tipo == "enlace" %} (renombrarlo o cambiar adónde lleva){% else %} (escribir){% endif %}.</li>
+    {% else %}
+      <li>✘ <strong>Cambiarlo</strong>: {{ permisos.motivo_u }}
+        {% if permisos.falta_redaccion %}
+          <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">Para escribirlo:</p>
+          <ul class="ml-4 list-disc text-xs">
+            {% for c in redaccion %}{% if c.usuario %}<li>pide la redacción a <a href="{% url 'comunicaciones:escribir_a_persona' %}?a={{ c.usuario.alias|urlencode }}" class="text-marca hover:underline">{{ c.usuario.alias }}</a> (puede dártela en «Redacción», en esta misma ficha);</li>{% endif %}{% endfor %}
+            <li>o <a href="{% url 'comunicaciones:nueva_conversacion' %}?administracion=g{{ documento.grupo_id }}&asunto={{ 'Redacción de «'|add:documento.titulo|add:'»'|urlencode }}" class="text-marca hover:underline">pídesela a la administración de {{ documento.grupo.nombre }}</a>;</li>
+            {% if permisos.comentar %}<li>o deja tu propuesta como comentario, abajo.</li>{% endif %}
+          </ul>
+        {% endif %}
+      </li>
+    {% endif %}
+    {% if permisos.d %}<li>✔ <strong>Eliminarlo</strong> (va a la papelera 30 días).</li>{% else %}<li>✘ <strong>Eliminarlo</strong>: {{ permisos.motivo_d }}</li>{% endif %}
+  </ul>
+</details>

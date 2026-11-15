@@ -320,9 +320,36 @@ class PruebasDeLaLista(PruebaDeArchivos):
             servicios.enlazar(self.nutria, "Web", url="https://ejemplo.org", grupo=self.henares, visibilidad="grupo:0")
 
         self.pdf()
-        respuesta = self.comprobar_consultas("/documentos/", 2, mas)
+        respuesta = self.comprobar_consultas("/documentos/", 4, mas)
         for texto in ("plano.pdf", "Enlace a otra web", "Cuelga de", "Último cambio:", 'data-fecha="'):
             self.assertContains(respuesta, texto)
+
+
+class PruebasDePermisos(PruebaDeArchivos):
+    """Lo que puede hacer cada persona con cada documento (R U D) y, si no, por qué y cómo conseguirlo."""
+
+    # Un texto de Lince: Nutria solo lee (R) y la ficha le dice a quién pedir la redacción; Lince (la tiene y
+    # administra) puede todo (R U D). La lista lo dice en «Puedo» y en el filtro «Puedo cambiarlo»; arriba,
+    # dónde puede crear.
+    def test_letras_y_explicacion(self):
+        texto = servicios.crear(self.lince, Documento.LIBRE, "Notas de Lince", grupo=self.henares, visibilidad="grupo:0")
+        propio = self.pdf()
+        permisos = servicios.permisos_en_lista(self.nutria, [texto, propio])
+        self.assertEqual((permisos[texto.pk].u, permisos[texto.pk].d, permisos[texto.pk].falta_redaccion), (False, False, True))
+        self.assertEqual((permisos[propio.pk].u, permisos[propio.pk].d), (True, True))
+        lista = self.client.get("/documentos/")
+        self.assertContains(lista, "No puedes cambiarlo: Solo lo escriben quienes tienen su redacción")
+        self.assertContains(lista, "puedes crear documentos en GRU Tajo, GRU Henares.")
+        ficha = self.client.get(f"/documentos/{texto.pk}/")
+        self.assertContains(ficha, "pide la redacción a")
+        self.assertContains(ficha, "/comunicaciones/personas/escribir/?a=Lince")
+        self.assertContains(ficha, "pídesela a la administración de GRU Henares")
+        self.assertTrue(servicios.permisos_de(self.lince, texto).u)
+        # Quien no puede crear en ningún grupo lo ve explicado, sin botones de crear.
+        self.como(crear_usuario_de_prueba("Suelta"))
+        respuesta = self.client.get("/documentos/")
+        self.assertContains(respuesta, "No puedes crear documentos")
+        self.assertNotContains(respuesta, "Subir un archivo</a>")
 
 
 class PruebasDelRangoDeFechas(SimpleTestCase):

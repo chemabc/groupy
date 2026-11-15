@@ -192,6 +192,21 @@ cd editor && npm install && npm run construir && \
 EDITOR_URL=ws://localhost:1234 EDITOR_URL_INTERNA=http://localhost:1234 python manage.py runserver 0.0.0.0:8000
 ```
 
+- [ ] **¿Llega el editor a la plataforma?** (arreglado en [A-64]) Esta orden escribe `403` (firma no
+  válida: la petición llega). Si escribe `400`, Django no acepta el nombre «app»: comprueba que
+  `DJANGO_ALLOWED_HOSTS` no está puesto en el contenedor (o que incluye `app`) y reinicia el servidor.
+
+```bash
+# Pide a la plataforma, por el nombre que usa el editor dentro de Docker, el texto de una sala (sin firma)
+#     -s: sin barra de progreso
+#     -o /dev/null: no enseña la respuesta
+#     -w "%{http_code}": escribe solo el código de la respuesta
+curl -s -o /dev/null -w "%{http_code}\n" "http://app:8000/editor/texto/?sala=x"
+```
+
+- [ ] **¿El editor tiene su última versión?** Tras cambios en `editor/` (como los avisos de [A-64]), reinicia
+  su contenedor (en VS Code, «Docker: Restart» del servicio `editor`, o «Rebuild Container»): al arrancar
+  vuelve a construir el cliente.
 - [ ] **¿Tiene biblioteca?** Al arrancar, el editor dice «Editor colaborativo en marcha en el puerto 1234»
   sin «(sin biblioteca: falta EDITOR_CLAVE)». **Si lo dice:** falta `EDITOR_CLAVE` (nueva en
   `.devcontainer/docker-compose.yml`): «Rebuild Container», o arráncalo a mano como arriba.
@@ -918,4 +933,20 @@ Antes: `python manage.py migrate` (0.3), `npm run construir` (0.2) y rehacer los
   «Cortar» y, como Nutria, el tramo «Grupos de actividad» desaparece. Como **Zorro**, propón otra vez para
   GRU Henares: Lince recibe un aviso y la acepta.
 - [ ] Como **superadmin**, crea una página de «Portada de la plataforma»: sale en la portada sin sesión.
+
+## 44. Editor que no abría textos y «Lo que puedes hacer» en los documentos
+
+Antes: el 0.8 (sobre todo «¿Llega el editor a la plataforma?» y reiniciar el editor).
+- [ ] Como **Nutria**, abre «Documento: ¿Dónde hacemos el huerto?» → «Escribir»: entra en directo («En
+  directo») y lo que escribes se guarda solo. Lo mismo con un documento nuevo.
+- [ ] Si algo falla al entrar, el aviso dice **por qué**: «el pase…» (caducado, otra sala) o «el editor no
+  consigue el texto de la aplicación…» (no es cosa de tu permiso).
+- [ ] «Participación → Documentos»: arriba, «C (crear): puedes crear documentos en…». Columna **«Puedo»** con
+  R U D en verde; en uno de Lince, U y D tachados, y al pasar el ratón dice por qué. Filtro «Puedo
+  cambiarlo: No».
+- [ ] Abre ese documento de Lince: el recuadro **«Lo que puedes hacer»** sale abierto, con «✘ Cambiarlo: Solo
+  lo escriben quienes tienen su redacción…» y las salidas: pedírsela a Lince (lleva a escribirle), a la
+  administración de su grupo (conversación con el asunto puesto) o comentar.
+- [ ] Como una persona sin grupos (o sin permiso de crear), la lista dice «No puedes crear documentos» con
+  la explicación, y no salen los botones de crear.
 

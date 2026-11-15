@@ -7,6 +7,7 @@ subir archivos (con versiones), enlaces, la papelera y lo congelado por una vota
 
 import difflib
 import re
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from datetime import timezone as zona
 
@@ -570,8 +571,22 @@ def _detalle(documento):
 # Dice si un documento está congelado: cuelga de algo que no deja cambiar lo suyo (una consulta desde que
 # se abre la votación; lo dice su ancla en el contrato, Ancla.congela). Una consulta, si cuelga de algo.
 def congelado(documento):
-    declarada = registro.anclas.get(documento.ancla_tipo) if documento.ancla_tipo else None
-    return bool(declarada and declarada.congela and import_string(declarada.congela)(documento.ancla_id))
+    return documento.pk in congelados([documento])
+
+
+# De unos documentos, los números de los congelados (ver congelado), con una consulta por cada tipo de ancla
+# que congela (no una por documento): para las listas.
+def congelados(documentos):
+    por_tipo = {}
+    for documento in documentos:
+        declarada = registro.anclas.get(documento.ancla_tipo) if documento.ancla_tipo else None
+        if declarada and declarada.congela:
+            por_tipo.setdefault(declarada.congela, []).append(documento)
+    resultado = set()
+    for funcion, lista in por_tipo.items():
+        frios = import_string(funcion)({d.ancla_id for d in lista})
+        resultado |= {d.pk for d in lista if d.ancla_id in frios}
+    return resultado
 
 
 # Dice si una persona es de la administración del grupo de un documento.
@@ -819,3 +834,90 @@ def poner_espacio(organizacion, megas):
     if not megas.isdigit() or int(megas) < 1:
         raise ValidationError("Pon un número entero de megabytes (MB), como 2048.")
     EspacioParaArchivos.objects.update_or_create(organizacion_id=organizacion_id, defaults={"megas": int(megas)})
+
+
+# ── Qué puede hacer cada persona (para la lista y la ficha) ──────────────────────────────────────────
+
+
+@dataclass
+class Permisos:
+    """
+    Lo que una persona puede hacer con un documento, con las iniciales en inglés de siempre (CRUD): R (read,
+    leer), U (update, cambiar o escribir) y D (delete, eliminar). C (create, crear) no es de un documento
+    sino de un grupo: ver grupos_donde_crea. Cuando no puede, «motivo_u» y «motivo_d» dicen por qué.
+    """
+
+    # Leer (siempre, si sale en sus listas).
+    r: bool = True
+    # Cambiar: escribir un texto, o subir otra versión o renombrar un archivo o un enlace.
+    u: bool = False
+    # Eliminar (llevar a la papelera).
+    d: bool = False
+    # Comentar (un texto en borrador que no puede escribir).
+    comentar: bool = False
+    # Por qué no puede cambiarlo o eliminarlo (vacío si puede).
+    motivo_u: str = ""
+    motivo_d: str = ""
+    # Si no puede escribir un texto solo por no tener la redacción (entonces hay a quién pedírsela).
+    falta_redaccion: bool = False
+
+
+# Lo que puede hacer una persona con cada uno de unos documentos (que ya ve): {número: Permisos}. Una
+# consulta para sus cometidos y una por cada tipo de ancla que congela, sean cuantos sean los documentos
+# (los permisos de grupo salen de la caché).
+#   - usuario: quien mira.
+#   - documentos: los documentos (con grupo_id, creador_id, ancla, tipo, estado…).
+def permisos_en_lista(usuario, documentos):
+    documentos = list(documentos)
+    if not documentos:
+        return {}
+    cometidos = set(
+        Cometido.objects.filter(usuario=usuario)
+        .filter(
+            Q(codigo=REDACCION, ancla_tipo=ANCLA, ancla_id__in=[d.pk for d in documentos])
+            | Q(codigo=TOMA_DE_ACTA, ancla_tipo="eventos.evento")
+            | Q(codigo=FACILITACION, ancla_tipo="debates.debate")
+        )
+        .values_list("codigo", "ancla_tipo", "ancla_id")
+    )
+    frios = congelados(documentos)
+    resultado = {}
+    for documento in documentos:
+        redacta = (REDACCION, ANCLA, documento.pk) in cometidos or (
+            documento.ancla_tipo == "eventos.evento" and (TOMA_DE_ACTA, "eventos.evento", documento.ancla_id) in cometidos
+        )
+        administra = _administra(usuario, documento)
+        facilita = documento.ancla_tipo == "debates.debate" and (FACILITACION, "debates.debate", documento.ancla_id) in cometidos
+        permisos = Permisos()
+        frio, papelera = documento.pk in frios, bool(documento.en_papelera_desde)
+        if documento.tipo in Documento.ESCRITOS:
+            aprobado = documento.estado == Documento.APROBADO
+            permisos.u = not (aprobado or frio or papelera) and redacta
+            permisos.comentar = not (aprobado or papelera)
+            if not permisos.u:
+                permisos.falta_redaccion = not (aprobado or frio or papelera)
+                permisos.motivo_u = (
+                    "Está en la papelera." if papelera else "Está aprobado: ya no se cambia." if aprobado
+                    else "Cuelga de una votación abierta: está congelado." if frio
+                    else "Solo lo escriben quienes tienen su redacción (o la toma de acta de su reunión), y tú no la tienes."
+                )
+        else:
+            permisos.u = not (frio or papelera) and (documento.creador_id == usuario.pk or redacta or administra)
+            if not permisos.u:
+                permisos.motivo_u = (
+                    "Está en la papelera." if papelera else "Cuelga de una votación abierta: está congelado." if frio
+                    else "Solo lo cambian quien lo creó, quien tiene su redacción y la administración del grupo."
+                )
+        permisos.d = not frio and (documento.creador_id == usuario.pk or administra or facilita)
+        if not permisos.d:
+            permisos.motivo_d = (
+                "Cuelga de una votación abierta: está congelado." if frio
+                else "Solo lo eliminan quien lo creó, la administración del grupo y, en un debate, su facilitación."
+            )
+        resultado[documento.pk] = permisos
+    return resultado
+
+
+# Lo que puede hacer una persona con un documento (ver permisos_en_lista).
+def permisos_de(usuario, documento):
+    return permisos_en_lista(usuario, [documento])[documento.pk]

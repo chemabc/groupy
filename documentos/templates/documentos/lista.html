@@ -1,17 +1,26 @@
 {% extends interfaz.plantilla %}
 {% comment %}
   Pantalla «Participación → Documentos» (documentos/views.py, lista): textos, archivos y enlaces, con
-  filtros por tipo, formato, de dónde cuelga, grupo, estado y fechas. Recibe «tabla».
+  filtros por tipo, formato, de dónde cuelga, grupo, estado, «Puedo cambiarlo» y fechas. Recibe «tabla»,
+  «donde_crea» (grupos donde puede crear) y «por_que_no_crea» (la explicación, si no puede en ninguno).
 {% endcomment %}
 {% block contenido %}
 <div class="space-y-3">
   <p class="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-    <a href="{% url 'documentos:nuevo' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Escribir</a>
-    <a href="{% url 'documentos:subir' %}" class="rounded border border-slate-300 px-3 py-1.5 dark:border-slate-700">Subir un archivo</a>
-    <a href="{% url 'documentos:enlazar' %}" class="rounded border border-slate-300 px-3 py-1.5 dark:border-slate-700">Enlazar</a>
+    {% if donde_crea %}
+      <a href="{% url 'documentos:nuevo' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Escribir</a>
+      <a href="{% url 'documentos:subir' %}" class="rounded border border-slate-300 px-3 py-1.5 dark:border-slate-700">Subir un archivo</a>
+      <a href="{% url 'documentos:enlazar' %}" class="rounded border border-slate-300 px-3 py-1.5 dark:border-slate-700">Enlazar</a>
+    {% endif %}
     <a href="{% url 'documentos:papelera' %}" class="text-marca hover:underline">Papelera</a>
     <span>Textos, archivos y enlaces de tus grupos. Lo que cuelga de una reunión, un proyecto, una tarea, un debate o una consulta se crea mejor desde su ficha.</span>
   </p>
+  {# C (crear): dónde puede crear quien mira o, si en ningún sitio, por qué y a quién pedirlo. #}
+  {% if donde_crea %}
+    <p class="text-xs text-slate-500"><span class="font-mono">C</span> (crear): puedes crear documentos en {% for g in donde_crea %}{{ g.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}. En la columna «Puedo»: <span class="font-mono">R</span> leer · <span class="font-mono">U</span> cambiar · <span class="font-mono">D</span> eliminar (tachado: no puedes; pasa el ratón para ver por qué, o abre el documento).</p>
+  {% else %}
+    <p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">No puedes crear documentos (<span class="font-mono">C</span>): {{ por_que_no_crea }}</p>
+  {% endif %}
   {% include "base/tabla.html" %}
 </div>
 {% endblock %}

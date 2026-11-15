@@ -86,6 +86,12 @@ class PruebasDelEditor(PruebaDePantalla):
         respuesta = self.client.get("/editor/texto/", {"sala": self.sala}, **firmadas(self.sala)).json()
         self.assertEqual(respuesta, {"texto": self.odd.texto, "version": self.odd.version})
 
+    # El editor llama a la plataforma por su nombre dentro de Docker («app»): Django debe aceptarlo. Si no,
+    # responde 400 (DisallowedHost) y el editor no puede abrir ningún texto nuevo (fallo de [A-64]).
+    def test_el_editor_llega_por_app(self):
+        respuesta = self.client.get("/editor/texto/", {"sala": self.sala}, HTTP_HOST="app:8000", **firmadas(self.sala))
+        self.assertEqual(respuesta.status_code, 200)
+
     # Lo escrito por dos personas se guarda con las dos en la autoría y en el registro; aprobado, ya no.
     def test_guardado(self):
         cuerpo = json.dumps({"sala": self.sala, "texto": self.odd.texto + "\nUn punto nuevo\n", "alias": ["Lince", "Nutria"], "version": 1})

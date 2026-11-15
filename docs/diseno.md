@@ -1864,6 +1864,14 @@ votaciones, y subir PDF como contexto; crear, editar, guardar, modificar y elimi
 - *Descartado:* una sección «Archivos» aparte (P1 B: dos sitios donde mirar) y solo enlaces (P1 C).
 - *Sin contestar:* una pestaña «Documentos» en la ficha de cada grupo (la lista filtrable por grupo hace
   ese papel de momento).
+- **Qué puedo hacer con cada documento** (15 de noviembre de 2026, [A-64], petición de la persona usuaria):
+  la lista tiene la columna «Puedo» con las iniciales CRUD en inglés (R leer, U cambiar, D eliminar; en
+  verde lo que se puede, tachado lo que no, con el motivo al pasar el ratón) y el filtro «Puedo cambiarlo»;
+  arriba, **C** (crear): en qué grupos se puede crear o, si en ninguno, por qué y a quién pedirlo (sin los
+  botones de crear). La ficha tiene el recuadro «Lo que puedes hacer», abierto si no puedes cambiarlo, con el
+  motivo y las salidas: pedir la redacción a quien la tiene (enlace a escribirle), pedírsela a la
+  administración del grupo (conversación con el asunto ya puesto) o comentar. `Ancla.congela` recibe ahora
+  una lista de números, para que la lista no haga una consulta por documento.
 
 ---
 

@@ -1,0 +1,12 @@
+{% comment %}
+  Celda «Puedo» de la lista de documentos (documentos/views.py, lista): R (leer), U (cambiar) y D (eliminar),
+  en verde lo que puede quien mira y tachado en gris lo que no, con el motivo al pasar el ratón. Recibe
+  «fila» (con «detalle», un servicios.Permisos).
+{% endcomment %}
+{% with p=fila.detalle %}
+<span class="inline-flex gap-0.5 font-mono text-xs" aria-label="Lo que puedes hacer: {{ fila.permisos }}">
+  <abbr title="R (read): puedes leerlo" class="rounded bg-emerald-100 px-1 text-emerald-800 no-underline dark:bg-emerald-950 dark:text-emerald-300">R</abbr>
+  {% if p.u %}<abbr title="U (update): puedes cambiarlo" class="rounded bg-emerald-100 px-1 text-emerald-800 no-underline dark:bg-emerald-950 dark:text-emerald-300">U</abbr>{% else %}<abbr title="No puedes cambiarlo: {{ p.motivo_u }}" class="rounded bg-slate-100 px-1 text-slate-400 line-through no-underline dark:bg-slate-800">U</abbr>{% endif %}
+  {% if p.d %}<abbr title="D (delete): puedes eliminarlo" class="rounded bg-emerald-100 px-1 text-emerald-800 no-underline dark:bg-emerald-950 dark:text-emerald-300">D</abbr>{% else %}<abbr title="No puedes eliminarlo: {{ p.motivo_d }}" class="rounded bg-slate-100 px-1 text-slate-400 line-through no-underline dark:bg-slate-800">D</abbr>{% endif %}
+</span>
+{% endwith %}

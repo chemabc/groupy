@@ -160,5 +160,5 @@ class PruebasDeDocumentos(PruebaDePantalla):
             otro = self.odd()
             servicios.guardar(self.lince, odd, odd.titulo, odd.texto + f"\n\nPunto {otro.pk}", Documento.objects.get(pk=odd.pk).version)
 
-        self.comprobar_consultas("/documentos/", 2, mas)
-        self.comprobar_consultas(f"/documentos/{odd.pk}/", 11, mas)
+        self.comprobar_consultas("/documentos/", 4, mas)
+        self.comprobar_consultas(f"/documentos/{odd.pk}/", 12, mas)
