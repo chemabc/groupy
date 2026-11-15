@@ -129,6 +129,26 @@ lanzarlas a mano en cualquier momento:
 python manage.py tareas_diarias
 ```
 
+### Los dos repositorios en GitHub
+
+La plataforma y el editor van cada uno a su repositorio de GitHub, en la cuenta `chemabc` (privados):
+`gestion-de-asambleas` y `editor-colaborativo`. Las direcciones ya están puestas (`git remote -v` y
+`git -C editor remote -v`). Para subirlos la primera vez:
+
+1. En github.com, crea los dos repositorios **vacíos** (sin README) con esos nombres.
+2. Inicia sesión desde el contenedor (una vez). Por ejemplo, con un token personal de GitHub con permiso
+   `repo`, la primera vez que git lo pida.
+3. Sube los dos:
+
+```bash
+# Sube la plataforma (rama master) y deja apuntado a dónde va
+#   - -u origin master: la rama master va a «origin» y se recuerda para los siguientes git push
+git push -u origin master
+# Lo mismo con el editor (su rama se llama main)
+#   - -C editor: ejecuta git dentro de la carpeta del editor
+git -C editor push -u origin main
+```
+
 ### El editor en tiempo real (otro repositorio)
 
 El editor colaborativo es **un repositorio aparte**, porque lo pueden usar otras aplicaciones. Vive dentro

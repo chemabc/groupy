@@ -290,14 +290,15 @@ Es un servicio aparte (carpeta `editor/`; ver «Diseño», apartado 13.2, y `edi
 
 ### 9.5 Comentarios dentro del texto
 - **Qué se hace:**
-  - Viven en el editor, en una sala aparte de cada texto.
-  - Llevan el alias y el color de quien comenta.
+  - Viven en el editor, en una sala aparte de cada texto, con el alias de quien comenta.
   - Quien solo lee no puede escribirlos: el servidor descarta lo que mande.
+  - Cada vez que cambian, el editor se los manda a la plataforma (firmado), que los guarda con el
+    documento y los enseña en su ficha.
 - **Riesgo que queda:**
-  - La plataforma no los tiene: no salen en su búsqueda ni los borra `limpieza`.
-  - «Resuelto» los esconde, pero siguen guardados.
-- **Para el futuro:** que el editor avise a la plataforma de los comentarios, y borrarlos al aprobar o
-  borrar el documento.
+  - Se guardan en dos sitios: el editor y la plataforma.
+  - «Resuelto» los esconde en el editor, pero siguen guardados en los dos.
+- **Para el futuro:** borrar la sala del editor (texto y comentarios) cuando la plataforma borra el
+  documento.
 
 ### 9.6 El cliente en el navegador
 - **Qué se hace:** el script del editor se sirve desde el propio editor (`/cliente.js`).

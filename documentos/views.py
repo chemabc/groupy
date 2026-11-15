@@ -4,6 +4,8 @@ ficha (leer con la autoría de cada párrafo, el registro de cambios, los acuerd
 la redacción) y escribir (con vista previa al momento).
 """
 
+import difflib
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.http import Http404
@@ -95,7 +97,7 @@ def _documento(usuario, pk):
 
 # Ficha de un documento: el texto párrafo a párrafo, cada uno con quién ha contribuido (en claro, entre
 # paréntesis); arriba, el registro de cambios plegado; los acuerdos y los temas pendientes de un acta; los
-# comentarios; los botones de escribir, crear el acta, aprobar y dar la redacción; y sus «Opciones». Unas 9 consultas.
+# comentarios; los botones de escribir, crear el acta, aprobar y dar la redacción; sus versiones, sus comentarios en el texto y sus «Opciones». Unas 11 consultas.
 #   - POST «accion»: «comentar» (con «texto»), «aprobar», «acta», «dar» (con «alias») o «quitar» (con
 #     «persona»).
 def documento(request, pk):
@@ -141,6 +143,9 @@ def documento(request, pk):
         "documento": documento,
         "bloques": bloques,
         "cambios": list(documento.cambios.all()[:200]),
+        "versiones": list(documento.versiones.defer("texto")[:100]),
+        "version_cada": servicios.VERSION_CADA,
+        "comentarios_en_el_texto": list(documento.comentarios_en_el_texto.all()),
         "comentarios": list(documento.comentarios.select_related("usuario")),
         "acuerdos": servicios.acuerdos(documento) if documento.tipo == Documento.ACTA else [],
         "temas": servicios.temas(documento) if documento.tipo == Documento.ACTA else [],
@@ -233,3 +238,32 @@ def limites(request):
     grupo = next((g for g in grupos if g.pk == numero), None) if elegido.startswith("g") else None
     contexto = {"formulario": formulario, "niveles": niveles, "elegido": elegido, "valen": servicios.limites_de(grupo) if grupo else None, "por_defecto": servicios.POR_DEFECTO}
     return render(request, "documentos/limites.html", contexto)
+
+
+# Una versión anterior de un documento: su texto y lo que cambia de ella a lo de ahora (líneas quitadas
+# en rojo y añadidas en verde). Quien tiene la redacción puede volver a ella (queda como una versión
+# nueva). Tres consultas.
+#   - POST «accion» = «volver».
+def version(request, pk, numero):
+    usuario = request.user
+    documento = _documento(usuario, pk)
+    elegida = get_object_or_404(documento.versiones, numero=numero)
+    error = ""
+    if request.method == "POST" and request.POST.get("accion") == "volver":
+        try:
+            servicios.volver_a_version(usuario, documento, numero)
+        except ValidationError as excepcion:
+            error = " ".join(excepcion.messages)
+        else:
+            return redirect("documentos:documento", documento.pk)
+    diferencias = [
+        ("quitada" if linea.startswith("-") else "anadida" if linea.startswith("+") else "igual", linea)
+        for linea in difflib.unified_diff(elegida.texto.splitlines(), documento.texto.splitlines(), "versión", "ahora", lineterm="", n=2)
+        if not linea.startswith(("---", "+++"))
+    ]
+    contexto = {
+        "documento": documento, "version": elegida, "diferencias": diferencias, "error": error,
+        "vuelve": servicios.puede_escribir(usuario, documento) and elegida.texto != documento.texto,
+        "vista": texto_a_html(elegida.texto) if documento.formato == Documento.MARKDOWN else None,
+    }
+    return render(request, "documentos/version.html", contexto)

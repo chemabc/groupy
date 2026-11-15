@@ -1,7 +1,8 @@
 """
 Direcciones con las que hablan el navegador y el editor colaborativo en tiempo real (ver base/editor.py):
 - /editor/pase/: el navegador pide un pase nuevo al reconectar (con su sesión, como cualquier pantalla).
-- /editor/texto/ y /editor/guardado/: las llama el servidor del editor, sin sesión pero con su firma.
+- /editor/texto/, /editor/guardado/ y /editor/comentarios/: las llama el servidor del editor, sin sesión
+  pero con su firma.
 Cada una pasa la petición al módulo que declara el texto (TextoEditable), sin importarlo.
 """
 
@@ -67,3 +68,22 @@ def guardado(request):
     except ValidationError as error:
         return JsonResponse({"error": " ".join(error.messages)}, status=409)
     return JsonResponse({"version": version})
+
+
+# Los comentarios hechos en el editor (los manda el editor cada vez que cambian, todos los de la sala).
+# Responde 404 si el módulo no los guarda (el editor lo entiende y no insiste).
+#   - POST en JSON: «sala» y «comentarios» (lista), firmado con el secreto del editor.
+@login_not_required
+@csrf_exempt
+@require_POST
+def comentarios(request):
+    cuerpo = request.body.decode()
+    if not editor.firma_valida(request, cuerpo):
+        return HttpResponseForbidden("Firma no válida.")
+    datos = json.loads(cuerpo)
+    tipo, numero = editor.leer_sala(datos.get("sala", ""))
+    declarado = editor.editable(tipo) if tipo else None
+    if declarado is None or not declarado.comentarios:
+        return HttpResponseNotFound("No se guardan comentarios de ese texto.")
+    import_string(declarado.comentarios)(numero, list(datos.get("comentarios", [])))
+    return JsonResponse({"guardados": len(datos.get("comentarios", []))})

@@ -6,6 +6,8 @@ aprobar (al aprobar un acta, sus acuerdos pasan al registro de decisiones con un
 
 import difflib
 import re
+from datetime import datetime, timedelta
+from datetime import timezone as zona
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -24,7 +26,7 @@ from grupos.models import Contencion
 from permisos.models import Cometido
 from permisos.servicios import asignar_cometido, exigir, puede
 
-from .models import CambioDeDocumento, Comentario, Documento, LimitesDeDocumento
+from .models import CambioDeDocumento, Comentario, ComentarioEnElTexto, Documento, LimitesDeDocumento, VersionDeDocumento
 
 # Tipo de ancla de los documentos.
 ANCLA = "documentos.documento"
@@ -33,6 +35,8 @@ REDACCION = "documentos.redaccion"
 # Cometido de una reunión que también da permiso para escribir sus documentos (lo declara «eventos»; se
 # nombra por su código, sin importar el módulo).
 TOMA_DE_ACTA = "eventos.toma_de_acta"
+# Minutos sin escribir tras los que el siguiente cambio empieza una versión nueva (ver VersionDeDocumento).
+VERSION_CADA = 10
 # Límites de partida, si el superadmin no ha puesto los de la plataforma: cuántas personas escriben (tienen
 # la redacción) y cuántas comentan a la vez en el editor en tiempo real (None: sin límite).
 POR_DEFECTO = {"max_escritores": 10, "max_comentaristas": None}
@@ -287,6 +291,64 @@ def _guardar_texto(documento, quien, texto, resumen=None):
     documento.save()
     firma = ", ".join(alias) if isinstance(alias, list) else alias
     CambioDeDocumento.objects.create(documento=documento, alias=firma[:30], resumen=(resumen or calculado)[:200])
+    _apuntar_version(documento, alias if isinstance(alias, list) else [alias], resumen or "")
+
+
+# Apunta el texto actual en las versiones (función interna). Mientras se sigue escribiendo (menos de
+# VERSION_CADA minutos desde el último cambio de una versión de edición), se pone al día la última; si no,
+# o si hay un motivo («creado», «aprobado», «vuelta a la versión 3»), empieza una nueva.
+#   - autores: los alias de quien escribe.
+def _apuntar_version(documento, autores, motivo=""):
+    ultima = documento.versiones.first()
+    seguida = ultima is not None and not motivo and not ultima.motivo and timezone.now() - ultima.cerrada < timedelta(minutes=VERSION_CADA)
+    if seguida:
+        ultima.texto = documento.texto
+        ultima.autores = list(dict.fromkeys(ultima.autores + autores))
+        ultima.save(update_fields=["texto", "autores", "cerrada"])
+        return
+    VersionDeDocumento.objects.create(
+        documento=documento, numero=(ultima.numero + 1) if ultima else 1, texto=documento.texto, autores=autores, motivo=motivo[:80],
+    )
+
+
+# Vuelve al texto de una versión anterior (queda como una versión nueva: no se pierde nada). Solo quien
+# tiene la redacción y si es borrador. Cierra la sala del editor en tiempo real, que al volver toma este
+# texto. Devuelve el documento.
+#   - numero: el número de la versión.
+@transaction.atomic
+def volver_a_version(usuario, documento, numero):
+    documento = Documento.objects.select_for_update().get(pk=documento.pk)
+    if not puede_escribir(usuario, documento):
+        raise ValidationError("Solo quien tiene la redacción vuelve a otra versión (y no si ya está aprobado).")
+    version = documento.versiones.filter(numero=numero).first()
+    if version is None:
+        raise ValidationError("Esa versión no existe.")
+    _guardar_texto(documento, usuario, version.texto, f"vuelta a la versión {numero}")
+    transaction.on_commit(lambda: editor.cerrar_sala(ANCLA, documento.pk))
+    return documento
+
+
+# Guarda los comentarios hechos en el editor en tiempo real (los manda el editor, todos los de la sala,
+# cada vez que cambian; ver TextoEditable en documentos/apps.py). Se ponen al día por su clave y no se
+# borra ninguno: quedan registrados.
+#   - comentarios: lista de {id, alias, texto, cuando (milisegundos), resuelto, cita, respuestas}.
+@transaction.atomic
+def guardar_comentarios_del_editor(numero, comentarios):
+    documento = Documento.objects.get(pk=numero)
+    for dato in comentarios:
+        if not isinstance(dato, dict) or not dato.get("id") or not dato.get("texto"):
+            continue
+        ComentarioEnElTexto.objects.update_or_create(
+            documento=documento, clave=str(dato["id"])[:40],
+            defaults={
+                "alias": str(dato.get("alias", ""))[:30], "texto": str(dato["texto"])[:5000], "cita": str(dato.get("cita", ""))[:2000],
+                "cuando": datetime.fromtimestamp(int(dato.get("cuando") or 0) / 1000, tz=zona.utc), "resuelto": bool(dato.get("resuelto")),
+                "respuestas": [
+                    {"alias": str(r.get("alias", ""))[:30], "texto": str(r.get("texto", ""))[:5000], "cuando": int(r.get("cuando") or 0)}
+                    for r in dato.get("respuestas", []) if isinstance(r, dict)
+                ][:200],
+            },
+        )
 
 
 # Guarda los cambios de quien redacta. Si otra persona ha guardado desde que se abrió (la versión no
@@ -416,6 +478,7 @@ def aprobar(usuario, documento):
     documento.estado, documento.aprobado_el = Documento.APROBADO, timezone.now()
     documento.save(update_fields=["estado", "aprobado_el"])
     CambioDeDocumento.objects.create(documento=documento, alias=str(usuario), resumen="aprobado")
+    _apuntar_version(documento, [str(usuario)], "aprobado")
     # Quien está en la sala del editor en tiempo real sale y, al volver, ya solo puede leer.
     transaction.on_commit(lambda: editor.cerrar_sala(ANCLA, documento.pk))
     if documento.tipo == Documento.ACTA:

@@ -17,7 +17,7 @@ from django.test import override_settings
 from base import editor
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
 from documentos import servicios
-from documentos.models import CambioDeDocumento, Documento, LimitesDeDocumento
+from documentos.models import CambioDeDocumento, ComentarioEnElTexto, Documento, LimitesDeDocumento
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
 
 # Consultas de «Escribir» con el editor en tiempo real.
@@ -99,6 +99,22 @@ class PruebasDelEditor(PruebaDePantalla):
         servicios.aprobar(self.lince, self.odd)
         respuesta = self.client.post("/editor/guardado/", cuerpo, content_type="application/json", **firmadas(cuerpo))
         self.assertEqual(respuesta.status_code, 409)
+
+    # Los comentarios del editor llegan firmados y quedan registrados (se ponen al día, no se borran); salen
+    # en la ficha con su trozo.
+    def test_comentarios(self):
+        comentario = {"id": "c1", "alias": "Nutria", "texto": "¿Y el agua?", "cuando": 1_763_000_000_000, "resuelto": False, "cita": "Ruegos", "respuestas": []}
+        cuerpo = json.dumps({"sala": self.sala, "comentarios": [comentario]})
+        self.assertEqual(self.client.post("/editor/comentarios/", cuerpo, content_type="application/json").status_code, 403)
+        self.client.post("/editor/comentarios/", cuerpo, content_type="application/json", **firmadas(cuerpo))
+        comentario.update(resuelto=True, respuestas=[{"alias": "Lince", "texto": "Del pozo", "cuando": 1}])
+        cuerpo = json.dumps({"sala": self.sala, "comentarios": [comentario]})
+        self.assertEqual(self.client.post("/editor/comentarios/", cuerpo, content_type="application/json", **firmadas(cuerpo)).status_code, 200)
+        guardado = ComentarioEnElTexto.objects.get()
+        self.assertEqual((guardado.alias, guardado.resuelto, guardado.respuestas[0]["texto"]), ("Nutria", True, "Del pozo"))
+        respuesta = self.client.get(f"/documentos/{self.odd.pk}/")
+        self.assertContains(respuesta, "«Ruegos»")
+        self.assertContains(respuesta, "Del pozo")
 
     # Con editor, «Escribir» pinta la isla con su sala y su pase, sin el formulario del texto; Nutria la ve
     # de solo lectura. Cuesta lo mismo que sin editor.

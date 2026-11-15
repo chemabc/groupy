@@ -299,6 +299,10 @@ class TextoEditable:
     # diccionario con «formato» («markdown» o «typst»), «titulo» (para el PDF), «max_escritores» y
     # «max_comentaristas» (cuántas personas a la vez; None, sin límite). Vacío: Markdown y sin límites.
     opciones: str = ""
+    # Ruta de una función que guarda los comentarios hechos en el editor: recibe (id, lista de comentarios
+    # tal como los manda el editor: id, alias, texto, cuando, resuelto, cita, respuestas). Vacío: el módulo
+    # no los guarda.
+    comentarios: str = ""
 
 
 @dataclass(frozen=True)

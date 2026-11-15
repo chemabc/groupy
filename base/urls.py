@@ -22,4 +22,5 @@ urlpatterns = [
     path("editor/pase/", vistas_del_editor.pase, name="editor_pase"),
     path("editor/texto/", vistas_del_editor.texto, name="editor_texto"),
     path("editor/guardado/", vistas_del_editor.guardado, name="editor_guardado"),
+    path("editor/comentarios/", vistas_del_editor.comentarios, name="editor_comentarios"),
 ]

@@ -41,6 +41,7 @@ class DocumentosConfig(ModuloConfig):
         TextoEditable(
             "documentos.documento", permiso="documentos.servicios.permiso_en_editor", texto="documentos.servicios.texto_para_editor",
             guardar="documentos.servicios.guardar_desde_editor", opciones="documentos.servicios.opciones_para_editor",
+            comentarios="documentos.servicios.guardar_comentarios_del_editor",
         ),
     )
     colgantes = (
@@ -52,7 +53,7 @@ class DocumentosConfig(ModuloConfig):
     menu = (
         EntradaDeMenu(
             codigo="documentos.documentos", nombre="Órdenes del día y actas", url="documentos:lista", icono="✍", color="#4d7c10",
-            otras_rutas=("documentos:nuevo", "documentos:documento", "documentos:escribir"),
+            otras_rutas=("documentos:nuevo", "documentos:documento", "documentos:escribir", "documentos:version"),
         ),
         EntradaDeMenu(
             codigo="documentos.limites", nombre="Documentos", url="documentos:limites", icono="✐", color="#5b6c1f", permiso="documentos.limitar",

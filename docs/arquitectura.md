@@ -1139,6 +1139,8 @@ sequenceDiagram
   E->>P: POST /editor/guardado/ (firmado), unos segundos después
   P->>M: TextoEditable.guardar (autorías, registro)
   P-->>E: versión nueva (o 409 si ya está aprobado)
+  E->>P: POST /editor/comentarios/ (firmado), al cambiar los comentarios
+  P->>M: TextoEditable.comentarios (quedan registrados)
   N->>P: GET /editor/pase/ al reconectar
   P->>E: POST /salas/cerrar (firmado), al aprobar
 ```

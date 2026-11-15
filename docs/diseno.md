@@ -1725,6 +1725,14 @@ editor**. La idea es acabar construyendo fuera un editor potente que esta herram
   - Pueden comentar quienes escriben y quienes comentan; quien solo lee, no.
   - *Elegido por sencillo y estable:* el bocadillo es un recuadro propio colocado bajo el trozo, sin
     tooltips de CodeMirror (se perdería lo que se está escribiendo al llegar una respuesta).
+- **Comentarios y versiones registrados** (15 de noviembre de 2026, [A-52]):
+  - **Comentarios:** el editor manda a la aplicación todos los comentarios de la sala cada vez que cambian,
+    con el trozo que comentan (`POST /editor/comentarios/`, firmado). `documentos` los guarda
+    (`ComentarioEnElTexto`) sin borrar ninguno y los enseña en la ficha.
+  - **Versiones:** cada documento guarda versiones de su texto (`VersionDeDocumento`): una por cada rato
+    de escritura (tras 10 minutos sin cambios empieza otra), otra al crearlo, otra al aprobarlo y otra al
+    volver a una anterior. Cada versión se ve, se compara con lo de ahora (líneas en rojo y verde) y,
+    quien tiene la redacción, puede volver a ella. Volver no borra nada: queda como una versión nueva.
 - **Muchas personas a la vez:** ya no hay un máximo fijo de dos. Hay **límites en cascada**
   (`LimitesDeDocumento`) de cuántas personas escriben (tienen la redacción) y cuántas comentan a la vez;
   vale el más estricto:

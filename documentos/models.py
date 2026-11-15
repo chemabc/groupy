@@ -150,3 +150,57 @@ class LimitesDeDocumento(models.Model):
     # Texto con el que se muestra: de quién son.
     def __str__(self):
         return f"Límites de {self.documento or self.grupo or self.organizacion or 'la plataforma'}"
+
+
+class VersionDeDocumento(models.Model):
+    """
+    Una versión guardada del texto de un documento, para verla después, compararla o volver a ella. No se
+    guarda una por cada cambio (el editor en tiempo real guarda cada pocos segundos): mientras se sigue
+    escribiendo, la última versión se va poniendo al día; si pasan más de VERSION_CADA minutos sin
+    escribir, o al aprobarse, empieza una nueva.
+    """
+
+    documento = models.ForeignKey(Documento, on_delete=models.CASCADE, related_name="versiones", verbose_name="documento", help_text="El documento.")
+    numero = models.PositiveIntegerField("número", help_text="1, 2, 3… en el orden en que se guardaron.")
+    texto = models.TextField("texto", help_text="El texto entero, tal como quedó.")
+    autores = models.JSONField("quién escribió", default=list, help_text="Los alias de quienes escribieron en esta versión.")
+    empezada = models.DateTimeField("empezada", auto_now_add=True, help_text="Cuándo se empezó a escribir esta versión.")
+    cerrada = models.DateTimeField("último cambio", auto_now=True, help_text="Cuándo cambió por última vez.")
+    motivo = models.CharField("motivo", max_length=80, blank=True, help_text="«creado», «aprobado», «vuelta a la versión 3»… o vacío (edición).")
+
+    class Meta:
+        verbose_name = "versión de documento"
+        verbose_name_plural = "versiones de documentos"
+        ordering = ["-numero"]
+        constraints = [models.UniqueConstraint(fields=["documento", "numero"], name="version_unica")]
+
+    # Texto con el que se muestra.
+    def __str__(self):
+        return f"Versión {self.numero} de {self.documento}"
+
+
+class ComentarioEnElTexto(models.Model):
+    """
+    Un comentario hecho en el editor en tiempo real sobre un trozo del texto (resaltado, con su bocadillo).
+    Viven en el editor; aquí se guarda una copia cada vez que cambian, para que queden registrados con el
+    documento (y se vean en su ficha aunque no haya editor).
+    """
+
+    documento = models.ForeignKey(Documento, on_delete=models.CASCADE, related_name="comentarios_en_el_texto", verbose_name="documento", help_text="El documento.")
+    clave = models.CharField("clave", max_length=40, help_text="Su identificador en el editor.")
+    alias = models.CharField("quién", max_length=30, help_text="Alias de quien lo hizo.")
+    texto = models.TextField("comentario", help_text="Lo que dice.")
+    cita = models.TextField("trozo comentado", blank=True, help_text="El trozo del texto que comenta, tal como estaba la última vez.")
+    cuando = models.DateTimeField("cuándo", help_text="Cuándo se hizo.")
+    resuelto = models.BooleanField("resuelto", default=False, help_text="Si se marcó como resuelto (deja de resaltarse).")
+    respuestas = models.JSONField("respuestas", default=list, help_text="Las respuestas: alias, texto y cuándo.")
+
+    class Meta:
+        verbose_name = "comentario en el texto"
+        verbose_name_plural = "comentarios en el texto"
+        ordering = ["cuando"]
+        constraints = [models.UniqueConstraint(fields=["documento", "clave"], name="comentario_en_el_texto_unico")]
+
+    # Texto con el que se muestra.
+    def __str__(self):
+        return f"{self.alias}: {self.texto[:40]}"

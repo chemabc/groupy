@@ -1,0 +1,31 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Una versión anterior de un documento (documentos/views.py, version). Recibe «documento», «version», «vista»
+  (su texto convertido, si es Markdown), «diferencias» (pares tipo y línea: «quitada», «anadida» o «igual»,
+  de esa versión a lo de ahora), «vuelve» (si quien mira puede volver a ella) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-5xl space-y-3">
+  <p class="text-sm"><a href="{% url 'documentos:documento' documento.pk %}" class="text-marca hover:underline">← {{ documento.titulo }}</a>
+    <span class="text-slate-500">· versión {{ version.numero }} · {{ version.cerrada|date:"d/m/Y H:i" }} · {{ version.autores|join:", " }}{% if version.motivo %} · {{ version.motivo }}{% endif %}</span></p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% if vuelve %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="volver">
+      <button type="submit" onclick="return confirm('¿Volver al texto de la versión {{ version.numero }}? Lo de ahora queda guardado como otra versión.')" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Volver a esta versión</button>
+    </form>
+  {% endif %}
+  <div class="grid gap-3 lg:grid-cols-2">
+    <section class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="mb-1 text-sm font-semibold">Texto de la versión {{ version.numero }}</h3>
+      {% if vista %}<div class="documento text-sm">{{ vista }}</div>{% else %}<pre class="whitespace-pre-wrap font-mono text-sm">{{ version.texto }}</pre>{% endif %}
+    </section>
+    <section class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="mb-1 text-sm font-semibold">Qué ha cambiado desde entonces</h3>
+      {% if diferencias %}
+        <pre class="overflow-x-auto font-mono text-xs leading-5">{% for tipo, linea in diferencias %}<span class="block {% if tipo == 'quitada' %}bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-300{% elif tipo == 'anadida' %}bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300{% else %}text-slate-500{% endif %}">{{ linea }}</span>{% endfor %}</pre>
+        <p class="mt-1 text-xs text-slate-500">En rojo, lo que había y ya no está; en verde, lo que hay ahora y no estaba.</p>
+      {% else %}<p class="text-sm text-slate-500">Nada: es igual que lo de ahora.</p>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

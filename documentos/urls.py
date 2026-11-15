@@ -15,6 +15,7 @@ urlpatterns = [
     # Cada documento: ficha (leer, comentar, aprobar, redacción) y escribir.
     path("<int:pk>/", views.documento, name="documento"),
     path("<int:pk>/escribir/", views.escribir, name="escribir"),
+    path("<int:pk>/versiones/<int:numero>/", views.version, name="version"),
     # Vista previa del texto mientras se escribe (la pide htmx).
     path("vista-previa/", views.vista_previa, name="vista_previa"),
     # Cuántas personas escriben y comentan a la vez (plataforma, organización o grupo).

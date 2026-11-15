@@ -26,11 +26,15 @@ y lo descartado). Al explicar algo nuevo para aprender, añádelo a `docs/tutori
 
 ## Forma de trabajar
 
-- Todo en castellano: respuestas, código, comentarios y documentos.
+- **Todo en castellano**: respuestas, preguntas, código, comentarios, nombres, mensajes de commit y
+  documentos, también los del editor (`editor/`). Aunque la persona usuaria escriba en otro idioma, se le
+  responde en castellano.
 - Las respuestas empiezan con una etiqueta [A-ID], donde ID se incrementa en cada respuesta.
 - Método socrático: antes de programar una pantalla o un módulo, propón opciones con pros y contras (una
   recomendada) y pregunta. No programes sin acuerdo.
-- Commit al terminar cada pieza acordada, con el mensaje en castellano.
+- Commit al terminar cada pieza acordada, con el mensaje en castellano. Hay dos repositorios: la
+  plataforma (aquí) y el editor (`editor/`, con su propio git: `git -C editor …`); los dos van a GitHub
+  (`chemabc`, ver docs/arranque.md). `docs/todo.md` y `.npmrc` no se suben nunca (están en `.gitignore`).
 - Cada pantalla nueva llega con su prueba de número de consultas, como mucho unas 15, que no crezca con
   las filas (`PruebaDePantalla.comprobar_consultas`, en `base/pruebas.py`), y se mide con datos de ejemplo.
 - Lo que lleva JavaScript propio (Alpine, htmx) se prueba también en un navegador de verdad

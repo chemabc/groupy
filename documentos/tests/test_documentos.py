@@ -6,12 +6,15 @@ de decisiones (se mira con apps.get_model, sin importar el módulo «decisiones�
 Estructura: ORG Tajo (GRU Tajo ⊃ GRU Henares). Lince y Nutria están en GRU Henares; Erizo, en otra organización.
 """
 
+from datetime import timedelta
+
 from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
 from documentos import servicios
-from documentos.models import CambioDeDocumento, Documento, LimitesDeDocumento
+from documentos.models import CambioDeDocumento, Documento, LimitesDeDocumento, VersionDeDocumento
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
 
 
@@ -60,6 +63,34 @@ class PruebasDeDocumentos(PruebaDePantalla):
         acta = servicios.guardar(self.lince, acta, acta.titulo, acta.texto.replace("- [consenso] \n", "- [consenso] Huerto en el solar\n"), acta.version)
         self.assertEqual(servicios.acuerdos(acta)[0][0], "Huerto en el solar")
         self.assertContains(self.client.get(f"/documentos/{acta.pk}/"), "== Puntos")
+
+    # Versiones: mientras se sigue escribiendo se pone al día la última; pasado un rato, otra; al aprobar,
+    # otra. Se puede volver a una anterior (queda como una nueva) y su pantalla enseña lo que cambió.
+    def test_versiones(self):
+        odd = self.odd()
+        odd = servicios.guardar(self.lince, odd, odd.titulo, "Uno", odd.version)
+        odd = servicios.guardar(self.lince, odd, odd.titulo, "Uno y dos", odd.version)
+        self.assertEqual(list(odd.versiones.values_list("numero", "texto", "motivo")), [(2, "Uno y dos", ""), (1, servicios.ODD_INICIAL, "creado")])
+        VersionDeDocumento.objects.filter(documento=odd, numero=2).update(cerrada=timezone.now() - timedelta(minutes=servicios.VERSION_CADA + 1))
+        odd = servicios.guardar(self.lince, odd, odd.titulo, "Tres", odd.version)
+        self.assertEqual(odd.versiones.first().numero, 3)
+        respuesta = self.client.get(f"/documentos/{odd.pk}/versiones/2/")
+        self.assertContains(respuesta, "-Uno y dos")
+        self.assertContains(respuesta, "+Tres")
+        self.client.post(f"/documentos/{odd.pk}/versiones/2/", {"accion": "volver"})
+        odd.refresh_from_db()
+        self.assertEqual((odd.texto, odd.versiones.first().motivo), ("Uno y dos", "vuelta a la versión 2"))
+        servicios.aprobar(self.lince, odd)
+        self.assertEqual(odd.versiones.first().motivo, "aprobado")
+        self.client.force_login(self.nutria)
+        self.assertNotContains(self.client.get(f"/documentos/{odd.pk}/versiones/1/"), "Volver a esta versión")
+
+        # Una versión más (no debe costar más consultas).
+        def mas():
+            ultima = odd.versiones.first()
+            VersionDeDocumento.objects.create(documento=odd, numero=ultima.numero + 1, texto=f"Texto {ultima.numero}", autores=["Lince"], motivo="prueba")
+
+        self.comprobar_consultas(f"/documentos/{odd.pk}/versiones/1/", 3, mas)
 
     # Cuántas personas tienen la redacción: de partida 10; el documento puede bajarlo (su administración).
     def test_maximo_de_redaccion(self):
@@ -130,4 +161,4 @@ class PruebasDeDocumentos(PruebaDePantalla):
             servicios.guardar(self.lince, odd, odd.titulo, odd.texto + f"\n\nPunto {otro.pk}", Documento.objects.get(pk=odd.pk).version)
 
         self.comprobar_consultas("/documentos/", 2, mas)
-        self.comprobar_consultas(f"/documentos/{odd.pk}/", 9, mas)
+        self.comprobar_consultas(f"/documentos/{odd.pk}/", 11, mas)

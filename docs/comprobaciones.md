@@ -752,5 +752,11 @@ Necesita el paso 0.8.
   con un aviso arriba.
 - [ ] «Administrar → Mi organización → Documentos»: los mismos límites por plataforma (superadmin),
   organización y grupo.
+- [ ] **Comentarios registrados:** después de comentar en el editor, la ficha del documento tiene
+  «Comentarios en el texto», con el trozo en amarillo, quién, las respuestas y si está resuelto.
+- [ ] **Versiones:** en la ficha, «Versiones». Abre una anterior: a la izquierda su texto; a la derecha, lo
+  que ha cambiado desde entonces (rojo, lo que se quitó; verde, lo nuevo). «Volver a esta versión» (solo
+  quien redacta) cambia el texto y lo deja como otra versión; si alguien estaba en el editor, se reconecta
+  y ve el texto vuelto.
 - [ ] Para el editor (`docker stop` del servicio o Ctrl+C) y abre «Escribir» en otro borrador: pone
   «Conectando…». Abajo, «Escribir sin directo» abre el formulario de siempre.
