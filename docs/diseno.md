@@ -2120,6 +2120,26 @@ llegarán con el chat (más adelante).
 - **Repositorio:** aparte (13.2). Falta decidir dónde se publica.
 - **Voto secreto:** opción de cada consulta, secreta de partida y de verdad; cada votación lo dice (12.1).
 
+**Plantillas, fragmentos e imágenes del editor ([A-52], petición de la persona usuaria):**
+- **Lo pedido:**
+  - una sección «Plantillas de documentos», con carpetas y categorías y las plantillas dentro (por
+    ejemplo, libros de física o actas); cada documento elige su plantilla en un desplegable;
+  - una enciclopedia de fragmentos (texto, código o mezcla), con carpetas, subcarpetas y los fragmentos
+    dentro;
+  - desde esta plataforma, el editor solo ve las plantillas y los fragmentos de actas (con sus
+    subcarpetas);
+  - cabecera y pie de página de cada organización, hechos con el propio editor;
+  - imágenes en el editor, guardadas en `imagenes/<organización>/` con su árbol de subcarpetas
+    (`plantillas/`, `grupos/`…).
+- **Propuesta (por confirmar):** la biblioteca (plantillas, fragmentos e imágenes) vive **en el editor**,
+  porque es para varias herramientas. Cada aplicación dice en el pase qué carpetas ve cada persona y si
+  puede cambiarlas.
+- **Preguntas:**
+  1. ¿Quién crea y cambia plantillas y fragmentos?
+  2. ¿Quién sube imágenes?
+  3. ¿La cabecera y el pie de la organización van siempre debajo de cualquier plantilla, o se eligen?
+  4. Una plantilla, ¿es solo el aspecto o también un texto de partida?
+
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.
 - **Búsqueda extensa para los admins** (13 de noviembre de 2026, petición de la persona usuaria): el
