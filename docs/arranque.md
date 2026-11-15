@@ -129,6 +129,19 @@ lanzarlas a mano en cualquier momento:
 python manage.py tareas_diarias
 ```
 
+### El editor en tiempo real (otro repositorio)
+
+El editor colaborativo es **un repositorio aparte**, porque lo pueden usar otras aplicaciones. Vive dentro
+de la carpeta `editor/` (la plataforma la ignora: ver `.gitignore`), con su propio historial de git. El
+servicio `editor` del contenedor lo arranca solo. Si la carpeta no existe, la plataforma funciona igual, con
+el formulario de siempre, y la prueba del editor en el navegador se salta.
+
+```bash
+# Comprobar que está y en qué versión
+#   - git -C editor: ejecuta git dentro de la carpeta del editor
+git -C editor log --oneline -1
+```
+
 ## 3. Seguir con Claude
 
 Abre Claude Code en el contenedor nuevo y pídele: «Lee CLAUDE.md y docs/diseno.md y empecemos la

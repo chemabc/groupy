@@ -22,6 +22,5 @@ static/generado/
 # Ficheros que suben las personas (carteles…): no van al historial
 ficheros/
 
-# Editor colaborativo: el cliente construido y su copia de las salas
-editor/publico/
-editor/datos/
+# Editor colaborativo: es otro repositorio (se clona dentro de editor/; ver docs/arranque.md)
+editor/
