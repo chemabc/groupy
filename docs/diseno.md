@@ -1518,9 +1518,15 @@ apartado 20.
   en el debate (al llegar al blando, una más y marcada; al duro, ya no), opciones nuevas por persona, apoyos
   para abrir una opción y si la fecha de fin es obligatoria. De partida: 250/400 palabras, 15/20
   intervenciones, 2 opciones, 2 apoyos.
+- **Opción de consenso** (15 de noviembre de 2026, respuesta a la duda 4 del apartado 20): cualquiera la
+  propone marcándola «de consenso»; se confirma sola cuando la apoyan (👍) N personas **que habían apoyado
+  (⭐ o 👍) opciones distintas** del debate, cada una con una opción diferente (se empareja cada persona con
+  una opción sin repetir: dos que venían de la misma opción cuentan como una). Al confirmarse, **las
+  intervenciones vuelven a contar desde cero para todo el mundo y en todo el debate**
+  (`Debate.intervenciones_desde`).
 - **Al cerrar**, `debates.cerrado` lleva la conclusión al registro de decisiones.
 - **Aún no:** límites por grupo y por debate, argumentos por opción, etiquetas y base de conocimiento,
-  «de consenso» que se confirma sola y reinicia las intervenciones, debate nuevo a partir de un argumento
+  debate nuevo a partir de un argumento
   (hoy, «+ Debate» en el recuadro «Cuelga de aquí» del debate), lectura pública sin alias, chat, vista
   gráfica y resumen.
 
@@ -1547,7 +1553,15 @@ apartado 20.
 
 ### 12.1 Cómo está hecho `consultas`, versión sencilla (15 de noviembre de 2026, encargo tras [A-47])
 
-- **Crear** (permiso `consultas.crear`, de entrada solo admin del grupo y de la organización): título,
+- **Quién crea** (15 de noviembre de 2026, respuesta a la duda 3 del apartado 20): la administración del
+  grupo y de la organización (`consultas.crear`) la crea directamente; **cualquier miembro**
+  (`consultas.proponer`) la propone: nace «propuesta» (solo la ve quien la propone), le pone las preguntas
+  y pulsa «Pedir apoyos al grupo» (solicitud `consultas.abrir`, 2 apoyos, 15 días, basta el sí del
+  superadmin, con las preguntas escritas en la solicitud). Desde ese momento las preguntas ya no cambian.
+  Al aceptarse queda «aceptada» como las demás; si su apertura ya había pasado, se abre en ese momento y el
+  cierre (y la publicación) se corren para que dure lo mismo.
+  - *Descartado:* que cualquiera la cree sin apoyos (el grupo recibiría votaciones sin filtro).
+- **Crear:** título,
   explicación, fechas, cuándo se ven los resultados (al cerrar, en una fecha posterior o en tiempo real, con
   el aviso), quién vota y quién ve los resultados (con el selector de siempre) y si se puede cambiar el voto.
   Las **preguntas** se ponen en su ficha y se pueden cambiar hasta que se abre.

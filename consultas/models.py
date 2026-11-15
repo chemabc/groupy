@@ -13,6 +13,13 @@ class Consulta(models.Model):
     cierra, y cuándo y quién ve los resultados. Al cerrarse, el resultado pasa al registro de decisiones.
     """
 
+    # Estados: las que crea la administración nacen aceptadas; las que propone cualquier miembro, propuestas
+    # (solo las ve quien las propone, que les pone las preguntas) y, al pedir apoyos, esperando apoyos.
+    PROPUESTA = "propuesta"
+    ESPERANDO = "esperando"
+    ACEPTADA = "aceptada"
+    ESTADOS = [(PROPUESTA, "Propuesta (preparando las preguntas)"), (ESPERANDO, "Esperando apoyos"), (ACEPTADA, "Aceptada")]
+
     AL_CERRAR = "cierre"
     EN_UNA_FECHA = "fecha"
     EN_TIEMPO_REAL = "tiempo_real"
@@ -45,6 +52,10 @@ class Consulta(models.Model):
     publicar_el = models.DateTimeField("se publican el", null=True, blank=True, help_text="Si se ven en una fecha: cuál (después del cierre).")
     cambiar_voto = models.BooleanField(
         "se puede cambiar el voto", default=False, help_text="Si se puede cambiar antes del cierre. Si no, se avisa antes de votar."
+    )
+    estado = models.CharField(
+        "estado", max_length=10, choices=ESTADOS, default=ACEPTADA,
+        help_text="Si la propuso un miembro: propuesta, esperando apoyos o aceptada. Solo se vota si está aceptada.",
     )
     creada = models.DateTimeField("creada", auto_now_add=True, help_text="Cuándo se creó.")
     cerrada_el = models.DateTimeField("cerrada el", null=True, blank=True, help_text="Cuándo se dio por cerrada (y pasó a decisiones).")

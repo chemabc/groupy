@@ -39,6 +39,10 @@ class Debate(models.Model):
         "Opcion", on_delete=models.SET_NULL, null=True, blank=True, related_name="+", verbose_name="opción elegida",
         help_text="La opción con la que se cerró, si se eligió una.",
     )
+    intervenciones_desde = models.DateTimeField(
+        "intervenciones contadas desde", null=True, blank=True,
+        help_text="Cuándo se confirmó la última opción de consenso: desde entonces se vuelven a contar las intervenciones de todo el mundo.",
+    )
     conclusion = models.TextField("conclusión", blank=True, help_text="Lo que se decidió al cerrarlo; pasa al registro de decisiones.")
 
     class Meta:
@@ -67,7 +71,7 @@ class Opcion(models.Model):
     autor = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="la propuso", help_text="Quién la propuso."
     )
-    de_consenso = models.BooleanField("de consenso", default=False, help_text="Si se propone como síntesis de varias opciones.")
+    de_consenso = models.BooleanField("de consenso", default=False, help_text="Si se propone como síntesis de varias opciones: se confirma con apoyos de personas que habían apoyado opciones distintas, y reinicia las intervenciones.")
     de_partida = models.BooleanField("de partida", default=False, help_text="Si venía con el debate (no cuenta para el límite de opciones nuevas).")
     estado = models.CharField("estado", max_length=10, choices=ESTADOS, default=ABIERTA, help_text="Propuesta (esperando apoyos) o abierta.")
     creada = models.DateTimeField("propuesta el", auto_now_add=True, help_text="Cuándo se propuso.")

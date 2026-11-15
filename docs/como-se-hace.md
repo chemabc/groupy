@@ -208,7 +208,9 @@ superadmin.
 En «Participación → Debates», abre uno. Cada opción va en su columna. Vota con ⭐ 👍 👎 ⛔ (⭐ y ⛔ piden una
 justificación breve, que sale sin tu nombre); pulsar otra vez el mismo voto lo quita. «+ Argumento» añade uno
 a favor o en contra (con tu alias) y «Responder» contesta a otro. Si ninguna opción te convence, propón otra
-en «Opciones propuestas»: se abre cuando la apoyan otras personas. Si todas te valen, pulsa 🤝.
+en «Opciones propuestas»: se abre cuando la apoyan otras personas. Si una opción une a varias, márcala «De
+consenso»: se abre cuando la apoyan personas que defendían opciones distintas, y entonces todo el mundo vuelve
+a tener sus intervenciones. Si todas te valen, pulsa 🤝.
 
 ### Proponer un debate
 
@@ -220,6 +222,12 @@ de una reunión o un proyecto, usa «+ Debate» en el recuadro «Cuelga de aquí
 
 Las que tienes pendientes salen en «Inicio → Panel». En la consulta, responde y pulsa **Votar**. Si no se
 puede cambiar el voto, te avisa antes. El voto es secreto: nadie ve desde la plataforma qué has votado.
+
+### Proponer una consulta
+
+«Participación → Consultas → Nueva consulta». Si administras el grupo, se crea directamente. Si no, se
+propone: ponle las preguntas en su ficha y pulsa «Pedir apoyos al grupo». Solo tú la ves hasta que la apoyan;
+entonces se abre como las demás.
 
 ### Escribir el orden del día y el acta
 

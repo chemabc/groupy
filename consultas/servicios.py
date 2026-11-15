@@ -1,6 +1,6 @@
 """
 Operaciones del módulo «consultas»: crearla (quién vota, fechas, cuándo y quién ve los resultados),
-prepararle las preguntas antes de abrirse, votar (una persona, un voto, secreto), ver los resultados y
+prepararle las preguntas antes de abrirse, pedir apoyos si la propone un miembro, votar (una persona, un voto, secreto), ver los resultados y
 cerrarla (el resultado pasa al registro de decisiones con un eventos_sw).
 """
 
@@ -21,7 +21,8 @@ from audiencias.servicios import filtrar_visibles, puede_ver
 from base.contrato import ApartadoDeTarjeta, FechaDeCalendario, FilaDeResumen, ResumenDeTarjeta
 from eventos_sw.servicios import emitir
 from grupos.models import Pertenencia
-from permisos.servicios import exigir
+from permisos.servicios import exigir, puede
+from solicitudes.servicios import pedir
 
 from .models import Consulta, Papeleta, Participacion, Pregunta, Respuesta
 
@@ -34,15 +35,21 @@ MINIMO_PARA_DESGLOSE = 10
 # ── Crear y preparar ─────────────────────────────────────────────────────────────────────────────────
 
 
-# Crea una consulta (sin preguntas: se le ponen después, antes de que se abra). Devuelve la consulta.
-#   - usuario: quien la crea (necesita «consultas.crear» en el grupo).
+# Crea una consulta (sin preguntas: se le ponen después, antes de que se abra). Devuelve la consulta. Si
+# quien la crea administra el grupo («consultas.crear»), nace aceptada; si no, nace propuesta: solo la ve
+# quien la propone, que le pone las preguntas y después pide apoyos (pedir_apoyos).
+#   - usuario: quien la crea (necesita «consultas.crear» o «consultas.proponer» en el grupo).
 #   - datos: titulo, descripcion, abre, cierra, resultados, publicar_el, cambiar_voto.
 #   - visibilidad: quién vota (clave del selector).
 #   - visibilidad_resultados: quién ve los resultados.
 #   - ancla: (tipo, número) de aquello de lo que cuelga, o (None, None).
 @transaction.atomic
 def crear(usuario, grupo, datos, visibilidad, visibilidad_resultados, ancla=(None, None)):
-    exigir(usuario, "consultas.crear", grupo=grupo)
+    if puede(usuario, "consultas.crear", grupo=grupo):
+        estado = Consulta.ACEPTADA
+    else:
+        exigir(usuario, "consultas.proponer", grupo=grupo)
+        estado = Consulta.PROPUESTA
     if datos["cierra"] <= datos["abre"]:
         raise ValidationError("Se tiene que cerrar después de abrirse.")
     if datos["resultados"] == Consulta.EN_UNA_FECHA and (not datos.get("publicar_el") or datos["publicar_el"] < datos["cierra"]):
@@ -50,21 +57,61 @@ def crear(usuario, grupo, datos, visibilidad, visibilidad_resultados, ancla=(Non
     consulta = Consulta(
         grupo=grupo, creador=usuario, visibilidad=visibilidad, visibilidad_resultados=visibilidad_resultados,
         audiencia=audiencia_de(visibilidad, grupo, personas=[usuario]), audiencia_resultados=audiencia_de(visibilidad_resultados, grupo, personas=[usuario]),
-        ancla_tipo=ancla[0] or "", ancla_id=ancla[1], **datos,
+        ancla_tipo=ancla[0] or "", ancla_id=ancla[1], estado=estado, **datos,
     )
     consulta.full_clean()
     consulta.save()
     return consulta
 
 
-# Dice si la consulta aún se prepara (no ha llegado su apertura): entonces se le cambian las preguntas.
+# Dice si a la consulta aún se le cambian las preguntas: no ha llegado su apertura y no está esperando
+# apoyos (quien apoya tiene que ver lo mismo que se votará).
 def en_preparacion(consulta):
-    return timezone.now() < consulta.abre
+    if consulta.estado == Consulta.ESPERANDO:
+        return False
+    return consulta.estado == Consulta.PROPUESTA or timezone.now() < consulta.abre
 
 
-# Dice si se puede votar ahora.
+# Dice si se puede votar ahora: está aceptada y entre su apertura y su cierre.
 def abierta(consulta):
-    return consulta.abre <= timezone.now() < consulta.cierra and consulta.cerrada_el is None
+    return consulta.estado == Consulta.ACEPTADA and consulta.abre <= timezone.now() < consulta.cierra and consulta.cerrada_el is None
+
+
+# Pide al grupo los apoyos para abrir una consulta propuesta por un miembro. Desde entonces las preguntas ya
+# no cambian; la solicitud las lleva escritas para que se sepa qué se apoya.
+@transaction.atomic
+def pedir_apoyos(usuario, consulta, justificacion=""):
+    if consulta.creador_id != usuario.pk or consulta.estado != Consulta.PROPUESTA:
+        raise ValidationError("Los apoyos los pide quien propone la consulta, una vez.")
+    preguntas = list(consulta.preguntas.prefetch_related("respuestas"))
+    if not preguntas:
+        raise ValidationError("Ponle al menos una pregunta antes de pedir apoyos.")
+    lineas = [f"Abrir la consulta «{consulta.titulo}»:"]
+    for pregunta in preguntas:
+        respuestas = " / ".join(r.texto for r in pregunta.respuestas.all())
+        lineas.append(f"- {pregunta.texto}" + (f" ({respuestas})" if respuestas else " (respuesta abierta)"))
+    pedir(usuario, "consultas.abrir", consulta.grupo, "\n".join(lineas), justificacion, datos={"consulta_id": consulta.pk})
+    consulta.estado = Consulta.ESPERANDO
+    consulta.save(update_fields=["estado"])
+
+
+# Acepta una consulta cuando su solicitud consigue los apoyos (la llama «solicitudes»; ver el
+# TipoDeSolicitud «consultas.abrir»). Si su apertura ya pasó mientras esperaba, se abre ahora y se corren el
+# cierre y la publicación para que dure lo mismo que se pensó. Devuelve su ancla.
+#   - solicitud: la solicitud aceptada (sus datos llevan «consulta_id»).
+def aceptar(solicitud):
+    consulta = Consulta.objects.get(pk=solicitud.datos["consulta_id"])
+    ahora = timezone.now()
+    campos = ["estado"]
+    if consulta.abre < ahora:
+        retraso = ahora - consulta.abre
+        consulta.abre, consulta.cierra = ahora, consulta.cierra + retraso
+        if consulta.publicar_el:
+            consulta.publicar_el += retraso
+        campos += ["abre", "cierra", "publicar_el"]
+    consulta.estado = Consulta.ACEPTADA
+    consulta.save(update_fields=campos)
+    return (ANCLA, consulta.pk)
 
 
 # Añade una pregunta, con sus respuestas posibles (una por línea; las abiertas no llevan). Solo quien la
@@ -95,15 +142,18 @@ def quitar_pregunta(usuario, consulta, pregunta):
 # ── Ver y votar ──────────────────────────────────────────────────────────────────────────────────────
 
 
-# Dice si una persona ve la consulta: vota en ella, ve sus resultados o la creó.
+# Dice si una persona ve la consulta: la creó, o está aceptada y vota en ella o ve sus resultados.
 def ve(usuario, consulta):
-    return consulta.creador_id == usuario.pk or puede_ver(usuario, consulta.audiencia_id) or puede_ver(usuario, consulta.audiencia_resultados_id)
+    if consulta.creador_id == usuario.pk:
+        return True
+    return consulta.estado == Consulta.ACEPTADA and (puede_ver(usuario, consulta.audiencia_id) or puede_ver(usuario, consulta.audiencia_resultados_id))
 
 
-# Consulta (sin ejecutar) de las consultas que ve una persona.
+# Consulta (sin ejecutar) de las consultas que ve una persona (las propuestas sin aceptar, solo quien las propone).
 def visibles(usuario):
-    por_voto = filtrar_visibles(Consulta.objects.all(), usuario).values("pk")
-    por_resultados = filtrar_visibles(Consulta.objects.all(), usuario, campo="audiencia_resultados").values("pk")
+    aceptadas = Consulta.objects.filter(estado=Consulta.ACEPTADA)
+    por_voto = filtrar_visibles(aceptadas, usuario).values("pk")
+    por_resultados = filtrar_visibles(aceptadas, usuario, campo="audiencia_resultados").values("pk")
     return Consulta.objects.filter(Q(pk__in=por_voto) | Q(pk__in=por_resultados) | Q(creador=usuario))
 
 
@@ -214,7 +264,7 @@ def resultados(consulta, preguntas):
 @transaction.atomic
 def cerrar(consulta):
     consulta = Consulta.objects.select_for_update().get(pk=consulta.pk)
-    if consulta.cerrada_el is not None or timezone.now() < consulta.cierra:
+    if consulta.estado != Consulta.ACEPTADA or consulta.cerrada_el is not None or timezone.now() < consulta.cierra:
         return
     consulta.cerrada_el = timezone.now()
     consulta.save(update_fields=["cerrada_el"])
@@ -235,7 +285,7 @@ def cerrar(consulta):
 # Cierra todas las consultas cuya fecha de cierre ha pasado (tarea diaria del trabajador; ver
 # consultas/apps.py). También se cierran solas al abrir su ficha.
 def cerrar_vencidas():
-    for consulta in Consulta.objects.filter(cerrada_el__isnull=True, cierra__lte=timezone.now()):
+    for consulta in Consulta.objects.filter(estado=Consulta.ACEPTADA, cerrada_el__isnull=True, cierra__lte=timezone.now()):
         cerrar(consulta)
 
 
@@ -245,7 +295,7 @@ def cerrar_vencidas():
 # El cierre de cada consulta que ve una persona, para el calendario común (ver FuenteDeCalendario en
 # consultas/apps.py). Una consulta.
 def fechas(usuario, desde, hasta):
-    lista = visibles(usuario).filter(cierra__gte=desde, cierra__lte=hasta)
+    lista = visibles(usuario).filter(estado=Consulta.ACEPTADA, cierra__gte=desde, cierra__lte=hasta)
     return [
         FechaDeCalendario(id=c.pk, titulo=f"Cierra: {c.titulo}", inicio=c.cierra, enlace=reverse("consultas:consulta", args=[c.pk]), categoria="consultas.cierres")
         for c in lista
@@ -257,7 +307,7 @@ def fechas(usuario, desde, hasta):
 def por_votar(usuario):
     ahora = timezone.now()
     consulta = (
-        filtrar_visibles(Consulta.objects.filter(abre__lte=ahora, cierra__gt=ahora, cerrada_el__isnull=True), usuario)
+        filtrar_visibles(Consulta.objects.filter(estado=Consulta.ACEPTADA, abre__lte=ahora, cierra__gt=ahora, cerrada_el__isnull=True), usuario)
         .exclude(participaciones__usuario=usuario)
         .order_by("cierra")
     )

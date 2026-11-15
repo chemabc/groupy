@@ -27,6 +27,8 @@ MAXIMO = 500
 
 # Estado de una consulta en palabras, para la lista y la ficha.
 def _estado(consulta, ahora):
+    if consulta.estado != Consulta.ACEPTADA:
+        return consulta.get_estado_display().split(" (")[0]
     if ahora < consulta.abre:
         return "En preparación"
     return "Abierta" if ahora < consulta.cierra and consulta.cerrada_el is None else "Cerrada"
@@ -49,7 +51,7 @@ def lista(request):
         identificador="consultas",
         columnas=[Columna("titulo", "Consulta", enlace="consultas:consulta"), Columna("grupo", "Grupo"), Columna("estado", "Estado"), Columna("cierra", "Se cierra"), Columna("votado", "Has votado")],
         fuente=FuenteDeLista(filas, campos_de_busqueda=["titulo", "grupo"]),
-        filtros=[Filtro("estado", "Estado", opciones=(("En preparación", "En preparación"), ("Abierta", "Abierta"), ("Cerrada", "Cerrada")))],
+        filtros=[Filtro("estado", "Estado", opciones=(("Propuesta", "Propuesta"), ("Esperando apoyos", "Esperando apoyos"), ("En preparación", "En preparación"), ("Abierta", "Abierta"), ("Cerrada", "Cerrada")))],
     )
     plantilla = tabla.plantilla_parcial()
     if plantilla:
@@ -58,14 +60,15 @@ def lista(request):
 
 
 # Pantalla «Nueva consulta»: el grupo arriba y el formulario. Al crearla se va a su ficha para ponerle las
-# preguntas.
+# preguntas. Quien administra el grupo la crea directamente; cualquier miembro la propone (y después pide
+# apoyos desde su ficha).
 #   - GET «grupo», «ancla».
 #   - POST: los campos de FormularioDeConsulta.
 def nueva(request):
     usuario = request.user
-    grupos = grupos_donde_puede(usuario, "consultas.crear")
+    grupos = grupos_donde_puede(usuario, "consultas.proponer")
     if not grupos:
-        raise SinPermiso(explicar_falta("consultas.crear"))
+        raise SinPermiso(explicar_falta("consultas.proponer"))
     ancla = leer_ancla(request.GET.get("ancla", ""))
     elemento = buscar_ancla(*ancla) if ancla[0] else None
     grupo_del_elemento = getattr(elemento, "grupo_id", None)
@@ -87,21 +90,22 @@ def nueva(request):
             formulario.add_error(None, error)
         else:
             return redirect("consultas:consulta", consulta.pk)
-    return render(request, "consultas/nueva.html", {"formulario": formulario, "grupos": grupos, "grupo": grupo, "elemento": elemento})
+    directa = grupo.pk in {g.pk for g in grupos_donde_puede(usuario, "consultas.crear")}
+    return render(request, "consultas/nueva.html", {"formulario": formulario, "grupos": grupos, "grupo": grupo, "elemento": elemento, "directa": directa})
 
 
 # Ficha de una consulta. Mientras se prepara, quien la creó le pone y quita preguntas. Abierta, quien vota ve
 # el formulario (con el aviso de si se puede cambiar el voto). Cuando toca, los resultados en barras (y el
 # desglose por grupos con 10 votos o más). Si su cierre ha pasado, se da por cerrada al abrirla. Unas 10
 # consultas.
-#   - POST «accion»: «pregunta» (FormularioDePregunta), «quitar» (con «pregunta») o «votar» (las
-#     respuestas, «p<número>»).
+#   - POST «accion»: «pregunta» (FormularioDePregunta), «quitar» (con «pregunta»), «apoyos» (con
+#     «justificacion»: pedir apoyos si la propuso un miembro) o «votar» (las respuestas, «p<número>»).
 def consulta(request, pk):
     usuario = request.user
     consulta = get_object_or_404(Consulta.objects.select_related("grupo"), pk=pk)
     if not servicios.ve(usuario, consulta):
         raise SinPermiso("Esta consulta no es para ti.")
-    if consulta.cerrada_el is None and timezone.now() >= consulta.cierra:
+    if consulta.estado == Consulta.ACEPTADA and consulta.cerrada_el is None and timezone.now() >= consulta.cierra:
         servicios.cerrar(consulta)
         consulta.refresh_from_db()
     preguntas = list(consulta.preguntas.prefetch_related("respuestas"))
@@ -115,6 +119,9 @@ def consulta(request, pk):
             return redirect("consultas:consulta", consulta.pk)
         if accion == "quitar":
             servicios.quitar_pregunta(usuario, consulta, get_object_or_404(Pregunta, pk=request.POST.get("pregunta"), consulta=consulta))
+            return redirect("consultas:consulta", consulta.pk)
+        if accion == "apoyos":
+            servicios.pedir_apoyos(usuario, consulta, request.POST.get("justificacion", ""))
             return redirect("consultas:consulta", consulta.pk)
         if accion == "votar":
             servicios.votar(usuario, consulta, servicios.leer_respuestas(preguntas, request.POST))

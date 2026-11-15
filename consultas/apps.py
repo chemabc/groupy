@@ -15,6 +15,7 @@ from base.contrato import (
     Permiso,
     TareaDiaria,
     TarjetaDeInicio,
+    TipoDeSolicitud,
 )
 
 
@@ -36,7 +37,11 @@ class ConsultasConfig(ModuloConfig):
     )
     anclas = (Ancla("consultas.consulta", "consultas.Consulta", "Una consulta (votación)"),)
     permisos = (
-        Permiso("consultas.crear", "Crear consultas (votaciones) del grupo", roles=("admin_grupo", "admin_org")),
+        Permiso("consultas.crear", "Crear consultas (votaciones) del grupo sin pedir apoyos", roles=("admin_grupo", "admin_org")),
+        Permiso("consultas.proponer", "Proponer consultas al grupo (se abren con apoyos)", roles=("usuario", "admin_grupo", "admin_org")),
+    )
+    solicitudes = (
+        TipoDeSolicitud("consultas.abrir", "Abrir una consulta", resolver="consultas.servicios.aceptar", apoyos=2, dias=15, basta_el_superadmin=True),
     )
     emite = (
         Emision(
@@ -70,7 +75,9 @@ class ConsultasConfig(ModuloConfig):
             seccion="consultas.consultas",
             titulo="Consultas",
             texto=(
-                "Las votaciones de tus grupos. Cada una dice quién vota, cuándo se abre y se cierra, cuándo se ven los "
+                "Las votaciones de tus grupos. La administración las crea directamente; cualquier miembro puede "
+                "proponer una: le pone las preguntas, pide apoyos y, cuando los consigue, se abre como las demás.\n\n"
+                "Cada una dice quién vota, cuándo se abre y se cierra, cuándo se ven los "
                 "resultados y si se puede cambiar el voto (si no se puede, te avisa antes de votar).\n\n"
                 "Una persona, un voto. El voto es secreto: se guarda quién ha votado por un lado y qué se ha votado por "
                 "otro, sin nada que los una. El desglose por grupos solo sale con 10 votos o más. Al cerrarse, el "

@@ -2,7 +2,7 @@
 {% comment %}
   Ficha de una consulta (consultas/views.py, consulta). Recibe «consulta», «descripcion» (ya convertida),
   «estado», «preguntas» (con sus respuestas y su documentación convertida), «prepara» (si quien mira le pone
-  preguntas), «nueva» (su formulario), «vota», «ha_votado», «recien_votado», «resultados» (o nada si aún no
+  preguntas; si está «propuesta», también pide apoyos), «nueva» (su formulario), «vota», «ha_votado», «recien_votado», «resultados» (o nada si aún no
   los ve), «ancla», «error» y «abrir».
 {% endcomment %}
 {% block contenido %}
@@ -30,7 +30,19 @@
         <summary class="cursor-pointer font-semibold text-marca">+ Añadir una pregunta</summary>
         <form method="post" class="mt-2">{% csrf_token %}<input type="hidden" name="accion" value="pregunta">{{ nueva }}<button type="submit" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Añadir</button></form>
       </details>
+      {# Propuesta por un miembro: con las preguntas listas, se piden los apoyos del grupo #}
+      {% if consulta.estado == "propuesta" and preguntas %}
+        <form method="post" class="mt-3 flex flex-wrap items-end gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
+          {% csrf_token %}<input type="hidden" name="accion" value="apoyos">
+          <label class="flex flex-1 flex-col text-xs">Por qué hace falta (opcional)<input name="justificacion" class="rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"></label>
+          <button type="submit" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Pedir apoyos al grupo</button>
+        </form>
+        <p class="mt-1 text-xs text-slate-500">Al pedirlos, las preguntas ya no cambian. Cuando la apoye el grupo, se abre en sus fechas (o en ese momento, si ya pasaron).</p>
+      {% endif %}
     </section>
+  {% endif %}
+  {% if consulta.estado == "esperando" %}
+    <p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Esperando los apoyos del grupo (en «Comunicaciones → Solicitudes»). Se abrirá cuando los consiga.</p>
   {% endif %}
 
   {% if vota %}

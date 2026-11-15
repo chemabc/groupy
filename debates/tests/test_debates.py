@@ -72,6 +72,30 @@ class PruebasDeDebates(PruebaDePantalla):
         opcion.refresh_from_db()
         self.assertEqual(opcion.estado, Opcion.ABIERTA)
 
+    # Una opción de consenso solo se abre con apoyos de personas que habían apoyado opciones distintas; al
+    # abrirse, las intervenciones vuelven a contar desde cero para todo el mundo.
+    def test_opcion_de_consenso(self):
+        LimitesDeDebate.objects.create(organizacion=self.tajo, intervenciones_blando=1, intervenciones_duro=5)
+        servicios.argumentar(self.garza, self.solar, "Hay agua")
+        servicios.argumentar(self.garza, self.solar, "Y sol")
+        for persona in (self.nutria, self.garza):
+            servicios.votar(persona, self.debate, Voto.APOYO, opcion=self.solar)
+        consenso = servicios.proponer_opcion(self.lince, self.debate, "Solar con bancales altos", de_consenso=True)
+        servicios.votar(self.nutria, self.debate, Voto.APOYO, opcion=consenso)
+        servicios.votar(self.garza, self.debate, Voto.APOYO, opcion=consenso)
+        consenso.refresh_from_db()
+        self.assertEqual(consenso.estado, Opcion.PROPUESTA)  # las dos venían de la misma opción
+        self.assertEqual(servicios.apoyos_de_consenso(consenso), 1)
+        servicios.votar(self.garza, self.debate, Voto.APOYO, opcion=self.solar)  # Garza quita su 👍 del solar…
+        servicios.votar(self.garza, self.debate, Voto.APOYO, opcion=self.azotea)  # …y apoya la azotea
+        servicios.votar(self.garza, self.debate, Voto.APOYO, opcion=consenso)  # quita y vuelve a dar su apoyo
+        servicios.votar(self.garza, self.debate, Voto.APOYO, opcion=consenso)
+        consenso.refresh_from_db()
+        self.assertEqual(consenso.estado, Opcion.ABIERTA)
+        self.debate.refresh_from_db()
+        self.assertIsNotNone(self.debate.intervenciones_desde)
+        self.assertFalse(servicios.argumentar(self.garza, self.solar, "De nuevo").pasado)
+
     # Límites: pasado el blando, una intervención más y marcada; después, ya no. Las palabras de más, no.
     def test_limites(self):
         LimitesDeDebate.objects.create(organizacion=self.tajo, intervenciones_blando=1, intervenciones_duro=5, palabras_duro=5)

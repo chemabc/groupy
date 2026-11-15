@@ -190,7 +190,8 @@ def _exigir_abierto(usuario, debate):
 
 
 # Propone una opción nueva: nace «propuesta» y se abre cuando la apoyan las personas que piden los límites
-# (2 de partida). Devuelve la opción.
+# (2 de partida). Si es de consenso, esos apoyos tienen que venir de personas que habían apoyado opciones
+# distintas (ver apoyos_de_consenso). Devuelve la opción.
 #   - de_consenso: si se propone como síntesis de varias.
 @transaction.atomic
 def proponer_opcion(usuario, debate, texto, de_consenso=False):
@@ -225,7 +226,11 @@ def argumentar(usuario, opcion, texto, a_favor=True, padre=None):
     palabras = len(texto.split())
     if limites.palabras_duro is not None and palabras > limites.palabras_duro:
         raise ValidationError(f"Tiene {palabras} palabras y el límite es {limites.palabras_duro}. Acórtalo.")
-    hechas = Argumento.objects.filter(opcion__debate=debate, autor=usuario).count()
+    # Desde la última opción de consenso confirmada, se cuenta de cero para todo el mundo.
+    hechas = Argumento.objects.filter(opcion__debate=debate, autor=usuario)
+    if debate.intervenciones_desde:
+        hechas = hechas.filter(creado__gte=debate.intervenciones_desde)
+    hechas = hechas.count()
     if limites.intervenciones_duro is not None and hechas >= limites.intervenciones_duro:
         raise ValidationError(f"Ya has intervenido {hechas} veces en este debate: es el máximo.")
     # Al llegar al límite blando se permite una intervención más (marcada); después, ya no.
@@ -261,11 +266,43 @@ def votar(usuario, debate, tipo, opcion=None, argumento=None, justificacion=""):
         usuario=usuario, debate=debate, opcion=opcion, argumento=argumento, defaults={"tipo": tipo, "justificacion": justificacion.strip()[:300]}
     )
     if opcion is not None and opcion.estado == Opcion.PROPUESTA:
-        apoyos = Voto.objects.filter(opcion=opcion, tipo=Voto.APOYO).exclude(usuario_id=opcion.autor_id).count()
+        if opcion.de_consenso:
+            apoyos = apoyos_de_consenso(opcion)
+        else:
+            apoyos = Voto.objects.filter(opcion=opcion, tipo=Voto.APOYO).exclude(usuario_id=opcion.autor_id).count()
         if apoyos >= limites_de(debate.grupo.organizacion_id).apoyos_para_opcion:
             opcion.estado = Opcion.ABIERTA
             opcion.save(update_fields=["estado"])
+            if opcion.de_consenso:
+                debate.intervenciones_desde = timezone.now()
+                debate.save(update_fields=["intervenciones_desde"])
     return voto
+
+
+# Cuántos apoyos válidos tiene una opción de consenso: cuántas de las personas que la apoyan (👍, sin contar
+# a quien la propuso) habían apoyado (⭐ o 👍) opciones distintas del debate, cada una con una opción
+# diferente. Por ejemplo, si Lince y Nutria apoyaban las dos «A» y Garza la «B», valen dos (una de A y una
+# de B). Se calcula emparejando cada persona con una opción sin repetir. Dos consultas.
+def apoyos_de_consenso(opcion):
+    quienes = list(Voto.objects.filter(opcion=opcion, tipo=Voto.APOYO).exclude(usuario_id=opcion.autor_id).values_list("usuario_id", flat=True))
+    antes = {}
+    votos = Voto.objects.filter(debate_id=opcion.debate_id, usuario_id__in=quienes, argumento__isnull=True, tipo__in=A_FAVOR).exclude(opcion=opcion).exclude(opcion__isnull=True)
+    for usuario_id, opcion_id in votos.values_list("usuario_id", "opcion_id"):
+        antes.setdefault(usuario_id, set()).add(opcion_id)
+    # Emparejamiento: cada persona busca una opción libre o se la quita a otra que pueda cambiar a otra libre.
+    pareja_de_opcion = {}
+
+    def emparejar(usuario_id, vistas):
+        for opcion_id in antes.get(usuario_id, ()):
+            if opcion_id in vistas:
+                continue
+            vistas.add(opcion_id)
+            if opcion_id not in pareja_de_opcion or emparejar(pareja_de_opcion[opcion_id], vistas):
+                pareja_de_opcion[opcion_id] = usuario_id
+                return True
+        return False
+
+    return sum(1 for usuario_id in antes if emparejar(usuario_id, set()))
 
 
 # ── Recuentos ────────────────────────────────────────────────────────────────────────────────────────

@@ -18,6 +18,7 @@ from consultas import servicios
 from consultas.models import Consulta, Papeleta, Participacion, Pregunta
 from grupos.models import Pertenencia
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
+from solicitudes.models import Solicitud
 
 
 class PruebasDeConsultas(PruebaDePantalla):
@@ -56,6 +57,30 @@ class PruebasDeConsultas(PruebaDePantalla):
     def test_preparar(self):
         with self.assertRaises(ValidationError):
             servicios.anadir_pregunta(self.lince, self.consulta, "Hora", Pregunta.ABIERTA)
+
+    # Un miembro que no administra la propone: solo la ve él, pide apoyos (las preguntas ya no cambian) y, al
+    # aceptarse la solicitud con su apertura ya pasada, se abre en ese momento y dura lo mismo.
+    def test_propuesta_de_un_miembro(self):
+        ahora = timezone.now()
+        datos = {"titulo": "¿Pintamos el local?", "descripcion": "", "abre": ahora + timedelta(hours=1), "cierra": ahora + timedelta(days=2),
+                 "resultados": Consulta.AL_CERRAR, "publicar_el": None, "cambiar_voto": False}
+        propuesta = servicios.crear(self.garza, self.henares, datos, "grupo:0", "grupo:0")
+        self.assertEqual(propuesta.estado, Consulta.PROPUESTA)
+        self.assertFalse(servicios.ve(self.nutria, propuesta))
+        with self.assertRaises(ValidationError):
+            servicios.pedir_apoyos(self.garza, propuesta)  # sin preguntas
+        servicios.anadir_pregunta(self.garza, propuesta, "¿Sí?", Pregunta.UNICA, respuestas=["Sí", "No"])
+        servicios.pedir_apoyos(self.garza, propuesta)
+        with self.assertRaises(ValidationError):
+            servicios.anadir_pregunta(self.garza, propuesta, "¿Color?", Pregunta.ABIERTA)
+        solicitud = Solicitud.objects.get(tipo="consultas.abrir")
+        self.assertIn("¿Sí? (Sí / No)", solicitud.descripcion)
+        Consulta.objects.filter(pk=propuesta.pk).update(abre=ahora - timedelta(hours=3), cierra=ahora + timedelta(days=1))
+        servicios.aceptar(solicitud)
+        propuesta.refresh_from_db()
+        self.assertEqual(propuesta.estado, Consulta.ACEPTADA)
+        self.assertTrue(servicios.abierta(propuesta) and servicios.ve(self.nutria, propuesta))
+        self.assertGreater(propuesta.cierra, ahora + timedelta(days=1, hours=2))
 
     # Una persona, un voto; la papeleta no dice de quién es. Erizo no vota.
     def test_un_voto_secreto(self):

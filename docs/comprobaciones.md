@@ -650,8 +650,9 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
   Pulsa 👍: se marca y suma 1; vuelve a pulsarlo: se quita. ⭐ y ⛔ piden una justificación, que sale bajo la
   opción **sin nombre**.
 - [ ] Los argumentos llevan alias; «Responder» cuelga una respuesta debajo. «+ Argumento», a favor o en contra.
-- [ ] «Opciones propuestas»: la de consenso de Garza espera 👍. Con dos apoyos (Nutria y Lince), pasa a
-  columna.
+- [ ] «Opciones propuestas»: la de consenso de Garza espera 👍 y lo explica. Nutria (que apoyaba el solar)
+  le da 👍: aún no basta. Como **Lince**, da 👍 a «En la azotea» y después a la de consenso: ahora vienen de
+  opciones distintas y pasa a columna. Desde ese momento, todo el mundo vuelve a tener sus intervenciones.
 - [ ] Como **Lince** (facilita): «Dar la facilitación», «Ampliar a» (solo opciones más amplias) y «Cerrar el
   debate» con una conclusión: sale arriba en verde y en «Decisiones».
 - [ ] «Proponer un debate»: queda «esperando apoyos» (solo lo ves tú) y sale en «Comunicaciones →
@@ -671,5 +672,9 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
   preguntas (única, múltiple, abierta); se pueden quitar hasta que se abra.
 - [ ] Cuando se cierre (o pon el cierre en el pasado en la trastienda y abre la ficha): resultados en
   barras; el desglose por grupos solo con 10 votos o más; y el resultado en «Decisiones».
+- [ ] Como **Garza** (miembro, sin administrar), «Nueva consulta»: el botón dice «Proponer». En su ficha le
+  pones preguntas y «Pedir apoyos al grupo»; la ficha dice «Esperando los apoyos» y las preguntas ya no se
+  cambian. Como **Nutria**, no la ves en la lista, pero sí en «Comunicaciones → Solicitudes», con las
+  preguntas. Con dos apoyos se abre y ya se vota.
 - [ ] «Participación → Decisiones»: «Vigentes» y «Todas», filtrables por cómo y por grupo. En una ficha, como
   Lince, «Sustituida por…» otra más nueva: sale de «Vigentes» y sigue en «Todas», con el aviso en ámbar.
