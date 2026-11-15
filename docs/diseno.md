@@ -2080,7 +2080,7 @@ jerarquía… han de aparecer en árbol»; «Árbol de proyectos: cada árbol en
   *(por diseñar al llegar a `publico`, fase 8)*
 
 **Portada pública y miniwebs (15 de noviembre de 2026, [A-59] y [A-60], respuestas de la persona usuaria).**
-Acordado; se hace después de los archivos (P9 A).
+Hecho en [A-62] (módulo `publico`).
 - **Portada (P4 A):** una de la plataforma (el superadmin) y una por organización (`/o/<org>/`, su admin),
   sin sesión: pestañas arriba con las secciones y «Entrar» a la derecha. Nada sale sin marcar «público».
 - **Miniwebs internas (P5):** páginas sencillas (texto con formato, imágenes, enlaces a documentos) que
@@ -2097,6 +2097,30 @@ Acordado; se hace después de los archivos (P9 A).
   las pestañas de las páginas del grupo, un buscador y «Novedades». Los grupos con relación de consumo, en
   un tramo «Grupos de actividad ▾». **Pestaña extra** con la jerarquía de la organización y las webs de
   cada grupo: en árbol (o en grafo si sale barato calcularlo respetando la visibilidad; si no, árbol).
+- **Cómo está hecho ([A-62]; decidido por mí, reversible):**
+  - La raíz `/` sin sesión lleva a la portada (`PORTADA_SIN_SESION`); con sesión, a Inicio. La portada tiene
+    «Entrar» (o «Ir a la plataforma» si ya hay sesión) y, la de la plataforma, la lista de organizaciones con
+    portada.
+  - Las páginas son pestañas de su web, en el orden que se pone. Se escriben como borrador (editor en
+    tiempo real si lo hay; si no, formulario con vista previa) y nadie las ve hasta publicarlas; luego el
+    borrador se sigue cambiando sin tocar lo publicado. Se pueden retirar.
+  - **Lo de un grupo lo ven el grupo y lo que cuelga de él, no los de encima** (de abuelo hacia abajo).
+    Las internas de una organización, todos sus grupos. Quien administra, lo que administra. El superadmin,
+    todo.
+  - Imágenes: se suben en la página y se pone en el texto lo que sale al lado (botón «Copiar»). Las de una
+    página pública se ven sin sesión. Los enlaces a documentos de la plataforma solo los abre quien los ve.
+  - **Novedades:** lo publicado en los últimos 60 días que se puede ver; el botón «🌐 Webs» lleva el número
+    de lo nuevo desde la última vez que se miró. La primera publicación de una página interna avisa también
+    como notificación («Organización y grupos», se puede desactivar), y proponer una relación avisa a la
+    administración del grupo que recibe.
+  - Barra de camino: solo salen los grupos con web que se pueden ver y los de encima (para llegar); los
+    desplegables son `<details>` (sin JavaScript). Los grupos de actividad, en su tramo.
+  - **Jerarquía en grafo** (Mermaid, la isla de los diagramas): sale barato porque lo que se ve son los
+    grupos de encima de los propios, que ya se conocen. En azul los que tienen páginas; en gris, los de paso;
+    los de actividad, aparte con flechas de puntos.
+  - El botón de la cabecera lo declara el módulo (`EnlaceDeCabecera` en el contrato), sin que `base` lo conozca.
+  - *Sin hacer:* el banco de recursos públicos (menús que se llenan solos con lo hecho público en proyectos,
+    eventos…) y la lista de lo publicado para ocultarlo rápido.
 
 ---
 

@@ -1,0 +1,65 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Una página para quien la gestiona (publico/views.py, editar). Recibe «pagina», «vista» (el borrador
+  convertido), «cambiado» (si el borrador ha cambiado desde la última publicación), «datos» (título, orden
+  y si es pública), «subida» (subir imagen), «imagenes» ({imagen, url}), «en_vivo» (si hay editor en tiempo
+  real) y «error». Cada imagen trae lo que hay que copiar en el texto (botón «copiar»).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-5xl space-y-3">
+  <p class="text-sm"><a href="{% url 'publico:paginas' %}" class="text-marca hover:underline">← Páginas</a> · {{ pagina.duena }}{% if pagina.publica %} · pública (portada){% endif %}</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <header class="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div class="min-w-0 flex-1">
+      <h2 class="text-xl font-semibold">{{ pagina.titulo }}</h2>
+      <p class="text-xs text-slate-500">{% if pagina.publicada %}Publicada el {{ pagina.publicada_el|date:"d/m/Y H:i" }}{% if pagina.publicada_por %} por {{ pagina.publicada_por }}{% endif %}{% if cambiado %} · <strong class="text-amber-700 dark:text-amber-400">el borrador tiene cambios sin publicar</strong>{% endif %}{% else %}Sin publicar: nadie la ve todavía{% endif %}</p>
+    </div>
+    <a href="{% url 'publico:escribir' pagina.pk %}" class="rounded bg-marca px-3 py-1 text-sm font-medium text-white">Escribir{% if en_vivo %} (en directo){% endif %}</a>
+    <form method="post">{% csrf_token %}<button type="submit" name="accion" value="publicar" class="rounded border border-emerald-400 px-3 py-1 text-sm text-emerald-800 dark:border-emerald-700 dark:text-emerald-300">{% if pagina.publicada %}Volver a publicar{% else %}Publicar{% endif %}</button></form>
+    {% if pagina.publicada %}
+      <a href="{% url 'publico:pagina' pagina.pk %}" class="rounded border border-slate-300 px-3 py-1 text-sm dark:border-slate-700">Ver publicada</a>
+      <form method="post">{% csrf_token %}<button type="submit" name="accion" value="despublicar" class="rounded border border-slate-300 px-3 py-1 text-sm dark:border-slate-700">Retirar</button></form>
+    {% endif %}
+  </header>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <h3 class="mb-2 text-sm font-semibold text-slate-500">Borrador</h3>
+    <div class="documento">{{ vista|default:"<p class='text-slate-400'>Aún vacío. Pulsa «Escribir».</p>" }}</div>
+  </section>
+  <div class="grid gap-3 md:grid-cols-2">
+    <section class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="font-semibold">Imágenes</h3>
+      <ul class="space-y-2">
+        {% for fila in imagenes %}
+          <li class="flex items-center gap-2">
+            <img src="{{ fila.url }}" alt="" class="size-12 rounded border border-slate-200 object-cover dark:border-slate-700">
+            <input id="imagen-{{ fila.imagen.pk }}" type="text" readonly value="![{{ fila.imagen.nombre }}]({{ fila.url }})" aria-label="Texto para poner la imagen" data-sin-copiar
+                   class="min-w-0 flex-1 rounded border border-slate-200 bg-slate-50 px-1 font-mono text-xs dark:border-slate-700 dark:bg-slate-950">
+            <button type="button" x-data="copiar" data-objetivo="imagen-{{ fila.imagen.pk }}" @click="copiar()" class="rounded border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700"><span x-text="copiado ? 'Copiado' : 'Copiar'">Copiar</span></button>
+            <form method="post">{% csrf_token %}<input type="hidden" name="imagen" value="{{ fila.imagen.pk }}"><button type="submit" name="accion" value="quitar_imagen" class="text-xs text-red-700 hover:underline dark:text-red-300" onclick="return confirm('¿Quitar esta imagen?')">Quitar</button></form>
+          </li>
+        {% empty %}
+          <li class="text-slate-500">Ninguna. Sube una y copia en el texto lo que sale a su lado.</li>
+        {% endfor %}
+      </ul>
+      <form method="post" enctype="multipart/form-data" class="space-y-2">
+        {% csrf_token %}<input type="hidden" name="accion" value="imagen">
+        {{ subida }}
+        <button type="submit" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Subir</button>
+      </form>
+    </section>
+    <section class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="font-semibold">Datos de la página</h3>
+      <form method="post" class="space-y-2">
+        {% csrf_token %}<input type="hidden" name="accion" value="datos">
+        {{ datos }}
+        <button type="submit" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Guardar</button>
+      </form>
+      <form method="post" class="pt-2">
+        {% csrf_token %}
+        <button type="submit" name="accion" value="borrar" onclick="return confirm('¿Borrar «{{ pagina.titulo|escapejs }}» con sus imágenes? No se puede deshacer.')" class="rounded border border-red-300 px-3 py-1 text-red-700 dark:border-red-800 dark:text-red-300">Borrar la página</button>
+      </form>
+    </section>
+  </div>
+  <p class="text-xs text-slate-500">Para enlazar un documento de la plataforma, copia su dirección: «[Acta de noviembre](/documentos/12/)». Solo lo abrirá quien pueda verlo.</p>
+</div>
+{% endblock %}

@@ -896,3 +896,17 @@ sirve aquí y dónde se usa.
   propia consulta en su contrato (`Ancla(..., congela="consultas.servicios.congela")`); `documentos` busca
   esa función en el registro con `import_string`. Igual para las tareas de un proyecto (`dentro`).
 
+## 41. Páginas sin sesión, una foto de lo publicado y una barra de camino (15 de noviembre de 2026)
+
+- **Abrir una puerta a propósito.** Toda la aplicación exige sesión (`LoginRequiredMiddleware`); las vistas de
+  la portada llevan `@login_not_required`, y nada más. Así lo público es una lista corta y a la vista.
+- **Borrador y foto publicada.** La página guarda dos cosas: el borrador (Markdown, que cambia mientras se
+  escribe) y la foto publicada (el HTML seguro de ese momento). Lo que ve la gente es la foto; por eso se
+  puede seguir escribiendo sin que cambie nada hasta volver a pulsar «Publicar».
+- **Quién ve de arriba abajo.** La tabla de cierre (`Contencion`) guarda cada pareja antecesor-descendiente.
+  Los grupos «de encima» de los míos son justo los que me tocan: si estoy en GRU Sorbe, veo las webs de GRU
+  Sorbe, GRU Henares, GRU Jarama y GRU Tajo. Con una consulta (`grupos_de`) se sabe todo.
+- **Desplegables sin JavaScript.** `<details>` y `<summary>` son HTML normal: se abren y se cierran solos.
+- **Un botón en la cabecera sin que la cabecera lo conozca.** El módulo lo declara en su contrato
+  (`EnlaceDeCabecera`) y la plantilla general pinta lo que haya en el registro, como el menú.
+

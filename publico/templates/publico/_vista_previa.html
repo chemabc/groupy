@@ -1,0 +1,5 @@
+{% comment %}
+  Vista previa del borrador de una página (publico/views.py, vista_previa y escribir). Recibe «vista», el
+  HTML ya convertido y seguro.
+{% endcomment %}
+<div id="vista-previa" class="documento min-h-40 rounded border border-dashed border-slate-300 p-3 dark:border-slate-700">{{ vista|default:"<p class='text-slate-400'>Aquí se ve cómo queda.</p>" }}</div>

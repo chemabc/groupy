@@ -1,0 +1,40 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Administrar → Webs → Publicación y consumo» (publico/views.py, relaciones). Recibe «filas»
+  (cada una con «relacion» y «acepta»: si quien mira puede aceptarla), «formulario» (proponer) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Un grupo publica para otro: lo propone la administración del que publica y lo acepta la del que recibe. Desde entonces, sus páginas las ven también el que recibe y los que cuelgan de él, y les salen en «Novedades». Cualquiera de las dos puede cortarla.</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <ul class="divide-y divide-slate-100 text-sm dark:divide-slate-800">
+      {% for fila in filas %}
+        {% with r=fila.relacion %}
+          <li class="flex flex-wrap items-center gap-2 py-2" data-relacion="{{ r.pk }}">
+            <div class="min-w-0 flex-1">
+              <p><strong>{{ r.productor.nombre }}</strong> <span class="text-xs text-slate-500">({{ r.productor.organizacion.nombre }})</span> publica para <strong>{{ r.consumidor.nombre }}</strong> <span class="text-xs text-slate-500">({{ r.consumidor.organizacion.nombre }})</span></p>
+              <p class="text-xs text-slate-500">{{ r.get_estado_display }}{% if r.propuesta_por %} · la propuso {{ r.propuesta_por }}{% endif %} · {{ r.creada|date:"d/m/Y" }}{% if r.mensaje %} · «{{ r.mensaje }}»{% endif %}</p>
+            </div>
+            <form method="post" class="flex gap-1">
+              {% csrf_token %}<input type="hidden" name="relacion" value="{{ r.pk }}">
+              {% if fila.acepta %}<button type="submit" name="accion" value="aceptar" class="rounded border border-emerald-400 px-2 py-0.5 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300">Aceptar</button>{% endif %}
+              <button type="submit" name="accion" value="cortar" onclick="return confirm('¿{% if r.estado == 'propuesta' %}Rechazar{% else %}Cortar{% endif %} esta relación?')" class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700">{% if r.estado == "propuesta" %}{% if fila.acepta %}Rechazar{% else %}Retirar{% endif %}{% else %}Cortar{% endif %}</button>
+            </form>
+          </li>
+        {% endwith %}
+      {% empty %}
+        <li class="py-1.5 text-slate-500">Ninguna relación todavía.</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% if formulario.fields.productor.queryset.exists %}
+    <form method="post" class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      {% csrf_token %}<input type="hidden" name="accion" value="proponer">
+      <h2 class="font-semibold">Proponer que uno de tus grupos publique para otro</h2>
+      {{ formulario }}
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Proponer</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

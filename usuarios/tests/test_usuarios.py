@@ -89,12 +89,14 @@ class PruebasDeEntradaYSalida(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertNotIn("_auth_user_id", self.client.session)
 
-    # «Salir» cierra la sesión y vuelve a la entrada.
+    # «Salir» cierra la sesión y vuelve a la entrada. Sin sesión, la raíz lleva a la portada pública
+    # (PORTADA_SIN_SESION) y cualquier otra página, a la entrada.
     def test_salir(self):
         self.client.force_login(self.usuario)
         respuesta = self.client.post("/cuenta/salir/")
         self.assertRedirects(respuesta, "/cuenta/entrar/")
-        self.assertRedirects(self.client.get("/"), "/cuenta/entrar/?next=/")
+        self.assertRedirects(self.client.get("/"), "/portada/", fetch_redirect_response=False)
+        self.assertRedirects(self.client.get("/cuenta/preferencias/"), "/cuenta/entrar/?next=/cuenta/preferencias/")
 
 
 class PruebasDeMiCuenta(PruebaDePantalla):

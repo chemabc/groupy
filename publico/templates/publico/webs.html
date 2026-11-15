@@ -1,0 +1,118 @@
+{% load static %}{% comment %}
+  Visor «🌐 Webs» (publico/views.py, _visor): página entera, sin el menú de la izquierda, como una web normal.
+  Arriba, la barra con la vuelta a la plataforma, la barra de camino con desplegables (organización ▾ ›
+  grupo ▾ › … y «Subgrupos ▾»), «Grupos de actividad ▾», el buscador, «Novedades» y «Jerarquía»; debajo, las
+  pestañas con las páginas del grupo; en medio, la página (o la sección elegida).
+  Recibe «titulo», «tramos» (navegacion.Tramo: nombre, url, desplegable), «hijos», «actividad»,
+  «pestanas» ({titulo, url, activa}), «pagina», «borrador» (HTML del borrador si quien la gestiona aún no la
+  ha publicado), «gestiona», «seccion» («novedades», «buscar», «jerarquia» o nada), «novedades» (cuántas
+  sin ver) y lo de cada sección: «lista», «busqueda», «grafo» y «enlaces», «vacia».
+  Los desplegables son <details> (sin JavaScript); el grafo lo dibuja la isla «documento».
+{% endcomment %}{% include "base/cabeza.html" %}
+<body class="min-h-full bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+  <header class="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 text-sm">
+      <a href="{% url 'base:inicio' %}" class="text-slate-500 hover:text-marca" title="Volver a la plataforma">← Plataforma</a>
+      <span class="font-semibold text-marca">🌐 Webs</span>
+      {# Barra de camino: cada tramo lleva a su web y, si tiene, despliega sus hermanos (u otras organizaciones). #}
+      <nav class="flex flex-wrap items-center gap-1" aria-label="Dónde estás">
+        {% for tramo in tramos %}
+          {% if not forloop.first %}<span class="text-slate-400" aria-hidden="true">›</span>{% endif %}
+          {% if tramo.desplegable %}
+            <details class="relative">
+              <summary class="cursor-pointer list-none rounded px-2 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 {% if forloop.last %}font-semibold{% endif %}">{{ tramo.nombre }} ▾</summary>
+              <ul class="absolute left-0 z-30 mt-1 max-h-80 min-w-48 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                {% if tramo.url %}<li><a href="{{ tramo.url }}" class="block rounded px-2 py-1 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">{{ tramo.nombre }}</a></li>{% endif %}
+                {% for opcion in tramo.desplegable %}{% if not opcion.actual %}<li><a href="{{ opcion.url }}" class="block rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800">{{ opcion.nombre }}</a></li>{% endif %}{% endfor %}
+              </ul>
+            </details>
+          {% else %}
+            <a href="{{ tramo.url }}" class="rounded px-2 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 {% if forloop.last %}font-semibold{% endif %}">{{ tramo.nombre }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if hijos %}
+          <details class="relative">
+            <summary class="cursor-pointer list-none rounded border border-slate-300 px-2 py-0.5 text-xs hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">Subgrupos ▾</summary>
+            <ul class="absolute left-0 z-30 mt-1 max-h-80 min-w-48 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              {% for opcion in hijos %}<li><a href="{{ opcion.url }}" class="block rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800">{{ opcion.nombre }}</a></li>{% endfor %}
+            </ul>
+          </details>
+        {% endif %}
+      </nav>
+      <span class="ml-auto flex flex-wrap items-center gap-2">
+        {% if actividad %}
+          <details class="relative">
+            <summary class="cursor-pointer list-none rounded px-2 py-0.5 text-amber-800 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950">Grupos de actividad ▾</summary>
+            <ul class="absolute right-0 z-30 mt-1 max-h-80 min-w-48 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              {% for opcion in actividad %}<li><a href="{{ opcion.url }}" class="block rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800">{{ opcion.nombre }}</a></li>{% endfor %}
+            </ul>
+          </details>
+        {% endif %}
+        <form method="get" action="{% url 'publico:buscar' %}" role="search">
+          <input type="search" name="q" value="{{ busqueda|default:'' }}" placeholder="Buscar en las webs…" aria-label="Buscar en las webs"
+                 class="w-44 rounded border border-slate-300 bg-white px-2 py-0.5 dark:border-slate-700 dark:bg-slate-900">
+        </form>
+        <a href="{% url 'publico:novedades' %}" class="rounded px-2 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 {% if seccion == 'novedades' %}font-semibold text-marca{% endif %}">Novedades{% if novedades %} <span class="rounded-full bg-marca px-1.5 text-xs font-semibold text-white">{{ novedades }}</span>{% endif %}</a>
+        <a href="{% url 'publico:jerarquia' %}" class="rounded px-2 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 {% if seccion == 'jerarquia' %}font-semibold text-marca{% endif %}">Jerarquía</a>
+      </span>
+    </div>
+    {% if pestanas %}
+      <nav class="mx-auto flex max-w-6xl flex-wrap gap-1 px-4 text-sm" aria-label="Páginas">
+        {% for p in pestanas %}
+          <a href="{{ p.url }}" class="-mb-px border-b-2 px-3 py-1.5 {% if p.activa %}border-marca font-semibold text-marca{% else %}border-transparent text-slate-600 hover:text-marca dark:text-slate-300{% endif %}"{% if p.activa %} aria-current="page"{% endif %}>{{ p.titulo }}</a>
+        {% endfor %}
+      </nav>
+    {% endif %}
+  </header>
+
+  <main class="mx-auto max-w-6xl space-y-4 px-4 py-6">
+    {% if seccion == "novedades" %}
+      <h1 class="text-xl font-semibold">Novedades</h1>
+      <ul class="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+        {% for p in lista %}
+          <li class="flex items-center gap-3 px-4 py-2">
+            <span class="size-2 shrink-0 rounded-full {% if p.nueva %}bg-marca{% else %}bg-transparent{% endif %}" aria-hidden="true"></span>
+            <a href="{% url 'publico:pagina' p.pk %}" class="{% if p.nueva %}font-semibold{% endif %} hover:text-marca hover:underline">{{ p.titulo }}</a>
+            <span class="text-xs text-slate-500">{{ p.duena }} · {{ p.publicada_el|date:"d/m/Y H:i" }}{% if p.nueva %} · nueva{% endif %}</span>
+          </li>
+        {% empty %}
+          <li class="px-4 py-3 text-slate-500">Nada publicado en los últimos días.</li>
+        {% endfor %}
+      </ul>
+    {% elif seccion == "buscar" %}
+      <h1 class="text-xl font-semibold">Buscar{% if busqueda %}: «{{ busqueda }}»{% endif %}</h1>
+      <ul class="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+        {% for p in lista %}
+          <li class="px-4 py-2"><a href="{% url 'publico:pagina' p.pk %}" class="hover:text-marca hover:underline">{{ p.titulo }}</a> <span class="text-xs text-slate-500">{{ p.duena }}{% if p.publica %} · pública{% endif %}</span></li>
+        {% empty %}
+          <li class="px-4 py-3 text-slate-500">{% if busqueda %}Ninguna página con esas palabras.{% else %}Escribe arriba qué buscas.{% endif %}</li>
+        {% endfor %}
+      </ul>
+    {% elif seccion == "jerarquia" %}
+      <h1 class="text-xl font-semibold">Jerarquía</h1>
+      <p class="text-sm text-slate-600 dark:text-slate-300">Los grupos con web que puedes ver, cada organización en su caja. En azul, los que tienen páginas; en gris, los de paso. Los grupos de actividad, aparte, con flechas de puntos hacia los grupos para los que publican. Pulsa uno para abrir su web.</p>
+      {% if grafo %}
+        {{ enlaces|json_script:"enlaces-de-las-webs" }}
+        <article x-data="documento" data-estaticos="{% static 'generado/diagramas/' %}" data-enlaces="enlaces-de-las-webs" class="documento">
+          <pre><code class="language-mermaid">{{ grafo }}</code></pre>
+        </article>
+      {% else %}
+        <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">Aún no hay webs que puedas ver.</p>
+      {% endif %}
+    {% elif pagina %}
+      {% if gestiona %}<p class="text-right text-sm"><a href="{% url 'publico:editar' pagina.pk %}" class="text-marca hover:underline">Gestionar esta página</a></p>{% endif %}
+      {% if borrador is not None %}
+        <p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Aún sin publicar: solo la ves tú (y quien la gestiona). Esto es el borrador.</p>
+        <article class="documento rounded-lg border border-dashed border-slate-300 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">{{ borrador }}</article>
+      {% else %}
+        <article class="documento rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">{{ pagina.html|safe }}</article>
+        <p class="text-xs text-slate-500">{{ pagina.duena }} · publicada el {{ pagina.publicada_el|date:"d/m/Y" }}</p>
+      {% endif %}
+    {% elif vacia %}
+      <p class="rounded-lg border border-slate-200 bg-white p-6 text-slate-500 dark:border-slate-800 dark:bg-slate-900">Aún no hay webs publicadas en tus grupos. La administración de cada grupo las crea en «Administrar → Webs».</p>
+    {% else %}
+      <p class="rounded-lg border border-slate-200 bg-white p-6 text-slate-500 dark:border-slate-800 dark:bg-slate-900">{{ titulo }} no tiene páginas propias{% if hijos %}: elige uno de sus subgrupos en «Subgrupos ▾»{% endif %}.</p>
+    {% endif %}
+  </main>
+</body>
+</html>

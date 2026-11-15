@@ -225,5 +225,10 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   contenido, 20 MB, espacio por organización, antivirus ClamAV en docker), enlaces a otra web o a otro
   documento, papelera de 30 días, «Cuelga de aquí» también en tareas, debates y consultas, congelados desde
   que se abre una votación (`Ancla.congela`), los de las tareas en su proyecto (`Ancla.dentro`) y la lista
-  filtrable con rango de fechas (`base.tablas.RangoDeFechas`). Acordado y **por hacer**: portada pública,
-  miniwebs con publicación y consumo, y botón «🌐 Webs» (diseño 15). Después, fase 8.
+  filtrable con rango de fechas (`base.tablas.RangoDeFechas`).
+- 15 de noviembre de 2026 ([A-62]): módulo **`publico`** (diseño 15): **portada pública** sin sesión (de la
+  plataforma y de cada organización; `/` sin sesión lleva a ella), **miniwebs** de grupos y organizaciones
+  (borrador en el editor, «Publicar» guarda una foto en HTML seguro; las ve el grupo y lo que cuelga de él),
+  **publicación y consumo** entre grupos (propuesta y aceptada), novedades y el visor **«🌐 Webs»** sin menú
+  lateral (botón de la cabecera, `EnlaceDeCabecera` en el contrato; barra de camino con desplegables y grafo
+  de la jerarquía). Después, fase 8 (chat, Telegram, bóveda real) y `moderacion`.

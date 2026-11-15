@@ -101,6 +101,24 @@ En la conversación con esa persona, «Bloquear». Ninguna de las dos podrá esc
 pulses «Desbloquear». El superadmin recibe un aviso de que la has bloqueado, sin ver lo que os habéis
 escrito.
 
+## Webs
+
+### Ver las webs de mis grupos
+Botón «🌐 Webs» de arriba (junto a tu alias). Se abre la web de tu asamblea base. Arriba, el camino
+(organización › grupo › …): cada tramo se despliega para ir a otros grupos, y «Subgrupos ▾» baja. Las
+páginas de cada grupo son las pestañas de debajo. «Novedades» enseña lo último publicado; «Jerarquía», el
+mapa de todas las webs que puedes ver.
+
+### Publicar la web de mi grupo
+«Administrar → Webs → Páginas» → «Nueva página» (elige el grupo). «Escribir» el texto; nadie lo ve hasta
+que pulsas «Publicar». Para una imagen, súbela en la página y copia en el texto lo que sale a su lado.
+
+### Hacer pública la portada de mi organización
+Igual, eligiendo tu organización y marcando «Pública». Sale en su portada, que se ve sin entrar.
+
+### Que un grupo de actividad publique para el mío
+Su administración lo propone en «Administrar → Webs → Publicación y consumo»; tú lo aceptas ahí mismo.
+
 ## Grupos
 
 ### Ver mis grupos

@@ -120,6 +120,9 @@ def interfaz(request):
             # la usa (la página entera, no al navegar).
             "direcciones_de_la_ayuda": _direcciones_de_la_ayuda,
             "titulo": " · ".join(parte for parte in partes if parte),
+            # Botones de la cabecera que declaran los módulos (EnlaceDeCabecera), con su número. Es una
+            # función: solo se calcula si la plantilla la usa (la página entera, no al navegar).
+            "cabecera": (lambda: _enlaces_de_cabecera(usuario)) if conectado else list,
             # Si hay alguien con la sesión iniciada, y su alias (arriba, en la cabecera).
             "conectado": conectado,
             "alias": usuario.get_username() if conectado else "",
@@ -128,6 +131,19 @@ def interfaz(request):
             "preferencias": {clave: getattr(usuario, clave, "") for clave in CLAVES} if conectado else {},
         }
     }
+
+
+# Los botones de la cabecera de todos los módulos, listos para pintar: [{nombre, url, icono, titulo,
+# numero}]. El número sale de su contador, que debe ser barato (normalmente, de la caché).
+#   - usuario: quien tiene la sesión.
+def _enlaces_de_cabecera(usuario):
+    return [
+        {
+            "codigo": enlace.codigo, "nombre": enlace.nombre, "url": reverse(enlace.url), "icono": enlace.icono, "titulo": enlace.titulo,
+            "numero": import_string(enlace.contador)(usuario) if enlace.contador else None,
+        }
+        for enlace in registro.enlaces_de_cabecera.values()
+    ]
 
 
 # Busca en el camino la sección más alta cuyas subsecciones van como pestañas y devuelve (madre, hija): la

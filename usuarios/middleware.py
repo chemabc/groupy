@@ -10,9 +10,10 @@ Se basa en LoginRequiredMiddleware de Django: toda vista exige sesión, salvo la
 Está en config/settings.py, en MIDDLEWARE.
 """
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.middleware import LoginRequiredMiddleware
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils import timezone
 from django.utils.functional import empty
 
@@ -37,7 +38,12 @@ class EntradaObligatoria(LoginRequiredMiddleware):
     # petición viene de htmx (por ejemplo, al navegar con la sesión ya caducada), htmx metería la
     # pantalla de entrada dentro de la zona central; con la cabecera HX-Redirect, htmx carga la
     # pantalla de entrada como página entera.
+    #   La raíz del sitio («/») sin sesión lleva a la portada pública (ajuste PORTADA_SIN_SESION), no a la
+    #   pantalla de entrada: la portada ya tiene su botón «Entrar».
     def handle_no_permission(self, request, view_func):
+        portada = getattr(settings, "PORTADA_SIN_SESION", "")
+        if portada and request.path == "/" and request.headers.get("HX-Request") != "true":
+            return HttpResponseRedirect(portada)
         redireccion = super().handle_no_permission(request, view_func)
         if request.headers.get("HX-Request") != "true":
             return redireccion

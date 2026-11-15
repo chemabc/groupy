@@ -101,6 +101,7 @@ INSTALLED_APPS = [
     "debates.apps.DebatesConfig",
     "consultas.apps.ConsultasConfig",
     "limpieza.apps.LimpiezaConfig",
+    "publico.apps.PublicoConfig",
 ]
 
 # Modelo de usuario de la aplicación: la cuenta con seudónimo (alias), en lugar del usuario de Django,
@@ -110,6 +111,9 @@ AUTH_USER_MODEL = "usuarios.Usuario"
 # Páginas de entrada y salida: adónde se manda a quien no ha iniciado sesión, adónde va al entrar y
 # adónde al salir. Son nombres de rutas (ver usuarios/urls.py y base/urls.py).
 LOGIN_URL = "usuarios:entrar"
+# Adónde va quien abre la raíz del sitio («/») sin sesión: la portada pública (módulo «publico»). Vacío: a
+# la pantalla de entrada, como cualquier otra página.
+PORTADA_SIN_SESION = "/portada/"
 LOGIN_REDIRECT_URL = "base:inicio"
 LOGOUT_REDIRECT_URL = "usuarios:entrar"
 

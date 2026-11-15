@@ -127,7 +127,10 @@ DISPOSICION = (
             "documentos.limites",
             "grupos.inactividad",
             "lugares.configuracion",
-            "proximamente.web_publica",
+        )),
+        Pestanas("publico.administrar", (
+            "publico.paginas",
+            "publico.relaciones",
         )),
     ), banda="Estás administrando: lo que hagas aquí afecta a los grupos y a las personas que administras."),
     # ── Plataforma (solo el superadmin) ────────────────────────────────────────────────────────────────

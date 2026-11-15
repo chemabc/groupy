@@ -86,7 +86,7 @@ flowchart LR
       direction TB
       subgraph FUN["Funcional"]
         direction LR
-        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza · documentos<br/>decisiones · debates · consultas<br/>administracion · mantenimiento · ayuda<br/>proximamente<br/>[Módulo · Funcional]"]:::capafun
+        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza · documentos<br/>decisiones · debates · consultas<br/>administracion · mantenimiento · ayuda<br/>proximamente · publico<br/>[Módulo · Funcional]"]:::capafun
       end
       subgraph ORG["Organización"]
         direction LR
@@ -163,7 +163,7 @@ flowchart TB
   classDef capaiden fill:#dcfce7,stroke:#16a34a,color:#14532d
   classDef capaorg fill:#fef9c3,stroke:#ca8a04,color:#713f12
   classDef capafun fill:#fce7f3,stroke:#db2777,color:#831843
-  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, documentos, decisiones, debates, consultas,<br/>administracion, mantenimiento, ayuda, proximamente"]:::capafun
+  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, documentos, decisiones, debates, consultas,<br/>administracion, mantenimiento, ayuda, proximamente, publico"]:::capafun
   O["Organización<br/>grupos, permisos, audiencias, etiquetas,<br/>tipologias, solicitudes, lugares, talentos"]:::capaorg
   I["Identidad<br/>boveda, usuarios"]:::capaiden
   B["Base<br/>base, eventos_sw, ejemplos"]:::capabase
@@ -1005,6 +1005,47 @@ flowchart LR
   con -. "Ancla consultas.consulta (congela: votación abierta)" .-> docs
 ```
 
+### 6.28 publico [Módulo · Funcional]
+
+Portada pública (de la plataforma y de cada organización, **sin sesión**: `/portada/`, `/o/<n>/`; la raíz
+`/` sin sesión lleva a ella por el ajuste `PORTADA_SIN_SESION`) y **miniwebs** de grupos y organizaciones:
+`Pagina` (borrador en Markdown, escrito en el editor en tiempo real si lo hay, con su `TextoEditable`;
+«Publicar» guarda una foto en HTML seguro de `base/markdown.py`), `ImagenDePagina`, `RelacionDeConsumo`
+(publicación y consumo entre grupos, propuesta y aceptada) y `LecturaDeNovedades`. El visor «🌐 Webs» es
+una página entera sin el menú de la izquierda, al que se llega por su botón de la cabecera
+(`EnlaceDeCabecera`, con el número de novedades); su barra de camino y el grafo de la jerarquía salen de
+`publico/navegacion.py`. Quién ve qué: el grupo y lo que cuelga de él (`grupos.servicios.grupos_de`), quien lo
+administra y los grupos que reciben sus páginas.
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  classDef libjs fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+  pub["publico<br/>[Módulo · Funcional]"]:::yo
+  nav["navegacion.py: mapa, barra de camino,<br/>grafo de la jerarquía<br/>[Componente]"]:::otro
+  gru["grupos (grupos_de, acceso, Contencion)"]:::otro
+  per["permisos (publico.publicar)"]:::otro
+  bas["base: markdown · editor · contrato<br/>(EnlaceDeCabecera, TextoEditable)"]:::otro
+  usu["usuarios (EntradaObligatoria:<br/>«/» sin sesión → portada)"]:::otro
+  esw["eventos_sw"]:::otro
+  com["comunicaciones (avisos)"]:::otro
+  edi["editor (servicio aparte)<br/>[Servicio]"]:::otro
+  isla["isla «documento» (Mermaid)<br/>[Isla JS]"]:::libjs
+  pub --> nav
+  pub --> gru
+  pub --> per
+  pub --> bas
+  pub --> esw
+  nav --> gru
+  esw ==> com
+  pub -. "TextoEditable publico.pagina" .-> bas
+  bas -- "pases, guardar" --> edi
+  pub -. "EnlaceDeCabecera publico.webs" .-> bas
+  usu -. "PORTADA_SIN_SESION" .-> pub
+  pub -- "grafo de la jerarquía" --> isla
+```
+
 ### 6.27 config [Configuración]
 
 Los ajustes (`settings.py`: apps, bases de datos, caché, cookies, guías de desarrollo), las direcciones
@@ -1046,11 +1087,13 @@ flowchart LR
   paginasAyuda["páginas de la ayuda<br/>(módulo ayuda)"]:::otro
   permisos["permisos: qué entradas se ven<br/>(o tambien_si)"]:::otro
   contadores["contadores de los módulos<br/>(en caché)"]:::otro
+  cabecera["botones de la cabecera<br/>(EnlaceDeCabecera; p. ej. «🌐 Webs»)"]:::otro
   menuLateral["isla «menuLateral»<br/>(plegar, recordar)<br/>[Isla JS]"]:::comp
   htmx["htmx: solo la zona central"]:::otro
   contexto --> registro
   contexto --> permisos
   contexto --> contadores
+  contexto -. "registro.enlaces_de_cabecera" .-> cabecera
   pagina --> contexto
   pagina --> menuLateral
   pagina --> panelAyuda

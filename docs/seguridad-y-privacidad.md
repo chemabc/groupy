@@ -265,6 +265,22 @@ Cada entrada tiene tres partes:
 - **Para el futuro:** quitar metadatos al subir (fotos y PDF), pasar los PDF por un «limpiador» que quite el
   JavaScript, cifrar los ficheros en el disco y una tarea que busque ficheros sueltos.
 
+### 6.6 Portada pública y miniwebs
+- **Qué se hace:**
+  - Sin sesión solo se ve lo marcado «público» y publicado (portadas de la plataforma y de las
+    organizaciones) y sus imágenes; cualquier otra dirección pide entrar. Una página de un grupo nunca
+    puede ser pública (lo impide la base de datos).
+  - Lo publicado es una foto en HTML seguro (sin HTML escrito a mano ni enlaces `javascript:`), y las
+    imágenes se entregan con `nosniff`.
+  - Las miniwebs internas solo las ve el grupo y lo que cuelga de él, quien lo administra y los grupos que
+    han **aceptado** recibirlas (entre organizaciones, nada sin un sí).
+- **Riesgo que queda:**
+  - Lo público lo puede copiar e indexar cualquiera, también los buscadores; retirarlo no lo borra de fuera.
+  - Las imágenes conservan sus metadatos (por ejemplo, el GPS de una foto).
+  - Una página interna puede enlazar a otra web que registre quién llega desde ella.
+- **Para el futuro:** quitar metadatos al subir imágenes, avisar antes de publicar algo público y la lista
+  de lo publicado de cada ámbito para retirarlo rápido (diseño, apartado 15).
+
 ---
 
 ## 7. Borrado y copias

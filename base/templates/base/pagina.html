@@ -20,7 +20,15 @@
             title="Plegar o desplegar el menú" aria-label="Plegar o desplegar el menú"
             x-data @click="$dispatch('alternar-menu')">☰</button>
     <a href="{% url 'base:inicio' %}" class="font-semibold text-marca">Asambleas</a>
-    <a href="{% url 'usuarios:preferencias' %}" class="ml-auto text-xs text-slate-500 hover:text-marca"
+    {# Botones que declaran los módulos (EnlaceDeCabecera; por ejemplo, «🌐 Webs»). Llevan a pantallas con su #}
+    {# propia navegación, así que se abren como página entera (hx-boost="false"). #}
+    <span class="ml-auto flex items-center gap-2">
+      {% for enlace in interfaz.cabecera %}
+        <a href="{{ enlace.url }}" hx-boost="false" data-cabecera="{{ enlace.codigo }}" title="{{ enlace.titulo }}"
+           class="rounded border border-slate-300 px-2 py-0.5 text-xs hover:border-marca hover:text-marca dark:border-slate-700">{{ enlace.icono }} {{ enlace.nombre }}{% if enlace.numero %} <span class="rounded-full bg-marca px-1.5 text-[0.65rem] font-semibold text-white">{{ enlace.numero }}</span>{% endif %}</a>
+      {% endfor %}
+    </span>
+    <a href="{% url 'usuarios:preferencias' %}" class="text-xs text-slate-500 hover:text-marca"
        title="Mi cuenta">{{ interfaz.alias }}</a>
     {# Botón «?» rojo: despliega las subsecciones de la ayuda (y las pestañas de las que tienen varias). #}
     {# Al elegir una, se abre en el panel de la derecha (evento «abrir-ayuda», que escucha panelDeAyuda). #}

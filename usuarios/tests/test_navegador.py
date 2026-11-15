@@ -9,12 +9,15 @@ from base.pruebas_navegador import PruebaEnElNavegador
 class PruebasDeUsuariosEnElNavegador(PruebaEnElNavegador):
     """Entrada, salida y preferencias en Chromium."""
 
-    # Tras entrar (lo hace setUp), la cabecera muestra el alias; «Salir» lleva a la entrada.
+    # Tras entrar (lo hace setUp), la cabecera muestra el alias; «Salir» lleva a la entrada. Sin sesión, la
+    # raíz lleva a la portada pública, y una página cualquiera, a la entrada.
     def test_entrar_y_salir(self):
         self.assertEqual(self.pagina.locator('header a[title="Mi cuenta"]').inner_text(), "Prueba")
         self.pagina.locator("header button", has_text="Salir").click()
         self.pagina.wait_for_url("**/cuenta/entrar/")
         self.abrir("/")
+        self.assertIn("/portada/", self.pagina.url)
+        self.abrir("/cuenta/preferencias/")
         self.assertIn("/cuenta/entrar/", self.pagina.url)
         self.assertEqual(self.errores, [])
 

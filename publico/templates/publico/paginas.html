@@ -1,0 +1,33 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Administrar → Webs → Páginas» (publico/views.py, paginas). Recibe «paginas» (las que gestiona
+  quien mira) y «formulario» (crear otra).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-4">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Las páginas de las webs que administras. Cada página es una pestaña de su web; nadie la ve hasta que la publicas. Las de un grupo las ven el grupo y los que cuelgan de él; las públicas de una organización salen en su portada, sin sesión. <a href="{% url 'publico:webs' %}" class="text-marca hover:underline">Ver las webs</a></p>
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-xs text-slate-500"><th class="py-1">Página</th><th class="py-1">De</th><th class="py-1">Estado</th><th class="py-1">Orden</th></tr></thead>
+      <tbody>
+        {% for p in paginas %}
+          <tr class="border-t border-slate-100 dark:border-slate-800" data-pagina="{{ p.pk }}">
+            <td class="py-1.5"><a href="{% url 'publico:editar' p.pk %}" class="text-marca hover:underline">{{ p.titulo }}</a></td>
+            <td class="py-1.5">{{ p.duena }}</td>
+            <td class="py-1.5">{% if p.publicada %}<span class="rounded bg-emerald-100 px-1.5 text-xs text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Publicada</span>{% else %}<span class="rounded bg-slate-100 px-1.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">Borrador</span>{% endif %}{% if p.publica %} <span class="rounded bg-sky-100 px-1.5 text-xs text-sky-800 dark:bg-sky-950 dark:text-sky-300">Pública</span>{% endif %}</td>
+            <td class="py-1.5">{{ p.orden }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="py-2 text-slate-500">Aún no hay páginas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <form method="post" class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    <h2 class="font-semibold">Nueva página</h2>
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear</button>
+  </form>
+</div>
+{% endblock %}

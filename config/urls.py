@@ -51,6 +51,8 @@ urlpatterns = [
     path("ayuda/", include("ayuda.urls")),
     # Módulo «proximamente»: las herramientas que aún no existen (dicen que están vacías y qué harán).
     path("proximamente/", include("proximamente.urls")),
+    # Módulo «publico»: la portada pública sin sesión (/portada/, /o/<organización>/) y «🌐 Webs» (/webs/…).
+    path("", include("publico.urls")),
     # Módulo «base»: la portada y el escaparate de componentes.
     path("", include("base.urls")),
 ]

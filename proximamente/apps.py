@@ -31,10 +31,6 @@ PENDIENTES = (
         "moderacion", "Moderación", "Avisos sobre contenido y ocultación provisional, en los grupos que administras.",
         "⚔", "#7f1d1d", permiso="grupos.ver_arbol",
     ),
-    Pendiente(
-        "web_publica", "Web pública", "La portada y el banco de recursos públicos de la organización.",
-        "⌂", "#155e75", permiso="audiencias.configurar",
-    ),
 )
 
 # Las mismas, por su clave.

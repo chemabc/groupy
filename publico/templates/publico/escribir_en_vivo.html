@@ -1,0 +1,16 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Escribir» el borrador de una página con el editor en tiempo real (publico/views.py, escribir,
+  cuando hay editor). Recibe «pagina» y «en_vivo» (base.editor.pase). Se guarda solo mientras se escribe;
+  publicar se hace desde la página.
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="flex flex-wrap items-center gap-2 text-sm">
+    <a href="{% url 'publico:editar' pagina.pk %}" class="text-marca hover:underline">← {{ pagina.titulo }}</a>
+    <span class="text-slate-500">· borrador · se guarda solo · Markdown · publicar se hace desde la página</span>
+  </p>
+  {% include "base/_editor.html" %}
+  <p class="text-xs text-slate-500">¿No conecta? <a href="?sin_directo=1" class="text-marca hover:underline">Escribir sin directo</a>.</p>
+</div>
+{% endblock %}

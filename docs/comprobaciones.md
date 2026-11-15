@@ -93,17 +93,18 @@ python manage.py migrate --database=boveda
 > ser al azar) y se pierden las papeletas de los ejemplos. Rehaz los ejemplos (la orden de abajo) aunque la
 > comprobación diga `True True`.
 
-Los ejemplos crecen con cada pieza. Los últimos que se añadieron: el PDF «Plano del solar» y el enlace
-«Carpeta compartida del huerto» en GRU Henares (antes, mensajes en las salas de los grupos de Nutria y una
+Los ejemplos crecen con cada pieza. Los últimos que se añadieron: las webs (portada de la plataforma y de
+ORG Tajo, miniwebs de GRU Henares y GRU Jarama, y GRU Arga publicando para GRU Henares), y antes el PDF
+«Plano del solar» y el enlace «Carpeta compartida del huerto» en GRU Henares (y, antes, mensajes en las salas de los grupos de Nutria y una
 conversación suya, y el proyecto «Huerto comunitario» con dependencias, recursos y etiquetas). Necesita el
 0.3 hecho.
 
 - [ ] **¿Ya está?** Esta orden escribe `True True`:
 
 ```bash
-# Pregunta a la base si están los mensajes de ejemplo de las salas y el PDF de ejemplo
+# Pregunta a la base si están el PDF de ejemplo y las webs de ejemplo
 #     shell -c: ejecuta una línea de Python con Django cargado
-python manage.py shell -c "from django.apps import apps; M=apps.get_model('comunicaciones','MensajeDeGrupo'); D=apps.get_model('documentos','Documento'); print(M.objects.exists(), D.objects.filter(titulo='Plano del solar').exists())"
+python manage.py shell -c "from django.apps import apps; D=apps.get_model('documentos','Documento'); P=apps.get_model('publico','Pagina'); print(D.objects.filter(titulo='Plano del solar').exists(), P.objects.filter(titulo='Taller de bicis').exists())"
 ```
 
   **Si no** (borra y vuelve a crear los ejemplos; no toca al superadmin). Ojo: borra también lo que hayas
@@ -894,4 +895,27 @@ Antes: `python manage.py migrate` (0.3), `npm run construir` (hay clases nuevas:
 - [ ] Con el antivirus en marcha (0.9), sube el fichero de prueba EICAR (un texto que todos los antivirus
   reconocen; búscalo como «EICAR test file», guárdalo como `eicar.txt`): dice que ha encontrado un virus y
   no lo guarda.
+
+## 43. Portada pública y miniwebs
+
+Antes: `python manage.py migrate` (0.3), `npm run construir` (0.2) y rehacer los ejemplos (0.4).
+- [ ] **Sin sesión** (ventana privada), abre http://localhost:8000/: va a la **portada**, con las pestañas
+  «Bienvenida» y «Cómo participar», «Entrar» a la derecha y, abajo, «ORG Tajo». Pulsa ORG Tajo: su portada
+  con «Quiénes somos». La página interna «Normas de convivencia» no sale.
+- [ ] Como **Nutria**, arriba sale el botón **«🌐 Webs»** (con un número: las novedades). Al pulsarlo se abre
+  la web de GRU Henares **sin el menú de la izquierda**: «Calendario de la huerta». Arriba, el camino «ORG
+  Tajo › GRU Tajo › GRU Jarama › GRU Henares»; GRU Jarama tiene su página «Asambleas de zona».
+- [ ] **Grupos de actividad ▾**: GRU Arga (de ORG Ebro), con «Taller de bicis» (publica para GRU Henares).
+- [ ] «Novedades» (el número del botón vuelve a cero), «Buscar» (prueba «habas») y **«Jerarquía»**: el grafo
+  con ORG Tajo en su caja y GRU Arga aparte, con una flecha de puntos «publica para». Pulsa un grupo.
+- [ ] Como **Garza** (GRU Sorbe, debajo de GRU Henares) también ve «Calendario de la huerta». Como **Tejón**
+  (GRU Manzanares) no la ve: su camino va por GRU Jarama, y GRU Henares no sale.
+- [ ] Como **Lince**, «Administrar → Webs → Páginas»: crea una página en GRU Henares, «Escribir» (en directo si
+  el editor está en marcha), sube una imagen y pon en el texto lo que sale al lado («Copiar»). Nadie la ve
+  hasta «Publicar»; al publicar, Nutria recibe una notificación. Cambia el borrador: lo publicado no cambia
+  hasta «Volver a publicar». «Retirar» la quita.
+- [ ] Como **Lince**, «Administrar → Webs → Publicación y consumo»: sale la relación de GRU Arga, aceptada.
+  «Cortar» y, como Nutria, el tramo «Grupos de actividad» desaparece. Como **Zorro**, propón otra vez para
+  GRU Henares: Lince recibe un aviso y la acepta.
+- [ ] Como **superadmin**, crea una página de «Portada de la plataforma»: sale en la portada sin sesión.
 

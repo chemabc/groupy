@@ -1,0 +1,40 @@
+{% comment %}
+  Portada pública (publico/views.py, portada y portada_de_organizacion): se ve sin sesión. Arriba, el nombre
+  (de la plataforma o de la organización), las pestañas con sus páginas y, a la derecha, «Entrar»; en medio,
+  la página elegida (HTML ya publicado y seguro). En la de la plataforma, abajo, las organizaciones que
+  tienen portada. Recibe «nombre», «pestanas» ({titulo, url, activa}), «pagina» (o nada), «organizaciones»
+  y «volver» (la portada de la plataforma).
+{% endcomment %}{% include "base/cabeza.html" %}
+<body class="min-h-full bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+  <header class="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2">
+      <a href="{{ volver }}" class="font-semibold text-marca">{{ nombre }}</a>
+      <nav class="flex flex-wrap gap-1 text-sm" aria-label="Secciones de la portada">
+        {% for p in pestanas %}
+          <a href="{{ p.url }}" class="rounded px-2 py-1 {% if p.activa %}bg-marca/10 font-semibold text-marca{% else %}text-slate-600 hover:text-marca dark:text-slate-300{% endif %}"{% if p.activa %} aria-current="page"{% endif %}>{{ p.titulo }}</a>
+        {% endfor %}
+      </nav>
+      {% if interfaz.conectado %}
+        <a href="{% url 'base:inicio' %}" class="ml-auto rounded bg-marca px-3 py-1 text-sm font-medium text-white">Ir a la plataforma</a>
+      {% else %}
+        <a href="{% url 'usuarios:entrar' %}" class="ml-auto rounded bg-marca px-3 py-1 text-sm font-medium text-white">Entrar</a>
+      {% endif %}
+    </div>
+  </header>
+  <main class="mx-auto max-w-5xl space-y-6 px-4 py-6">
+    {% if pagina %}
+      <article class="documento rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">{{ pagina.html|safe }}</article>
+    {% else %}
+      <p class="rounded-lg border border-slate-200 bg-white p-6 text-slate-500 dark:border-slate-800 dark:bg-slate-900">Aún no hay nada publicado aquí.</p>
+    {% endif %}
+    {% if organizaciones %}
+      <section aria-label="Organizaciones">
+        <h2 class="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-500">Organizaciones</h2>
+        <ul class="flex flex-wrap gap-2">
+          {% for o in organizaciones %}<li><a href="{% url 'publico:portada_de_organizacion' o.pk %}" class="block rounded-lg border border-slate-200 bg-white px-3 py-2 hover:border-marca hover:text-marca dark:border-slate-800 dark:bg-slate-900">{{ o.nombre }}</a></li>{% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>

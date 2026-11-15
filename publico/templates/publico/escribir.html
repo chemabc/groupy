@@ -1,0 +1,23 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Escribir» el borrador de una página sin el editor en tiempo real (publico/views.py, escribir).
+  Recibe «pagina», «texto», «version», «vista» (el texto convertido) y «error». La vista previa se pone al
+  día mientras se escribe (htmx, medio segundo después de la última tecla).
+{% endcomment %}
+{% block contenido %}
+<form method="post" class="space-y-3">
+  {% csrf_token %}<input type="hidden" name="version" value="{{ version }}">
+  <p class="flex flex-wrap items-center gap-2 text-sm">
+    <a href="{% url 'publico:editar' pagina.pk %}" class="text-marca hover:underline">← {{ pagina.titulo }}</a>
+    <span class="text-slate-500">· borrador · Markdown: «## Título», «- punto», «**negrita**», «[enlace](dirección)», «![imagen](dirección)»</span>
+  </p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <div class="grid gap-3 lg:grid-cols-2">
+    <textarea name="texto" rows="24" aria-label="Texto" spellcheck="true"
+              hx-post="{% url 'publico:vista_previa' %}" hx-trigger="input changed delay:500ms" hx-target="#vista-previa" hx-swap="outerHTML"
+              class="w-full rounded border border-slate-300 bg-white p-2 font-mono text-sm dark:border-slate-700 dark:bg-slate-900">{{ texto }}</textarea>
+    {% include "publico/_vista_previa.html" %}
+  </div>
+  <p><button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar el borrador</button> <span class="text-xs text-slate-500">Guardar no publica: publica desde la página.</span></p>
+</form>
+{% endblock %}

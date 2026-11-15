@@ -184,6 +184,28 @@ class FechaDeCalendario:
 
 
 @dataclass(frozen=True)
+class EnlaceDeCabecera:
+    """
+    Un botón de la cabecera de arriba (junto al alias), fuera del menú de la izquierda: por ejemplo, «🌐
+    Webs», que abre las miniwebs de los grupos con su propia navegación. La cabecera lo pinta para quien
+    tiene sesión, con su número si lo lleva, sin conocer el módulo que lo declara.
+    """
+
+    # Código único, empezando por la etiqueta del módulo. Ejemplo: «publico.webs».
+    codigo: str
+    # Texto del botón: «Webs».
+    nombre: str
+    # Nombre de la dirección web a la que lleva. Ejemplo: «publico:webs».
+    url: str
+    # Icono que va delante: «🌐».
+    icono: str = ""
+    # Explicación al pasar el ratón.
+    titulo: str = ""
+    # Ruta de la función que da su número (recibe el usuario; 0 o None: sin número). Debe ser barata (caché).
+    contador: str = ""
+
+
+@dataclass(frozen=True)
 class TarjetaDeInicio:
     """
     Un recuadro que el módulo aporta a la portada, «Inicio» (el panel o «Mis datos»): un resumen de lo
@@ -625,6 +647,8 @@ class ModuloConfig(AppConfig):
     fuentes_de_calendario: tuple[FuenteDeCalendario, ...] = ()
     # Sus recuadros de la portada («Inicio → Panel» y «Mis datos»).
     tarjetas_de_inicio: tuple[TarjetaDeInicio, ...] = ()
+    # Sus botones de la cabecera de arriba (fuera del menú de la izquierda).
+    enlaces_de_cabecera: tuple[EnlaceDeCabecera, ...] = ()
     # Lo suyo que puede colgar de elementos de otros módulos (sale en sus fichas, «Cuelga de aquí»).
     colgantes: tuple[Colgante, ...] = ()
     # Los textos que se escriben en el editor colaborativo en tiempo real.
