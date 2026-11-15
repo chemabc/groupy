@@ -519,7 +519,7 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor 
 - [ ] «Configuración de mi cuenta», con submenús a la izquierda: Usabilidad, Mis datos (pestañas: Datos
   (vacía) · Talentos · Lugar), Avisos que recibo, Contraseña y Archivo (pestañas: Archivados · Borrados).
 - [ ] Como **Lince** (admin de GRU Henares y de ORG Tajo): debajo sale el bloque «ADMINISTRAR», con su título
-  y una franja ámbar: Grupos que administro (Árbol · Miembros (vacía) · Invitaciones entre grupos), Buzón de la
+  y una franja ámbar: Grupos que administro (Árbol · Miembros · Invitaciones entre grupos), Buzón de la
   administración (Conversaciones que atiendo · Avisar), Por aprobar, Eventos y talentos (Eventos de mis grupos
   · Pedir talentos), Moderación (vacía) y Mi organización (Datos · Visibilidad · Tipologías ·
   Etiquetas · Apoyos y plazos · Lugares · Web pública (vacía)).
@@ -810,4 +810,22 @@ No necesita nada especial (sin tablas nuevas).
 - [ ] En la ficha de un evento de su grupo que convocó otra persona, Lince ve «Editar» y «Cancelar» y ve
   cuántos van, pero **no quiénes**. Cancélalo: pasa a «Cancelados».
 - [ ] Como Nutria (no administra nada), «Administrar» no sale y `/eventos/administrados/` da «No puedes».
+
+## 40. Miembros de los grupos que administro e inactividad
+
+Antes: `python manage.py migrate` (tabla `LimiteDeInactividad` y campo `ultima_actividad` del usuario; ver 0.3).
+- [ ] Como **Lince** (admin de GRU Henares), «Administrar → Grupos que administro → Miembros»: una fila por
+  persona y grupo, de GRU Henares y sus subgrupos. Las filas de un grupo que no es la asamblea base de esa
+  persona salen **más tenues**. Filtra por grupo, rol, asamblea base o actividad.
+- [ ] En una fila de GRU Henares: cambia el rol («Cambiar») y saca a alguien («Sacar», con confirmación).
+  Arriba sale lo que ha pasado. Las filas de los subgrupos no tienen controles (el permiso de admitir es del
+  propio grupo).
+- [ ] **En bloque:** marca dos filas, elige «Sacar del grupo» y «Aplicar a las marcadas». Como admin de grupo
+  no sale «Cambiar el rol a Admin del grupo»; como admin de la organización, sí.
+- [ ] «+ Admitir a una persona»: elige grupo, alias y rol.
+- [ ] **Inactividad:** en la trastienda (o con `python manage.py shell`), pon a una persona
+  `ultima_actividad` de hace 45 días: en «Miembros» sale «Sin actividad (más de 30 días)». No se ve el día.
+- [ ] «Administrar → Mi organización → Inactividad»: como superadmin, «Toda la plataforma» con los días y el
+  mínimo. Como Lince, su grupo: no deja bajar del mínimo ni subir de los días de la plataforma. «Quitar»
+  vuelve a lo de arriba.
 

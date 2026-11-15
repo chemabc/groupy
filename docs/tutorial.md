@@ -845,3 +845,18 @@ sirve aquí y dónde se usa.
   dentro de la propia sala. Así se reparten a todo el mundo como cualquier cambio del texto, y solo los
   cambia quien puede escribir, sin código de más.
 
+## 38. Controles dentro de una tabla, capas por petición y plazos que solo bajan (15 de noviembre de 2026)
+
+- **Un formulario no puede ir dentro de otro.** La tabla filtrable ya tiene su formulario (el buscador). Para
+  poner casillas y botones en sus filas, cada control lleva `form="miembros-acciones"`: pertenece a ese
+  formulario aunque esté en otro sitio de la página. El botón pulsado manda su `name` y su `value`
+  («accion=sacar:12»), y así un solo formulario sirve para todas las filas y para «Aplicar a las marcadas».
+- **Celdas con plantilla propia.** `Columna(..., plantilla="…html")` pinta la celda con esa plantilla y le
+  pasa la fila entera; el texto de la celda se sigue usando para buscar, filtrar y ordenar.
+- **Una capa (middleware) que pasa por cada petición.** `ApuntarActividad` mira si hoy ya consta el día de
+  la persona; si no, lo apunta con un `update` (sin `save`, que tocaría todos los campos). Así cuesta una
+  consulta al día por persona, no una por página.
+- **Un plazo que solo se puede bajar.** Cada nivel guarda su número y se toma el menor; después se aplica el
+  mínimo: `max(min(candidatos), minimo)`. El formulario comprueba además que nadie suba por encima del de la
+  plataforma.
+

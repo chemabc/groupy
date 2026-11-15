@@ -22,8 +22,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from base.registro import registro
 from base.tablas import Columna, Filtro, FuenteDeLista, Tabla
-from permisos.servicios import SinPermiso, exigir, explicar_falta, permisos_de, puede
+from permisos.servicios import SinPermiso, exigir, explicar_falta, organizaciones_con, permisos_de, puede
 
+from . import inactividad as modulo_de_inactividad
 from . import servicios
 from .acceso import alcance_de, grupos_visibles, ve_miembros
 from .arboles import arboles_de, nombres_de_roles_de_grupo
@@ -32,6 +33,7 @@ from .formularios import (
     FormularioDeAdmision,
     FormularioDeAlias,
     FormularioDeGrupo,
+    FormularioDeInactividad,
     FormularioDeOrganizacion,
     FormularioDeOrganizacionNueva,
     FormularioDeRelacion,
@@ -483,3 +485,40 @@ def mis_organizaciones(request):
             raise SinPermiso(explicar_falta("grupos.editar_organizacion"))
         consulta = consulta.filter(pk__in=ids)
     return render(request, "grupos/mis_organizaciones.html", {"organizaciones": list(consulta)})
+
+
+# Pantalla «Administrar → Mi organización → Inactividad»: cuántos días sin usar la plataforma hacen que
+# alguien salga «sin actividad» en «Miembros». El superadmin pone el de toda la plataforma y el mínimo (de
+# partida, 30 días los dos); el admin de cada organización y el de cada grupo solo pueden bajarlo, sin pasar
+# del mínimo. Vale el más corto (grupos/inactividad.py).
+#   - GET «nivel»: «» (la plataforma, solo el superadmin), «o<número>» (una organización) o «g<número>» (un grupo).
+#   - POST: los campos de FormularioDeInactividad, o «accion» = «quitar» (vuelve a lo de arriba).
+def inactividad(request):
+    usuario = request.user
+    organizaciones = list(organizaciones_con(usuario, "grupos.limitar_inactividad"))
+    ids = _grupos_con_permiso(usuario, "grupos.limitar_inactividad")
+    grupos = modulo_de_inactividad.caminos(ids) if ids is None or ids else []
+    if not organizaciones and not grupos and not usuario.is_superuser:
+        raise SinPermiso(explicar_falta("grupos.limitar_inactividad"))
+    niveles = [("", "Toda la plataforma")] if usuario.is_superuser else []
+    niveles += [(f"o{o.pk}", f"Organización: {o.nombre}") for o in organizaciones]
+    niveles += [(f"g{numero}", f"Grupo: {nombre}") for numero, nombre in grupos]
+    elegido = request.GET.get("nivel", niveles[0][0])
+    if elegido not in dict(niveles):
+        raise SinPermiso(explicar_falta("grupos.limitar_inactividad"))
+    numero = int(elegido[1:]) if elegido else None
+    fila = modulo_de_inactividad.fila_de(organizacion_id=numero if elegido.startswith("o") else None, grupo_id=numero if elegido.startswith("g") else None)
+    de_partida = modulo_de_inactividad.de_partida(modulo_de_inactividad.de_la_plataforma())
+    if request.method == "POST" and request.POST.get("accion") == "quitar":
+        if fila.pk and elegido:
+            fila.delete()
+        return redirect(f"{request.path}?nivel={elegido}")
+    formulario = FormularioDeInactividad(request.POST or None, instance=fila, de_partida=de_partida)
+    if request.method == "POST" and formulario.is_valid():
+        formulario.save()
+        return redirect(f"{request.path}?nivel={elegido}")
+    vale = None
+    if elegido.startswith("g"):
+        vale = modulo_de_inactividad.dias_por_grupo([Grupo.objects.get(pk=numero)])[numero]
+    contexto = {"formulario": formulario, "niveles": niveles, "elegido": elegido, "de_partida": de_partida, "propia": bool(fila.pk), "vale": vale}
+    return render(request, "grupos/inactividad.html", contexto)

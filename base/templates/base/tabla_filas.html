@@ -4,11 +4,13 @@
   sustituyen al anterior. Recibe «tabla».
 
   Cada fila lleva en data-texto su texto de búsqueda normalizado y en data-filtro-<campo> sus categorías,
-  y cada celda en data-valor el valor con el que se ordena: los usa tablaLocal (interfaz.js).
+  y cada celda en data-valor el valor con el que se ordena: los usa tablaLocal (interfaz.js). Una celda con
+  plantilla propia (Columna.plantilla) se pinta con ella y recibe la fila entera («fila»); la fila lleva las
+  clases de su campo «_clase».
 {% endcomment %}
 {% for fila in tabla.filas_pintadas %}
-  <tr class="border-t border-slate-200 dark:border-slate-800" data-texto="{{ fila.texto }}"{% for campo, valor in fila.categorias %} data-filtro-{{ campo }}="{{ valor }}"{% endfor %}>
-    {% for celda in fila.celdas %}<td class="px-3 py-1.5" data-valor="{{ celda.valor }}">{% if celda.enlace %}<a href="{{ celda.enlace }}" class="text-marca hover:underline">{{ celda.texto }}</a>{% else %}{{ celda.texto }}{% endif %}</td>{% endfor %}
+  <tr class="border-t border-slate-200 dark:border-slate-800 {{ fila.clase }}" data-texto="{{ fila.texto }}"{% for campo, valor in fila.categorias %} data-filtro-{{ campo }}="{{ valor }}"{% endfor %}>
+    {% for celda in fila.celdas %}<td class="px-3 py-1.5" data-valor="{{ celda.valor }}">{% if celda.plantilla %}{% include celda.plantilla with fila=fila.datos %}{% elif celda.enlace %}<a href="{{ celda.enlace }}" class="text-marca hover:underline">{{ celda.texto }}</a>{% else %}{{ celda.texto }}{% endif %}</td>{% endfor %}
   </tr>
 {% empty %}
   <tr><td colspan="{{ tabla.columnas|length }}" class="px-3 py-4 text-center text-slate-500">Ninguna fila coincide con el filtro.</td></tr>

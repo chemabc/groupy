@@ -89,6 +89,10 @@ class Columna:
     # Nombre de la ruta de la ficha de cada fila («administracion:persona»). Si lo hay, el texto de la
     # celda es un enlace a esa ficha, con la clave de la fila (pk) como parámetro.
     enlace: str = ""
+    # Plantilla con la que se pinta la celda en lugar de su texto (para poner controles: una casilla, un
+    # desplegable, un botón…). Recibe «fila» (la fila entera, como diccionario) y «celda». El texto se sigue
+    # usando para buscar, filtrar y ordenar. Vacío: se pinta el texto.
+    plantilla: str = ""
 
 
 @dataclass(frozen=True)
@@ -207,6 +211,8 @@ class Celda:
     valor: str
     # Dirección a la que lleva la celda, si es un enlace (ver Columna.enlace).
     enlace: str = ""
+    # Plantilla con la que se pinta (ver Columna.plantilla).
+    plantilla: str = ""
 
 
 @dataclass
@@ -220,6 +226,10 @@ class FilaPintada:
     texto: str
     # Pares (campo, valor) de los filtros de categoría, para filtrar en el navegador.
     categorias: list
+    # La fila tal cual (para las celdas con plantilla propia).
+    datos: object = None
+    # Clases de CSS de la fila (de su campo «_clase», si lo tiene): por ejemplo, para pintarla más tenue.
+    clase: str = ""
 
 
 class Tabla:
@@ -325,11 +335,14 @@ class Tabla:
             for celda, columna in zip(celdas, self.columnas):
                 if columna.enlace:
                     celda.enlace = reverse(columna.enlace, args=[self.fuente.valor(fila, "pk")])
+                celda.plantilla = columna.plantilla
             pintadas.append(
                 FilaPintada(
                     celdas=celdas,
                     texto=normalizar(" ".join(str(self.fuente.valor(fila, campo)) for campo in self.fuente.campos_de_busqueda)),
                     categorias=[(filtro.campo, str(self.fuente.valor(fila, filtro.campo))) for filtro in self.filtros],
+                    datos=fila,
+                    clase=fila.get("_clase", "") if isinstance(fila, dict) else "",
                 )
             )
         return pintadas

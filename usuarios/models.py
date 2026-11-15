@@ -140,6 +140,16 @@ class Usuario(AbstractBaseUser):
             "(registro real, fase 8). Nunca dice qué persona hay detrás."
         ),
     )
+    ultima_actividad = models.DateField(
+        "último día con actividad",
+        null=True,
+        blank=True,
+        help_text=(
+            "Último día en que usó la plataforma (solo el día, nunca la hora; se apunta una vez al día). Nadie lo "
+            "ve: solo sirve para marcar «sin actividad» en la lista de miembros de la administración cuando pasa "
+            "más tiempo del que dicen los ajustes de inactividad."
+        ),
+    )
     activado_el = models.DateField(
         "activado el día",
         default=timezone.localdate,

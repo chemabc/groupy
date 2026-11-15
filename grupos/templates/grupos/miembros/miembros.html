@@ -1,0 +1,43 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Administrar → Grupos que administro → Miembros» (grupos/miembros.py). Recibe «tabla» (una fila
+  por pertenencia; las que no son la asamblea base de la persona, más tenues), «hay», «aviso» (lo que acaba
+  de pasar), «operaciones» (las de las acciones en bloque), «admision» (formulario para admitir) y
+  «puede_admitir».
+
+  Los controles de la tabla (casillas, roles, «Sacar») van con form="miembros-acciones": el formulario de
+  abajo los envía todos, aunque estén dentro de la tabla (que tiene su propio formulario de búsqueda).
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="max-w-3xl text-sm text-slate-600 dark:text-slate-300">Las personas de los grupos que administras y de sus subgrupos: una fila por cada grupo en el que está. Las filas más tenues son de grupos que no son su asamblea base. «Sin actividad» sale cuando alguien lleva más tiempo sin usar la plataforma del que dicen los ajustes de inactividad (no se ve cuándo entró).</p>
+  {% if aviso %}<p class="rounded border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" role="status">{{ aviso }}</p>{% endif %}
+
+  <form id="miembros-acciones" method="post" class="flex flex-wrap items-center gap-2 text-sm">
+    {% csrf_token %}
+    <label for="operacion">Con las filas marcadas:</label>
+    <select id="operacion" name="operacion" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+      {% for valor, nombre in operaciones %}<option value="{{ valor }}">{{ nombre }}</option>{% endfor %}
+    </select>
+    <button type="submit" name="accion" value="en_bloque" onclick="return confirm('¿Aplicarlo a todas las filas marcadas?')"
+            class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Aplicar a las marcadas</button>
+  </form>
+
+  {% if hay %}
+    {% include "base/tabla.html" %}
+  {% else %}
+    <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">Tus grupos aún no tienen miembros.</p>
+  {% endif %}
+
+  {% if puede_admitir %}
+    <details class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" {% if admision.errors %}open{% endif %}>
+      <summary class="cursor-pointer text-sm font-medium text-marca">+ Admitir a una persona</summary>
+      <form method="post" class="mt-2 max-w-xl">
+        {% csrf_token %}<input type="hidden" name="accion" value="admitir">
+        {{ admision }}
+        <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Admitir</button>
+      </form>
+    </details>
+  {% endif %}
+</div>
+{% endblock %}

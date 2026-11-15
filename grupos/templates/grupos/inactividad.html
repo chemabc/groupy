@@ -1,0 +1,27 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Administrar → Mi organización → Inactividad» (grupos/views.py, inactividad). Recibe «formulario»
+  (el plazo del nivel elegido), «niveles» (pares clave y nombre: «» la plataforma, «o12» una organización,
+  «g34» un grupo), «elegido», «de_partida» (días y mínimo de la plataforma), «propia» (si el nivel tiene su
+  propio plazo) y «vale» (el que vale en el grupo elegido, juntando niveles).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">Cuántos días sin usar la plataforma hacen que una persona salga «Sin actividad» en «Miembros». El superadmin pone el plazo de toda la plataforma y el mínimo; cada organización y cada grupo (vale también en sus subgrupos) solo pueden bajarlo, sin pasar del mínimo. Vale el más corto. Nadie ve cuándo entró cada persona: solo esa marca.</p>
+  <form method="get" class="flex items-center gap-2 text-sm">
+    <label for="nivel">Plazo de</label>
+    <select id="nivel" name="nivel" onchange="this.form.requestSubmit()" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+      {% for clave, nombre in niveles %}<option value="{{ clave }}" {% if clave == elegido %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+    </select>
+  </form>
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <div class="flex gap-2">
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
+      {% if propia and elegido %}<button type="submit" name="accion" value="quitar" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">Quitar (vale el de arriba)</button>{% endif %}
+    </div>
+  </form>
+  <p class="text-xs text-slate-500">Toda la plataforma: {{ de_partida.0 }} días; mínimo: {{ de_partida.1 }} días.{% if vale %} En este grupo vale ahora: {{ vale }} días.{% endif %}</p>
+</div>
+{% endblock %}

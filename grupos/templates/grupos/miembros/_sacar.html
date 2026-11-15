@@ -1,0 +1,4 @@
+{% comment %}Última celda de «Miembros» (grupos/miembros.py): «Sacar», con confirmación, si se puede. Recibe «fila».{% endcomment %}
+{% if fila.gestiona %}<button type="submit" form="miembros-acciones" name="accion" value="sacar:{{ fila.pk }}"
+        onclick="return confirm('¿Sacar a {{ fila.alias|escapejs }} de {{ fila.grupo|escapejs }}?')"
+        class="rounded border border-red-300 px-2 py-0.5 text-xs text-red-700 dark:border-red-800 dark:text-red-300">Sacar</button>{% endif %}

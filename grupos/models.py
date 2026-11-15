@@ -519,3 +519,41 @@ class InvitacionDeGrupo(models.Model):
             "ancla_id": self.ancla_id,
             "grupo_invitado_id": self.grupo_invitado_id,
         }
+
+
+class LimiteDeInactividad(models.Model):
+    """
+    Cuánto tiempo sin usar la plataforma hace que una persona salga marcada «sin actividad» en la lista de
+    miembros de la administración (petición de la persona usuaria, 15 de noviembre de 2026). Va en cascada
+    y vale el más corto: el de la plataforma (el superadmin, que pone también el mínimo), el de cada
+    organización (su admin) y el de cada grupo (su admin; vale también en sus subgrupos). Por debajo del
+    mínimo no se puede bajar, y nadie más que el superadmin puede subirlo por encima del de la plataforma.
+    Cada fila es de un solo nivel; la de la plataforma no tiene ninguno.
+    """
+
+    organizacion = models.ForeignKey(
+        Organizacion, on_delete=models.CASCADE, null=True, blank=True, related_name="+",
+        verbose_name="organización", help_text="Si es de una organización: cuál.",
+    )
+    grupo = models.ForeignKey(
+        Grupo, on_delete=models.CASCADE, null=True, blank=True, related_name="+",
+        verbose_name="grupo", help_text="Si es de un grupo (y sus subgrupos): cuál.",
+    )
+    dias = models.PositiveSmallIntegerField(
+        "días sin actividad", help_text="Pasados estos días sin usar la plataforma, la persona sale marcada «sin actividad».",
+    )
+    minimo = models.PositiveSmallIntegerField(
+        "mínimo de días", null=True, blank=True,
+        help_text="Solo en la fila de la plataforma: por debajo de esto no lo puede bajar nadie.",
+    )
+
+    class Meta:
+        verbose_name = "límite de inactividad"
+        verbose_name_plural = "límites de inactividad"
+        constraints = [
+            models.UniqueConstraint(fields=["organizacion", "grupo"], nulls_distinct=False, name="limite_de_inactividad_por_nivel"),
+        ]
+
+    # Texto con el que se muestra: de quién es y cuántos días.
+    def __str__(self):
+        return f"Inactividad de {self.grupo or self.organizacion or 'la plataforma'}: {self.dias} días"

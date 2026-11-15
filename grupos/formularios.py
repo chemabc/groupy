@@ -6,6 +6,8 @@ con ello está en grupos/servicios.py, y quién puede hacerlo lo decide la vista
 from django import forms
 from django.contrib.auth import get_user_model
 
+from .models import LimiteDeInactividad
+
 
 class FormularioDeGrupo(forms.Form):
     """Datos de un grupo: nombre, descripción, ámbito y, a veces, el grupo padre."""
@@ -102,3 +104,61 @@ class FormularioDeRelacion(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["origen"].choices = origenes
         self.fields["destino"].choices = destinos
+
+
+class FormularioDeInactividad(forms.ModelForm):
+    """
+    Cuántos días sin usar la plataforma hacen que una persona salga «sin actividad», en un nivel (plataforma,
+    organización o grupo). En la plataforma se pone además el mínimo; en los demás niveles solo se puede
+    bajar el de la plataforma, sin pasar del mínimo.
+    """
+
+    class Meta:
+        model = LimiteDeInactividad
+        fields = ["dias", "minimo"]
+
+    # Prepara el formulario. Fuera de la plataforma no sale el mínimo.
+    #   - de_partida: (días, mínimo) de la plataforma.
+    def __init__(self, *args, de_partida, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.de_partida = de_partida
+        self.es_plataforma = not (self.instance.organizacion_id or self.instance.grupo_id)
+        if self.es_plataforma:
+            self.fields["minimo"].required = True
+            self.fields["minimo"].initial = de_partida[1]
+            self.fields["dias"].initial = de_partida[0]
+        else:
+            del self.fields["minimo"]
+            self.fields["dias"].help_text = f"Entre {de_partida[1]} (el mínimo) y {de_partida[0]} (el de toda la plataforma)."
+
+    # Comprueba los límites: en la plataforma, el mínimo no pasa de los días; en los demás niveles, los días
+    # quedan entre el mínimo y los de la plataforma.
+    def clean(self):
+        datos = super().clean()
+        dias = datos.get("dias")
+        if dias is None:
+            return datos
+        if self.es_plataforma:
+            if datos.get("minimo") is not None and datos["minimo"] > dias:
+                self.add_error("minimo", "El mínimo no puede ser mayor que los días de partida.")
+        else:
+            por_defecto, minimo = self.de_partida
+            if dias < minimo:
+                self.add_error("dias", f"No puede bajar del mínimo de la plataforma: {minimo} días.")
+            elif dias > por_defecto:
+                self.add_error("dias", f"Solo se puede bajar: como mucho, {por_defecto} días (el de toda la plataforma).")
+        return datos
+
+
+class FormularioDeAdmisionEnGrupo(FormularioDeAdmision):
+    """Admitir a una persona en uno de los grupos que se administran (pantalla «Miembros»): grupo, alias y rol."""
+
+    grupo = forms.TypedChoiceField(label="Grupo", coerce=int, help_text="Uno de los grupos donde puedes admitir.")
+
+    # Prepara los desplegables de grupo y de rol.
+    #   - grupos: pares (id, «ORG › camino»).
+    #   - roles: pares (código, nombre).
+    def __init__(self, *args, grupos, roles, **kwargs):
+        super().__init__(*args, roles=roles, **kwargs)
+        self.fields["grupo"].choices = grupos
+        self.order_fields(["grupo", "alias", "rol"])

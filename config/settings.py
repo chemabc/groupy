@@ -127,6 +127,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # Nada se ve sin iniciar sesión, salvo la pantalla de entrada (ver usuarios/middleware.py).
     "usuarios.middleware.EntradaObligatoria",
+    # Apunta el día en que cada persona usa la plataforma, una vez al día (ver usuarios/middleware.py).
+    "usuarios.middleware.ApuntarActividad",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Avisa al navegador de que una misma dirección puede devolver la página entera o solo su zona

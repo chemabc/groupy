@@ -1226,6 +1226,31 @@ Un solo componente dibuja los grupos en árbol en todas las pantallas, para que 
   - *Descartado:* una librería de grafos interactivos (Cytoscape, vis-network…): más peso para lo mismo.
     Si hace falta mover nodos a mano o filtrar, se reconsidera.
 
+### 8.1.1 Miembros de los grupos que administro (15 de noviembre de 2026, [A-55], respuestas de la persona usuaria)
+
+- **«Administrar → Grupos que administro → Miembros»** (`grupos/miembros.py`): las personas de los grupos que
+  administro y de sus subgrupos (todas, el superadmin), en la tabla filtrable común, **una fila por
+  pertenencia** (persona y grupo): rol, asamblea base, desde cuándo y actividad. **Las filas de un grupo que
+  no es la asamblea base de la persona salen más tenues** (petición de la persona usuaria).
+  *Descartado:* una fila por persona (el rol es de cada grupo y se filtra peor).
+- **Se gestiona desde aquí** (lo mismo que en la ficha de cada grupo, pero junto): cambiar el rol y sacar
+  en cada fila, **y en bloque** marcando varias filas (con confirmación); arriba, admitir eligiendo grupo.
+  Mismos permisos que en la ficha: `grupos.admitir` en ese grupo; hacer o deshacer admins,
+  `grupos.nombrar_admin_grupo`. Las filas que no se pueden tocar salen sin controles.
+  - Decidido sin preguntar (reversible): **el admin de un grupo no gestiona a la gente de sus subgrupos**
+    (la ve, pero el permiso de admitir sigue siendo de su grupo, como hasta ahora); el admin de la
+    organización, sí, en todos sus grupos.
+- **Inactividad** (petición de la persona usuaria): de partida no se enseña ningún dato de actividad, pero
+  quien lleva más de un plazo sin usar la plataforma sale marcado **«Sin actividad (más de N días)»**.
+  - El plazo va en cascada (`LimiteDeInactividad`, «Administrar → Mi organización → Inactividad»): el
+    superadmin pone el de toda la plataforma y el **mínimo** (de partida, **30 días los dos**); el admin de
+    cada organización y el de cada grupo (vale en sus subgrupos) **solo pueden bajarlo, sin pasar del
+    mínimo**. Vale el más corto (`grupos/inactividad.py`).
+  - «Actividad» es usar la plataforma: `Usuario.ultima_actividad` guarda **solo el día**, una vez al día
+    (`usuarios.middleware.ApuntarActividad`). Nadie ve ese día: solo la marca. Ver «Seguridad y
+    privacidad», 3.3.
+  - *Descartado:* enseñar el día de la última entrada (es un dato de vigilancia).
+
 ### 8.2 Lugares
 
 - El superadmin sube listas desde Excel en dos pasos (vista previa → confirmar). Mapa con chinchetas

@@ -111,6 +111,8 @@ class PruebasDeMiCuenta(PruebaDePantalla):
 
     # Guardar una preferencia cuesta una consulta más (la actualización) y queda en la cuenta.
     def test_guardar_preferencia(self):
+        # Antes, una visita: la primera petición del día apunta además la actividad (usuarios/middleware.py).
+        self.client.get("/cuenta/preferencias/")
         with self.assertNumQueries(2):
             respuesta = self.client.post("/cuenta/preferencias/guardar/", {"clave": "tema", "valor": "oscuro"})
         self.assertEqual(respuesta.status_code, 204)

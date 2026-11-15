@@ -137,6 +137,13 @@ eventos», «Mi papel» dice si lo convocaste o si vas.
 apoyos» ves las reuniones que aún no los tienen y cuántos llevan. Desde la ficha de cada evento puedes
 editarlo o cancelarlo.
 
+### Gestionar a la gente de los grupos que administro
+
+«Administrar → Grupos que administro → Miembros»: una fila por persona y grupo (las de un grupo que no es su
+asamblea base, más tenues). En cada fila cambias el rol o la sacas del grupo. Para varias a la vez, márcalas,
+elige arriba qué hacer y «Aplicar a las marcadas». «+ Admitir a una persona», al final. «Sin actividad» sale
+cuando alguien lleva tiempo sin entrar; el plazo se baja en «Administrar → Mi organización → Inactividad».
+
 ### Decir si voy a ir
 
 Abre el evento (desde «Calendario y eventos → Eventos de mis grupos» o desde el calendario) y responde **¿Vas a ir?**. Cuántas

@@ -1,0 +1,10 @@
+{% comment %}Celda «Rol» de «Miembros» (grupos/miembros.py): el desplegable y «Cambiar», si se puede; si no, el nombre. Recibe «fila».{% endcomment %}
+{% if fila.gestiona %}
+  <span class="flex items-center gap-1">
+    <select name="rol-{{ fila.pk }}" form="miembros-acciones" aria-label="Rol de {{ fila.alias }} en {{ fila.grupo }}"
+            class="rounded border border-slate-300 bg-white px-1 py-0.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+      {% for codigo, nombre in fila.roles %}<option value="{{ codigo }}" {% if codigo == fila.codigo_del_rol %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+    </select>
+    <button type="submit" form="miembros-acciones" name="accion" value="rol:{{ fila.pk }}" class="rounded border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700">Cambiar</button>
+  </span>
+{% else %}{{ fila.rol }}{% endif %}

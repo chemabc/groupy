@@ -111,6 +111,12 @@ class GruposConfig(ModuloConfig):
         Permiso("grupos.admitir", "Admitir personas en el grupo o sacarlas de él", roles=("admin_grupo", "admin_org")),
         Permiso("grupos.nombrar_admin_grupo", "Nombrar o quitar admins del grupo", roles=("admin_org",)),
         Permiso("grupos.editar_organizacion", "Editar los datos de la organización", roles=("admin_org",)),
+        # Cuánto tiempo sin actividad marca a alguien en «Miembros» ([A-55]): solo puede bajar el de la plataforma.
+        Permiso(
+            "grupos.limitar_inactividad",
+            "Bajar el tiempo sin actividad que marca a alguien en «Miembros» (en la organización o el grupo)",
+            roles=("admin_grupo", "admin_org"),
+        ),
         # Invitar a otra organización abre una puerta entre las dos: solo con privilegios (13 de noviembre
         # de 2026, a petición de la persona usuaria).
         Permiso(
@@ -177,6 +183,15 @@ class GruposConfig(ModuloConfig):
             icono="⋔",
             color="#65a30d",
             permiso="grupos.ver_arbol",
+        ),
+        # «Administrar → Grupos que administro → Miembros» (grupos/miembros.py).
+        EntradaDeMenu(
+            codigo="grupos.miembros", nombre="Miembros", url="grupos:miembros", icono="☰", color="#c2410d", permiso="grupos.ver_arbol",
+        ),
+        # «Administrar → Mi organización → Inactividad» (grupos/views.py, inactividad).
+        EntradaDeMenu(
+            codigo="grupos.inactividad", nombre="Inactividad", url="grupos:inactividad", icono="⧖", color="#78350f",
+            permiso="grupos.limitar_inactividad",
         ),
         EntradaDeMenu(
             codigo="grupos.invitaciones",

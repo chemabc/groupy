@@ -35,11 +35,6 @@ PENDIENTES = (
     ),
     # Administrar
     Pendiente(
-        "miembros", "Miembros",
-        "Las personas de los grupos que administras, con su rol, su asamblea base y desde cuándo están.",
-        "☰", "#c2410d", permiso="grupos.ver_arbol",
-    ),
-    Pendiente(
         "moderacion", "Moderación", "Avisos sobre contenido y ocultación provisional, en los grupos que administras.",
         "⚔", "#7f1d1d", permiso="grupos.ver_arbol",
     ),

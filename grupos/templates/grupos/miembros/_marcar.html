@@ -1,0 +1,2 @@
+{% comment %}Celda «✓» de «Miembros» (grupos/miembros.py): la casilla para las acciones en bloque. Recibe «fila».{% endcomment %}
+{% if fila.gestiona %}<input type="checkbox" name="seleccion" value="{{ fila.pk }}" form="miembros-acciones" aria-label="Marcar a {{ fila.alias }} en {{ fila.grupo }}" class="h-4 w-4">{% endif %}

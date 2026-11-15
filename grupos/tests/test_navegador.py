@@ -63,3 +63,33 @@ class PruebasDelGrafoEnElNavegador(PruebaEnElNavegador):
             nodo.click()
         self.assertTrue(self.pagina.url.endswith(f"/organizaciones/grupo/{henares.pk}/"))
         self.assertEqual(self.errores, [])
+
+
+class PruebasDeMiembrosEnElNavegador(PruebaEnElNavegador):
+    """«Administrar → Miembros»: el usuario de la prueba administra GRU Henares (ORG Tajo)."""
+
+    # Se marcan dos filas y se sacan del grupo de una vez, aceptando la confirmación; sale el aviso. Hacer
+    # admins no se ofrece (es admin de grupo, no de la organización). La fila de un grupo que no es la base de
+    # la persona sale tenue.
+    def test_en_bloque(self):
+        tajo, general = crear_organizacion("ORG Tajo", "GRU Tajo")
+        henares = crear_grupo(tajo, "GRU Henares", padre=general)
+        jarama = crear_grupo(tajo, "GRU Jarama", padre=general)
+        admitir(self.usuario, henares, rol=Pertenencia.ADMIN_GRUPO)
+        nutria, garza = crear_usuario_de_prueba("Nutria"), crear_usuario_de_prueba("Garza")
+        admitir(nutria, jarama, es_base=True)
+        admitir(nutria, henares)
+        admitir(garza, henares, es_base=True)
+        self.abrir("/organizaciones/miembros/")
+        pagina = self.pagina
+        self.assertIn("opacity-60", pagina.locator("tr", has_text="Nutria").get_attribute("class"))
+        pagina.get_by_label("Marcar a Nutria", exact=False).check()
+        pagina.get_by_label("Marcar a Garza", exact=False).check()
+        operacion = pagina.get_by_label("Con las filas marcadas:")
+        self.assertNotIn("Admin del grupo", operacion.inner_text())
+        operacion.select_option(label="Sacar del grupo")
+        pagina.once("dialog", lambda dialogo: dialogo.accept())
+        pagina.get_by_role("button", name="Aplicar a las marcadas").click()
+        pagina.get_by_text("Hecho con 2 filas.").wait_for()
+        self.assertEqual(list(Pertenencia.objects.filter(grupo=henares).values_list("usuario__alias", flat=True)), [self.usuario.alias])
+        self.assertEqual(self.errores, [])

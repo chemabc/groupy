@@ -178,7 +178,7 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   voto secreto, resultados, cierre → decisión, calendario, tarjeta de Inicio). Piezas comunes: `Colgante`
   y `{% colgantes %}` («Cuelga de aquí» en fichas de eventos y proyectos), `base/anclas.py`,
   `base/markdown.py`, `grupos.acceso.grupos_donde_puede`. **Las dudas esenciales están en docs/diseno.md
-  §20** y hay que preguntarlas. Lo que queda de [A-37] (miembros,
+  §20** y hay que preguntarlas. Lo que queda de [A-37] (
   conversaciones con grupos y personas) sigue pospuesto; después, fase 8.
   Recuerda `migrate --database=boveda`.
 - 15 de noviembre de 2026 ([A-50], respuestas a las dudas de §20): **opción de consenso** en debates (apoyos
@@ -209,3 +209,10 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   administro y sus subgrupos; la administración ve, edita y cancela, sin ver quién va) y todas las listas de
   eventos en la tabla filtrable («Mis eventos»: Próximos · Pasados · Series, con «Mi papel»). Quedan de
   [A-37]: miembros y conversaciones con grupos y personas.
+- 15 de noviembre de 2026 ([A-55]): **«Administrar → Miembros»** (`grupos/miembros.py`): una fila por
+  pertenencia (las que no son la asamblea base, tenues), gestión una a una y en bloque, admitir; e
+  **inactividad** («Sin actividad (más de N días)»; plazo en cascada `LimiteDeInactividad`: superadmin pone el de
+  partida y el mínimo, 30 días los dos; organización y grupo solo bajan; día de actividad en
+  `Usuario.ultima_actividad` con `usuarios.middleware.ApuntarActividad`). La tabla común admite celdas con
+  plantilla propia (`Columna.plantilla`) y clase por fila (`_clase`). Queda de [A-37]: conversaciones con
+  grupos y personas.

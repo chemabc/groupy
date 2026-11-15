@@ -104,7 +104,7 @@ DISPOSICION = (
     Bloque("Administrar", "administrar", (
         Pestanas("administracion.grupos", (
             "grupos.arbol",
-            "proximamente.miembros",
+            "grupos.miembros",
             "grupos.invitaciones",
         )),
         Pestanas("administracion.buzon", (
@@ -125,6 +125,7 @@ DISPOSICION = (
             "solicitudes.ajustes",
             "debates.limites",
             "documentos.limites",
+            "grupos.inactividad",
             "lugares.configuracion",
             "proximamente.web_publica",
         )),

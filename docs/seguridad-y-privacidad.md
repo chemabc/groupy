@@ -102,6 +102,20 @@ Cada entrada tiene tres partes:
 - **Para el futuro:** revisar los umbrales con grupos reales. Evitar mostrar a la vez varios datos de un
   mismo alias a quien no administra.
 
+### 3.3 Actividad de cada persona («Sin actividad» en «Miembros»)
+- **Qué se hace:**
+  - Se guarda **solo el día** en que cada persona usa la plataforma (`Usuario.ultima_actividad`), una vez al
+    día. Ni la hora, ni qué hace, ni desde dónde.
+  - Nadie ve ese día. La administración de sus grupos solo ve la marca «Sin actividad (más de N días)»
+    cuando se pasa del plazo, y el plazo no baja del mínimo que pone el superadmin (de partida, 30 días).
+- **Riesgo que queda:**
+  - Con el plazo mínimo y mirando la lista cada día, se puede deducir aproximadamente cuándo dejó de entrar
+    alguien.
+  - El superadmin puede leer el día en la base de datos o en la trastienda.
+- **Para el futuro:**
+  - Guardar solo la semana en lugar del día.
+  - Que cada persona pueda ver en «Mis datos» que se guarda y para qué.
+
 ---
 
 ## 4. Visibilidad y permisos

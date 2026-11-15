@@ -379,7 +379,8 @@ flowchart LR
 ### 6.5 usuarios [Módulo · Identidad]
 
 El usuario de la aplicación (`Usuario`, con alias y sin datos personales), entrar y salir, «Configuración de mi cuenta» y
-la capa intermedia `EntradaObligatoria` (nada se ve sin sesión). Contraseñas con Argon2.
+la capa intermedia `EntradaObligatoria` (nada se ve sin sesión). Contraseñas con Argon2. La capa
+`ApuntarActividad` apunta el día en que cada persona usa la plataforma (`ultima_actividad`), una vez al día.
 
 ```mermaid
 flowchart LR
@@ -403,7 +404,10 @@ base, admins, relaciones e invitaciones entre organizaciones. La solicitud «Ent
 componente de **árboles de grupos** (`grupos/arboles.py` y la plantilla `grupos/arboles.html`): los grupos
 de cada persona en árbol, con su asamblea base en amarillo y el grupo que se mira en rojo. Y
 `grupos/editor.py`: los **ámbitos** de cada persona en la biblioteca del editor (toda la plataforma, sus
-organizaciones y sus grupos; contrato `ambitos_del_editor`) y la búsqueda de personas para compartir.
+organizaciones y sus grupos; contrato `ambitos_del_editor`) y la búsqueda de personas para compartir. Y
+«Administrar → **Miembros**» (`grupos/miembros.py`: una fila por pertenencia, gestión una a una y en bloque) con
+la **inactividad** en cascada (`grupos/inactividad.py`, `LimiteDeInactividad`), que lee el día de actividad que
+apunta `usuarios`.
 
 ```mermaid
 flowchart LR
@@ -435,6 +439,14 @@ flowchart LR
   bed["base.editor (id_para_editor)"]:::otro
   ged --> bed
   bed -. "ambitos_del_editor" .-> ged
+  mie["grupos.miembros<br/>Administrar → Miembros"]:::otro
+  ina["grupos.inactividad<br/>plazo en cascada"]:::otro
+  tab["base.tablas (celdas con plantilla)"]:::otro
+  usu["usuarios (ultima_actividad)"]:::otro
+  mie --> ina
+  mie --> tab
+  mie --> per
+  ina --> usu
 ```
 
 ### 6.7 permisos [Módulo · Organización]
