@@ -185,3 +185,10 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   plataforma, llamadas firmadas, pensado para que lo usen otras aplicaciones), `TextoEditable` en el
   contrato, puente `base/editor.py`, isla «editorEnVivo», servicio `editor` en docker. PDF con Typst: por
   hacer dentro del editor. Dudas nuevas en docs/diseno.md §20.
+- 15 de noviembre de 2026 ([A-51]): el **editor es otro repositorio** (git propio dentro de `editor/`,
+  ignorado aquí; sin publicar aún), con barra de formato, **vista Typst** que se enciende y apaga,
+  Previsualizar, PDF, **comentarios en bocadillo** anclados al texto y máximo de personas a la vez.
+  Documentos en **Markdown o Typst**. **Límites en cascada** (`base/limites.py`): debates por plataforma,
+  organización, grupo y debate; documentos (escritores y comentaristas) por plataforma, organización, grupo
+  y documento. **Consultas secretas o públicas** (secretas de partida y de verdad: urna en Redis con tandas
+  desordenadas, `consultas/urna.py`).

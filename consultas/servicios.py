@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import secrets
 from collections import Counter
+from types import SimpleNamespace
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -20,10 +21,11 @@ from audiencias.selector import audiencia_de
 from audiencias.servicios import filtrar_visibles, puede_ver
 from base.contrato import ApartadoDeTarjeta, FechaDeCalendario, FilaDeResumen, ResumenDeTarjeta
 from eventos_sw.servicios import emitir
-from grupos.models import Pertenencia
+from grupos.models import Grupo, Pertenencia
 from permisos.servicios import exigir, puede
 from solicitudes.servicios import pedir
 
+from . import urna
 from .models import Consulta, Papeleta, Participacion, Pregunta, Respuesta
 
 # Tipo de ancla de las consultas.
@@ -86,7 +88,7 @@ def pedir_apoyos(usuario, consulta, justificacion=""):
     preguntas = list(consulta.preguntas.prefetch_related("respuestas"))
     if not preguntas:
         raise ValidationError("Ponle al menos una pregunta antes de pedir apoyos.")
-    lineas = [f"Abrir la consulta «{consulta.titulo}»:"]
+    lineas = [f"Abrir la consulta «{consulta.titulo}» ({'voto secreto' if consulta.secreta else 'voto público: se verá qué vota cada persona'}):"]
     for pregunta in preguntas:
         respuestas = " / ".join(r.texto for r in pregunta.respuestas.all())
         lineas.append(f"- {pregunta.texto}" + (f" ({respuestas})" if respuestas else " (respuesta abierta)"))
@@ -189,8 +191,11 @@ def leer_respuestas(preguntas, datos):
     return respuestas
 
 
-# Vota (una persona, un voto). Si la consulta deja cambiarlo y ya había votado, la papeleta nueva sustituye
-# a la anterior; si no, un segundo voto no se acepta.
+# Vota (una persona, un voto). Si la consulta deja cambiar el voto y ya había votado, la papeleta nueva
+# sustituye a la anterior; si no, un segundo voto no se acepta.
+# En una consulta secreta, la papeleta no se guarda aún: va a la urna (consultas/urna.py) y se guarda en
+# tandas desordenadas, para que no se pueda emparejar con la fila de quién ha votado. En una pública, se
+# guarda ya, con quién la vota.
 #   - respuestas: lo que devuelve leer_respuestas().
 @transaction.atomic
 def votar(usuario, consulta, respuestas):
@@ -202,10 +207,22 @@ def votar(usuario, consulta, respuestas):
     if not _nueva and not consulta.cambiar_voto:
         raise ValidationError("Ya has votado y en esta consulta no se puede cambiar el voto.")
     base = Pertenencia.objects.filter(usuario=usuario, es_base=True).values_list("grupo_id", flat=True).first()
-    if consulta.cambiar_voto:
-        Papeleta.objects.update_or_create(clave=clave_de_papeleta(consulta, usuario), defaults={"consulta": consulta, "grupo_id": base, "respuestas": respuestas})
-    else:
-        Papeleta.objects.create(consulta=consulta, clave=secrets.token_hex(32), grupo_id=base, respuestas=respuestas)
+    if not consulta.secreta:
+        Papeleta.objects.update_or_create(consulta=consulta, usuario=usuario, defaults={"clave": f"{consulta.pk}:{usuario.pk}", "grupo_id": base, "respuestas": respuestas})
+        return
+    clave = clave_de_papeleta(consulta, usuario) if consulta.cambiar_voto else secrets.token_hex(32)
+    # Lo último antes de terminar: si Redis fallara, no quedaría apuntado que ha votado.
+    if urna.meter(consulta.pk, {"clave": clave, "grupo_id": base, "respuestas": respuestas}) >= urna.TANDA:
+        vaciar_urna(consulta)
+
+
+# Guarda en la base las papeletas que esperan en la urna de una consulta secreta, desordenadas. Se llama al
+# juntarse una tanda y al cerrar la consulta (entonces, aunque sean menos).
+def vaciar_urna(consulta):
+    for papeleta in urna.sacar(consulta.pk):
+        Papeleta.objects.update_or_create(
+            clave=papeleta["clave"], defaults={"consulta": consulta, "grupo_id": papeleta["grupo_id"], "respuestas": papeleta["respuestas"]},
+        )
 
 
 # Dice si una persona ya ha votado.
@@ -230,11 +247,16 @@ def ve_resultados(usuario, consulta):
 
 
 # Los resultados de una consulta: por pregunta, cuántos votos tiene cada respuesta (con su porcentaje) o
-# los textos de las abiertas, y el desglose por grupos si hay votos suficientes. Dos consultas, recorriendo
-# las papeletas en memoria.
+# los textos de las abiertas, y el desglose por grupos si hay votos suficientes. En una consulta pública,
+# también quién ha votado cada respuesta. Cuentan también las papeletas que esperan en la urna (sin
+# guardarlas). Tres consultas, recorriendo las papeletas en memoria.
 #   - preguntas: las de la consulta, con sus respuestas cargadas.
 def resultados(consulta, preguntas):
-    papeletas = list(consulta.papeletas.select_related("grupo"))
+    papeletas = list(consulta.papeletas.select_related("grupo", "usuario"))
+    en_la_urna = urna.mirar(consulta.pk) if consulta.secreta else []
+    if en_la_urna:
+        grupos = Grupo.objects.in_bulk({p["grupo_id"] for p in en_la_urna if p["grupo_id"]})
+        papeletas += [SimpleNamespace(respuestas=p["respuestas"], grupo=grupos.get(p["grupo_id"]), usuario=None) for p in en_la_urna]
     total = len(papeletas)
     con_desglose = total >= MINIMO_PARA_DESGLOSE
     salida = []
@@ -243,15 +265,17 @@ def resultados(consulta, preguntas):
         if pregunta.tipo == Pregunta.ABIERTA:
             salida.append({"pregunta": pregunta, "textos": [p.respuestas[clave] for p in papeletas if clave in p.respuestas], "total": total})
             continue
-        cuentas, por_grupo = Counter(), {}
+        cuentas, por_grupo, quienes = Counter(), {}, {}
         for papeleta in papeletas:
             for elegida in papeleta.respuestas.get(clave, []):
                 cuentas[elegida] += 1
+                if papeleta.usuario is not None:
+                    quienes.setdefault(elegida, []).append(papeleta.usuario.alias)
                 if con_desglose:
                     nombre = papeleta.grupo.nombre if papeleta.grupo else "Sin asamblea base"
                     por_grupo.setdefault(nombre, Counter())[elegida] += 1
         filas = [
-            {"respuesta": r, "votos": cuentas[r.pk], "porcentaje": round(100 * cuentas[r.pk] / total) if total else 0}
+            {"respuesta": r, "votos": cuentas[r.pk], "porcentaje": round(100 * cuentas[r.pk] / total) if total else 0, "quienes": sorted(quienes.get(r.pk, []))}
             for r in pregunta.respuestas.all()
         ]
         desglose = [(nombre, [cuenta[r.pk] for r in pregunta.respuestas.all()]) for nombre, cuenta in sorted(por_grupo.items())]
@@ -268,6 +292,7 @@ def cerrar(consulta):
         return
     consulta.cerrada_el = timezone.now()
     consulta.save(update_fields=["cerrada_el"])
+    vaciar_urna(consulta)
     preguntas = list(consulta.preguntas.prefetch_related("respuestas"))
     datos = resultados(consulta, preguntas)
     resumen = []

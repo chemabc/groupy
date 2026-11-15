@@ -145,7 +145,16 @@ services:
   # Redis 8: caché, tiempo real y cola de tareas (imagen oficial sobre Debian 13)
   redis:
     image: redis:8-trixie
+    # Guarda cada cambio en disco (además de las copias periódicas), para que un reinicio no pierda las
+    # papeletas que esperan en la urna de las consultas secretas (consultas/urna.py)
+    #   - --appendonly yes: apunta cada escritura en un fichero que se relee al arrancar
+    command: redis-server --appendonly yes
+    # Guarda los datos de Redis en un volumen, para que sigan aunque se rehaga el contenedor
+    #   - redisdata: nombre del volumen; /data es donde Redis guarda sus ficheros
+    volumes:
+      - redisdata:/data
 
 # Declaración de los volúmenes con nombre usados arriba
 volumes:
   pgdata:
+  redisdata:

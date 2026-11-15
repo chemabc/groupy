@@ -148,26 +148,33 @@ Cada entrada tiene tres partes:
 
 ### 5.2 Consultas: voto secreto
 - **Qué se hace:**
-  - **Quién ha votado** (`Participacion`) y **qué se ha votado** (`Papeleta`) van en tablas distintas.
-  - Ninguna guarda la hora.
-  - La papeleta no tiene usuario: solo la asamblea base, para el desglose por grupos, que sale solo con
-    **10 votos o más**.
-  - Sin cambio de voto, la papeleta lleva una clave al azar.
+  - Cada consulta es **secreta** (de partida) o **pública**, y la ficha lo dice siempre.
+  - En una secreta, **quién ha votado** (`Participacion`) y **qué se ha votado** (`Papeleta`) van en
+    tablas distintas, sin hora.
+  - La papeleta no tiene usuario: solo la asamblea base, para el desglose por grupos, que sale con **10 votos
+    o más**.
+  - La papeleta **no se guarda al votar**: espera en una urna (Redis) y se guarda en **tandas de 5 o más,
+    desordenadas**, con un número al azar (UUID). Así no se puede emparejar con la participación ni por el
+    número, ni por la operación en la que se creó, ni por el orden en el disco. Al cerrar se guarda lo que
+    quede.
+  - Sin cambio de voto, la clave de la papeleta es al azar.
   - Con cambio de voto, la clave es un HMAC del par consulta-persona con un secreto derivado de
     `SECRET_KEY`.
 - **Riesgo que queda:**
   - **Con cambio de voto:** quien tenga la base de datos **y** el secreto puede recalcular la clave de cada
-    persona y saber qué votó. *(Aceptado el 15 de noviembre de 2026 hasta la bóveda real de la fase 8.)*
-  - **Orden de llegada:** las dos filas de un voto se crean juntas y reciben números correlativos. Quien
-    tenga la base de datos podría emparejar la n-ésima participación con la n-ésima papeleta. Con esto, el
-    voto secreto es real **desde la plataforma**, pero **no frente a quien tiene la base de datos**.
+    persona y saber qué votó. *(Aceptado el 15 de noviembre de 2026 hasta la bóveda real de la fase 8.)* La
+    ficha lo avisa.
+  - **Quien vigile el servidor en directo** (Redis y la base a la vez, mientras se vota) podría ver llegar
+    una papeleta a la urna justo cuando aparece una participación. Las tandas protegen lo guardado, no a
+    quien mira en el momento.
+  - **La última tanda** puede ser pequeña: si al cerrar quedan 2 papeletas, esas 2 se distinguen como «las
+    últimas en votar». El desglose por grupos sigue pidiendo 10.
+  - Si Redis perdiera sus datos (disco roto), se perderían las papeletas que esperaban. Por eso guarda cada
+    cambio en disco.
   - Si cambia `SECRET_KEY` con una consulta abierta, quien ya votó no puede cambiar su voto (votaría de
     nuevo).
-- **Para el futuro:**
-  - **Fácil:** números al azar (UUID) en las papeletas y repartirlas en un orden desordenado. Así se quita el
-    emparejamiento por número; queda el orden físico en el disco, más difícil de aprovechar.
-  - **Completo (fase 8):** la persona vota con un pase de un solo uso firmado a ciegas. La plataforma no sabe
-    de quién es la papeleta ni necesita guardar quién ha votado.
+- **Para el futuro:** votar con un pase de un solo uso firmado a ciegas (fase 8). La plataforma no sabría
+  de quién es la papeleta ni necesitaría guardar quién ha votado.
 
 ### 5.3 Solicitudes con apoyos
 - **Qué se hace:** quien pide y quien apoya o rechaza se ve por su alias, a propósito: es un acto público

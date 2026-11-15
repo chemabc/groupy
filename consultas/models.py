@@ -3,6 +3,8 @@ Tablas del módulo «consultas» (ver docs/diseno.md, apartado 12). El voto es s
 (Participacion) y qué ha votado (Papeleta) van en tablas distintas, sin nada que las una.
 """
 
+import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -50,6 +52,10 @@ class Consulta(models.Model):
     cierra = models.DateTimeField("se cierra", help_text="Hasta cuándo se puede votar.")
     resultados = models.CharField("resultados", max_length=12, choices=CUANDO, default=AL_CERRAR, help_text="Cuándo se ven los resultados.")
     publicar_el = models.DateTimeField("se publican el", null=True, blank=True, help_text="Si se ven en una fecha: cuál (después del cierre).")
+    secreta = models.BooleanField(
+        "voto secreto", default=True,
+        help_text="Secreto: nadie puede saber qué ha votado cada persona. Si no, quien ve los resultados ve qué votó cada una. Cada votación lo dice.",
+    )
     cambiar_voto = models.BooleanField(
         "se puede cambiar el voto", default=False, help_text="Si se puede cambiar antes del cierre. Si no, se avisa antes de votar."
     )
@@ -133,10 +139,14 @@ class Participacion(models.Model):
 
 class Papeleta(models.Model):
     """
-    Lo que se ha votado, sin nombre. Si la consulta deja cambiar el voto, lleva una clave que solo se puede
-    calcular con un secreto del servidor (ver consultas/servicios.py, clave_de_papeleta); si no, una al azar.
+    Lo que se ha votado. En una consulta secreta, sin nombre: su número es al azar (no dice en qué orden
+    llegó) y no se guarda al votar, sino en tandas desordenadas desde la urna (consultas/urna.py), para que
+    no se pueda emparejar con quién ha votado. Si la consulta deja cambiar el voto, su clave solo se puede
+    calcular con un secreto del servidor (ver consultas/servicios.py, clave_de_papeleta); si no, es al azar.
+    En una consulta no secreta, lleva quién la votó.
     """
 
+    id = models.UUIDField("número", primary_key=True, default=uuid.uuid4, editable=False, help_text="Al azar: no dice en qué orden se votó.")
     consulta = models.ForeignKey(Consulta, on_delete=models.CASCADE, related_name="papeletas", verbose_name="consulta", help_text="La consulta.")
     clave = models.CharField("clave", max_length=64, unique=True, help_text="Seudónimo de la papeleta: no dice de quién es.")
     grupo = models.ForeignKey(
@@ -144,6 +154,10 @@ class Papeleta(models.Model):
         help_text="La asamblea base de quien votó, para el desglose por grupos (solo se enseña con 10 votos o más).",
     )
     respuestas = models.JSONField("respuestas", default=dict, help_text="Por pregunta: los números de las respuestas elegidas, o el texto.")
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+", verbose_name="quién (solo voto público)",
+        help_text="Solo en las consultas que no son secretas: quién la votó. En las secretas, siempre vacío.",
+    )
 
     class Meta:
         verbose_name = "papeleta"

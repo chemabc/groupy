@@ -221,7 +221,8 @@ de una reunión o un proyecto, usa «+ Debate» en el recuadro «Cuelga de aquí
 ### Votar en una consulta
 
 Las que tienes pendientes salen en «Inicio → Panel». En la consulta, responde y pulsa **Votar**. Si no se
-puede cambiar el voto, te avisa antes. El voto es secreto: nadie ve desde la plataforma qué has votado.
+puede cambiar el voto, te avisa antes. Arriba de cada consulta pone si el voto es **secreto** (nadie
+puede saber qué has votado) o **público** (quien vea los resultados verá qué ha votado cada persona).
 
 ### Proponer una consulta
 

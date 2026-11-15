@@ -240,6 +240,10 @@ CACHES = {
     }
 }
 
+# Redis de la urna de las consultas secretas (consultas/urna.py): donde esperan las papeletas antes de
+# guardarse en tandas desordenadas. Es el mismo Redis que la caché (también en las pruebas).
+URNA_REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+
 # En las pruebas, la caché va en la memoria del propio proceso: cada ejecución empieza limpia y no
 # mezcla datos con el Redis de desarrollo.
 if PROBANDO:

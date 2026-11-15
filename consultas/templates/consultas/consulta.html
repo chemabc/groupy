@@ -15,6 +15,12 @@
     <p class="text-xs text-slate-500">{{ consulta.grupo.nombre }} · {{ estado }} · de {{ consulta.abre|date:"d/m/Y H:i" }} a {{ consulta.cierra|date:"d/m/Y H:i" }} · resultados: {{ consulta.get_resultados_display|lower }}{% if consulta.publicar_el %} ({{ consulta.publicar_el|date:"d/m/Y H:i" }}){% endif %}</p>
     <h2 class="text-xl font-semibold">{{ consulta.titulo }}</h2>
     {% if consulta.descripcion %}<div class="documento mt-1 text-sm">{{ descripcion }}</div>{% endif %}
+    {# Siempre a la vista: si el voto es secreto o no #}
+    {% if consulta.secreta %}
+      <p class="mt-2 rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">🔒 <strong>Voto secreto.</strong> Nadie, tampoco la administración, puede saber qué has votado: tu papeleta se guarda sin tu nombre, separada de que has votado y mezclada con otras.{% if consulta.cambiar_voto %} Como se puede cambiar el voto, la plataforma guarda una clave para encontrar tu papeleta; esa protección es provisional hasta la bóveda.{% endif %}</p>
+    {% else %}
+      <p class="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">👁 <strong>Voto público.</strong> Quien vea los resultados verá qué ha votado cada persona, con su alias.</p>
+    {% endif %}
   </section>
 
   {% if prepara %}
@@ -79,7 +85,8 @@
             <ul class="mt-1 space-y-1">
               {% for fila in parte.filas %}
                 <li><div class="flex justify-between gap-2 text-xs"><span>{{ fila.respuesta.texto }}</span><span>{{ fila.votos }} · {{ fila.porcentaje }} %</span></div>
-                  <div class="h-2 rounded bg-slate-100 dark:bg-slate-800"><div class="h-2 rounded bg-marca" style="width: {{ fila.porcentaje }}%"></div></div></li>
+                  <div class="h-2 rounded bg-slate-100 dark:bg-slate-800"><div class="h-2 rounded bg-marca" style="width: {{ fila.porcentaje }}%"></div></div>
+                  {% if fila.quienes %}<p class="text-xs text-slate-500">{{ fila.quienes|join:", " }}</p>{% endif %}</li>
               {% endfor %}
             </ul>
             {% if parte.desglose %}

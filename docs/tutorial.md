@@ -814,3 +814,7 @@ sirve aquí y dónde se usa.
 - **Comentarios que no se mueven.** Un comentario no guarda «de la letra 120 a la 130», que cambia al
   escribir delante. Guarda una **posición relativa** de Yjs: «justo después de esta letra concreta». Yjs la
   traduce al número de ahora cada vez que se pinta.
+- **Una urna para que el voto sea secreto de verdad.** Cuando dos filas se crean en la misma operación de
+  la base de datos, quedan unidas aunque no compartan ninguna columna: tienen el mismo número de
+  transacción, números seguidos y están juntas en el disco. Por eso la papeleta espera en una lista de
+  Redis y se guarda junto a otras cuatro o más, en desorden y con un número al azar (`uuid4`).

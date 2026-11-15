@@ -1572,6 +1572,18 @@ apartado 20.
   el aviso), quién vota y quién ve los resultados (con el selector de siempre) y si se puede cambiar el voto.
   Las **preguntas** se ponen en su ficha y se pueden cambiar hasta que se abre.
 - **Votar:** una persona, un voto. Sin cambio de voto, se avisa antes y un segundo voto se rechaza.
+- **Secreto o público** (15 de noviembre de 2026, [A-51]): cada consulta elige (`Consulta.secreta`), y de
+  partida es **secreta**. La ficha lo dice siempre, arriba, y la solicitud de apoyos también.
+  - **Pública:** la papeleta lleva quién la vota y los resultados enseñan los alias de cada respuesta.
+  - **Secreta de verdad:** la papeleta no se guarda al votar. Va a una **urna en Redis**
+    (`consultas/urna.py`) y se guarda en la base en **tandas de 5 o más, desordenadas**, con un **número al
+    azar** (UUID). Así no se puede emparejar con la fila de quién ha votado por su orden ni por la operación
+    en la que se creó. Al cerrar se vacía lo que quede. Los resultados cuentan también lo que espera en la
+    urna.
+  - Redis guarda cada cambio en disco (`--appendonly yes`, con su volumen), para no perder papeletas al
+    reiniciar.
+  - *Descartado:* guardar la papeleta al votar con un número al azar. Seguiría creándose en la misma
+    operación que la participación, y eso las empareja.
 - **Voto secreto:** `Participacion` dice quién ha votado (sin hora) y `Papeleta` qué se ha votado (sin
   nombre ni hora; solo la asamblea base, para el desglose). Si se puede cambiar el voto, la papeleta lleva
   una clave HMAC del par consulta-persona con un secreto del servidor: con la base de datos sola no se sabe

@@ -12,7 +12,7 @@ from django.utils import timezone
 from grupos.ejemplos import organizaciones_de_ejemplo
 from grupos.models import Pertenencia
 
-from . import servicios
+from . import servicios, urna
 from .models import Consulta, Pregunta
 
 # Título de la consulta de ejemplo (sirve para saber si ya está).
@@ -37,6 +37,10 @@ def crear():
         servicios.votar(personas["Garza"], consulta, {str(dia.pk): [dia.respuestas.all()[1].pk]})
 
 
-# Borra las consultas de las organizaciones de ejemplo (con sus preguntas, participaciones y papeletas).
+# Borra las consultas de las organizaciones de ejemplo (con sus preguntas, participaciones y papeletas, también
+# las que esperaban en la urna).
 def borrar():
-    Consulta.objects.filter(grupo__organizacion__in=organizaciones_de_ejemplo()).delete()
+    consultas = Consulta.objects.filter(grupo__organizacion__in=organizaciones_de_ejemplo())
+    for numero in consultas.values_list("pk", flat=True):
+        urna.sacar(numero)  # las papeletas que esperaban en su urna, fuera
+    consultas.delete()

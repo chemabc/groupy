@@ -89,6 +89,10 @@ python manage.py migrate --database=boveda
 
 ### 0.4 Datos de ejemplo al día
 
+> **15 de noviembre de 2026:** la migración de las consultas rehace la tabla de papeletas (su número pasa a
+> ser al azar) y se pierden las papeletas de los ejemplos. Rehaz los ejemplos (la orden de abajo) aunque la
+> comprobación diga `True True`.
+
 Los ejemplos crecen con cada pieza. Los últimos que se añadieron: el proyecto «Huerto comunitario» lleva
 dependencias, recursos y etiquetas, y el tipo «Preparación de acción» trae tareas modelo. Necesita el 0.3
 hecho.
@@ -157,6 +161,13 @@ python manage.py tareas_diarias
   Si en paralelo salen muchos fallos de golpe con «Ya existe Organización…», suele ser **uno solo** que
   arrastra a los demás (en paralelo, un fallo deja sus datos sin deshacer). Busca en la salida el primer
   «failed:» o pásalas en serie (`python manage.py test`, unos 5 minutos), que dice cuál es.
+
+### 0.75 Redis guarda en disco (urna de las consultas secretas)
+
+- [ ] **¿Ya está?** Esta orden escribe `yes`:
+  `python -c "import redis; print(redis.Redis(host='redis').config_get('appendonly')['appendonly'])"`. **Si no:**
+  «Dev Containers: Rebuild Container» (el servicio `redis` ahora arranca con `--appendonly yes` y un
+  volumen). Mientras tanto todo funciona, pero un reinicio de Redis perdería las papeletas que esperan.
 
 ### 0.8 Editor en tiempo real (servicio «editor»)
 
@@ -695,6 +706,9 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
 - [ ] La consulta: vota. Se puede cambiar el voto (lo dice); vota otra vez y cambia. En una consulta sin
   cambio de voto, sale el aviso en ámbar y te pide confirmar antes de votar.
 - [ ] Los resultados dicen «se verán al cerrar». En el calendario sale «Cierra: ¿Qué día…?».
+- [ ] Arriba de la consulta, en verde, «🔒 Voto secreto» con la explicación. Crea otra (como Lince) sin
+  marcar «voto secreto»: sale en ámbar «👁 Voto público» y, en los resultados, debajo de cada respuesta,
+  los alias de quien la ha votado.
 - [ ] Como **Lince** (admin de GRU Henares), «Nueva consulta»: al elegir «En una fecha» sale la fecha de
   publicación; «En tiempo real», el aviso de que influye. Créala con la apertura en el futuro y añade
   preguntas (única, múltiple, abierta); se pueden quitar hasta que se abra.

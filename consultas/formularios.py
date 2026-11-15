@@ -20,7 +20,7 @@ class FormularioDeConsulta(forms.ModelForm):
 
     class Meta:
         model = Consulta
-        fields = ["titulo", "descripcion", "abre", "cierra", "resultados", "publicar_el", "cambiar_voto"]
+        fields = ["titulo", "descripcion", "abre", "cierra", "resultados", "publicar_el", "secreta", "cambiar_voto"]
         widgets = {"descripcion": forms.Textarea(attrs={"rows": 3}), "abre": _fecha_y_hora(), "cierra": _fecha_y_hora(), "publicar_el": _fecha_y_hora()}
 
     # Prepara los desplegables de visibilidad con las opciones del grupo.
