@@ -36,7 +36,12 @@ class ProyectosConfig(ModuloConfig):
         "responsable, colaboradoras y fecha límite, en lista y en kanban."
     )
     datos_de_ejemplo = DatosDeEjemplo(crear="proyectos.ejemplos.crear", borrar="proyectos.ejemplos.borrar")
-    anclas = (Ancla("proyectos.proyecto", "proyectos.Proyecto", "Un proyecto (o subproyecto)"),)
+    # De un proyecto y de una tarea pueden colgar cosas de otros módulos (documentos…). Lo que cuelga de sus
+    # tareas se ve también en el proyecto (dentro), y una tarea da el grupo y quién lo ve (contexto).
+    anclas = (
+        Ancla("proyectos.proyecto", "proyectos.Proyecto", "Un proyecto (o subproyecto)", dentro="proyectos.anclas.tareas_del_proyecto"),
+        Ancla("proyectos.tarea", "proyectos.Tarea", "Una tarea (de un proyecto o suelta)", contexto="proyectos.anclas.contexto_de_tarea"),
+    )
     permisos = (
         Permiso("proyectos.crear", "Crear proyectos y tareas sueltas en el grupo", roles=("usuario", "admin_grupo", "admin_org")),
     )

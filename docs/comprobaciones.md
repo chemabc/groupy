@@ -93,16 +93,17 @@ python manage.py migrate --database=boveda
 > ser al azar) y se pierden las papeletas de los ejemplos. Rehaz los ejemplos (la orden de abajo) aunque la
 > comprobación diga `True True`.
 
-Los ejemplos crecen con cada pieza. Los últimos que se añadieron: mensajes en las salas de los grupos de
-Nutria y una conversación de Nutria con otra persona (antes, el proyecto «Huerto comunitario» con
-dependencias, recursos y etiquetas, y las tareas modelo de «Preparación de acción»). Necesita el 0.3 hecho.
+Los ejemplos crecen con cada pieza. Los últimos que se añadieron: el PDF «Plano del solar» y el enlace
+«Carpeta compartida del huerto» en GRU Henares (antes, mensajes en las salas de los grupos de Nutria y una
+conversación suya, y el proyecto «Huerto comunitario» con dependencias, recursos y etiquetas). Necesita el
+0.3 hecho.
 
 - [ ] **¿Ya está?** Esta orden escribe `True True`:
 
 ```bash
-# Pregunta a la base si están el huerto con recursos y los mensajes de ejemplo de las salas
+# Pregunta a la base si están los mensajes de ejemplo de las salas y el PDF de ejemplo
 #     shell -c: ejecuta una línea de Python con Django cargado
-python manage.py shell -c "from django.apps import apps; P=apps.get_model('proyectos','Proyecto'); M=apps.get_model('comunicaciones','MensajeDeGrupo'); print(P.objects.filter(titulo='Huerto comunitario', recursos__isnull=False).exists(), M.objects.exists())"
+python manage.py shell -c "from django.apps import apps; M=apps.get_model('comunicaciones','MensajeDeGrupo'); D=apps.get_model('documentos','Documento'); print(M.objects.exists(), D.objects.filter(titulo='Plano del solar').exists())"
 ```
 
   **Si no** (borra y vuelve a crear los ejemplos; no toca al superadmin). Ojo: borra también lo que hayas
@@ -195,6 +196,22 @@ EDITOR_URL=ws://localhost:1234 EDITOR_URL_INTERNA=http://localhost:1234 python m
   `.devcontainer/docker-compose.yml`): «Rebuild Container», o arráncalo a mano como arriba.
 - [ ] Las pruebas del propio editor: `cd editor && npm run probar` (10 pruebas). Es otro repositorio:
   `git -C editor log --oneline -3`.
+
+### 0.9 Antivirus de los archivos (servicio «antivirus», ClamAV)
+
+- [ ] **¿Ya está?** En la terminal del contenedor, `echo $ANTIVIRUS` dice `antivirus:3310` y esta orden
+  escribe `PONG`:
+
+```bash
+# Pregunta al antivirus si está despierto (orden PING de ClamAV)
+#     -c: ejecuta la línea de Python que va entre comillas
+python -c "import socket; s=socket.create_connection(('antivirus',3310),5); s.sendall(b'zPING\0'); print(s.recv(10))"
+```
+
+  **Si no:** el servicio es nuevo en `.devcontainer/docker-compose.yml`: «Dev Containers: Rebuild
+  Container». La primera vez tarda **unos minutos** en descargar las firmas de virus; mientras, al subir un
+  archivo sale «El antivirus no responde». Sin reconstruir (sin `ANTIVIRUS`), los archivos se guardan igual
+  pero marcados «sin revisar».
 
 ---
 
@@ -849,3 +866,32 @@ rehacer los ejemplos (0.4). El trabajador debe estar en marcha para que llegue e
 - [ ] Como **superadmin**, en «Notificaciones» (bandeja «Sistema»): «X ha bloqueado a Y en las
   conversaciones entre personas». No hay forma de leer la conversación.
 - [ ] «Desbloquear»: vuelven a poder escribirse.
+
+## 42. Archivos, enlaces y papelera; documentos en tareas, debates y consultas
+
+Antes: `python manage.py migrate` (0.3), `npm run construir` (hay clases nuevas: 0.2), rehacer los ejemplos
+(0.4) y, para el antivirus, el 0.9.
+- [ ] Como **Lince**, «Participación → Documentos»: salen juntos textos, el PDF «Plano del solar» y el enlace
+  «Carpeta compartida del huerto». Prueba los desplegables (Tipo, Formato, Cuelga de, Grupo, Estado) y
+  **«Último cambio» desde… hasta…**: las filas se esconden al momento.
+- [ ] Abre «Plano del solar»: el PDF se ve dentro de la página; «Abrir» y «Descargar». Arriba dice si lo
+  revisó el antivirus («sin revisar» si no hay).
+- [ ] «Subir otra versión» con otro PDF: en «Versiones» salen las dos y se abre cada una.
+- [ ] Botón **«Subir un archivo»**: arriba sale el aviso de Microsoft. Prueba a subir un `.docx`: no lo
+  guarda y explica cómo pasarlo a PDF u odt. Renombra un `.exe` a `.pdf`: dice que no lo parece.
+- [ ] **«Enlazar»**: uno a una dirección de Drive y otro a un documento de aquí (desplegable). En la ficha,
+  el de fuera se abre aparte.
+- [ ] En la ficha de un **debate**, de una **consulta**, de una **tarea** y de un **proyecto** sale el
+  recuadro «Cuelga de aquí» con «+ Documento, archivo o enlace». Sube un PDF a una tarea del huerto: sale
+  también en la ficha del **proyecto**, con «de «nombre de la tarea»».
+- [ ] **Congelado:** sube un PDF a una consulta que aún no se ha abierto (se puede cambiar); cuando se abra
+  la votación, su ficha dice «❄ Congelado» y no deja subir versión, renombrar ni eliminar (sí añadir otro).
+- [ ] **Papelera:** «Eliminar» un documento (pide confirmación) lleva a «Documentos → Papelera», con los días
+  que le quedan; «Recuperar» lo devuelve. Como **Nutria**, un documento de Lince no tiene «Eliminar».
+- [ ] Como **superadmin**, «Plataforma → Espacio para archivos»: el espacio de toda la plataforma (2048 MB de partida) y
+  el de cada organización, con lo que ocupa. «Plataforma → Limpieza» tiene una fila nueva, «Documentos en
+  la papelera» (30 días).
+- [ ] Con el antivirus en marcha (0.9), sube el fichero de prueba EICAR (un texto que todos los antivirus
+  reconocen; búscalo como «EICAR test file», guárdalo como `eicar.txt`): dice que ha encontrado un virus y
+  no lo guarda.
+

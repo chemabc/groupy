@@ -354,7 +354,8 @@ document.addEventListener("alpine:init", () => {
     // Oculta las filas que no cumplen todos los filtros:
     //   - el buscador general: todas las palabras deben estar en el texto de búsqueda de la fila;
     //   - los desplegables: la categoría de la fila debe ser la elegida;
-    //   - los filtros de columna: el texto de la celda debe contener lo escrito.
+    //   - los filtros de columna: el texto de la celda debe contener lo escrito;
+    //   - el rango de fechas: el día de la fila (data-fecha) debe estar entre «Desde» y «Hasta».
     // Nunca importan las tildes ni las mayúsculas. Se llama al escribir o al cambiar un desplegable.
     filtrar() {
       const identificador = this.$root.dataset.identificador;
@@ -366,9 +367,18 @@ document.addEventListener("alpine:init", () => {
       const porColumna = [...this.$root.querySelectorAll("thead input[data-indice]")]
         .filter((cuadro) => cuadro.value.trim())
         .map((cuadro) => [Number(cuadro.dataset.indice), normalizar(cuadro.value.trim())]);
+      // Rango de fechas (si la tabla lo tiene): las fechas AAAA-MM-DD se comparan bien como texto.
+      const desde = this.$root.querySelector('input[data-rango="desde"]')?.value || "";
+      const hasta = this.$root.querySelector('input[data-rango="hasta"]')?.value || "";
+      const enRango = (fila) => {
+        if (!desde && !hasta) return true;
+        const dia = fila.dataset.fecha || "";
+        return Boolean(dia) && (!desde || dia >= desde) && (!hasta || dia <= hasta);
+      };
       let visibles = 0;
       for (const fila of this.filas) {
         const coincide =
+          enRango(fila) &&
           palabras.every((palabra) => fila.dataset.texto.includes(palabra)) &&
           categorias.every(([campo, valor]) => fila.getAttribute(`data-filtro-${campo}`) === valor) &&
           porColumna.every(([indice, texto]) => normalizar(fila.cells[indice].textContent).includes(texto));

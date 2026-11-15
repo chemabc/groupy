@@ -1,16 +1,25 @@
 """
 Documentos de ejemplo: en la asamblea base de Nutria (GRU Henares), un orden del día de Lince y el acta que sale
 de él, ya aprobada (sus dos acuerdos pasan al registro de decisiones), y el orden del día de la próxima
-reunión, en borrador. Los crea y borra la orden «python manage.py ejemplos».
+reunión, en borrador. Además, un PDF subido («Plano del solar») y un enlace a otra web. Los crea y borra la
+orden «python manage.py ejemplos».
 """
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 
 from grupos.ejemplos import organizaciones_de_ejemplo
 from grupos.models import Pertenencia
 
 from . import servicios
-from .models import Documento
+from .models import Documento, VersionDeArchivo
+
+# Un PDF muy pequeño pero válido (una página en blanco), para el archivo de ejemplo.
+PDF_DE_EJEMPLO = (
+    b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+    b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"
+)
 
 # Título del orden del día de ejemplo (sirve para saber si ya están).
 PRIMERO = "Orden del día de la asamblea de noviembre"
@@ -32,8 +41,20 @@ def crear():
     acta = servicios.guardar(lince, acta, acta.titulo, texto, acta.version)
     servicios.aprobar(lince, acta)
     servicios.crear(lince, Documento.ODD, "Orden del día de la asamblea de diciembre", grupo=base.grupo, visibilidad="grupo:0")
+    # El archivo de ejemplo no pasa por el antivirus (puede no estar arrancado al crear los ejemplos).
+    with override_settings(ANTIVIRUS=""):
+        servicios.subir_archivo(
+            lince, SimpleUploadedFile("plano-del-solar.pdf", PDF_DE_EJEMPLO), "Plano del solar", grupo=base.grupo, visibilidad="grupo:0"
+        )
+    servicios.enlazar(
+        lince, "Carpeta compartida del huerto", url="https://drive.google.com/drive/folders/ejemplo", grupo=base.grupo, visibilidad="grupo:0"
+    )
 
 
-# Borra los documentos de las organizaciones de ejemplo (con su registro de cambios y sus comentarios).
+# Borra los documentos de las organizaciones de ejemplo (con su registro de cambios, sus comentarios y los
+# ficheros de sus archivos).
 def borrar():
-    Documento.objects.filter(grupo__organizacion__in=organizaciones_de_ejemplo()).delete()
+    documentos = Documento.objects.filter(grupo__organizacion__in=organizaciones_de_ejemplo())
+    ficheros = list(VersionDeArchivo.objects.filter(documento__in=documentos).values_list("fichero", flat=True))
+    documentos.delete()
+    servicios.borrar_ficheros(ficheros)

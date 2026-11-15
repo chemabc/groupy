@@ -1,12 +1,16 @@
 {% extends interfaz.plantilla %}
 {% comment %}
-  Pantalla «Participación → Órdenes del día y actas» (documentos/views.py, lista). Recibe «tabla».
+  Pantalla «Participación → Documentos» (documentos/views.py, lista): textos, archivos y enlaces, con
+  filtros por tipo, formato, de dónde cuelga, grupo, estado y fechas. Recibe «tabla».
 {% endcomment %}
 {% block contenido %}
 <div class="space-y-3">
   <p class="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-    <a href="{% url 'documentos:nuevo' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Nuevo documento</a>
-    Órdenes del día, actas y documentos de tus grupos. El orden del día de una reunión se crea mejor desde la ficha de la reunión.
+    <a href="{% url 'documentos:nuevo' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Escribir</a>
+    <a href="{% url 'documentos:subir' %}" class="rounded border border-slate-300 px-3 py-1.5 dark:border-slate-700">Subir un archivo</a>
+    <a href="{% url 'documentos:enlazar' %}" class="rounded border border-slate-300 px-3 py-1.5 dark:border-slate-700">Enlazar</a>
+    <a href="{% url 'documentos:papelera' %}" class="text-marca hover:underline">Papelera</a>
+    <span>Textos, archivos y enlaces de tus grupos. Lo que cuelga de una reunión, un proyecto, una tarea, un debate o una consulta se crea mejor desde su ficha.</span>
   </p>
   {% include "base/tabla.html" %}
 </div>

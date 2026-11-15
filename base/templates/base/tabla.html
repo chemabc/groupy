@@ -1,5 +1,5 @@
 {% comment %}
-  Tabla filtrable completa: buscador, desplegables de categoría y resultado. Recibe «tabla» (una Tabla de
+  Tabla filtrable completa: buscador, desplegables de categoría, rango de fechas (si lo tiene) y resultado. Recibe «tabla» (una Tabla de
   base/tablas.py, que ya lo ha decidido todo). Se incluye con {% include "base/tabla.html" %}.
 
   Dos modos, según tabla.en_navegador:
@@ -38,6 +38,21 @@
         {% endfor %}
       </select>
     {% endfor %}
+    {# Rango de fechas («Desde» y «Hasta»), si la tabla lo tiene (base/tablas.py, RangoDeFechas). #}
+    {% with cuadros=tabla.cuadros_de_fechas %}{% if cuadros %}
+      <span class="flex flex-wrap items-center gap-1 text-sm text-slate-600 dark:text-slate-300">
+        {{ cuadros.titulo }}:
+        <label class="sr-only" for="{{ cuadros.desde.parametro }}">{{ cuadros.titulo }} desde</label>
+        <input type="date" id="{{ cuadros.desde.parametro }}" name="{{ cuadros.desde.parametro }}" value="{{ cuadros.desde.valor }}" data-rango="desde"
+               class="rounded border border-slate-300 bg-white px-1 py-0.5 dark:border-slate-700 dark:bg-slate-900"
+               {% if not tabla.en_navegador %}hx-get="{{ request.path }}" hx-trigger="change"{% endif %}>
+        –
+        <label class="sr-only" for="{{ cuadros.hasta.parametro }}">{{ cuadros.titulo }} hasta</label>
+        <input type="date" id="{{ cuadros.hasta.parametro }}" name="{{ cuadros.hasta.parametro }}" value="{{ cuadros.hasta.valor }}" data-rango="hasta"
+               class="rounded border border-slate-300 bg-white px-1 py-0.5 dark:border-slate-700 dark:bg-slate-900"
+               {% if not tabla.en_navegador %}hx-get="{{ request.path }}" hx-trigger="change"{% endif %}>
+      </span>
+    {% endif %}{% endwith %}
     {# Indicador de que el servidor está buscando (htmx le añade la clase htmx-request mientras espera). #}
     {% if not tabla.en_navegador %}<span class="htmx-indicator text-xs text-slate-500">Buscando…</span>{% endif %}
   </form>

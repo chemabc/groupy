@@ -245,6 +245,26 @@ Cada entrada tiene tres partes:
   concreto con `moderacion` (el superadmin lo lee solo entonces, con registro y aviso, apartado 5.1 del
   diseño).
 
+### 6.5 Archivos subidos
+- **Qué se hace:**
+  - Solo PDF, imágenes, formatos abiertos de oficina y texto; nunca de Microsoft (decisión de [A-60]: suelen
+    llevar macros y metadatos). Se mira la **firma del contenido**, no solo la extensión, y hasta 20 MB.
+  - Cada archivo pasa por **ClamAV** antes de guardarse; si hay virus o el antivirus no responde, no se
+    guarda.
+  - Los ficheros se guardan con un **nombre al azar** fuera de las carpetas públicas y los entrega una vista
+    que comprueba quién ve el documento, con `X-Content-Type-Options: nosniff` (el navegador no «adivina»
+    otro tipo). Solo los PDF y las imágenes se abren en el navegador; lo demás se descarga.
+  - Espacio máximo por organización y papelera de 30 días antes de borrar el fichero de verdad.
+- **Riesgo que queda:**
+  - Sin antivirus configurado (desarrollo) los archivos quedan «sin revisar», y la ficha lo dice.
+  - Un PDF puede llevar JavaScript o enlaces engañosos: el visor del navegador los limita, pero no se quitan.
+  - Las imágenes y los PDF conservan sus **metadatos** (autor, GPS de una foto…).
+  - Los ficheros no están cifrados en el disco; quien tenga el servidor los lee.
+  - Si la transacción falla después de guardar el fichero (raro), puede quedar un fichero suelto sin
+    documento.
+- **Para el futuro:** quitar metadatos al subir (fotos y PDF), pasar los PDF por un «limpiador» que quite el
+  JavaScript, cifrar los ficheros en el disco y una tarea que busque ficheros sueltos.
+
 ---
 
 ## 7. Borrado y copias

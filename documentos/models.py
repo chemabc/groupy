@@ -1,6 +1,7 @@
 """
 Tablas del módulo «documentos»: órdenes del día (ODD), actas y documentos libres, con el registro de
-cambios y los comentarios (ver docs/diseno.md, apartado 13).
+cambios y los comentarios; y también archivos subidos (con sus versiones), enlaces y la papelera (ver
+docs/diseno.md, apartados 13 y 13.4).
 """
 
 from django.conf import settings
@@ -9,15 +10,22 @@ from django.db import models
 
 class Documento(models.Model):
     """
-    Un texto con formato (Markdown) que escriben quienes tienen el cometido de redacción: el orden del día
-    de una reunión, su acta o un documento libre. Puede colgar de otra cosa (una reunión, un proyecto) y
-    entonces toma su grupo y quién lo ve. Detrás de cada párrafo se guarda quién ha contribuido a él.
+    Un documento del grupo. Puede ser un texto con formato (Markdown o Typst) que escriben quienes tienen el
+    cometido de redacción (el orden del día de una reunión, su acta o un documento libre), un archivo
+    subido (un PDF, una imagen…, con sus versiones) o un enlace (a otra web o a otro documento). Puede
+    colgar de otra cosa (una reunión, un proyecto, una tarea, un debate, una consulta) y entonces toma su
+    grupo y quién lo ve. Detrás de cada párrafo de un texto se guarda quién ha contribuido a él. Si se
+    elimina, pasa 30 días en la papelera.
     """
 
     ODD = "odd"
     ACTA = "acta"
     LIBRE = "libre"
-    TIPOS = [(ODD, "Orden del día"), (ACTA, "Acta"), (LIBRE, "Documento")]
+    ARCHIVO = "archivo"
+    ENLACE = "enlace"
+    TIPOS = [(ODD, "Orden del día"), (ACTA, "Acta"), (LIBRE, "Documento"), (ARCHIVO, "Archivo"), (ENLACE, "Enlace")]
+    # Los que se escriben con el editor (los demás son un archivo subido o un enlace).
+    ESCRITOS = (ODD, ACTA, LIBRE)
     BORRADOR = "borrador"
     APROBADO = "aprobado"
     ESTADOS = [(BORRADOR, "Borrador"), (APROBADO, "Aprobado")]
@@ -55,6 +63,27 @@ class Documento(models.Model):
     creado = models.DateTimeField("creado", auto_now_add=True, help_text="Cuándo se creó.")
     actualizado = models.DateTimeField("último cambio", auto_now=True, help_text="Cuándo cambió por última vez.")
     aprobado_el = models.DateTimeField("aprobado el", null=True, blank=True, help_text="Cuándo se aprobó.")
+    # Archivos subidos (tipo «Archivo»): lo que se repite de su última versión, para filtrar la lista.
+    extension = models.CharField(
+        "extensión", max_length=10, blank=True, help_text="Si es un archivo, su extensión en minúsculas («pdf», «odt»…) de la última versión."
+    )
+    tamano = models.PositiveBigIntegerField("tamaño", default=0, help_text="Si es un archivo, los bytes de su última versión.")
+    # Enlaces (tipo «Enlace»): a una dirección de fuera o a otro documento de la plataforma.
+    url = models.URLField(
+        "dirección", max_length=1000, blank=True, help_text="Si es un enlace a otra web (Drive…), su dirección completa (https://…)."
+    )
+    enlazado = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="enlaces", verbose_name="documento enlazado",
+        help_text="Si es un enlace a otro documento de la plataforma (un texto escrito en el editor), cuál.",
+    )
+    # Papelera: un documento eliminado se puede recuperar durante 30 días; después se borra de verdad.
+    en_papelera_desde = models.DateTimeField(
+        "en la papelera desde", null=True, blank=True, help_text="Cuándo se eliminó. Vacío: no está en la papelera."
+    )
+    en_papelera_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+", verbose_name="eliminado por",
+        help_text="Quién lo llevó a la papelera.",
+    )
 
     class Meta:
         verbose_name = "documento"
@@ -65,6 +94,74 @@ class Documento(models.Model):
     # Texto con el que se muestra: su título.
     def __str__(self):
         return self.titulo
+
+
+# Dónde se guarda cada versión de un archivo: una carpeta por mes y un nombre al azar (el nombre original
+# se guarda aparte), para que no se pueda adivinar ni choque con otro.
+def ruta_de_archivo(version, _nombre):
+    import uuid
+
+    return f"documentos/{version.subida:%Y/%m}/{uuid.uuid4().hex}"
+
+
+class VersionDeArchivo(models.Model):
+    """
+    Una versión de un archivo subido (un PDF, una imagen, una hoja de cálculo abierta…). Subir una versión
+    nueva no borra las anteriores. El fichero no tiene dirección pública: lo entrega la pantalla de
+    descargar, solo a quien ve el documento. Antes de guardarse pasa por el antivirus.
+    """
+
+    LIMPIO = "limpio"
+    SIN_REVISAR = "sin_revisar"
+    REVISIONES = [(LIMPIO, "Revisado por el antivirus"), (SIN_REVISAR, "Sin revisar (no hay antivirus)")]
+
+    documento = models.ForeignKey(Documento, on_delete=models.CASCADE, related_name="archivos", verbose_name="documento", help_text="De qué archivo es esta versión.")
+    numero = models.PositiveIntegerField("número", help_text="1 la primera, 2 la siguiente…")
+    subida = models.DateTimeField("subida", help_text="Cuándo se subió.")
+    fichero = models.FileField("fichero", upload_to=ruta_de_archivo, max_length=200, help_text="El contenido, guardado con un nombre al azar.")
+    nombre_original = models.CharField("nombre original", max_length=255, help_text="Cómo se llamaba en el ordenador de quien lo subió.")
+    extension = models.CharField("extensión", max_length=10, help_text="«pdf», «png», «odt»…")
+    tipo_mime = models.CharField("tipo de contenido", max_length=100, help_text="Cómo se le dice al navegador qué es: «application/pdf»…")
+    tamano = models.PositiveBigIntegerField("tamaño", help_text="En bytes.")
+    subida_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+", verbose_name="subida por", help_text="Quién la subió."
+    )
+    revision = models.CharField(
+        "antivirus", max_length=12, choices=REVISIONES, default=SIN_REVISAR,
+        help_text="Si lo ha revisado el antivirus (si encuentra un virus, el archivo no se guarda).",
+    )
+
+    class Meta:
+        verbose_name = "versión de un archivo"
+        verbose_name_plural = "versiones de archivos"
+        ordering = ["-numero"]
+        constraints = [models.UniqueConstraint(fields=["documento", "numero"], name="una_version_de_archivo_por_numero")]
+
+    # Texto con el que se muestra: «informe.pdf (versión 2)».
+    def __str__(self):
+        return f"{self.nombre_original} (versión {self.numero})"
+
+
+class EspacioParaArchivos(models.Model):
+    """
+    Cuánto pueden ocupar los archivos subidos de una organización (todas sus versiones, también las de la
+    papelera). Lo pone el superadmin. La fila sin organización es la de toda la plataforma: vale para las
+    organizaciones que no tienen la suya.
+    """
+
+    organizacion = models.OneToOneField(
+        "grupos.Organizacion", on_delete=models.CASCADE, null=True, blank=True, related_name="+", verbose_name="organización",
+        help_text="De qué organización. Vacío: el de partida para todas.",
+    )
+    megas = models.PositiveIntegerField("espacio (MB)", default=2048, help_text="Megabytes como mucho. De partida, 2048 (2 GB).")
+
+    class Meta:
+        verbose_name = "espacio para archivos"
+        verbose_name_plural = "espacios para archivos"
+
+    # Texto con el que se muestra: «ORG Tajo: 2048 MB».
+    def __str__(self):
+        return f"{self.organizacion or 'Plataforma'}: {self.megas} MB"
 
 
 class CambioDeDocumento(models.Model):

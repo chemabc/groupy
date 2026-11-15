@@ -1,0 +1,11 @@
+{% comment %}
+  Botón «Eliminar» de la ficha de un documento (lo lleva a la papelera, con confirmación). Recibe
+  «documento» y «elimina» (si quien mira puede).
+{% endcomment %}
+{% if elimina and not documento.en_papelera_desde %}
+  <form method="post" class="text-sm">
+    {% csrf_token %}
+    <button type="submit" name="accion" value="eliminar" onclick="return confirm('¿Llevar «{{ documento.titulo|escapejs }}» a la papelera? Se puede recuperar durante 30 días.')"
+            class="rounded border border-red-300 px-3 py-1 text-red-700 dark:border-red-800 dark:text-red-300">Eliminar</button>
+  </form>
+{% endif %}

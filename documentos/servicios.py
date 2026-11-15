@@ -1,7 +1,8 @@
 """
 Operaciones del módulo «documentos»: crear (suelto, colgado de algo o el acta a partir de su orden del
 día), quién lo escribe, guardar con la autoría de cada párrafo y el registro de cambios, comentar y
-aprobar (al aprobar un acta, sus acuerdos pasan al registro de decisiones con un eventos_sw).
+aprobar (al aprobar un acta, sus acuerdos pasan al registro de decisiones con un eventos_sw). También
+subir archivos (con versiones), enlaces, la papelera y lo congelado por una votación (apartado 13.4).
 """
 
 import difflib
@@ -11,22 +12,36 @@ from datetime import timezone as zona
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db.models import Max, Q, Sum
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.module_loading import import_string
 
 from audiencias.selector import audiencia_de
 from audiencias.servicios import filtrar_visibles, puede_ver
 from base import editor
 from base.anclas import buscar_ancla
 from base.limites import mas_estricto
+from base.registro import registro
 from base.contrato import FilaDeResumen
 from eventos_sw.servicios import emitir
 from grupos.models import Contencion
 from permisos.models import Cometido
 from permisos.servicios import asignar_cometido, exigir, puede
 
-from .models import CambioDeDocumento, Comentario, ComentarioEnElTexto, Documento, LimitesDeDocumento, VersionDeDocumento
+from .archivos import comprobar
+from .models import (
+    CambioDeDocumento,
+    Comentario,
+    ComentarioEnElTexto,
+    Documento,
+    EspacioParaArchivos,
+    LimitesDeDocumento,
+    VersionDeArchivo,
+    VersionDeDocumento,
+)
 
 # Tipo de ancla de los documentos.
 ANCLA = "documentos.documento"
@@ -35,6 +50,8 @@ REDACCION = "documentos.redaccion"
 # Cometido de una reunión que también da permiso para escribir sus documentos (lo declara «eventos»; se
 # nombra por su código, sin importar el módulo).
 TOMA_DE_ACTA = "eventos.toma_de_acta"
+# Cometido de un debate que también deja eliminar los documentos que cuelgan de él (lo declara «debates»).
+FACILITACION = "debates.facilitacion"
 # Minutos sin escribir tras los que el siguiente cambio empieza una versión nueva (ver VersionDeDocumento).
 VERSION_CADA = 10
 # Límites de partida, si el superadmin no ha puesto los de la plataforma: cuántas personas escriben (tienen
@@ -81,21 +98,12 @@ FINAL_DEL_ACTA = f"""
 #   - formato: «markdown» (de partida) o «typst».
 @transaction.atomic
 def crear(usuario, tipo, titulo, grupo=None, visibilidad="privado", ancla=(None, None), texto=None, formato=Documento.MARKDOWN):
-    ancla_tipo, ancla_id = ancla
-    elemento = buscar_ancla(ancla_tipo, ancla_id) if ancla_tipo else None
-    if ancla_tipo and elemento is None:
-        raise ValidationError("Aquello de lo que iba a colgar ya no existe.")
-    if elemento is not None and getattr(elemento, "audiencia_id", None) and getattr(elemento, "grupo_id", None):
-        grupo, audiencia = elemento.grupo, elemento.audiencia
-        if not (puede_ver(usuario, audiencia) or getattr(elemento, "convocante_id", None) == usuario.pk or getattr(elemento, "creador_id", None) == usuario.pk):
-            raise ValidationError("No puedes colgar documentos de algo que no ves.")
-    else:
-        audiencia = audiencia_de(visibilidad, grupo, personas=[usuario])
+    grupo, audiencia = _grupo_y_audiencia(usuario, ancla, grupo, visibilidad)
     exigir(usuario, "documentos.crear", grupo=grupo)
     if texto is None:
         texto = _en_formato(ODD_INICIAL if tipo == Documento.ODD else FINAL_DEL_ACTA.lstrip() if tipo == Documento.ACTA else "", formato)
     documento = Documento(
-        tipo=tipo, titulo=titulo, grupo=grupo, audiencia=audiencia, ancla_tipo=ancla_tipo or "", ancla_id=ancla_id, creador=usuario, texto="",
+        tipo=tipo, titulo=titulo, grupo=grupo, audiencia=audiencia, ancla_tipo=ancla[0] or "", ancla_id=ancla[1], creador=usuario, texto="",
         formato=formato,
     )
     documento.full_clean()
@@ -103,6 +111,36 @@ def crear(usuario, tipo, titulo, grupo=None, visibilidad="privado", ancla=(None,
     asignar_cometido(usuario, REDACCION, ANCLA, documento.pk, grupo=grupo)
     _guardar_texto(documento, usuario, texto, "creado")
     return documento
+
+
+# El grupo y quién ve un documento nuevo (función interna de crear, subir y enlazar). Si cuelga de algo,
+# los suyos: los que diga su ancla en el contrato (Ancla.contexto) o, si no, sus campos «grupo» y
+# «audiencia»; y quien lo crea tiene que poder verlo. Si no cuelga de nada, el grupo y la visibilidad
+# elegidos. Devuelve (grupo, audiencia).
+#   - usuario: quien lo crea.
+#   - ancla: (tipo, número), o (None, None).
+#   - grupo, visibilidad: lo elegido, si no cuelga de nada.
+def _grupo_y_audiencia(usuario, ancla, grupo, visibilidad):
+    ancla_tipo, ancla_id = ancla
+    if not ancla_tipo:
+        return grupo, audiencia_de(visibilidad, grupo, personas=[usuario])
+    elemento = buscar_ancla(ancla_tipo, ancla_id)
+    if elemento is None:
+        raise ValidationError("Aquello de lo que iba a colgar ya no existe.")
+    declarada = registro.anclas[ancla_tipo]
+    if declarada.contexto:
+        contexto = import_string(declarada.contexto)(ancla_id)
+        if contexto is None:
+            raise ValidationError("De aquí no se pueden colgar documentos (por ejemplo, de una tarea personal).")
+        grupo, audiencia = contexto
+    elif getattr(elemento, "audiencia_id", None) and getattr(elemento, "grupo_id", None):
+        grupo, audiencia = elemento.grupo, elemento.audiencia
+    else:
+        raise ValidationError("De aquí no se pueden colgar documentos.")
+    propio = usuario.pk in (getattr(elemento, "convocante_id", None), getattr(elemento, "creador_id", None), getattr(elemento, "responsable_id", None))
+    if not (propio or puede_ver(usuario, audiencia)):
+        raise ValidationError("No puedes colgar documentos de algo que no ves.")
+    return grupo, audiencia
 
 
 # Crea el acta de una reunión a partir de su orden del día: copia sus puntos y le añade los apartados
@@ -164,10 +202,12 @@ def ve(usuario, documento):
     return documento.creador_id == usuario.pk or puede_ver(usuario, documento.audiencia_id) or _redacta(usuario, documento)
 
 
-# Consulta (sin ejecutar) de los documentos que ve una persona.
-def visibles(usuario):
+# Consulta (sin ejecutar) de los documentos que ve una persona. Sin los de la papelera, salvo que se pidan.
+#   - con_papelera: si se quieren también los eliminados (para la papelera).
+def visibles(usuario, con_papelera=False):
     propios = Cometido.objects.filter(usuario=usuario, codigo=REDACCION, ancla_tipo=ANCLA).values("ancla_id")
-    return Documento.objects.filter(Q(pk__in=filtrar_visibles(Documento.objects.all(), usuario).values("pk")) | Q(creador=usuario) | Q(pk__in=propios))
+    consulta = Documento.objects.filter(Q(pk__in=filtrar_visibles(Documento.objects.all(), usuario).values("pk")) | Q(creador=usuario) | Q(pk__in=propios))
+    return consulta if con_papelera else consulta.filter(en_papelera_desde__isnull=True)
 
 
 # Dice si una persona tiene la redacción del documento (o la toma de acta de la reunión de la que cuelga).
@@ -184,6 +224,8 @@ def _redacta(usuario, documento):
 #   - aunque_aprobado: para lo que se puede hacer también con un documento ya aprobado (crear el acta).
 def puede_escribir(usuario, documento, aunque_aprobado=False):
     if documento.estado == Documento.APROBADO and not aunque_aprobado:
+        return False
+    if documento.tipo not in Documento.ESCRITOS or documento.en_papelera_desde or congelado(documento):
         return False
     return _redacta(usuario, documento)
 
@@ -494,7 +536,286 @@ def aprobar(usuario, documento):
 
 
 # Los documentos que cuelgan de algo y ve una persona, para el recuadro «Cuelga de aquí» de su ficha (ver
-# Colgante en documentos/apps.py). Una consulta.
+# Colgante en documentos/apps.py). También los de lo que hay «dentro» (Ancla.dentro: en un proyecto, los de
+# sus tareas), con su nombre detrás. Una o dos consultas.
 def colgantes(usuario, ancla_tipo, ancla_id):
-    lista = visibles(usuario).filter(ancla_tipo=ancla_tipo, ancla_id=ancla_id).order_by("creado")
-    return [FilaDeResumen(d.titulo, reverse("documentos:documento", args=[d.pk]), f"{d.get_tipo_display()} · {d.get_estado_display().lower()}") for d in lista]
+    dentro = {}
+    declarada = registro.anclas.get(ancla_tipo)
+    if declarada and declarada.dentro:
+        dentro = {(tipo, numero): nombre for tipo, numero, nombre in import_string(declarada.dentro)(ancla_id)}
+    condicion = Q(ancla_tipo=ancla_tipo, ancla_id=ancla_id)
+    for tipo in {tipo for tipo, _numero in dentro}:
+        condicion |= Q(ancla_tipo=tipo, ancla_id__in=[numero for t, numero in dentro if t == tipo])
+    filas = []
+    for d in visibles(usuario).filter(condicion).order_by("creado"):
+        detalle = _detalle(d)
+        if (d.ancla_tipo, d.ancla_id) in dentro:
+            detalle = f"{detalle} · de «{dentro[(d.ancla_tipo, d.ancla_id)]}»"
+        filas.append(FilaDeResumen(d.titulo, reverse("documentos:documento", args=[d.pk]), detalle))
+    return filas
+
+
+# Lo que se cuenta de un documento en una línea: «Acta · borrador», «Archivo · pdf», «Enlace».
+def _detalle(documento):
+    if documento.tipo == Documento.ARCHIVO:
+        return f"Archivo · {documento.extension}"
+    if documento.tipo == Documento.ENLACE:
+        return "Enlace"
+    return f"{documento.get_tipo_display()} · {documento.get_estado_display().lower()}"
+
+
+# ── Archivos y enlaces (apartado 13.4) ───────────────────────────────────────────────────────────────
+
+
+# Dice si un documento está congelado: cuelga de algo que no deja cambiar lo suyo (una consulta desde que
+# se abre la votación; lo dice su ancla en el contrato, Ancla.congela). Una consulta, si cuelga de algo.
+def congelado(documento):
+    declarada = registro.anclas.get(documento.ancla_tipo) if documento.ancla_tipo else None
+    return bool(declarada and declarada.congela and import_string(declarada.congela)(documento.ancla_id))
+
+
+# Dice si una persona es de la administración del grupo de un documento.
+def _administra(usuario, documento):
+    return puede(usuario, "grupos.editar_grupo", grupo=documento.grupo_id)
+
+
+# Dice si una persona puede cambiar un archivo o un enlace (subir otra versión, cambiarle el nombre o la
+# dirección): quien lo creó, quien tiene su redacción y la administración del grupo; nunca si está en la
+# papelera o congelado.
+def puede_modificar(usuario, documento):
+    if documento.tipo in Documento.ESCRITOS or documento.en_papelera_desde or congelado(documento):
+        return False
+    return documento.creador_id == usuario.pk or _redacta(usuario, documento) or _administra(usuario, documento)
+
+
+# Dice si una persona puede eliminar un documento (llevarlo a la papelera) o recuperarlo: quien lo creó, la
+# administración del grupo y, si cuelga de un debate, su facilitación. Nunca si está congelado.
+def puede_eliminar(usuario, documento):
+    if congelado(documento):
+        return False
+    if documento.creador_id == usuario.pk or _administra(usuario, documento):
+        return True
+    return documento.ancla_tipo == "debates.debate" and Cometido.objects.filter(
+        usuario=usuario, codigo=FACILITACION, ancla_tipo="debates.debate", ancla_id=documento.ancla_id
+    ).exists()
+
+
+# Espacio que ocupan los archivos de una organización (todas las versiones, también en la papelera), en
+# bytes. Una consulta.
+def espacio_usado(organizacion_id):
+    return VersionDeArchivo.objects.filter(documento__grupo__organizacion_id=organizacion_id).aggregate(total=Sum("tamano"))["total"] or 0
+
+
+# Espacio máximo de una organización, en bytes: el suyo, si el superadmin lo ha puesto, o el de la
+# plataforma (de partida, 2 GB). Una consulta.
+def espacio_maximo(organizacion_id):
+    filas = {fila.organizacion_id: fila.megas for fila in EspacioParaArchivos.objects.filter(Q(organizacion_id=organizacion_id) | Q(organizacion__isnull=True))}
+    megas = filas.get(organizacion_id, filas.get(None, EspacioParaArchivos._meta.get_field("megas").default))
+    return megas * 1024 * 1024
+
+
+# Guarda una versión nueva de un archivo ya comprobado (función interna). Comprueba antes el espacio de la
+# organización. Pone al día la extensión y el tamaño del documento.
+#   - documento: el archivo.
+#   - comprobado: un ArchivoComprobado (documentos/archivos.py).
+#   - usuario: quien lo sube.
+def _guardar_version(documento, comprobado, usuario):
+    organizacion_id = documento.grupo.organizacion_id
+    if espacio_usado(organizacion_id) + len(comprobado.contenido) > espacio_maximo(organizacion_id):
+        raise ValidationError("La organización ha llegado a su espacio máximo para archivos. Pide a la administración que libere espacio o lo amplíe.")
+    numero = (documento.archivos.aggregate(mayor=Max("numero"))["mayor"] or 0) + 1
+    version = VersionDeArchivo(
+        documento=documento, numero=numero, subida=timezone.now(), nombre_original=comprobado.nombre, extension=comprobado.extension,
+        tipo_mime=comprobado.tipo_mime, tamano=len(comprobado.contenido), subida_por=usuario, revision=comprobado.revision,
+    )
+    version.fichero.save(comprobado.nombre, ContentFile(comprobado.contenido), save=False)
+    try:
+        version.save()
+    except Exception:
+        # Si no se puede apuntar la versión, el fichero recién guardado no debe quedarse suelto.
+        borrar_ficheros([version.fichero.name])
+        raise
+    Documento.objects.filter(pk=documento.pk).update(extension=comprobado.extension, tamano=len(comprobado.contenido), actualizado=timezone.now())
+    documento.extension, documento.tamano = comprobado.extension, len(comprobado.contenido)
+    CambioDeDocumento.objects.create(documento=documento, alias=str(usuario), resumen=f"versión {numero} del archivo ({comprobado.nombre})")
+    return version
+
+
+# Sube un archivo nuevo (un PDF de contexto para un debate, una foto…). Lo comprueba (tipo, contenido,
+# tamaño y antivirus; ver documentos/archivos.py), toma el grupo y quién lo ve como un documento y guarda
+# su primera versión. Devuelve el documento.
+#   - usuario: quien lo sube (necesita «documentos.crear» en el grupo).
+#   - subido: el archivo del formulario.
+#   - titulo: cómo se llamará (si se deja vacío, el nombre del archivo).
+#   - grupo, visibilidad, ancla: como en crear().
+@transaction.atomic
+def subir_archivo(usuario, subido, titulo="", grupo=None, visibilidad="privado", ancla=(None, None)):
+    comprobado = comprobar(subido)
+    grupo, audiencia = _grupo_y_audiencia(usuario, ancla, grupo, visibilidad)
+    exigir(usuario, "documentos.crear", grupo=grupo)
+    documento = Documento(
+        tipo=Documento.ARCHIVO, titulo=(titulo or comprobado.nombre)[:200], grupo=grupo, audiencia=audiencia, ancla_tipo=ancla[0] or "",
+        ancla_id=ancla[1], creador=usuario, estado=Documento.APROBADO,
+    )
+    documento.full_clean()
+    documento.save()
+    _guardar_version(documento, comprobado, usuario)
+    return documento
+
+
+# Sube una versión nueva de un archivo (las anteriores se guardan). Devuelve la versión.
+#   - usuario: quien la sube (ver puede_modificar).
+#   - documento: el archivo.
+#   - subido: el archivo del formulario.
+@transaction.atomic
+def nueva_version(usuario, documento, subido):
+    if not puede_modificar(usuario, documento):
+        raise ValidationError("No puedes cambiar este archivo (o está congelado por una votación abierta).")
+    return _guardar_version(documento, comprobar(subido), usuario)
+
+
+# Crea un enlace: a otra web (Drive…) o a otro documento de la plataforma. Devuelve el documento.
+#   - usuario: quien lo crea (necesita «documentos.crear» en el grupo).
+#   - titulo: cómo se llamará.
+#   - url: la dirección de fuera, o vacía.
+#   - enlazado: el documento de la plataforma, o None (uno de los dos, no los dos).
+#   - grupo, visibilidad, ancla: como en crear().
+@transaction.atomic
+def enlazar(usuario, titulo, url="", enlazado=None, grupo=None, visibilidad="privado", ancla=(None, None)):
+    _comprobar_destino(usuario, url, enlazado)
+    grupo, audiencia = _grupo_y_audiencia(usuario, ancla, grupo, visibilidad)
+    exigir(usuario, "documentos.crear", grupo=grupo)
+    documento = Documento(
+        tipo=Documento.ENLACE, titulo=titulo or (enlazado.titulo if enlazado else url)[:200], grupo=grupo, audiencia=audiencia,
+        ancla_tipo=ancla[0] or "", ancla_id=ancla[1], creador=usuario, url=url, enlazado=enlazado, estado=Documento.APROBADO,
+    )
+    documento.full_clean()
+    documento.save()
+    CambioDeDocumento.objects.create(documento=documento, alias=str(usuario), resumen="creado")
+    return documento
+
+
+# Comprueba el destino de un enlace: o una dirección http(s) o un documento que quien enlaza ve.
+def _comprobar_destino(usuario, url, enlazado):
+    if bool(url) == bool(enlazado):
+        raise ValidationError("Pon una dirección o elige un documento de la plataforma (uno de los dos).")
+    if url and not url.lower().startswith(("https://", "http://")):
+        raise ValidationError("La dirección debe empezar por https:// (o http://).")
+    if enlazado is not None and not ve(usuario, enlazado):
+        raise ValidationError("Solo puedes enlazar documentos que ves.")
+
+
+# Cambia el nombre de un archivo o de un enlace y, si es un enlace, su destino.
+#   - usuario: quien lo cambia (ver puede_modificar).
+#   - documento: el archivo o el enlace.
+#   - titulo: el nombre nuevo.
+#   - url, enlazado: el destino nuevo de un enlace (se ignoran en un archivo).
+@transaction.atomic
+def cambiar(usuario, documento, titulo, url="", enlazado=None):
+    if not puede_modificar(usuario, documento):
+        raise ValidationError("No puedes cambiarlo (o está congelado por una votación abierta).")
+    documento.titulo = titulo.strip()[:200] or documento.titulo
+    campos = ["titulo", "actualizado"]
+    if documento.tipo == Documento.ENLACE:
+        _comprobar_destino(usuario, url, enlazado)
+        documento.url, documento.enlazado = url, enlazado
+        campos += ["url", "enlazado"]
+    documento.save(update_fields=campos)
+    CambioDeDocumento.objects.create(documento=documento, alias=str(usuario), resumen="cambiado el nombre o el destino")
+
+
+# Lleva un documento a la papelera: deja de verse en las listas y se puede recuperar durante 30 días.
+#   - usuario: quien lo elimina (ver puede_eliminar).
+@transaction.atomic
+def eliminar(usuario, documento):
+    if not puede_eliminar(usuario, documento):
+        raise ValidationError("Solo lo eliminan quien lo creó, la administración del grupo o la facilitación del debate (y no mientras se vota).")
+    documento.en_papelera_desde, documento.en_papelera_por = timezone.now(), usuario
+    documento.save(update_fields=["en_papelera_desde", "en_papelera_por"])
+    CambioDeDocumento.objects.create(documento=documento, alias=str(usuario), resumen="llevado a la papelera")
+    if documento.tipo in Documento.ESCRITOS:
+        transaction.on_commit(lambda: editor.cerrar_sala(ANCLA, documento.pk))
+
+
+# Saca un documento de la papelera.
+#   - usuario: quien lo recupera (ver puede_eliminar).
+@transaction.atomic
+def recuperar(usuario, documento):
+    if not puede_eliminar(usuario, documento):
+        raise ValidationError("Solo lo recuperan quien lo creó, la administración del grupo o la facilitación del debate.")
+    documento.en_papelera_desde, documento.en_papelera_por = None, None
+    documento.save(update_fields=["en_papelera_desde", "en_papelera_por"])
+    CambioDeDocumento.objects.create(documento=documento, alias=str(usuario), resumen="recuperado de la papelera")
+
+
+# Lo que hay en la papelera y puede recuperar una persona: lo que ve, está en la papelera y puede
+# eliminar. Unas 3 consultas más una por documento como mucho (comprobar la facilitación); la papelera es
+# corta (se vacía a los 30 días).
+def papelera_de(usuario):
+    en_papelera = visibles(usuario, con_papelera=True).filter(en_papelera_desde__isnull=False).select_related("grupo", "en_papelera_por")
+    return [d for d in en_papelera.order_by("-en_papelera_desde") if puede_eliminar(usuario, d)]
+
+
+# Borra de verdad lo que lleva en la papelera desde antes de un momento, con sus ficheros. La llama la
+# limpieza diaria (Limpiable «documentos.papelera»). Devuelve cuántos ha borrado.
+#   - momento: lo eliminado antes de esto se borra.
+def vaciar_papelera(momento):
+    viejos = list(Documento.objects.filter(en_papelera_desde__lt=momento))
+    ficheros = [v.fichero.name for v in VersionDeArchivo.objects.filter(documento__in=viejos)]
+    with transaction.atomic():
+        borrados = Documento.objects.filter(pk__in=[d.pk for d in viejos]).delete()[1].get("documentos.Documento", 0)
+    borrar_ficheros(ficheros)
+    return borrados
+
+
+# Borra ficheros guardados (los de las versiones de los archivos borrados). Si alguno ya no está, sigue.
+def borrar_ficheros(nombres):
+    for nombre in nombres:
+        try:
+            default_storage.delete(nombre)
+        except OSError:
+            pass
+
+
+# Días que pasa un documento en la papelera antes de borrarse: los de partida de su Limpiable (30). Si el
+# superadmin los cambia en «Plataforma → Limpieza», la limpieza usa los suyos; aquí se enseñan los de partida.
+def dias_en_la_papelera():
+    return registro.limpiables["documentos.papelera"].borrar_a
+
+
+# ── Espacio para archivos (lo pone el superadmin) ────────────────────────────────────────────────────
+
+
+# Las organizaciones con su espacio máximo (el suyo o el de la plataforma) y lo que ocupan, en MB. Tres
+# consultas.
+def espacios():
+    from grupos.models import Organizacion
+
+    propios = dict(EspacioParaArchivos.objects.filter(organizacion__isnull=False).values_list("organizacion_id", "megas"))
+    plataforma = espacio_maximo(None) // 1024 // 1024
+    usados = dict(
+        VersionDeArchivo.objects.values("documento__grupo__organizacion_id").annotate(total=Sum("tamano")).values_list("documento__grupo__organizacion_id", "total")
+    )
+    return [
+        {
+            "organizacion": organizacion, "propio": propios.get(organizacion.pk), "megas": propios.get(organizacion.pk, plataforma),
+            "usados": round((usados.get(organizacion.pk) or 0) / 1024 / 1024, 1),
+        }
+        for organizacion in Organizacion.objects.order_by("nombre")
+    ]
+
+
+# Pone el espacio máximo de una organización (o el de la plataforma). Solo el superadmin (lo comprueba la
+# vista).
+#   - organizacion: su número como texto, o vacío para la plataforma.
+#   - megas: el número de MB como texto; vacío en una organización quita la suya (vale la de la plataforma).
+@transaction.atomic
+def poner_espacio(organizacion, megas):
+    organizacion_id = int(organizacion) if str(organizacion).isdigit() else None
+    megas = str(megas).strip()
+    if not megas and organizacion_id:
+        EspacioParaArchivos.objects.filter(organizacion_id=organizacion_id).delete()
+        return
+    if not megas.isdigit() or int(megas) < 1:
+        raise ValidationError("Pon un número entero de megabytes (MB), como 2048.")
+    EspacioParaArchivos.objects.update_or_create(organizacion_id=organizacion_id, defaults={"megas": int(megas)})

@@ -3,13 +3,14 @@
   también lo que devuelve el servidor al pulsar ese botón: las filas siguientes y un botón nuevo, que
   sustituyen al anterior. Recibe «tabla».
 
-  Cada fila lleva en data-texto su texto de búsqueda normalizado y en data-filtro-<campo> sus categorías,
+  Cada fila lleva en data-texto su texto de búsqueda normalizado, en data-filtro-<campo> sus categorías y,
+  si la tabla tiene rango de fechas, en data-fecha su día (AAAA-MM-DD),
   y cada celda en data-valor el valor con el que se ordena: los usa tablaLocal (interfaz.js). Una celda con
   plantilla propia (Columna.plantilla) se pinta con ella y recibe la fila entera («fila»); la fila lleva las
   clases de su campo «_clase».
 {% endcomment %}
 {% for fila in tabla.filas_pintadas %}
-  <tr class="border-t border-slate-200 dark:border-slate-800 {{ fila.clase }}" data-texto="{{ fila.texto }}"{% for campo, valor in fila.categorias %} data-filtro-{{ campo }}="{{ valor }}"{% endfor %}>
+  <tr class="border-t border-slate-200 dark:border-slate-800 {{ fila.clase }}" data-texto="{{ fila.texto }}"{% for campo, valor in fila.categorias %} data-filtro-{{ campo }}="{{ valor }}"{% endfor %}{% if fila.fecha %} data-fecha="{{ fila.fecha }}"{% endif %}>
     {% for celda in fila.celdas %}<td class="px-3 py-1.5" data-valor="{{ celda.valor }}">{% if celda.plantilla %}{% include celda.plantilla with fila=fila.datos %}{% elif celda.enlace %}<a href="{{ celda.enlace }}" class="text-marca hover:underline">{{ celda.texto }}</a>{% else %}{{ celda.texto }}{% endif %}</td>{% endfor %}
   </tr>
 {% empty %}

@@ -1,0 +1,15 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Nuevo documento → Enlazar» (documentos/views.py, enlazar): un enlace a otra web (Drive…) o a
+  otro documento de aquí. Recibe «formulario» y lo de las pestañas de crear.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-xl space-y-3">
+  {% include "documentos/_pestanas_de_crear.html" %}
+  <form method="post" class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear el enlace</button>
+  </form>
+</div>
+{% endblock %}

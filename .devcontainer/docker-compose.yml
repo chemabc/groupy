@@ -38,6 +38,9 @@ services:
       EDITOR_URL: ws://localhost:1234
       EDITOR_URL_INTERNA: http://editor:1234
       EDITOR_SECRETO: solo-para-desarrollo-cambiar-en-produccion
+      # Antivirus de los archivos subidos (servicio «antivirus», más abajo; ver documentos/archivos.py)
+      #   - ANTIVIRUS: servidor:puerto donde escucha ClamAV (vacío: sin antivirus, archivos «sin revisar»)
+      ANTIVIRUS: antivirus:3310
     # Arranca primero la base de datos y Redis
     depends_on:
       - db
@@ -147,6 +150,17 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d:ro
 
+  # Antivirus ClamAV: revisa cada archivo que se sube a «documentos» antes de guardarlo. Es un programa
+  # aparte (licencia GPL, pero no se mezcla con nuestro código: se le habla por la red con su protocolo).
+  # Al arrancar descarga las firmas de virus, que tarda unos minutos; mientras, no se pueden subir archivos.
+  antivirus:
+    # Imagen oficial de ClamAV, versión estable
+    image: clamav/clamav:stable
+    # Guarda las firmas de virus en un volumen, para no descargarlas enteras cada vez que arranca
+    #   - clamav: nombre del volumen; /var/lib/clamav es donde ClamAV guarda sus firmas
+    volumes:
+      - clamav:/var/lib/clamav
+
   # Redis 8: caché, tiempo real y cola de tareas (imagen oficial sobre Debian 13)
   redis:
     image: redis:8-trixie
@@ -163,3 +177,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  clamav:

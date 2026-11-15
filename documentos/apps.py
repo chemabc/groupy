@@ -2,7 +2,21 @@
 Configuración y contrato del módulo «documentos».
 """
 
-from base.contrato import Ancla, Ayuda, Capa, Colgante, Cometido, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TextoEditable
+from base.contrato import (
+    Ancla,
+    Ayuda,
+    Capa,
+    Colgante,
+    Cometido,
+    DatosDeEjemplo,
+    Emision,
+    EntradaDeMenu,
+    Limpiable,
+    ModuloConfig,
+    Permiso,
+    TextoEditable,
+    Vista,
+)
 
 
 class DocumentosConfig(ModuloConfig):
@@ -24,6 +38,8 @@ class DocumentosConfig(ModuloConfig):
     anclas = (Ancla("documentos.documento", "documentos.Documento", "Un orden del día, un acta o un documento"),)
     permisos = (
         Permiso("documentos.crear", "Crear órdenes del día, actas y documentos del grupo", roles=("usuario", "admin_grupo", "admin_org")),
+        # Sin roles: solo el superadmin.
+        Permiso("documentos.espacio", "Poner cuánto pueden ocupar los archivos de cada organización"),
         Permiso("documentos.limitar", "Poner cuántas personas escriben y comentan a la vez (organización, grupo o documento)", roles=("admin_grupo", "admin_org")),
     )
     cometidos = (
@@ -46,14 +62,27 @@ class DocumentosConfig(ModuloConfig):
     )
     colgantes = (
         Colgante(
-            "documentos.documentos", "Órdenes del día y actas", ("eventos.evento", "proyectos.proyecto"), "documentos.servicios.colgantes",
-            crear="documentos:nuevo", texto_crear="+ Documento",
+            "documentos.documentos", "Documentos",
+            ("eventos.evento", "proyectos.proyecto", "proyectos.tarea", "debates.debate", "consultas.consulta"),
+            "documentos.servicios.colgantes", crear="documentos:nuevo", texto_crear="+ Documento, archivo o enlace",
+        ),
+    )
+    # Lo que lleva 30 días en la papelera se borra de verdad, con sus archivos (ver documentos/servicios.py).
+    limpiables = (
+        Limpiable(
+            "documentos.papelera", "documentos.Documento", "Documentos en la papelera (días desde que se eliminaron)",
+            borrar="documentos.servicios.vaciar_papelera", borrar_a=30,
         ),
     )
     menu = (
         EntradaDeMenu(
-            codigo="documentos.documentos", nombre="Órdenes del día y actas", url="documentos:lista", icono="✍", color="#4d7c10",
-            otras_rutas=("documentos:nuevo", "documentos:documento", "documentos:escribir", "documentos:version"),
+            codigo="documentos.documentos", nombre="Documentos", url="documentos:lista", icono="✍", color="#4d7c10",
+            otras_rutas=("documentos:nuevo", "documentos:subir", "documentos:enlazar", "documentos:documento", "documentos:escribir", "documentos:version"),
+            vistas=(
+                Vista("Todos", "documentos:lista"),
+                Vista("Nuevo", "documentos:nuevo"),
+                Vista("Papelera", "documentos:papelera"),
+            ),
         ),
         # La biblioteca del editor (ver documentos/views.py, biblioteca). Sus pestañas, en config/menu.py.
         EntradaDeMenu(codigo="documentos.biblioteca", nombre="Plantillas de documentos", url="documentos:plantillas", icono="⎘", color="#3d6b12"),
@@ -62,15 +91,26 @@ class DocumentosConfig(ModuloConfig):
         EntradaDeMenu(codigo="documentos.imagenes", nombre="Imágenes", url="documentos:imagenes", icono="⛶", color="#6b8e23"),
         EntradaDeMenu(codigo="documentos.fragmentos", nombre="Enciclopedia de fragmentos", url="documentos:fragmentos", icono="⧉", color="#2f5d0a"),
         EntradaDeMenu(
+            codigo="documentos.espacio", nombre="Espacio para archivos", url="documentos:espacio", icono="⛁", color="#365314",
+            permiso="documentos.espacio", vistas=(Vista("Por organización", "documentos:espacio"),),
+        ),
+        EntradaDeMenu(
             codigo="documentos.limites", nombre="Documentos", url="documentos:limites", icono="✐", color="#5b6c1f", permiso="documentos.limitar",
         ),
     )
     ayuda = (
         Ayuda(
             seccion="documentos.documentos",
-            titulo="Órdenes del día y actas",
+            titulo="Documentos",
             texto=(
-                "Los órdenes del día y las actas de las reuniones de tus grupos, y otros documentos. Los escriben "
+                "Todo lo que guardan tus grupos: textos (órdenes del día, actas y otros), archivos subidos (PDF, "
+                "imágenes, documentos abiertos) y enlaces (a Drive u otras webs, o a otro documento). La lista se "
+                "filtra por nombre, tipo, de dónde cuelga, grupo, estado y fechas.\n\n"
+                "Los archivos guardan todas sus versiones. No se admiten formatos de Microsoft (docx, xlsx…): "
+                "guárdalos como PDF o en formato abierto (odt, ods). Cada archivo pasa por el antivirus. "
+                "«Eliminar» lo lleva a la papelera, de donde se recupera durante 30 días. Lo que cuelga de una "
+                "votación queda congelado desde que se abre.\n\n"
+                "Los órdenes del día y las actas de las reuniones los escriben "
                 "quienes tienen la redacción (o la toma de acta de la reunión); quien los ve puede comentarlos hasta "
                 "que se aprueban.\n\n"
                 "El acta se crea desde su orden del día: copia los puntos y añade «Acuerdos alcanzados» y «Temas a "
@@ -79,6 +119,15 @@ class DocumentosConfig(ModuloConfig):
                 "decisiones."
             ),
             ejemplo="Lince tiene la toma de acta de la asamblea: abre su orden del día, pulsa «Crear el acta» y la completa durante la reunión.",
+        ),
+        Ayuda(
+            seccion="documentos.espacio",
+            titulo="Espacio para archivos",
+            texto=(
+                "Cuánto pueden ocupar los archivos subidos de cada organización, con todas sus versiones y lo que "
+                "hay en la papelera. El de «Toda la plataforma» vale para las organizaciones que no tienen el suyo. "
+                "Al llegar al máximo, no se pueden subir más archivos hasta liberar espacio o ampliarlo."
+            ),
         ),
         Ayuda(
             seccion="documentos.limites",

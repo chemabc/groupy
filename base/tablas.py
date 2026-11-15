@@ -107,6 +107,29 @@ class Filtro:
     opciones: tuple
 
 
+@dataclass(frozen=True)
+class RangoDeFechas:
+    """
+    Dos cuadros de fecha («Desde» y «Hasta») para quedarse con las filas cuya fecha cae entre las dos
+    (incluidas). Cualquiera de los dos puede quedar vacío. El campo debe tener una fecha (o fecha y hora).
+    """
+
+    # Campo con la fecha de cada fila.
+    campo: str
+    # Nombre visible: «Fecha», «Último cambio»…
+    titulo: str
+
+
+# La fecha de un valor (fecha, o fecha y hora en la hora de aquí) en formato AAAA-MM-DD, o "" si no es una
+# fecha. La usan las dos fuentes y las filas pintadas (para el filtro del navegador).
+def fecha_iso(valor):
+    if isinstance(valor, datetime.datetime):
+        return (timezone.localtime(valor) if timezone.is_aware(valor) else valor).date().isoformat()
+    if isinstance(valor, datetime.date):
+        return valor.isoformat()
+    return ""
+
+
 class FuenteDeConsulta:
     """
     Filas que salen de la base de datos (un QuerySet de Django). La búsqueda usa «unaccent» de
@@ -124,8 +147,18 @@ class FuenteDeConsulta:
     #   - palabras: lista de palabras ya normalizadas.
     #   - categorias: diccionario de campo a valor elegido.
     #   - por_columna: diccionario de campo a texto ya normalizado.
-    def filtrar(self, palabras, categorias, por_columna):
+    #   - fechas: (campo, desde, hasta) del rango de fechas, con las fechas en AAAA-MM-DD o vacías; o None.
+    def filtrar(self, palabras, categorias, por_columna, fechas=None):
         consulta = self.consulta
+        if fechas:
+            campo, desde, hasta = fechas
+            # Con fecha y hora se compara su día en la hora de aquí (__date); con una fecha, ella misma.
+            tipo = self.consulta.model._meta.get_field(campo).get_internal_type()
+            buscar = f"{campo}__date" if tipo == "DateTimeField" else campo
+            if desde:
+                consulta = consulta.filter(**{f"{buscar}__gte": desde})
+            if hasta:
+                consulta = consulta.filter(**{f"{buscar}__lte": hasta})
         for campo, texto in por_columna.items():
             # En los campos de texto se quitan las tildes en la base de datos (unaccent). En los demás
             # (fechas, números), PostgreSQL los compara como texto: las fechas, en formato AAAA-MM-DD.
@@ -173,7 +206,15 @@ class FuenteDeLista:
 
     # Igual que FuenteDeConsulta.filtrar, pero recorriendo la lista. Los filtros de columna comparan con
     # el texto tal como se ve en la celda (las fechas, DD/MM/AAAA), igual que el filtro del navegador.
-    def filtrar(self, palabras, categorias, por_columna):
+    def filtrar(self, palabras, categorias, por_columna, fechas=None):
+        if fechas:
+            campo, desde, hasta = fechas
+            dentro = []
+            for fila in self.filas:
+                dia = fecha_iso(fila[campo])
+                if dia and (not desde or dia >= desde) and (not hasta or dia <= hasta):
+                    dentro.append(fila)
+            return FuenteDeLista(dentro, self.campos_de_busqueda).filtrar(palabras, categorias, por_columna)
         filas = [
             fila
             for fila in self.filas
@@ -230,6 +271,8 @@ class FilaPintada:
     datos: object = None
     # Clases de CSS de la fila (de su campo «_clase», si lo tiene): por ejemplo, para pintarla más tenue.
     clase: str = ""
+    # Su fecha en AAAA-MM-DD, si la tabla tiene rango de fechas (para filtrar en el navegador).
+    fecha: str = ""
 
 
 class Tabla:
@@ -244,14 +287,16 @@ class Tabla:
     #   - columnas: lista de Columna.
     #   - fuente: FuenteDeConsulta o FuenteDeLista.
     #   - filtros: lista de Filtro (desplegables de categoría).
+    #   - fechas: un RangoDeFechas («Desde» y «Hasta»), o None.
     #   - limite: máximo de filas para filtrar en el navegador.
     #   - tamano_de_pagina: filas por carga cuando se filtra en el servidor.
-    def __init__(self, request, identificador, columnas, fuente, filtros=(), limite=LIMITE_EN_NAVEGADOR,
+    def __init__(self, request, identificador, columnas, fuente, filtros=(), fechas=None, limite=LIMITE_EN_NAVEGADOR,
                  tamano_de_pagina=TAMANO_DE_PAGINA):
         self.request = request
         self.identificador = identificador
         self.columnas = list(columnas)
         self.filtros = list(filtros)
+        self.fechas = fechas
         self.limite = limite
         self.tamano_de_pagina = tamano_de_pagina
         self._leer_parametros(request.GET)
@@ -282,6 +327,16 @@ class Tabla:
             valor = parametros.get(self.parametro(filtro.campo), "")
             if valor in {str(opcion) for opcion, _nombre in filtro.opciones}:
                 self.categorias[filtro.campo] = valor
+        # Rango de fechas: solo se aceptan fechas bien escritas (AAAA-MM-DD).
+        self.fecha_desde = self.fecha_hasta = ""
+        if self.fechas:
+            for nombre in ("fdesde", "fhasta"):
+                texto = parametros.get(self.parametro(nombre), "").strip()
+                try:
+                    texto = datetime.date.fromisoformat(texto).isoformat() if texto else ""
+                except ValueError:
+                    texto = ""
+                setattr(self, "fecha_desde" if nombre == "fdesde" else "fecha_hasta", texto)
         try:
             self.desde = max(0, int(parametros.get(self.parametro("desde"), 0)))
         except ValueError:
@@ -303,7 +358,8 @@ class Tabla:
                 self.hay_mas = False
                 return
         self.en_navegador = False
-        filtrada = fuente.filtrar(self.palabras, self.categorias, self.por_columna)
+        rango = (self.fechas.campo, self.fecha_desde, self.fecha_hasta) if self.fechas and (self.fecha_desde or self.fecha_hasta) else None
+        filtrada = fuente.filtrar(self.palabras, self.categorias, self.por_columna, rango)
         self.total = filtrada.contar()
         self.filas = filtrada.cortar(self.desde, self.desde + self.tamano_de_pagina)
         self.hay_mas = self.desde + len(self.filas) < self.total
@@ -343,6 +399,7 @@ class Tabla:
                     categorias=[(filtro.campo, str(self.fuente.valor(fila, filtro.campo))) for filtro in self.filtros],
                     datos=fila,
                     clase=fila.get("_clase", "") if isinstance(fila, dict) else "",
+                    fecha=fecha_iso(self.fuente.valor(fila, self.fechas.campo)) if self.fechas else "",
                 )
             )
         return pintadas
@@ -386,6 +443,16 @@ class Tabla:
             }
             for filtro in self.filtros
         ]
+
+    # Los dos cuadros del rango de fechas, listos para pintar (o None si la tabla no tiene).
+    def cuadros_de_fechas(self):
+        if not self.fechas:
+            return None
+        return {
+            "titulo": self.fechas.titulo,
+            "desde": {"parametro": self.parametro("fdesde"), "valor": self.fecha_desde},
+            "hasta": {"parametro": self.parametro("fhasta"), "valor": self.fecha_hasta},
+        }
 
     # Nombre del parámetro de la búsqueda en la dirección, para el buscador.
     @property

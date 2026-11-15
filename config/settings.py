@@ -293,3 +293,8 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_ROOT = BASE_DIR / "ficheros"
 # Tamaño máximo de cada imagen subida, en bytes (5 MB).
 TAMANO_MAXIMO_DE_IMAGEN = 5 * 1024 * 1024
+
+# Antivirus de los archivos que se suben a «documentos» (ClamAV, servicio «antivirus» de docker): dónde
+# escucha, como «servidor:puerto». Vacío: no hay antivirus y los archivos quedan «sin revisar» (pruebas, o
+# desarrollo sin ese contenedor). Ver documentos/archivos.py.
+ANTIVIRUS = os.environ.get("ANTIVIRUS", "")

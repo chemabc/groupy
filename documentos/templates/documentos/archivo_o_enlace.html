@@ -1,0 +1,78 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de un archivo o de un enlace (documentos/views.py, _archivo_o_enlace). Recibe «documento»,
+  «versiones» (de un archivo, la más nueva primero) y «actual», «se_ve» (PDF o imagen: se ve aquí mismo),
+  «es_pdf», «ve_enlazado» (si quien mira ve el documento enlazado), «cambios» (el registro), «ancla»,
+  «modifica», «elimina», «congelado», «nueva» (formulario de otra versión), «cambio» (formulario del nombre
+  y el destino) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-3">
+  <p class="text-sm"><a href="{% url 'documentos:lista' %}" class="text-marca hover:underline">← Documentos</a>{% if ancla %} · cuelga de <strong>{{ ancla }}</strong>{% endif %}</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% include "documentos/_avisos_de_estado.html" %}
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <p class="text-xs text-slate-500">{{ documento.get_tipo_display }} · {{ documento.grupo.nombre }}{% if actual %} · {{ actual.extension|upper }} · {{ actual.tamano|filesizeformat }} · {{ actual.get_revision_display|lower }}{% endif %}</p>
+    <h2 class="mb-2 text-xl font-semibold">{{ documento.titulo }}</h2>
+    {% if documento.tipo == "archivo" and actual %}
+      <div class="flex flex-wrap gap-2 text-sm">
+        {% if se_ve %}<a href="{% url 'documentos:descargar' documento.pk %}" target="_blank" rel="noopener" class="rounded bg-marca px-3 py-1 font-medium text-white">Abrir</a>{% endif %}
+        <a href="{% url 'documentos:descargar' documento.pk %}?descargar=1" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Descargar</a>
+      </div>
+      {% if es_pdf %}
+        <iframe src="{% url 'documentos:descargar' documento.pk %}" title="{{ documento.titulo }}" class="mt-3 h-[70vh] w-full rounded border border-slate-200 dark:border-slate-800"></iframe>
+      {% elif se_ve %}
+        <img src="{% url 'documentos:descargar' documento.pk %}" alt="{{ documento.titulo }}" class="mt-3 max-h-[70vh] max-w-full rounded border border-slate-200 dark:border-slate-800">
+      {% else %}
+        <p class="mt-2 text-sm text-slate-500">Este tipo de archivo no se ve en el navegador: descárgalo para abrirlo (por ejemplo, con LibreOffice).</p>
+      {% endif %}
+    {% elif documento.tipo == "enlace" %}
+      {% if documento.url %}
+        <p class="text-sm">Lleva a <a href="{{ documento.url }}" target="_blank" rel="noopener noreferrer" class="break-all text-marca hover:underline">{{ documento.url }}</a> <span class="text-xs text-slate-500">(otra web: se abre aparte)</span></p>
+      {% elif ve_enlazado %}
+        <p class="text-sm">Lleva al documento <a href="{% url 'documentos:documento' documento.enlazado.pk %}" class="text-marca hover:underline">{{ documento.enlazado.titulo }}</a>.</p>
+      {% else %}
+        <p class="text-sm text-slate-500">Lleva a un documento que no puedes ver (o que ya no existe).</p>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  {% if versiones|length > 1 %}
+    <details class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <summary class="cursor-pointer font-semibold">Versiones ({{ versiones|length }})</summary>
+      <ul class="mt-1 space-y-0.5 text-xs text-slate-600 dark:text-slate-300">
+        {% for v in versiones %}<li><a href="{% url 'documentos:descargar_version' documento.pk v.numero %}" class="text-marca hover:underline">Versión {{ v.numero }}</a> · {{ v.nombre_original }} · {{ v.tamano|filesizeformat }} · {{ v.subida|date:"d/m/Y H:i" }} · {{ v.subida_por.alias|default:"—" }}</li>{% endfor %}
+      </ul>
+    </details>
+  {% endif %}
+
+  {% if modifica %}
+    <div class="grid gap-3 sm:grid-cols-2">
+      {% if documento.tipo == "archivo" %}
+        <form method="post" enctype="multipart/form-data" class="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+          {% csrf_token %}<input type="hidden" name="accion" value="version">
+          <h3 class="font-semibold">Subir otra versión</h3>
+          {{ nueva }}
+          <button type="submit" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Subir</button>
+        </form>
+      {% endif %}
+      <form method="post" class="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+        {% csrf_token %}<input type="hidden" name="accion" value="cambiar">
+        <h3 class="font-semibold">{% if documento.tipo == "enlace" %}Cambiar el nombre o adónde lleva{% else %}Cambiar el nombre{% endif %}</h3>
+        {{ cambio }}
+        <button type="submit" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Guardar</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% include "documentos/_eliminar.html" %}
+
+  <details class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900">
+    <summary class="cursor-pointer font-semibold">Registro de cambios ({{ cambios|length }})</summary>
+    <ul class="mt-1 space-y-0.5 text-xs text-slate-600 dark:text-slate-300">
+      {% for cambio in cambios %}<li>{{ cambio.cuando|date:"d/m/Y H:i" }} · <strong>{{ cambio.alias }}</strong> · {{ cambio.resumen }}</li>{% endfor %}
+    </ul>
+  </details>
+</div>
+{% endblock %}

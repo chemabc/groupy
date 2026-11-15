@@ -238,6 +238,26 @@ superadmin.
 
 ## Participación
 
+### Subir un PDF a un debate, una votación, un proyecto o una tarea
+En la ficha (del debate, la consulta, el proyecto o la tarea), recuadro «Cuelga de aquí» → «+ Documento,
+archivo o enlace» → pestaña «Subir un archivo». Lo verá quien ve aquello. No se admiten formatos de
+Microsoft (docx, xlsx…): guárdalo antes como PDF o en formato abierto (odt, ods). Lo de las tareas se ve
+también en la ficha de su proyecto.
+
+### Poner un enlace a Drive o a otro documento
+Igual, pestaña «Enlazar»: pega la dirección (https://…) o elige uno de tus documentos.
+
+### Subir otra versión de un archivo
+En la ficha del archivo, «Subir otra versión». Las anteriores se guardan en «Versiones».
+
+### Buscar un documento
+«Participación → Documentos»: escribe en el buscador o filtra por tipo, formato, de dónde cuelga, grupo,
+estado y fechas («Último cambio» desde… hasta…).
+
+### Eliminar y recuperar un documento
+En su ficha, «Eliminar»: va a la papelera («Documentos → Papelera»), de donde se recupera durante 30 días.
+Lo que cuelga de una votación ya abierta no se puede eliminar ni cambiar.
+
 ### Debatir
 
 En «Participación → Debates», abre uno. Cada opción va en su columna. Vota con ⭐ 👍 👎 ⛔ (⭐ y ⛔ piden una

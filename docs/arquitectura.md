@@ -112,6 +112,7 @@ flowchart LR
     redis[("Redis: caché<br/>[Servicio]")]:::servicio
     trab["trabajador: procesar_bandeja<br/>(avisos y tareas diarias)<br/>[Servicio]"]:::servicio
     edi["editor: Node + Hocuspocus + Yjs + Typst<br/>(tiempo real, comentarios, PDF;<br/>otro repositorio, en editor/)<br/>[Servicio]"]:::servicio
+    clam["antivirus: ClamAV (clamd)<br/>(revisa los archivos subidos)<br/>[Servicio]"]:::servicio
   end
   osm["Teselas de OpenStreetMap<br/>[Servicio externo]"]:::servicio
 
@@ -137,6 +138,7 @@ flowchart LR
   cliente -- "WebSocket con pase firmado" --> edi
   edi -- "texto inicial y guardado (firmados)" --> urls
   vistas -- "cerrar sala (firmado)" --> edi
+  vistas -- "INSTREAM (documentos/archivos.py)" --> clam
   config --> NUCLEO
   contrib --> orm
   tw -. "genera static/generado" .-> css
@@ -755,6 +757,8 @@ flowchart LR
   pro --> arbp
   ini["base: Inicio"]:::otro
   pro -. "TarjetaDeInicio proyectos.abiertos" .-> ini
+  docs["documentos"]:::otro
+  pro -. "Ancla proyecto (dentro: sus tareas) y tarea (contexto)<br/>proyectos/anclas.py" .-> docs
 ```
 
 ### 6.18 limpieza [Módulo · Funcional]
@@ -877,22 +881,32 @@ aprobar un acta, sus acuerdos salen como eventos_sw hacia `decisiones`. Si hay e
 texto se escribe ahí (declara un `TextoEditable`; el puente es `base/editor.py`) y, al aprobarse, se le pide
 cerrar la sala. Y las pantallas de la **biblioteca del editor** («Plantillas de documentos» y «Enciclopedia
 de fragmentos»), que solo dan el pase: la biblioteca vive en el editor y la pinta la isla
-«bibliotecaDelEditor».
+«bibliotecaDelEditor». Además (apartado 13.4 del diseño): **archivos subidos** con versiones
+(`VersionDeArchivo`; `documentos/archivos.py` comprueba tipo, firma del contenido, tamaño y antivirus),
+**enlaces**, **papelera** de 30 días (Limpiable `documentos.papelera`), **espacio por organización**
+(`EspacioParaArchivos`) y la lista filtrable con rango de fechas. Cuelga de eventos, proyectos, tareas,
+debates y consultas; pregunta a sus anclas si están **congeladas** (`Ancla.congela`) y qué hay **dentro**
+(`Ancla.dentro`) o de dónde sale el grupo (`Ancla.contexto`), sin importar esos módulos.
 
 ```mermaid
 flowchart LR
   classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
   classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
   classDef libjs fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+  classDef servicio fill:#ffedd5,stroke:#ea580c,color:#7c2d12
   doc["documentos<br/>[Módulo · Funcional]"]:::yo
+  arc["archivos.py: tipos, firmas,<br/>tamaño y antivirus<br/>[Componente]"]:::otro
+  clam["antivirus (ClamAV)<br/>[Servicio]"]:::servicio
   aud["audiencias"]:::otro
-  per["permisos (cometido documentos.redaccion;<br/>eventos.toma_de_acta por su código)"]:::otro
+  per["permisos (cometido documentos.redaccion;<br/>eventos.toma_de_acta y debates.facilitacion por su código)"]:::otro
   gru["grupos (acceso; Contencion para los límites)"]:::otro
-  bas["base: anclas · markdown · tablas · colgantes · editor · limites"]:::otro
+  bas["base: anclas · markdown · tablas (RangoDeFechas)<br/>· colgantes · editor · limites · registro"]:::otro
   edi["editor (servicio aparte)<br/>[Servicio]"]:::otro
   esw["eventos_sw"]:::otro
   dec["decisiones"]:::otro
-  fichas["fichas de eventos y proyectos"]:::otro
+  fichas["fichas de eventos, proyectos, tareas,<br/>debates y consultas"]:::otro
+  anclas["proyectos (Ancla.dentro, Ancla.contexto)<br/>· consultas (Ancla.congela)"]:::otro
+  lim["limpieza (papelera a los 30 días)"]:::otro
   deb["debates (temas del acta)"]:::otro
   htmx["htmx<br/>[Librería JS]"]:::libjs
   doc --> aud
@@ -900,8 +914,12 @@ flowchart LR
   doc --> gru
   doc --> bas
   doc --> esw
+  doc --> arc
+  arc -- "INSTREAM" --> clam
   doc ==> dec
   doc -. "Colgante documentos.documentos" .-> fichas
+  anclas -. "contrato de sus anclas (por el registro)" .-> doc
+  doc -. "Limpiable documentos.papelera" .-> lim
   doc -. "enlace «Proponer debate»" .-> deb
   htmx -- "/documentos/vista-previa/" --> doc
   doc -. "TextoEditable documentos.documento" .-> bas
@@ -983,6 +1001,8 @@ flowchart LR
   con ==> dec
   con -. "FuenteDeCalendario consultas.cierres" .-> cal
   con -. "TareaDiaria consultas.cerrar" .-> tra
+  docs["documentos"]:::otro
+  con -. "Ancla consultas.consulta (congela: votación abierta)" .-> docs
 ```
 
 ### 6.27 config [Configuración]
@@ -1052,12 +1072,12 @@ flowchart LR
   classDef comp fill:#ede9fe,stroke:#7c3aed,color:#3b0764
   classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
   tablas["tablas.py + tabla.html<br/>[Componente]"]:::comp
-  tablaLocal["isla «tablaLocal»<br/>(filtro sin recargar)<br/>[Isla JS]"]:::comp
+  tablaLocal["isla «tablaLocal»<br/>(filtro sin recargar,<br/>también por rango de fechas)<br/>[Isla JS]"]:::comp
   copiar["isla «copiar»<br/>[Isla JS]"]:::comp
   selector["SelectorDePalabras + CampoDePalabras<br/>+ isla «selectorDePalabras»<br/>[Componente]"]:::comp
   personas["SelectorDePersonas + CampoDePersonas<br/>+ isla «selectorDePersonas»<br/>[Componente]"]:::comp
   usan4["proyectos (responsable y colaboran)<br/>con la lista de audiencias.cercania<br/>· comunicaciones (escribir a una persona)"]:::otro
-  usan1["administracion · grupos · lugares"]:::otro
+  usan1["administracion · grupos · lugares<br/>· documentos (con RangoDeFechas)"]:::otro
   usan2["calendario (suscripción) · …"]:::otro
   usan3["etiquetas (CampoDeEtiquetas) → proyectos"]:::otro
   tablas --> tablaLocal
@@ -1223,4 +1243,5 @@ sequenceDiagram
 | Redis | [Servicio] | Caché: permisos, audiencias, contadores, «tareas de hoy hechas» | permisos, audiencias, comunicaciones, base |
 | trabajador | [Servicio] | Reparte la bandeja de eventos_sw y hace las tareas diarias | eventos_sw, base/tareas.py |
 | editor | [Servicio] | Escribir a la vez en tiempo real, comentarios anclados, vista y PDF con Typst, y la biblioteca cifrada de plantillas, fragmentos, cabeceras y pies e imágenes (Node: Hocuspocus + Yjs + typst.ts; otro repositorio, en `editor/`, que pueden usar otras aplicaciones) | `base/editor.py` (pases, firmas, cerrar sala) y los módulos con `TextoEditable` (documentos) |
+| antivirus | [Servicio] | ClamAV (`clamd`, programa aparte con licencia GPL: se le habla por la red, no se mezcla con nuestro código). Revisa cada archivo subido antes de guardarlo | `documentos/archivos.py` (ajuste `ANTIVIRUS`) |
 | OpenStreetMap | [Servicio externo] | Teselas del mapa | isla «mapa» (lugares) |

@@ -5,13 +5,15 @@
   «version_cada»), «comentarios», «comentarios_en_el_texto» (los hechos en el editor), «acuerdos» y
   «temas» (de un acta), «redaccion» (quién la tiene), «escribe», «en_directo» (si hay editor en tiempo real y es borrador: quien no escribe lo sigue en directo), «aprueba» y «crea_acta» (qué botones
   salen), «ancla» (aquello de lo que cuelga, o nada), «error», «limites» (cuántas personas escriben y
-  comentan a la vez) y «opciones» (el formulario de los límites propios, si quien mira puede cambiarlos).
+  comentan a la vez), «opciones» (el formulario de los límites propios, si quien mira puede cambiarlos),
+  «elimina» (si puede llevarlo a la papelera o recuperarlo) y «congelado» (si cuelga de una votación abierta).
   Cada bloque trae su «html» (Markdown convertido) o, si el documento es de Typst, su «texto» tal cual.
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-4xl space-y-3">
-  <p class="text-sm"><a href="{% url 'documentos:lista' %}" class="text-marca hover:underline">← Órdenes del día y actas</a>{% if ancla %} · cuelga de <strong>{{ ancla }}</strong>{% endif %}{% if documento.origen %} · sale de <a href="{% url 'documentos:documento' documento.origen.pk %}" class="text-marca hover:underline">{{ documento.origen }}</a>{% endif %}</p>
+  <p class="text-sm"><a href="{% url 'documentos:lista' %}" class="text-marca hover:underline">← Documentos</a>{% if ancla %} · cuelga de <strong>{{ ancla }}</strong>{% endif %}{% if documento.origen %} · sale de <a href="{% url 'documentos:documento' documento.origen.pk %}" class="text-marca hover:underline">{{ documento.origen }}</a>{% endif %}</p>
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% include "documentos/_avisos_de_estado.html" %}
 
   {# Registro de cambios: en la primera página, plegado #}
   <details class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900">
@@ -48,6 +50,7 @@
       {% endfor %}
     </div>
   </section>
+  {% include "documentos/_eliminar.html" %}
 
   {% if acuerdos or temas %}
     <section class="grid gap-3 sm:grid-cols-2">

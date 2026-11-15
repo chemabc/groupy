@@ -160,5 +160,5 @@ class PruebasDeConsultas(PruebaDePantalla):
             admitir(persona, self.henares)
             self.votar(persona, self.jueves)
 
-        self.comprobar_consultas(f"/consultas/{self.consulta.pk}/", 5, mas)
+        self.comprobar_consultas(f"/consultas/{self.consulta.pk}/", 6, mas)
         self.comprobar_consultas("/consultas/", 3, mas)

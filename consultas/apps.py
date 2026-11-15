@@ -35,7 +35,8 @@ class ConsultasConfig(ModuloConfig):
         "cuándo se abre y se cierra, cuándo y quién ve los resultados y si se puede cambiar el voto. El voto es "
         "secreto. Al cerrarse, el resultado pasa al registro de decisiones."
     )
-    anclas = (Ancla("consultas.consulta", "consultas.Consulta", "Una consulta (votación)"),)
+    # Lo que cuelga de una consulta (sus documentos de contexto) queda congelado desde que se abre la votación.
+    anclas = (Ancla("consultas.consulta", "consultas.Consulta", "Una consulta (votación)", congela="consultas.servicios.congela"),)
     permisos = (
         Permiso("consultas.crear", "Crear consultas (votaciones) del grupo sin pedir apoyos", roles=("admin_grupo", "admin_org")),
         Permiso("consultas.proponer", "Proponer consultas al grupo (se abren con apoyos)", roles=("usuario", "admin_grupo", "admin_org")),

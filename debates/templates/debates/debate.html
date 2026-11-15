@@ -1,4 +1,5 @@
 {% extends interfaz.plantilla %}
+{% load colgantes %}
 {% comment %}
   Ficha de un debate (debates/views.py, debate). Recibe «debate», «descripcion» (el contexto ya convertido),
   «columnas» (las opciones abiertas, cada una con sus recuentos, botones, justificaciones sin nombre,
@@ -108,5 +109,7 @@
       </form>
     </details>
   {% endif %}
+  {# Lo que otros módulos cuelgan de aquí (documentos, archivos, enlaces…): base/templatetags/colgantes.py #}
+  {% colgantes "debates.debate" debate.pk %}
 </div>
 {% endblock %}

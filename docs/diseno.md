@@ -1831,6 +1831,40 @@ Pedido por la persona usuaria en [A-52]; respuestas a las cuatro preguntas en [A
 - expulsar a una persona sin cerrar la sala;
 - varias instancias con Redis.
 
+### 13.4 Archivos, enlaces y papelera; documentos en tareas, debates y consultas (15 de noviembre de 2026, [A-59] y [A-60])
+
+Pedido por la persona usuaria en [A-59]: generar y guardar documentos en proyectos, tareas, debates y
+votaciones, y subir PDF como contexto; crear, editar, guardar, modificar y eliminar. Respuestas en [A-60].
+- **Un archivo es un documento más (P1 A).** `Documento.tipo` suma «Archivo» y «Enlace». Sale en la misma
+  lista, toma quién lo ve de aquello de lo que cuelga y guarda todas sus versiones (`VersionDeArchivo`:
+  subir una nueva no borra las anteriores). Los PDF y las imágenes se ven en el navegador; lo demás se
+  descarga. Los ficheros nunca tienen dirección pública: los entrega una vista que mira quién los ve.
+- **Lista filtrable de todo** (petición de [A-60]): por nombre, tipo (texto, archivo, enlace y la
+  extensión), de dónde cuelga (reunión, proyecto, tarea, debate, consulta o nada), grupo, estado y **rango
+  de fechas**. El rango de fechas es nuevo en la tabla filtrable común (`RangoDeFechas`) y vale para
+  cualquier lista.
+- **Tipos y tamaño (P2 A):** PDF, imágenes (PNG, JPG, WebP, GIF), formatos abiertos de oficina (odt, ods,
+  odp, odg) y texto (txt, csv, md), hasta 20 MB por archivo, con un **espacio máximo por organización**
+  que pone el superadmin. **Nunca formatos de Microsoft** (docx, xlsx, pptx, doc, xls, ppt…): sale un
+  aviso que explica cómo guardarlo en PDF o en formato abierto. Se comprueba el contenido (la «firma» de
+  cada formato), no solo la extensión.
+- **Enlaces (P2, añadido):** a una dirección de fuera (Drive…) o a otro documento de la plataforma (un
+  texto escrito en el editor). El enlace a otro documento solo enseña su título a quien puede verlo.
+- **Papelera de 30 días (P3 A):** «Eliminar» lleva el documento a la papelera, de donde se recupera; a los
+  30 días se borra de verdad (con `limpieza`, plazo que cambia el superadmin). Eliminan quien lo creó, la
+  administración del grupo y, en un debate, su facilitación.
+- **Congelados en una votación:** desde que una consulta se abre, los documentos que cuelgan de ella no se
+  pueden cambiar ni eliminar (sí añadir otros). La consulta lo dice en su contrato (`Ancla.congela`).
+- **Lo de las tareas se ve en su proyecto:** el recuadro «Documentos» del proyecto junta lo suyo y lo de
+  sus tareas, con el nombre de la tarea (`Ancla.dentro` en el contrato de `proyectos`).
+- **Antivirus:** cada archivo pasa por ClamAV (servicio aparte en docker, `clamd`; se le habla por su
+  protocolo, sin librerías) antes de guardarse. Si hay virus, no se guarda. Sin antivirus configurado
+  (desarrollo y pruebas) el archivo queda marcado «sin revisar».
+- **«Cuelga de aquí» también en tareas, debates y consultas.**
+- *Descartado:* una sección «Archivos» aparte (P1 B: dos sitios donde mirar) y solo enlaces (P1 C).
+- *Sin contestar:* una pestaña «Documentos» en la ficha de cada grupo (la lista filtrable por grupo hace
+  ese papel de momento).
+
 ---
 
 ## 14. Proyectos, tareas y limpieza
@@ -2044,6 +2078,25 @@ jerarquía… han de aparecer en árbol»; «Árbol de proyectos: cada árbol en
   solo textos y enlaces a los demás materiales). Se ve como una **lista o tabla filtrable** (por palabras y
   por tipo en cada columna, con la tabla filtrable común), **ordenada de más reciente a más antiguo**.
   *(por diseñar al llegar a `publico`, fase 8)*
+
+**Portada pública y miniwebs (15 de noviembre de 2026, [A-59] y [A-60], respuestas de la persona usuaria).**
+Acordado; se hace después de los archivos (P9 A).
+- **Portada (P4 A):** una de la plataforma (el superadmin) y una por organización (`/o/<org>/`, su admin),
+  sin sesión: pestañas arriba con las secciones y «Entrar» a la derecha. Nada sale sin marcar «público».
+- **Miniwebs internas (P5):** páginas sencillas (texto con formato, imágenes, enlaces a documentos) que
+  publica la administración de un grupo o de una organización. Las ve el grupo y todo lo que cuelga de él
+  (de abuelo hacia abajo); un grupo sin hijos, solo él. Portada y miniwebs son el mismo tipo de página
+  (pública o interna).
+- **Publicación y consumo (P6 A):** un grupo (por ejemplo, de actividad, fuera de las asambleas) propone
+  la relación a otro y la administración de este la acepta; desde entonces lo que publica el primero les
+  aparece a ese grupo y a los que cuelgan de él, como «Novedad». Se corta desde los dos lados.
+- **Con el editor (P7 A):** se escribe en Markdown en el editor; «Publicar» guarda una foto convertida en
+  HTML seguro (`base/markdown.py`). Lo publicado no cambia hasta volver a publicar.
+- **Interfaz (P8 A):** botón «🌐 Webs» en la cabecera; se esconde el menú de la izquierda. Arriba, una
+  barra de camino con desplegables (ORG ▾ › GRU ▾ › GRU ▾, con hermanos e hijos que tienen web), debajo
+  las pestañas de las páginas del grupo, un buscador y «Novedades». Los grupos con relación de consumo, en
+  un tramo «Grupos de actividad ▾». **Pestaña extra** con la jerarquía de la organización y las webs de
+  cada grupo: en árbol (o en grafo si sale barato calcularlo respetando la visibilidad; si no, árbol).
 
 ---
 

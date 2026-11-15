@@ -1,6 +1,6 @@
 """
 Pruebas en un navegador de verdad (ver base/pruebas_navegador.py) de lo que lleva JavaScript en
-«Participación»: la vista previa de un documento, que se pone al día mientras se escribe (htmx); en una
+«Participación»: el rango de fechas de la lista de documentos (tabla filtrable común); la vista previa de un documento, que se pone al día mientras se escribe (htmx); en una
 consulta nueva, la fecha de publicación y el aviso de «tiempo real», que salen según lo elegido (Alpine);
 y el editor colaborativo en tiempo real con dos personas a la vez (isla «editorEnVivo» y editor/).
 """
@@ -32,6 +32,25 @@ class PruebasDeParticipacionEnElNavegador(PruebaEnElNavegador):
     def preparar(self):
         _tajo, self.grupo = crear_organizacion("ORG Tajo", "GRU Tajo")
         admitir(self.usuario, self.grupo, rol=Pertenencia.ADMIN_GRUPO)
+
+    # La lista de documentos con rango de fechas: al poner «Desde» después del último cambio de uno, se
+    # esconde; al quitarlo, vuelve (se filtra en el navegador, sin recargar).
+    def test_rango_de_fechas(self):
+        self.preparar()
+        viejo = servicios.crear(self.usuario, Documento.LIBRE, "Notas viejas", grupo=self.grupo, visibilidad="grupo:0")
+        servicios.crear(self.usuario, Documento.LIBRE, "Notas nuevas", grupo=self.grupo, visibilidad="grupo:0")
+        Documento.objects.filter(pk=viejo.pk).update(actualizado="2025-01-15T10:00:00Z")
+        self.abrir("/documentos/")
+        desde = self.pagina.get_by_label("Último cambio desde")
+        desde.fill("2025-06-01")
+        self.pagina.get_by_text("Notas viejas").wait_for(state="hidden")
+        self.assertTrue(self.pagina.get_by_text("Notas nuevas").is_visible())
+        self.pagina.get_by_label("Último cambio hasta").fill("2025-02-01")
+        self.pagina.get_by_text("Notas nuevas").wait_for(state="hidden")
+        desde.fill("")
+        self.pagina.get_by_label("Último cambio hasta").fill("")
+        self.pagina.get_by_text("Notas viejas").wait_for()
+        self.assertEqual(self.errores, [])
 
     # Al escribir, la vista previa de la derecha muestra el texto convertido, sin guardar ni recargar.
     def test_vista_previa(self):

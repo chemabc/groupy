@@ -876,3 +876,23 @@ sirve aquí y dónde se usa.
 - **Números del menú en la caché, con versión.** Cada mensaje en una sala sube un número de «versión» en
   Redis; la clave de cada recuento lleva esa versión, así que los recuentos viejos dejan de usarse solos sin
   tener que buscarlos uno a uno para borrarlos.
+
+## 40. Subir archivos sin fiarse del nombre, hablar con un antivirus y una papelera (15 de noviembre de 2026)
+
+- **La extensión no basta.** Cualquiera puede llamar «informe.pdf» a un programa. Cada formato empieza con
+  unos bytes fijos, su «firma»: un PDF empieza por `%PDF-`, un PNG por `\x89PNG`. Un documento abierto
+  (odt, ods) es un zip cuyo primer fichero, `mimetype`, dice qué es. `documentos/archivos.py` lo comprueba.
+- **Hablar con un servicio por su protocolo.** ClamAV escucha en un puerto; se le manda `zINSTREAM\0` y
+  después el archivo en trozos, cada uno precedido de su tamaño en 4 bytes (`struct.pack("!L", n)`), y un
+  trozo de tamaño 0 para acabar. Responde «stream: OK» o «… FOUND». Son 15 líneas con `socket`, sin
+  librerías. En las pruebas, un servidor de mentira (`socketserver`) hace de ClamAV.
+- **Ficheros privados.** Se guardan con un nombre al azar (`uuid4`) en una carpeta que no se sirve sola;
+  una vista mira quién ve el documento y entrega el fichero con `FileResponse`, avisando al navegador con
+  `nosniff` para que no lo interprete como otra cosa.
+- **Borrar sin borrar (papelera).** Eliminar solo pone una fecha (`en_papelera_desde`); las listas
+  esconden lo que la tiene. La limpieza diaria borra de verdad lo que lleva más de 30 días, y después sus
+  ficheros del disco.
+- **Preguntar a otro módulo sin importarlo.** Que una consulta abierta congele sus documentos lo dice la
+  propia consulta en su contrato (`Ancla(..., congela="consultas.servicios.congela")`); `documentos` busca
+  esa función en el registro con `import_string`. Igual para las tareas de un proyecto (`dentro`).
+

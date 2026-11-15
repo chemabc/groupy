@@ -143,6 +143,7 @@ DISPOSICION = (
             "comunicaciones.niveles",
         )),
         "limpieza.plazos",
+        "documentos.espacio",
         ("mantenimiento.desarrollo", (
             "mantenimiento.pruebas",
             "mantenimiento.trastienda",

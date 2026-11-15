@@ -106,6 +106,16 @@ class Ancla:
     modelo: str
     # Qué es, en lenguaje llano. Ejemplo: «Una tarea de un proyecto».
     descripcion: str
+    # Si lo que cuelga de él toma su grupo y quién lo ve de otra parte: ruta de la función que recibe su
+    # número y devuelve (grupo, audiencia), o None si no se puede colgar nada (una tarea personal). Sin
+    # ella, se usan sus campos «grupo» y «audiencia». Ejemplo: «proyectos.anclas.contexto_de_tarea».
+    contexto: str = ""
+    # Si congela lo que cuelga de él (que no se pueda cambiar ni eliminar): ruta de la función que recibe
+    # su número y dice si está congelado. Ejemplo: una consulta, desde que se abre la votación.
+    congela: str = ""
+    # Otras anclas «de dentro» cuyo contenido se enseña también aquí: ruta de la función que recibe su
+    # número y devuelve una lista de (tipo, número, nombre). Ejemplo: las tareas de un proyecto.
+    dentro: str = ""
 
 
 @dataclass(frozen=True)

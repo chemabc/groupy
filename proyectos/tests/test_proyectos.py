@@ -444,7 +444,7 @@ class PruebasDeConsultas(PruebaDeProyectos):
             anadir_recurso(self.nutria, huerto, {"nombre": "Mangueras", "cantidad": "3", "origen": "Ferretería"})
 
         mas()
-        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 13, mas)
+        self.comprobar_consultas(f"/proyectos/{huerto.pk}/", 14, mas)
         self.comprobar_consultas(f"/proyectos/{huerto.pk}/kanban/", 6, mas)
 
     # Mis tareas, su kanban y la ficha de una tarea.
@@ -458,8 +458,8 @@ class PruebasDeConsultas(PruebaDeProyectos):
         mas()
         self.comprobar_consultas("/proyectos/tareas/", 2, mas)
         self.comprobar_consultas("/proyectos/tareas/kanban/", 2, mas)
-        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').first().pk}/", 10, mas)
-        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').last().pk}/", 10, mas)
+        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').first().pk}/", 11, mas)
+        self.comprobar_consultas(f"/proyectos/tareas/{Tarea.objects.order_by('pk').last().pk}/", 11, mas)
 
 
 class PruebasDeCambiarUnDato(PruebaDeProyectos):

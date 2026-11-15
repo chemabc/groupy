@@ -1,0 +1,13 @@
+{% comment %}
+  Avisos de la ficha de un documento: si está en la papelera (con «Recuperar», si se puede) o congelado por
+  una votación abierta. Recibe «documento», «elimina» y «congelado».
+{% endcomment %}
+{% if documento.en_papelera_desde %}
+  <form method="post" class="flex flex-wrap items-center gap-2 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+    {% csrf_token %}
+    <span>Está en la papelera desde el {{ documento.en_papelera_desde|date:"d/m/Y" }}{% if documento.en_papelera_por %} (lo eliminó {{ documento.en_papelera_por }}){% endif %}. Se borrará del todo a los 30 días.</span>
+    {% if elimina %}<button type="submit" name="accion" value="recuperar" class="rounded border border-red-400 bg-white px-2 py-0.5 dark:bg-slate-900">Recuperar</button>{% endif %}
+  </form>
+{% elif congelado %}
+  <p class="rounded border border-sky-300 bg-sky-50 p-2 text-sm text-sky-900 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200">❄ Congelado: cuelga de una votación ya abierta, así que no se puede cambiar ni eliminar (para que todo el mundo vote sobre lo mismo).</p>
+{% endif %}

@@ -1,0 +1,16 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Nuevo documento → Subir un archivo» (documentos/views.py, subir). Recibe «formulario»,
+  «maximo» (MB) y lo de las pestañas de crear.
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-xl space-y-3">
+  {% include "documentos/_pestanas_de_crear.html" %}
+  <p class="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">No se admiten formatos de Microsoft (docx, xlsx, pptx…). Guárdalos antes como PDF o en formato abierto (odt, ods, odp). Cada archivo pasa por el antivirus; como mucho, {{ maximo }} MB.</p>
+  <form method="post" enctype="multipart/form-data" class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Subir</button>
+  </form>
+</div>
+{% endblock %}

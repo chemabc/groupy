@@ -1,0 +1,38 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Espacio para archivos» (documentos/views.py, espacio), solo para el superadmin. Recibe «filas»
+  (cada organización con «propio» —su espacio, si tiene—, «megas» —el que vale— y «usados»), «plataforma»
+  (el de partida, en MB) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <p class="text-sm text-slate-600 dark:text-slate-300">Cuánto pueden ocupar los archivos subidos de cada organización (con todas sus versiones y lo que hay en la papelera). Cada archivo, como mucho 20 MB.</p>
+  <form method="post" class="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}<input type="hidden" name="organizacion" value="">
+    <label for="megas-plataforma" class="font-semibold">Toda la plataforma (de partida):</label>
+    <input id="megas-plataforma" name="megas" type="number" min="1" value="{{ plataforma }}" class="w-28 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900"> MB
+    <button type="submit" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-700">Guardar</button>
+  </form>
+  <table class="w-full rounded-lg border border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-900">
+    <thead><tr class="text-left text-xs text-slate-500"><th class="px-3 py-2">Organización</th><th class="px-3 py-2">Ocupa</th><th class="px-3 py-2">Máximo (MB)</th></tr></thead>
+    <tbody>
+      {% for fila in filas %}
+        <tr class="border-t border-slate-200 dark:border-slate-800">
+          <td class="px-3 py-1.5">{{ fila.organizacion.nombre }}</td>
+          <td class="px-3 py-1.5">{{ fila.usados }} MB</td>
+          <td class="px-3 py-1.5">
+            <form method="post" class="flex items-center gap-2">
+              {% csrf_token %}<input type="hidden" name="organizacion" value="{{ fila.organizacion.pk }}">
+              <input name="megas" type="number" min="1" value="{{ fila.propio|default_if_none:'' }}" placeholder="{{ plataforma }}" aria-label="Máximo de {{ fila.organizacion.nombre }}" class="w-28 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+              <button type="submit" class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700">Guardar</button>
+              {% if fila.propio is None %}<span class="text-xs text-slate-500">el de la plataforma</span>{% endif %}
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="text-xs text-slate-500">Vacío en una organización: vale el de la plataforma.</p>
+</div>
+{% endblock %}

@@ -148,7 +148,7 @@ class PruebasDeDebates(PruebaDePantalla):
             servicios.argumentar(persona, self.solar, "Y está cerca", padre=argumento)
             servicios.votar(persona, self.debate, Voto.APOYO, argumento=otro)
 
-        respuesta = self.comprobar_consultas(f"/debates/{self.debate.pk}/", 9, mas)
+        respuesta = self.comprobar_consultas(f"/debates/{self.debate.pk}/", 12, mas)
         self.assertContains(respuesta, "Es lo más barato")
         self.assertContains(respuesta, "Garza")
         self.assertNotContains(respuesta, "Nutria ·")

@@ -1,15 +1,18 @@
 """
-Pantallas del módulo «documentos»: la lista, crear uno (suelto o colgado de una reunión o un proyecto), la
-ficha (leer con la autoría de cada párrafo, el registro de cambios, los acuerdos, comentar, aprobar y dar
-la redacción) y escribir (con vista previa al momento).
+Pantallas del módulo «documentos»: la lista filtrable, crear uno (escribir un texto, subir un archivo o
+enlazar; suelto o colgado de algo), la ficha (leer con la autoría de cada párrafo, el registro de cambios,
+los acuerdos, comentar, aprobar y dar la redacción; o ver un archivo con sus versiones o un enlace),
+escribir (con vista previa al momento), descargar, la papelera y el espacio para archivos.
 """
 
 import difflib
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.http import Http404
+from django.apps import apps
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -17,43 +20,110 @@ from audiencias.selector import opciones
 from base import editor
 from base.anclas import buscar_ancla, leer_ancla
 from base.markdown import texto_a_html
-from base.tablas import Columna, Filtro, FuenteDeLista, Tabla
+from base.registro import registro
+from base.tablas import Columna, Filtro, FuenteDeLista, RangoDeFechas, Tabla
 from grupos.acceso import grupos_donde_puede
+from permisos.decoradores import requiere_permiso
 from permisos.servicios import SinPermiso, explicar_falta, organizaciones_con
 
-from . import servicios
-from .formularios import FormularioDeDocumentoNuevo, FormularioDeLimites
+from . import archivos, servicios
+from .formularios import FormularioDeArchivo, FormularioDeDocumentoNuevo, FormularioDeEnlace, FormularioDeLimites, FormularioDeVersion
 from .models import Documento
 
 # Máximo de documentos de la lista (se filtran en el navegador).
 MAXIMO = 500
 
 
-# Pantalla «Participación → Órdenes del día y actas»: los documentos que ve quien mira, filtrables al
-# momento por tipo, grupo y estado. 2 consultas.
+# Pantalla «Participación → Documentos»: todo lo que ve quien mira (textos, archivos y enlaces), filtrable
+# al momento por nombre, tipo, formato, de dónde cuelga, grupo, estado y rango de fechas. 2 consultas.
 def lista(request):
     documentos = list(servicios.visibles(request.user).select_related("grupo")[:MAXIMO])
     filas = [
         {
-            "pk": d.pk, "titulo": d.titulo, "tipo": d.get_tipo_display(), "grupo": d.grupo.nombre,
-            "estado": d.get_estado_display(), "fecha": timezone.localtime(d.actualizado).strftime("%d/%m/%Y"),
+            "pk": d.pk, "titulo": d.titulo, "tipo": d.get_tipo_display(), "formato": _formato(d), "cuelga": _cuelga_de(d.ancla_tipo),
+            "grupo": d.grupo.nombre, "estado": _estado(d), "fecha": timezone.localtime(d.actualizado).date(),
         }
         for d in documentos
     ]
+    # Las opciones de los desplegables salen de lo que hay (así no salen opciones vacías).
+    def opciones_de(campo):
+        return tuple((valor, valor) for valor in sorted({fila[campo] for fila in filas}))
+
     tabla = Tabla(
         request,
         identificador="documentos",
-        columnas=[Columna("titulo", "Título", enlace="documentos:documento"), Columna("tipo", "Tipo"), Columna("grupo", "Grupo"), Columna("estado", "Estado"), Columna("fecha", "Último cambio")],
-        fuente=FuenteDeLista(filas, campos_de_busqueda=["titulo", "grupo"]),
-        filtros=[
-            Filtro("tipo", "Tipo", opciones=tuple((n, n) for _c, n in Documento.TIPOS)),
-            Filtro("estado", "Estado", opciones=tuple((n, n) for _c, n in Documento.ESTADOS)),
+        columnas=[
+            Columna("titulo", "Nombre", enlace="documentos:documento"), Columna("tipo", "Tipo"), Columna("formato", "Formato"),
+            Columna("cuelga", "Cuelga de"), Columna("grupo", "Grupo"), Columna("estado", "Estado"), Columna("fecha", "Último cambio"),
         ],
+        fuente=FuenteDeLista(filas, campos_de_busqueda=["titulo", "grupo", "formato"]),
+        filtros=[
+            Filtro("tipo", "Tipo", opciones=opciones_de("tipo")),
+            Filtro("formato", "Formato", opciones=opciones_de("formato")),
+            Filtro("cuelga", "Cuelga de", opciones=opciones_de("cuelga")),
+            Filtro("grupo", "Grupo", opciones=opciones_de("grupo")),
+            Filtro("estado", "Estado", opciones=opciones_de("estado")),
+        ],
+        fechas=RangoDeFechas("fecha", "Último cambio"),
     )
     plantilla = tabla.plantilla_parcial()
     if plantilla:
         return render(request, plantilla, {"tabla": tabla})
     return render(request, "documentos/lista.html", {"tabla": tabla})
+
+
+# El formato de un documento, para la lista: «Markdown», «Typst», la extensión de un archivo («PDF») o
+# «Enlace a otra web» / «Enlace a un documento».
+def _formato(documento):
+    if documento.tipo == Documento.ARCHIVO:
+        return documento.extension.upper()
+    if documento.tipo == Documento.ENLACE:
+        return "Enlace a un documento" if documento.enlazado_id else "Enlace a otra web"
+    return "Typst" if documento.formato == Documento.TYPST else "Markdown"
+
+
+# El estado de un documento, para la lista: el de los textos (borrador, aprobado); los archivos y enlaces
+# no tienen («—»).
+def _estado(documento):
+    return documento.get_estado_display() if documento.tipo in Documento.ESCRITOS else "—"
+
+
+# De qué cuelga un documento, en una palabra («Evento», «Tarea», «Consulta»…), sacada del modelo que declara
+# esa ancla; «Nada» si no cuelga de nada.
+def _cuelga_de(ancla_tipo):
+    declarada = registro.anclas.get(ancla_tipo) if ancla_tipo else None
+    if declarada is None:
+        return "Nada"
+    return str(apps.get_model(declarada.modelo)._meta.verbose_name).capitalize()
+
+
+# De dónde se crea algo nuevo (función interna de nuevo, subir y enlazar): con «?ancla=eventos.evento:12»
+# cuelga de esa reunión (toma su grupo y su visibilidad); si no, del grupo elegido en «?grupo=». Devuelve
+# (ancla, elemento, grupos, grupo).
+def _donde(request):
+    usuario = request.user
+    ancla = leer_ancla(request.GET.get("ancla", ""))
+    elemento = buscar_ancla(*ancla) if ancla[0] else None
+    grupos = [] if elemento else grupos_donde_puede(usuario, "documentos.crear")
+    if elemento is None and not grupos:
+        raise SinPermiso(explicar_falta("documentos.crear"))
+    grupo = None if elemento else next((g for g in grupos if str(g.pk) == request.GET.get("grupo", "")), grupos[0])
+    return (ancla if elemento else (None, None)), elemento, grupos, grupo
+
+
+# Lo común a las tres pantallas de crear: aquello de lo que cuelga, los grupos, el elegido y las pestañas
+# (Escribir · Subir un archivo · Enlazar), que conservan «?ancla=» y «?grupo=».
+def _contexto_de_crear(request, elemento, grupos, grupo, activa):
+    consulta = request.GET.urlencode()
+    pestanas = [
+        ("nuevo", "Escribir un texto", reverse("documentos:nuevo")),
+        ("subir", "Subir un archivo", reverse("documentos:subir")),
+        ("enlazar", "Enlazar", reverse("documentos:enlazar")),
+    ]
+    return {
+        "elemento": elemento, "grupos": grupos, "grupo": grupo, "ancla": request.GET.get("ancla", ""),
+        "pestanas": [{"codigo": c, "nombre": n, "url": f"{u}?{consulta}" if consulta else u, "activa": c == activa} for c, n, u in pestanas],
+    }
 
 
 # Pantalla «Nuevo documento». Con «?ancla=eventos.evento:12» cuelga de esa reunión (toma su grupo y su
@@ -62,36 +132,86 @@ def lista(request):
 #   - POST: los campos de FormularioDeDocumentoNuevo.
 def nuevo(request):
     usuario = request.user
-    ancla = leer_ancla(request.GET.get("ancla", ""))
-    elemento = buscar_ancla(*ancla) if ancla[0] else None
-    grupos = [] if elemento else grupos_donde_puede(usuario, "documentos.crear")
-    if elemento is None and not grupos:
-        raise SinPermiso(explicar_falta("documentos.crear"))
-    grupo = None if elemento else next((g for g in grupos if str(g.pk) == request.GET.get("grupo", "")), grupos[0])
+    ancla, elemento, grupos, grupo = _donde(request)
     inicial = {"tipo": request.GET.get("tipo") or (Documento.ODD if ancla[0] == "eventos.evento" else Documento.LIBRE)}
     if elemento is not None:
-        inicial["titulo"] = f"{dict(Documento.TIPOS)[inicial['tipo']]}: {elemento}"
+        inicial["titulo"] = f"{dict(Documento.TIPOS).get(inicial['tipo'], 'Documento')}: {elemento}"
     formulario = FormularioDeDocumentoNuevo(request.POST or None, initial=inicial, visibilidades=None if elemento else opciones(grupo))
     if request.method == "POST" and formulario.is_valid():
         datos = formulario.cleaned_data
         try:
             documento = servicios.crear(
-                usuario, datos["tipo"], datos["titulo"], grupo=grupo, visibilidad=datos.get("visibilidad", "privado"), ancla=ancla if elemento else (None, None),
+                usuario, datos["tipo"], datos["titulo"], grupo=grupo, visibilidad=datos.get("visibilidad", "privado"), ancla=ancla,
                 formato=datos["formato"],
             )
         except ValidationError as error:
             formulario.add_error(None, error)
         else:
             return redirect("documentos:escribir", documento.pk)
-    contexto = {"formulario": formulario, "elemento": elemento, "grupos": grupos, "grupo": grupo, "ancla": request.GET.get("ancla", "")}
+    contexto = {"formulario": formulario, **_contexto_de_crear(request, elemento, grupos, grupo, "nuevo")}
     return render(request, "documentos/nuevo.html", contexto)
 
 
+# Pantalla «Subir un archivo»: el archivo (PDF, imagen, documento abierto o texto), su nombre y, si no
+# cuelga de nada, quién lo ve. Se comprueba y pasa por el antivirus (documentos/archivos.py).
+#   - GET «ancla», «grupo»: como en nuevo.
+#   - POST: los campos de FormularioDeArchivo (con el fichero).
+def subir(request):
+    usuario = request.user
+    ancla, elemento, grupos, grupo = _donde(request)
+    formulario = FormularioDeArchivo(request.POST or None, request.FILES or None, visibilidades=None if elemento else opciones(grupo))
+    if request.method == "POST" and formulario.is_valid():
+        datos = formulario.cleaned_data
+        try:
+            documento = servicios.subir_archivo(
+                usuario, datos["archivo"], datos["titulo"], grupo=grupo, visibilidad=datos.get("visibilidad", "privado"), ancla=ancla
+            )
+        except ValidationError as error:
+            formulario.add_error("archivo", error)
+        else:
+            return redirect("documentos:documento", documento.pk)
+    contexto = {"formulario": formulario, "maximo": archivos.TAMANO_MAXIMO // 1024 // 1024, **_contexto_de_crear(request, elemento, grupos, grupo, "subir")}
+    return render(request, "documentos/subir.html", contexto)
+
+
+# Pantalla «Enlazar»: un enlace a otra web (Drive…) o a otro documento de la plataforma que quien mira ve.
+#   - GET «ancla», «grupo»: como en nuevo.
+#   - POST: los campos de FormularioDeEnlace.
+def enlazar(request):
+    usuario = request.user
+    ancla, elemento, grupos, grupo = _donde(request)
+    formulario = FormularioDeEnlace(
+        request.POST or None, documentos=_para_enlazar(usuario), visibilidades=None if elemento else opciones(grupo)
+    )
+    if request.method == "POST" and formulario.is_valid():
+        datos = formulario.cleaned_data
+        try:
+            documento = servicios.enlazar(
+                usuario, datos["titulo"], url=datos["url"], enlazado=datos["documento"], grupo=grupo,
+                visibilidad=datos.get("visibilidad", "privado"), ancla=ancla,
+            )
+        except ValidationError as error:
+            formulario.add_error(None, error)
+        else:
+            return redirect("documentos:documento", documento.pk)
+    contexto = {"formulario": formulario, **_contexto_de_crear(request, elemento, grupos, grupo, "enlazar")}
+    return render(request, "documentos/enlazar.html", contexto)
+
+
+# Los textos que una persona puede enlazar: los que ve, escritos en el editor, los más recientes primero.
+def _para_enlazar(usuario):
+    return servicios.visibles(usuario).filter(tipo__in=Documento.ESCRITOS).select_related("grupo").order_by("-actualizado")[:MAXIMO]
+
+
 # Busca un documento que quien mira puede ver, o da 404 (función interna de las pantallas).
-def _documento(usuario, pk):
-    documento = get_object_or_404(Documento.objects.select_related("grupo__organizacion", "origen"), pk=pk)
+#   - aunque_en_papelera: si se deja abrir también lo eliminado (la ficha, para recuperarlo; solo quien
+#     puede recuperarlo).
+def _documento(usuario, pk, aunque_en_papelera=False):
+    documento = get_object_or_404(Documento.objects.select_related("grupo__organizacion", "origen", "enlazado"), pk=pk)
     if not servicios.ve(usuario, documento):
         raise SinPermiso("Este documento no es para ti: solo lo ven las personas a las que llega.")
+    if documento.en_papelera_desde and not (aunque_en_papelera and servicios.puede_eliminar(usuario, documento)):
+        raise Http404("Este documento está en la papelera.")
     return documento
 
 
@@ -102,10 +222,14 @@ def _documento(usuario, pk):
 #     «persona»).
 def documento(request, pk):
     usuario = request.user
-    documento = _documento(usuario, pk)
+    documento = _documento(usuario, pk, aunque_en_papelera=True)
     accion = request.POST.get("accion") if request.method == "POST" else None
+    if documento.tipo not in Documento.ESCRITOS:
+        return _archivo_o_enlace(request, documento, accion)
     error = ""
     try:
+        if accion in ("eliminar", "recuperar"):
+            return _eliminar_o_recuperar(request, documento, accion)
         if accion == "comentar":
             servicios.comentar(usuario, documento, request.POST.get("texto", ""))
         elif accion == "aprobar":
@@ -158,8 +282,121 @@ def documento(request, pk):
         "error": error,
         "limites": servicios.limites_de(documento.grupo, documento),
         "opciones": FormularioDeLimites(instance=servicios.fila_de_limites(documento_id=documento.pk)) if cambia_opciones else None,
+        "elimina": servicios.puede_eliminar(usuario, documento),
+        "congelado": servicios.congelado(documento),
     }
     return render(request, "documentos/documento.html", contexto)
+
+
+# Lleva un documento a la papelera o lo recupera, y vuelve a donde toca: tras eliminar, a la papelera
+# (donde se ve lo eliminado, con «Recuperar»); tras recuperar, a su ficha. Función interna de documento.
+def _eliminar_o_recuperar(request, documento, accion):
+    if accion == "eliminar":
+        servicios.eliminar(request.user, documento)
+        return redirect("documentos:papelera")
+    servicios.recuperar(request.user, documento)
+    return redirect("documentos:documento", documento.pk)
+
+
+# Ficha de un archivo o de un enlace: el archivo a la vista (PDF e imágenes) o para descargar, con sus
+# versiones; o adónde lleva el enlace. Para quien puede: subir otra versión, cambiar el nombre (y el
+# destino de un enlace), eliminar o recuperar. Unas 10 consultas.
+#   - accion: «version» (con «archivo»), «cambiar» (con «titulo», «url», «documento»), «eliminar» o
+#     «recuperar».
+def _archivo_o_enlace(request, documento, accion):
+    usuario = request.user
+    modifica = servicios.puede_modificar(usuario, documento)
+    nueva = FormularioDeVersion(request.POST if accion == "version" else None, request.FILES if accion == "version" else None)
+    cambio = FormularioDeEnlace(
+        request.POST if accion == "cambiar" else None, documentos=_para_enlazar(usuario) if documento.tipo == Documento.ENLACE and modifica else Documento.objects.none(),
+        visibilidades=None, solo_nombre=documento.tipo == Documento.ARCHIVO,
+        initial={"titulo": documento.titulo, "url": documento.url, "documento": documento.enlazado_id},
+    )
+    error = ""
+    try:
+        if accion in ("eliminar", "recuperar"):
+            return _eliminar_o_recuperar(request, documento, accion)
+        if accion == "version" and nueva.is_valid():
+            servicios.nueva_version(usuario, documento, nueva.cleaned_data["archivo"])
+            return redirect("documentos:documento", documento.pk)
+        if accion == "cambiar" and cambio.is_valid():
+            datos = cambio.cleaned_data
+            servicios.cambiar(usuario, documento, datos["titulo"], url=datos.get("url", ""), enlazado=datos.get("documento"))
+            return redirect("documentos:documento", documento.pk)
+    except ValidationError as excepcion:
+        error = " ".join(excepcion.messages)
+    versiones = list(documento.archivos.select_related("subida_por")) if documento.tipo == Documento.ARCHIVO else []
+    contexto = {
+        "documento": documento,
+        "versiones": versiones,
+        "actual": versiones[0] if versiones else None,
+        "se_ve": bool(versiones) and archivos.se_ve_en_el_navegador(versiones[0].extension),
+        "es_pdf": bool(versiones) and versiones[0].extension == "pdf",
+        "ve_enlazado": documento.enlazado is not None and servicios.ve(usuario, documento.enlazado),
+        "cambios": list(documento.cambios.all()[:200]),
+        "ancla": buscar_ancla(documento.ancla_tipo, documento.ancla_id) if documento.ancla_tipo else None,
+        "modifica": modifica,
+        "elimina": servicios.puede_eliminar(usuario, documento),
+        "congelado": servicios.congelado(documento),
+        "nueva": nueva,
+        "cambio": cambio,
+        "error": error,
+    }
+    return render(request, "documentos/archivo_o_enlace.html", contexto)
+
+
+# Entrega una versión de un archivo (la última, si no se dice cuál) a quien ve el documento: los PDF y las
+# imágenes, para verlos en el navegador; lo demás, para descargar. El fichero no tiene dirección pública.
+#   - pk: el documento.
+#   - numero: la versión (o None: la última).
+#   - GET «descargar»: descargar siempre, aunque se pueda ver en el navegador.
+def descargar(request, pk, numero=None):
+    documento = _documento(request.user, pk, aunque_en_papelera=True)
+    versiones = documento.archivos.all()
+    version = get_object_or_404(versiones, numero=numero) if numero else versiones.first()
+    if version is None:
+        raise Http404("Este archivo no tiene versiones.")
+    en_el_navegador = archivos.se_ve_en_el_navegador(version.extension) and not request.GET.get("descargar")
+    respuesta = FileResponse(
+        version.fichero.open("rb"), content_type=version.tipo_mime, as_attachment=not en_el_navegador, filename=version.nombre_original
+    )
+    # Que el navegador no adivine otro tipo de contenido (nunca ejecuta lo que no es lo que dice ser).
+    respuesta["X-Content-Type-Options"] = "nosniff"
+    return respuesta
+
+
+# Pantalla «Documentos → Papelera»: lo eliminado que quien mira puede recuperar, con cuándo se eliminó,
+# quién y cuántos días le quedan antes de borrarse de verdad. Al recuperar uno, se va a su ficha.
+#   - POST «recuperar»: el número del documento.
+def papelera(request):
+    usuario = request.user
+    if request.method == "POST":
+        documento = _documento(usuario, request.POST.get("recuperar", "0") if request.POST.get("recuperar", "").isdigit() else 0, aunque_en_papelera=True)
+        servicios.recuperar(usuario, documento)
+        return redirect("documentos:documento", documento.pk)
+    dias = servicios.dias_en_la_papelera()
+    filas = []
+    for documento in servicios.papelera_de(usuario):
+        quedan = dias - (timezone.now() - documento.en_papelera_desde).days
+        filas.append({"documento": documento, "quedan": max(quedan, 0)})
+    return render(request, "documentos/papelera.html", {"filas": filas, "dias": dias})
+
+
+# Pantalla «Plataforma → Espacio para archivos» (solo el superadmin): cuánto pueden ocupar los archivos
+# de cada organización y cuánto ocupan ya. La fila «Toda la plataforma» vale para las que no tienen la suya.
+#   - POST «organizacion» (vacío: la plataforma) y «megas» (vacío en una organización: quitar la suya).
+@requiere_permiso("documentos.espacio")
+def espacio(request):
+    error = ""
+    if request.method == "POST":
+        try:
+            servicios.poner_espacio(request.POST.get("organizacion", ""), request.POST.get("megas", ""))
+        except ValidationError as excepcion:
+            error = " ".join(excepcion.messages)
+        else:
+            return redirect("documentos:espacio")
+    contexto = {"filas": servicios.espacios(), "plataforma": servicios.espacio_maximo(None) // 1024 // 1024, "error": error}
+    return render(request, "documentos/espacio.html", contexto)
 
 
 # Pantalla «Escribir»: el título y el texto en Markdown a la izquierda y la vista previa a la derecha, que

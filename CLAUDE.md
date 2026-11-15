@@ -219,4 +219,11 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   una **sala por grupo**, solo para sus miembros (`comunicaciones/con_grupos.py`; quizá hilos más adelante),
   y conversaciones **de dos en dos** con quien compartes grupo, sin petición, con **bloqueo que avisa al
   superadmin** (`comunicaciones/con_personas.py`). Mensajes nuevos cada 10 s. Sin herramientas de «lo
-  propio» en `proximamente`. Después, fase 8.
+  propio» en `proximamente`.
+- 15 de noviembre de 2026 ([A-59], [A-60]): **archivos, enlaces y papelera** en `documentos` (diseño 13.4):
+  un archivo es un documento más (versiones, PDF e imágenes a la vista, nunca formatos de Microsoft, firma del
+  contenido, 20 MB, espacio por organización, antivirus ClamAV en docker), enlaces a otra web o a otro
+  documento, papelera de 30 días, «Cuelga de aquí» también en tareas, debates y consultas, congelados desde
+  que se abre una votación (`Ancla.congela`), los de las tareas en su proyecto (`Ancla.dentro`) y la lista
+  filtrable con rango de fechas (`base.tablas.RangoDeFechas`). Acordado y **por hacer**: portada pública,
+  miniwebs con publicación y consumo, y botón «🌐 Webs» (diseño 15). Después, fase 8.
