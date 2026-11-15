@@ -2208,6 +2208,22 @@ llegarán con el chat (más adelante).
 3. **Cabecera y pie:** se eligen, como una plantilla.
 4. **Plantilla:** aspecto y texto de partida; puede llevar cualquier cosa.
 
+**Conversaciones con grupos y con personas** (15 de noviembre de 2026, [A-56]; lo último de [A-37]).
+Preguntado, sin contestar todavía:
+1. **«Con grupos», qué es:** (A, recomendada) una **sala por grupo**: un solo hilo donde escriben todos sus
+   miembros, como el chat del grupo; (B) **hilos con asunto** que abre cualquier miembro y responde el
+   grupo; (C) las dos cosas.
+2. **Quién escribe a un grupo:** (A, recomendada) solo sus miembros; (B) también personas de fuera, cuyo
+   mensaje llega como una conversación que atiende el grupo (como el buzón de la administración).
+3. **«Con personas», contra el acoso:** (A, recomendada) se puede escribir a quien comparte grupo contigo;
+   el primer mensaje llega como **petición** que la otra persona acepta o rechaza, y siempre puede
+   **bloquear**; (B) se escribe sin petición a quien comparte grupo, con bloqueo; (C) solo entre
+   personas que se han aceptado antes como contactos.
+4. **Grupos de varias personas** («con personas» para 3 o más, sin ser un grupo de la plataforma): (A,
+   recomendada) ahora no, solo de dos en dos; (B) sí, desde el principio.
+Decidido por mí (reversible): mensajes nuevos cada 10 s con htmx, como el buzón (Channels, con el chat);
+ni el superadmin ni la administración leen las conversaciones entre personas (5.1).
+
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.
 - **Búsqueda extensa para los admins** (13 de noviembre de 2026, petición de la persona usuaria): el
