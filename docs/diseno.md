@@ -1414,6 +1414,19 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - **Avisos:** «nuevos eventos que puedo ver» (a quienes lo ven; si es público, al grupo que convoca y sus
   subgrupos) y «se cancela un evento al que iba».
 - Editar y cancelar: quien convoca, la administración del grupo (`grupos.editar_grupo`) o el superadmin.
+- **Eventos de los grupos que administro y repaso de las listas** (15 de noviembre de 2026, [A-54],
+  respuestas de la persona usuaria; era lo que quedaba de [A-37]):
+  - «Administrar → Eventos y talentos → Eventos de mis grupos»: **tabla filtrable con pestañas** Próximos ·
+    Esperan apoyos (con «1/2» apoyos) · Pasados · Cancelados, con los eventos de los grupos que administro
+    **y de sus subgrupos** (todos, el superadmin). *Descartado:* cajas por grupo (largas y sin filtros).
+  - La administración **ve, edita y cancela** los eventos de esos grupos, también los de los subgrupos y los
+    que esperan apoyos. Ve cuántos van, **no quiénes** (sigue siendo de quien convoca y de los cometidos,
+    3A). *Descartado de momento:* ver los alias.
+  - Decidido sin preguntar (reversible): la administración ve los eventos de sus grupos aunque la
+    visibilidad elegida no le llegue, porque tiene que poder editarlos y cancelarlos.
+  - **Todas las listas de eventos** pasan a la tabla filtrable común (fecha y hora, evento, tipo, grupo,
+    estado, cuántos van): «Eventos de mis grupos» (Próximos · Pasados) y «Mis eventos» (**Próximos ·
+    Pasados · Series**, con la columna «Mi papel»: Convoco, Voy, Quizá).
 
 ### 10.4 Calendario
 

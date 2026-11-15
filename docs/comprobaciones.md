@@ -521,7 +521,7 @@ Antes: `npm run construir` (hay clases nuevas; ver 0.2) y reiniciar el servidor 
 - [ ] Como **Lince** (admin de GRU Henares y de ORG Tajo): debajo sale el bloque «ADMINISTRAR», con su título
   y una franja ámbar: Grupos que administro (Árbol · Miembros (vacía) · Invitaciones entre grupos), Buzón de la
   administración (Conversaciones que atiendo · Avisar), Por aprobar, Eventos y talentos (Eventos de mis grupos
-  (vacía) · Pedir talentos), Moderación (vacía) y Mi organización (Datos · Visibilidad · Tipologías ·
+  · Pedir talentos), Moderación (vacía) y Mi organización (Datos · Visibilidad · Tipologías ·
   Etiquetas · Apoyos y plazos · Lugares · Web pública (vacía)).
 - [ ] En cualquier pantalla de «Administrar», arriba sale la banda ámbar «Estás administrando…».
 - [ ] Una conversación de Nutria con la administración de GRU Henares: Lince la ve en «Administrar → Buzón de
@@ -792,3 +792,22 @@ Necesita el paso 0.8 (con biblioteca).
 - [ ] Quien solo comenta o lee ve los desplegables, pero no puede cambiarlos ni meter nada.
 - [ ] El cifrado: en el contenedor, `ls editor/datos/biblioteca` y `head -c 200 editor/datos/biblioteca/indice.cif`:
   no se lee ningún nombre.
+
+## 39. Eventos: listas filtrables y los de los grupos que administro
+
+No necesita nada especial (sin tablas nuevas).
+- [ ] Como **Nutria**, «Calendario y eventos → Eventos de mis grupos»: los eventos salen en una tabla con
+  fecha y hora, evento, tipo, grupo, estado y cuántos van. Prueba los desplegables (Tipo, Grupo, Estado),
+  escribe una palabra y pulsa el título de una columna para ordenar. «Pasados»: lo mismo con los ya
+  celebrados.
+- [ ] «Mis eventos»: pestañas **Próximos · Pasados · Series**, con la columna «Mi papel» (Convoco, Voy,
+  Quizá) y su filtro.
+- [ ] Como **Lince** (admin de GRU Henares), «Administrar → Eventos y talentos → Eventos de mis grupos»:
+  pestañas Próximos · Esperan apoyos · Pasados · Cancelados, con los eventos de GRU Henares y de sus
+  subgrupos (no los de otras organizaciones).
+- [ ] Como Nutria, convoca una **reunión** en GRU Henares (queda esperando apoyos). Como Lince, sale en
+  «Esperan apoyos» con «0/2»; ábrela: ves la ficha aunque aún no esté convocada.
+- [ ] En la ficha de un evento de su grupo que convocó otra persona, Lince ve «Editar» y «Cancelar» y ve
+  cuántos van, pero **no quiénes**. Cancélalo: pasa a «Cancelados».
+- [ ] Como Nutria (no administra nada), «Administrar» no sale y `/eventos/administrados/` da «No puedes».
+

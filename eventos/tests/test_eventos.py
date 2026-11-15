@@ -219,5 +219,66 @@ class PruebasDeLaFicha(PruebaDeEventos):
             apuntar(persona, evento, persona, "eventos.logistica")
 
         self.comprobar_consultas("/eventos/", 2, mas)
-        self.comprobar_consultas("/eventos/mios/", 2, mas)
+        self.comprobar_consultas("/eventos/mios/", 3, mas)
         self.comprobar_consultas(f"/eventos/{evento.pk}/", 10, mas)
+
+
+class PruebasDeLaAdministracion(PruebaDeEventos):
+    """«Administrar → Eventos de mis grupos»: lo que ve y lo que puede hacer quien administra."""
+
+    # Lince administra GRU Henares: ve los eventos de su grupo y de GRU Sorbe (subgrupo), también la reunión
+    # que espera apoyos (con cuántos lleva) y los cancelados; no los de otra organización. Nutria, que no
+    # administra nada, no entra.
+    def test_pestanas(self):
+        self.charla(titulo="Charla de Henares")
+        convocar(self.garza, self.sorbe, self.generico, datos_del_servicio(titulo="Huerto de Sorbe"), "grupo:0")
+        convocar(self.nutria, self.henares, self.reunion, datos_del_servicio(titulo="Asamblea pendiente"), "grupo:0")
+        convocar(self.erizo, self.gru_ebro, self.generico, datos_del_servicio(titulo="Del Ebro"), "grupo:0")
+        self.como(self.lince)
+        proximos = self.client.get("/eventos/administrados/")
+        self.assertContains(proximos, "Charla de Henares")
+        self.assertContains(proximos, "Huerto de Sorbe")
+        self.assertNotContains(proximos, "Del Ebro")
+        self.assertNotContains(proximos, "Asamblea pendiente")
+        pendientes = self.client.get("/eventos/administrados/esperan-apoyos/")
+        self.assertContains(pendientes, "Asamblea pendiente")
+        self.assertContains(pendientes, "0/2")
+        self.assertContains(self.client.get("/eventos/administrados/pasados/"), "aún no tienen eventos pasados")
+        self.como(self.nutria)
+        self.assertEqual(self.client.get("/eventos/administrados/").status_code, 403)
+
+    # Quien administra el grupo de arriba ve la ficha de una reunión que espera apoyos y puede editar y
+    # cancelar el evento de un subgrupo; los alias de quien va, no.
+    def test_ficha(self):
+        pendiente = convocar(self.garza, self.sorbe, self.reunion, datos_del_servicio(titulo="Reunión de Sorbe"), "grupo:0")
+        huerto = convocar(self.garza, self.sorbe, self.generico, datos_del_servicio(titulo="Huerto"), "grupo:0")
+        responder(self.garza, huerto, Asistencia.SI)
+        self.como(self.lince)
+        self.assertContains(self.client.get(f"/eventos/{pendiente.pk}/"), "Reunión de Sorbe")
+        ficha = self.client.get(f"/eventos/{huerto.pk}/")
+        self.assertContains(ficha, "Editar")
+        self.assertIsNone(ficha.context["quien_va"])
+        self.assertEqual(self.client.get(f"/eventos/{huerto.pk}/editar/").status_code, 200)
+        self.client.post(f"/eventos/{huerto.pk}/", {"accion": "cancelar"})
+        huerto.refresh_from_db()
+        self.assertEqual(huerto.estado, Evento.CANCELADO)
+        self.assertContains(self.client.get("/eventos/administrados/cancelados/"), "Huerto")
+        # Erizo, de otra organización, ni la ve.
+        self.como(self.erizo)
+        self.assertEqual(self.client.get(f"/eventos/{pendiente.pk}/").status_code, 403)
+
+    # Lo que cuesta cada pestaña no crece con los eventos.
+    def test_consultas(self):
+        self.usuario = self.lince
+        self.como(self.lince)
+
+        def mas():
+            numero = Evento.objects.count()
+            convocar(self.garza, self.sorbe, self.generico, datos_del_servicio(titulo=f"Huerto {numero}"), "grupo:0")
+            # Cada reunión, de una persona distinta (cada cual solo puede tener una solicitud pendiente).
+            persona = crear_usuario_de_prueba(f"Convoca {numero}")
+            admitir(persona, self.henares)
+            convocar(persona, self.henares, self.reunion, datos_del_servicio(titulo=f"Reunión {numero}"), "grupo:0")
+
+        self.comprobar_consultas("/eventos/administrados/", 3, mas)
+        self.comprobar_consultas("/eventos/administrados/esperan-apoyos/", 4, mas)

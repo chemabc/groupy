@@ -38,7 +38,7 @@ class AdministracionConfig(ModuloConfig):
             codigo="administracion.buzon", nombre="Buzón de la administración", url="comunicaciones:atendidas", icono="☖", color="#92400f",
         ),
         EntradaDeMenu(
-            codigo="administracion.eventos_y_talentos", nombre="Eventos y talentos", url="proximamente:eventos_administrados",
+            codigo="administracion.eventos_y_talentos", nombre="Eventos y talentos", url="eventos:administrados",
             icono="✺", color="#9a3413",
         ),
         EntradaDeMenu(

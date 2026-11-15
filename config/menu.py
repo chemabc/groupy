@@ -113,7 +113,7 @@ DISPOSICION = (
         )),
         "solicitudes.por_aprobar",
         Pestanas("administracion.eventos_y_talentos", (
-            "proximamente.eventos_administrados",
+            "eventos.administrados",
             "talentos.pedir",
         )),
         "proximamente.moderacion",

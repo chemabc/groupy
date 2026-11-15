@@ -619,7 +619,8 @@ flowchart LR
 ### 6.15 eventos [Módulo · Funcional]
 
 Convocar con visibilidad y tipología, reuniones con apoyos, «¿Vas a ir?», cometidos, cartel, series y su
-paso por el calendario y la limpieza.
+paso por el calendario y la limpieza. Las listas (Eventos de mis grupos, Mis eventos y «Administrar →
+Eventos de mis grupos», con los de los grupos que administro y sus subgrupos) usan la tabla filtrable común.
 
 ```mermaid
 flowchart LR
@@ -647,6 +648,10 @@ flowchart LR
   eve -. "Limpiable eventos.evento" .-> lim
   eve -. "TareaDiaria generar_series" .-> base
   eve ==> com
+  gac["grupos.acceso (grupos que administro)"]:::otro
+  tab["base.tablas (tabla filtrable)"]:::otro
+  eve --> gac
+  eve --> tab
 ```
 
 ### 6.16 calendario [Módulo · Funcional]

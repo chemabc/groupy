@@ -40,11 +40,6 @@ PENDIENTES = (
         "☰", "#c2410d", permiso="grupos.ver_arbol",
     ),
     Pendiente(
-        "eventos_administrados", "Eventos de mis grupos",
-        "Los eventos de los grupos que administras, también los pendientes de apoyos, para seguirlos y ayudar.",
-        "✶", "#b91c1d", permiso="grupos.ver_arbol",
-    ),
-    Pendiente(
         "moderacion", "Moderación", "Avisos sobre contenido y ocultación provisional, en los grupos que administras.",
         "⚔", "#7f1d1d", permiso="grupos.ver_arbol",
     ),

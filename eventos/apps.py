@@ -92,7 +92,16 @@ class EventosConfig(ModuloConfig):
         EntradaDeMenu(
             codigo="eventos.mios", nombre="Mis eventos", url="eventos:mios", icono="★", color="#166534",
             otras_rutas=("eventos:serie",),
-            vistas=(Vista("Mis eventos", "eventos:mios"), Vista("Series", "eventos:series")),
+            vistas=(Vista("Próximos", "eventos:mios"), Vista("Pasados", "eventos:mios_pasados"), Vista("Series", "eventos:series")),
+        ),
+        # «Administrar → Eventos y talentos → Eventos de mis grupos» (ver config/menu.py).
+        EntradaDeMenu(
+            codigo="eventos.administrados", nombre="Eventos de mis grupos", url="eventos:administrados", icono="✶", color="#b91c1d",
+            permiso="grupos.ver_arbol",
+            vistas=(
+                Vista("Próximos", "eventos:administrados"), Vista("Esperan apoyos", "eventos:administrados_pendientes"),
+                Vista("Pasados", "eventos:administrados_pasados"), Vista("Cancelados", "eventos:administrados_cancelados"),
+            ),
         ),
         EntradaDeMenu(
             codigo="eventos.convocar", nombre="Convocar", url="eventos:convocar", icono="✷", color="#e11d78",
@@ -112,10 +121,25 @@ class EventosConfig(ModuloConfig):
             ),
         ),
         Ayuda(
+            seccion="eventos.administrados",
+            titulo="Eventos de mis grupos (administración)",
+            texto=(
+                "Los eventos de los grupos que administras y de sus subgrupos, para seguirlos y ayudar. Arriba, "
+                "«Próximos», «Esperan apoyos» (las reuniones que aún no tienen los apoyos, con cuántos llevan), "
+                "«Pasados» y «Cancelados». Filtra por tipo, grupo o estado, busca por palabra u ordena por "
+                "cualquier columna.\n\n"
+                "Desde la ficha de cada uno puedes editarlo o cancelarlo (por ejemplo, si quien lo convocó no "
+                "está). Ves cuántas personas van, pero no quiénes: eso solo lo ven quien convoca y quien tiene un "
+                "cometido."
+            ),
+            ejemplo="Lince administra GRU Henares: en «Esperan apoyos» ve que la reunión de vecinos lleva 1 de 2 apoyos y avisa al grupo.",
+        ),
+        Ayuda(
             seccion="eventos.mios",
             titulo="Mis eventos",
             texto=(
-                "Los que has convocado y aquellos a los que has dicho que vas o quizá. Con la pestaña «Convocar» creas uno. "
+                "Los que has convocado y aquellos a los que has dicho que vas o quizá, en «Próximos» y «Pasados», con tu "
+                "papel en cada uno (Convoco, Voy, Quizá); se filtran por cualquier columna. Con la pestaña «Convocar» creas uno. "
                 "Una reunión necesita apoyos: queda pendiente (solo la ves tú) hasta que la apoyan 2 personas de "
                 "tu grupo (5 si es para el grupo padre, 10 para el abuelo); entonces se convoca sola. Al convocar "
                 "puedes hacer que se repita (cada semana, cada mes…): en «Series» ves y cambias las tuyas. Cada vez "

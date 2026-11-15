@@ -178,7 +178,7 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   voto secreto, resultados, cierre → decisión, calendario, tarjeta de Inicio). Piezas comunes: `Colgante`
   y `{% colgantes %}` («Cuelga de aquí» en fichas de eventos y proyectos), `base/anclas.py`,
   `base/markdown.py`, `grupos.acceso.grupos_donde_puede`. **Las dudas esenciales están en docs/diseno.md
-  §20** y hay que preguntarlas. Lo que queda de [A-37] (eventos de los grupos que administro, miembros,
+  §20** y hay que preguntarlas. Lo que queda de [A-37] (miembros,
   conversaciones con grupos y personas) sigue pospuesto; después, fase 8.
   Recuerda `migrate --database=boveda`.
 - 15 de noviembre de 2026 ([A-50], respuestas a las dudas de §20): **opción de consenso** en debates (apoyos
@@ -204,3 +204,8 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   `base.editor.id_para_editor`); cualquiera crea lo suyo y lo comparte con grupos o personas; desde aquí,
   solo las carpetas «Actas». Pantallas «Plantillas de documentos» y «Enciclopedia de fragmentos»
   (`documentos`, isla «bibliotecaDelEditor»); desplegables «Plantilla» y «Cabecera y pie» en el editor.
+- 15 de noviembre de 2026 ([A-54]): **eventos de lo que quedó de [A-37]**: «Administrar → Eventos de mis
+  grupos» (tabla con pestañas Próximos · Esperan apoyos · Pasados · Cancelados; los de los grupos que
+  administro y sus subgrupos; la administración ve, edita y cancela, sin ver quién va) y todas las listas de
+  eventos en la tabla filtrable («Mis eventos»: Próximos · Pasados · Series, con «Mi papel»). Quedan de
+  [A-37]: miembros y conversaciones con grupos y personas.

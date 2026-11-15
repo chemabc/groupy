@@ -12,6 +12,7 @@ from django.utils import timezone
 from audiencias.selector import audiencia_de
 from audiencias.servicios import anadir_personas, filtrar_visibles, puede_ver
 from eventos_sw.servicios import emitir
+from grupos.acceso import grupos_que_administra
 from grupos.models import Contencion
 from permisos.models import Cometido
 from permisos.servicios import asignar_cometido, exigir, puede, quitar_cometido
@@ -103,12 +104,27 @@ def convocar_reunion(solicitud):
 # ── Editar y cancelar ────────────────────────────────────────────────────────────────────────────────
 
 
+# Consulta de los eventos de los grupos que una persona administra y de sus subgrupos (todos, si es
+# superadmin), en cualquier estado: también los que esperan apoyos y los cancelados. Sin ejecutar. Es lo que
+# sale en «Administrar → Eventos de mis grupos».
+def de_grupos_administrados(usuario):
+    if usuario.is_superuser:
+        return Evento.objects.all()
+    return Evento.objects.filter(grupo_id__in=grupos_que_administra(usuario))
+
+
+# Dice si una persona administra el grupo de un evento (o uno que lo contiene). Una consulta, o ninguna si
+# no administra nada.
+def administra(usuario, evento):
+    return usuario.is_superuser or evento.grupo_id in grupos_que_administra(usuario)
+
+
 # Dice si una persona puede editar o cancelar un evento: quien lo convocó, la administración del grupo
-# (con «grupos.editar_grupo») o el superadmin.
+# (con «grupos.editar_grupo» en él, o porque administra un grupo que lo contiene) o el superadmin.
 def puede_gestionar(usuario, evento):
     if usuario.is_superuser or evento.convocante_id == usuario.pk:
         return True
-    return puede(usuario, "grupos.editar_grupo", grupo=evento.grupo_id)
+    return puede(usuario, "grupos.editar_grupo", grupo=evento.grupo_id) or administra(usuario, evento)
 
 
 # Cambia los datos de un evento. La visibilidad de una reunión ya convocada no cambia (se pidieron apoyos
@@ -154,11 +170,14 @@ def visibles(usuario):
     return Evento.objects.filter(Q(pk__in=convocados.values("pk")) | Q(convocante=usuario))
 
 
-# Dice si una persona ve un evento.
+# Dice si una persona ve un evento: quien lo convocó y la administración de su grupo siempre (también
+# mientras espera apoyos); las demás, si está convocado (o cancelado) y les llega.
 def ve(usuario, evento):
     if evento.convocante_id == usuario.pk:
         return True
-    return evento.estado != Evento.PENDIENTE and puede_ver(usuario, evento.audiencia)
+    if evento.estado != Evento.PENDIENTE and puede_ver(usuario, evento.audiencia):
+        return True
+    return administra(usuario, evento)
 
 
 # Responde a «¿Vas a ir?» (o cambia la respuesta). Hace falta ver el evento y que esté convocado.

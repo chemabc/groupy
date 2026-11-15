@@ -8,13 +8,14 @@ from datetime import timedelta
 from urllib.parse import quote
 
 from django.core.exceptions import ValidationError
-from django.db.models import Min, Q
+from django.db.models import Count, Min, Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from audiencias.selector import clave_de, opciones
 from base.registro import registro
+from base.tablas import Columna, Filtro, FuenteDeLista, Tabla
 from grupos.models import Grupo
 from permisos.servicios import SinPermiso, explicar_falta, permisos_de
 from solicitudes.models import Solicitud
@@ -33,32 +34,127 @@ MAXIMO = 100
 # ── Listas ───────────────────────────────────────────────────────────────────────────────────────────
 
 
-# Consulta base de las listas: sin lo archivado (está en «Archivo») y con grupo, organización y
-# tipología cargados.
-def _base(usuario):
-    return servicios.visibles(usuario).filter(archivado__isnull=True).select_related("grupo__organizacion", "tipologia")
+# Consulta base de las listas: sin lo archivado (está en «Archivo»), con grupo, organización y tipología
+# cargados y cuántas personas han dicho que van («van»).
+#   - consulta: de qué eventos se parte (los que ve la persona, o los de los grupos que administra).
+def _base(consulta):
+    return consulta.filter(archivado__isnull=True).select_related("grupo__organizacion", "tipologia").annotate(
+        van=Count("asistencias", filter=Q(asistencias__respuesta=Asistencia.SI))
+    )
 
 
-# Pantalla «Próximos»: los eventos que se ven, desde los que están en curso (empezaron hace menos de 3
-# horas) hacia delante. Cuesta unas 5 consultas.
+# Desde cuándo un evento cuenta como «próximo»: los que empezaron hace menos de 3 horas siguen en curso.
+def _desde():
+    return timezone.now() - timedelta(hours=3)
+
+
+# Apoyos de las reuniones que los esperan, por evento: {id del evento: «1/2»}. Una consulta.
+def _apoyos(eventos):
+    pendientes = [evento.pk for evento in eventos if evento.estado == Evento.PENDIENTE]
+    if not pendientes:
+        return {}
+    solicitudes = Solicitud.objects.filter(tipo="eventos.reunion", estado=Solicitud.PENDIENTE, datos__evento_id__in=pendientes)
+    return {solicitud.datos["evento_id"]: f"{solicitud.apoyos}/{solicitud.apoyos_necesarios}" for solicitud in solicitudes}
+
+
+# Tabla filtrable de una lista de eventos (la común: base/tablas.py), con fecha y hora, título (enlace a su
+# ficha), tipo, grupo, estado, cuántos van y, si se pide, los apoyos y el papel de quien mira. Se filtra por
+# tipo, grupo, estado y papel; se busca por título, grupo, organización y tipo; se ordena por cualquier
+# columna. Devuelve la respuesta (la página entera o, si la pide la propia tabla, solo sus filas).
+#   - eventos: la lista ya leída (como mucho MAXIMO).
+#   - identificador: nombre de la tabla en la página.
+#   - contexto: lo que necesita la plantilla además de la tabla (vacio, con_convocar…).
+#   - con_apoyos: si sale la columna de apoyos (para quien administra).
+#   - papeles: {id del evento: «Convoco», «Voy» o «Quizá»} para la columna «Mi papel», o None si no sale.
+def _tabla(request, eventos, identificador, contexto, con_apoyos=False, papeles=None):
+    apoyos = _apoyos(eventos) if con_apoyos else {}
+    filas = []
+    for evento in eventos:
+        fila = {
+            "pk": evento.pk, "inicio": evento.inicio, "titulo": evento.titulo, "tipo": evento.tipologia.nombre, "grupo": evento.grupo.nombre,
+            "organizacion": evento.grupo.organizacion.nombre, "estado": evento.get_estado_display(), "van": evento.van,
+        }
+        if con_apoyos:
+            fila["apoyos"] = apoyos.get(evento.pk, "—")
+        if papeles is not None:
+            fila["papel"] = papeles.get(evento.pk, "")
+        filas.append(fila)
+    columnas = [
+        Columna("inicio", "Fecha"), Columna("titulo", "Evento", enlace="eventos:evento"), Columna("tipo", "Tipo"), Columna("grupo", "Grupo"),
+        Columna("estado", "Estado"), Columna("van", "Van", filtrable=False),
+    ]
+    if con_apoyos:
+        columnas.append(Columna("apoyos", "Apoyos", filtrable=False))
+    if papeles is not None:
+        columnas.append(Columna("papel", "Mi papel"))
+    distintos = lambda campo: tuple((valor, valor) for valor in sorted({fila[campo] for fila in filas}))
+    filtros = [Filtro("tipo", "Tipo", distintos("tipo")), Filtro("grupo", "Grupo", distintos("grupo")), Filtro("estado", "Estado", distintos("estado"))]
+    if papeles is not None:
+        filtros.append(Filtro("papel", "Mi papel", distintos("papel")))
+    tabla = Tabla(request, identificador=identificador, columnas=columnas, fuente=FuenteDeLista(filas, campos_de_busqueda=["titulo", "grupo", "organizacion", "tipo"]), filtros=filtros)
+    plantilla = tabla.plantilla_parcial()
+    if plantilla:
+        return render(request, plantilla, {"tabla": tabla})
+    return render(request, "eventos/lista.html", {"tabla": tabla, "hay": bool(filas), "vacio": "", "con_convocar": False, **contexto})
+
+
+# Pantalla «Eventos de mis grupos → Próximos»: los eventos que se ven, desde los que están en curso hacia
+# delante. Unas 5 consultas.
 def proximos(request):
-    desde = timezone.now() - timedelta(hours=3)
-    lista = list(_base(request.user).filter(inicio__gte=desde).exclude(estado=Evento.PENDIENTE).order_by("inicio")[:MAXIMO])
-    return render(request, "eventos/lista.html", {"eventos": lista, "vacio": "No hay eventos próximos que puedas ver."})
+    lista = list(_base(servicios.visibles(request.user)).filter(inicio__gte=_desde()).exclude(estado=Evento.PENDIENTE).order_by("inicio")[:MAXIMO])
+    return _tabla(request, lista, "eventos", {"vacio": "No hay eventos próximos que puedas ver."})
 
 
-# Pantalla «Pasados»: los ya celebrados, del más reciente al más antiguo.
+# Pantalla «Eventos de mis grupos → Pasados»: los ya celebrados, del más reciente al más antiguo.
 def pasados(request):
-    lista = list(_base(request.user).filter(inicio__lt=timezone.now()).exclude(estado=Evento.PENDIENTE).order_by("-inicio")[:MAXIMO])
-    return render(request, "eventos/lista.html", {"eventos": lista, "vacio": "Aún no hay eventos pasados."})
+    lista = list(_base(servicios.visibles(request.user)).filter(inicio__lt=_desde()).exclude(estado=Evento.PENDIENTE).order_by("-inicio")[:MAXIMO])
+    return _tabla(request, lista, "eventos", {"vacio": "Aún no hay eventos pasados."})
 
 
-# Pantalla «Mis eventos»: los que ha convocado (también los pendientes de apoyos) y a los que va o quizá.
-def mios(request):
+# Papel de quien mira en cada evento: «Convoco» (los que convocó) o su respuesta a «¿Vas a ir?» (Voy,
+# Quizá). Una consulta.
+def _papeles(usuario, eventos):
+    nombres = {Asistencia.SI: "Voy", Asistencia.NO_SE: "Quizá"}
+    respuestas = Asistencia.objects.filter(usuario=usuario, evento__in=[e.pk for e in eventos]).exclude(respuesta=Asistencia.NO)
+    papeles = {evento_id: nombres[respuesta] for evento_id, respuesta in respuestas.values_list("evento_id", "respuesta")}
+    papeles.update({evento.pk: "Convoco" for evento in eventos if evento.convocante_id == usuario.pk})
+    return papeles
+
+
+# Pantallas «Mis eventos → Próximos» y «→ Pasados»: los que ha convocado (también los que esperan apoyos)
+# y a los que va o quizá, con su papel en cada uno. Unas 6 consultas.
+#   - pasados: si son los pasados (del más reciente al más antiguo) o los próximos.
+def mios(request, pasados=False):
     usuario = request.user
     voy = Asistencia.objects.filter(usuario=usuario).exclude(respuesta=Asistencia.NO).values("evento_id")
-    lista = list(_base(usuario).filter(Q(convocante=usuario) | Q(pk__in=voy)).order_by("-inicio")[:MAXIMO])
-    return render(request, "eventos/lista.html", {"eventos": lista, "vacio": "Aún no has convocado ni te has apuntado a ningún evento.", "con_convocar": True})
+    consulta = _base(servicios.visibles(usuario)).filter(Q(convocante=usuario) | Q(pk__in=voy))
+    consulta = consulta.filter(inicio__lt=_desde()).order_by("-inicio") if pasados else consulta.filter(inicio__gte=_desde()).order_by("inicio")
+    lista = list(consulta[:MAXIMO])
+    vacio = "No tienes eventos pasados." if pasados else "No has convocado ni te has apuntado a ningún evento próximo."
+    return _tabla(request, lista, "mios", {"vacio": vacio, "con_convocar": True}, con_apoyos=True, papeles=_papeles(usuario, lista))
+
+
+# Lo que enseña cada pestaña de «Administrar → Eventos de mis grupos»: (filtro de la consulta, orden, texto
+# si no hay ninguno).
+ADMINISTRADOS = {
+    "proximos": (lambda c: c.filter(estado=Evento.CONVOCADO, inicio__gte=_desde()), "inicio", "Tus grupos no tienen eventos próximos."),
+    "pendientes": (lambda c: c.filter(estado=Evento.PENDIENTE), "inicio", "Ninguna reunión de tus grupos espera apoyos."),
+    "pasados": (lambda c: c.filter(estado=Evento.CONVOCADO, inicio__lt=_desde()), "-inicio", "Tus grupos aún no tienen eventos pasados."),
+    "cancelados": (lambda c: c.filter(estado=Evento.CANCELADO), "-inicio", "Tus grupos no tienen eventos cancelados."),
+}
+
+
+# Pantalla «Administrar → Eventos y talentos → Eventos de mis grupos»: los eventos de los grupos que
+# administra quien mira y de sus subgrupos, en cuatro pestañas (próximos, los que esperan apoyos, pasados y
+# cancelados), con los apoyos de los que los esperan. Desde la ficha de cada uno puede editarlo o
+# cancelarlo; cuántos van sí, pero no quiénes (eso es de quien convoca y de los cometidos). Unas 5 consultas.
+#   - cual: la pestaña («proximos», «pendientes», «pasados» o «cancelados»; viene de eventos/urls.py).
+def administrados(request, cual):
+    filtrar, orden, vacio = ADMINISTRADOS[cual]
+    if not request.user.is_superuser and not any("grupos.ver_arbol" in codigos for codigos in permisos_de(request.user).grupos.values()):
+        raise SinPermiso(explicar_falta("grupos.ver_arbol"))
+    lista = list(filtrar(_base(servicios.de_grupos_administrados(request.user))).order_by(orden)[:MAXIMO])
+    return _tabla(request, lista, "administrados", {"vacio": vacio}, con_apoyos=cual == "pendientes")
 
 
 # ── Convocar y editar ────────────────────────────────────────────────────────────────────────────────

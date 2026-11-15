@@ -125,6 +125,18 @@ completa. Pulsa un grupo para ir a su ficha.
 Una reunión necesita apoyos: queda pendiente hasta que la apoyan 2 personas de tu grupo (5 si es para el
 grupo padre, 10 para el abuelo).
 
+### Buscar un evento
+
+«Calendario y eventos → Eventos de mis grupos» (o «Mis eventos»): arriba, «Próximos» o «Pasados». Filtra
+por tipo, grupo o estado, escribe una palabra o pulsa el título de una columna para ordenar. En «Mis
+eventos», «Mi papel» dice si lo convocaste o si vas.
+
+### Seguir los eventos de los grupos que administro
+
+«Administrar → Eventos y talentos → Eventos de mis grupos»: los de tus grupos y sus subgrupos. En «Esperan
+apoyos» ves las reuniones que aún no los tienen y cuántos llevan. Desde la ficha de cada evento puedes
+editarlo o cancelarlo.
+
 ### Decir si voy a ir
 
 Abre el evento (desde «Calendario y eventos → Eventos de mis grupos» o desde el calendario) y responde **¿Vas a ir?**. Cuántas

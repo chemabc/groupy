@@ -41,6 +41,7 @@ from operator import and_, or_
 
 from django.db.models import Q
 from django.urls import reverse
+from django.utils import timezone
 
 # Máximo de filas que se mandan enteras para filtrar en el navegador. El superadmin podrá bajarlo.
 LIMITE_EN_NAVEGADOR = 500
@@ -398,6 +399,10 @@ class Tabla:
 def celda_de(valor):
     if valor is None:
         return Celda("", "")
+    # Fecha y hora (por ejemplo, el inicio de un evento): en la hora de aquí, con la hora a la vista.
+    if isinstance(valor, datetime.datetime):
+        local = timezone.localtime(valor) if timezone.is_aware(valor) else valor
+        return Celda(local.strftime("%d/%m/%Y %H:%M"), local.isoformat())
     if isinstance(valor, datetime.date):
         return Celda(valor.strftime("%d/%m/%Y"), valor.isoformat())
     return Celda(str(valor), str(valor))

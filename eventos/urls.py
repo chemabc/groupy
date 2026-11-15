@@ -13,6 +13,12 @@ urlpatterns = [
     path("", views.proximos, name="proximos"),
     path("pasados/", views.pasados, name="pasados"),
     path("mios/", views.mios, name="mios"),
+    path("mios/pasados/", views.mios, {"pasados": True}, name="mios_pasados"),
+    # «Administrar → Eventos de mis grupos»: los de los grupos que administro, en cuatro pestañas.
+    path("administrados/", views.administrados, {"cual": "proximos"}, name="administrados"),
+    path("administrados/esperan-apoyos/", views.administrados, {"cual": "pendientes"}, name="administrados_pendientes"),
+    path("administrados/pasados/", views.administrados, {"cual": "pasados"}, name="administrados_pasados"),
+    path("administrados/cancelados/", views.administrados, {"cual": "cancelados"}, name="administrados_cancelados"),
     path("convocar/", views.convocar, name="convocar"),
     # Cada evento: ficha, editar y cartel.
     path("<int:pk>/", views.evento, name="evento"),
