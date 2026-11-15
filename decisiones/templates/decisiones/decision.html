@@ -1,0 +1,36 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de una decisión (decisiones/views.py, decision). Recibe «decision», «sustituye_a» (las antiguas a
+  las que reemplaza), «gestiona» (si quien mira puede marcarla como sustituida), «candidatas» (decisiones
+  más nuevas del mismo grupo que pueden sustituirla) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-2xl space-y-3">
+  <p class="text-sm"><a href="{% url 'decisiones:lista' %}" class="text-marca hover:underline">← Decisiones</a></p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <p class="text-xs text-slate-500">{{ decision.get_forma_display }} · {{ decision.grupo.nombre }} · {{ decision.tomada|date:"d/m/Y H:i" }}</p>
+    {% if decision.sustituida_por %}
+      <p class="mt-1 rounded bg-amber-50 px-2 py-1 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">Sustituida por <a href="{% url 'decisiones:decision' decision.sustituida_por.pk %}" class="font-medium underline">{{ decision.sustituida_por }}</a></p>
+    {% endif %}
+    <p class="mt-2 whitespace-pre-line text-lg">{{ decision.texto }}</p>
+    {% if decision.detalle %}<p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ decision.detalle }}</p>{% endif %}
+    {% if decision.enlace %}<p class="mt-2 text-sm"><a href="{{ decision.enlace }}" class="text-marca hover:underline">Ver de dónde sale →</a></p>{% endif %}
+    {% if sustituye_a %}
+      <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Sustituye a: {% for antigua in sustituye_a %}<a href="{% url 'decisiones:decision' antigua.pk %}" class="text-marca hover:underline">{{ antigua }}</a>{% if not forloop.last %}; {% endif %}{% endfor %}</p>
+    {% endif %}
+  </section>
+  {% if gestiona %}
+    <form method="post" class="flex flex-wrap items-end gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+      {% csrf_token %}
+      <label class="flex min-w-0 flex-1 flex-col gap-1">Sustituida por
+        <select name="nueva" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+          <option value="">— Sigue vigente —</option>
+          {% for otra in candidatas %}<option value="{{ otra.pk }}" {% if decision.sustituida_por_id == otra.pk %}selected{% endif %}>{{ otra.tomada|date:"d/m/Y" }} · {{ otra }}</option>{% endfor %}
+        </select>
+      </label>
+      <button type="submit" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Guardar</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

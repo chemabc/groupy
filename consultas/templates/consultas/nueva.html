@@ -1,0 +1,27 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Nueva consulta» (consultas/views.py, nueva). Recibe «formulario», «grupos», «grupo» y «elemento»
+  (de lo que cuelga, o nada).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-xl space-y-3">
+  {% if elemento %}<p class="text-sm">Cuelga de <strong>{{ elemento }}</strong>.</p>{% endif %}
+  <form method="get" class="flex items-center gap-2 text-sm">
+    {% if request.GET.ancla %}<input type="hidden" name="ancla" value="{{ request.GET.ancla }}">{% endif %}
+    <label for="grupo-de-la-consulta">Grupo</label>
+    <select id="grupo-de-la-consulta" name="grupo" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+      {% for g in grupos %}<option value="{{ g.pk }}" {% if g.pk == grupo.pk %}selected{% endif %}>{{ g.organizacion.nombre }} › {{ g.camino }}</option>{% endfor %}
+    </select>
+  </form>
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" x-data="{ cuando: '{{ formulario.resultados.value|default:'cierre' }}' }">
+    {% csrf_token %}
+    {{ formulario.non_field_errors }}
+    {% for campo in formulario %}
+      <div {% if campo.name == "publicar_el" %}x-show="cuando === 'fecha'"{% endif %} {% if campo.name == "resultados" %}@change="cuando = $event.target.value"{% endif %}>{{ campo.as_field_group }}</div>
+      {% if campo.name == "resultados" %}<p x-show="cuando === 'tiempo_real'" x-cloak class="-mt-2 mb-3 rounded bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200">Ver cómo va la votación influye en quien aún no ha votado.</p>{% endif %}
+    {% endfor %}
+    <p class="mb-2 text-xs text-slate-500">Después de crearla le pones las preguntas; se pueden cambiar hasta que se abra.</p>
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear y poner las preguntas</button>
+  </form>
+</div>
+{% endblock %}

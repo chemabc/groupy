@@ -734,3 +734,30 @@ sirve aquí y dónde se usa.
   cada campo) y lo guarda con el mismo servicio, `editar_tarea`. No hay dos maneras de guardar una tarea.
 - **`form.reset()`** devuelve cada cuadro de un formulario a su valor de partida: es lo que hace
   «Cancelar».
+
+## 34. Colgar cosas de otras sin importarlas, y el voto secreto (15 de noviembre de 2026)
+
+- **Anclas: «tipo + número».** Un debate que cuelga de una reunión guarda `ancla_tipo = "eventos.evento"` y
+  `ancla_id = 12`, no una clave ajena a la tabla de eventos (eso obligaría a importar el módulo).
+  `base/anclas.py` encuentra el elemento con `apps.get_model` (la función de Django que da un modelo por su
+  nombre, «eventos.Evento», sin importarlo), y de él se toman su grupo y su audiencia.
+
+  *Ejemplo: Lince pulsa «+ Debate» en la ficha de la asamblea; el debate nace con el grupo y la
+  visibilidad de la asamblea, sin que Lince tenga que elegirlos.*
+- **El recuadro «Cuelga de aquí».** Cada módulo declara un `Colgante` en su contrato y la ficha solo
+  escribe `{% colgantes "eventos.evento" evento.pk %}`: una **etiqueta de plantilla** propia (código Python
+  que se llama desde una plantilla de Django con `{% … %}`; se carga con `{% load colgantes %}`).
+- **Avisarse sin importarse.** Al aprobar un acta, `documentos` emite `documentos.acuerdo_tomado` con todos
+  los datos de la decisión; `decisiones` lo escucha y la apunta. Ninguno sabe que el otro existe; los une el
+  registro.
+- **Votar en secreto.** Se guardan dos cosas por separado: que Nutria ha votado (para que no vote dos veces)
+  y una papeleta sin nombre ni hora con lo que votó. Si se permite cambiar el voto, la papeleta lleva una
+  **clave HMAC** (un resumen que solo se puede calcular conociendo un secreto, `hmac` de la biblioteca de
+  Python) del par consulta-persona: así se encuentra su papeleta para sustituirla sin guardar su nombre en
+  ella.
+- **Markdown seguro.** Lo que escriben las personas se convierte con Python-Markdown quitando el HTML y
+  revisando cada enlace: un `[pulsa](javascript:…)` acabaría ejecutando código en el navegador de quien lo
+  pulse (ataque XSS), así que se cambia por `#`.
+- **Quién escribió cada párrafo.** `difflib` (biblioteca de Python que compara listas, la de las
+  herramientas de diferencias) compara los párrafos de antes y de después y dice cuáles son iguales,
+  cuáles cambian, cuáles se añaden y cuáles se quitan.

@@ -58,11 +58,11 @@ DISPOSICION = (
             "proyectos.tareas",
             "proyectos.proyectos",
         )),
-        ("proximamente.participacion", (
-            "proximamente.debates",
-            "proximamente.consultas",
-            "proximamente.documentos",
-            "proximamente.decisiones",
+        ("decisiones.participacion", (
+            "debates.debates",
+            "consultas.consultas",
+            "documentos.documentos",
+            "decisiones.decisiones",
         )),
         ("grupos.organizaciones", (
             Pestanas("grupos.mios", (
@@ -117,6 +117,7 @@ DISPOSICION = (
             "tipologias.tipologias",
             "etiquetas.etiquetas",
             "solicitudes.ajustes",
+            "debates.limites",
             "lugares.configuracion",
             "proximamente.web_publica",
         )),

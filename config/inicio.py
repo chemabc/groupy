@@ -21,7 +21,7 @@ DISPOSICION = {
     # «Inicio → Panel»: lo pendiente y lo que está en marcha.
     "panel": (
         ("comunicaciones.pendientes", "solicitudes.pendientes"),
-        ("proyectos.abiertos",),
+        ("proyectos.abiertos", "consultas.por_votar"),
     ),
     # «Inicio → Mis datos»: un resumen de la cuenta, con un botón «Editar» en cada recuadro.
     "mis_datos": (

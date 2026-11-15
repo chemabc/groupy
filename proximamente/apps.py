@@ -33,11 +33,6 @@ PENDIENTES = (
         "Mensajes entre dos personas, por su alias. Antes hay que decidir cómo se cuida la privacidad y cómo se evita el acoso.",
         "⚉", "#1d4ed8",
     ),
-    Pendiente("participacion", "Participación", "Debates, consultas, órdenes del día, actas y decisiones de tus grupos.", "⚘", "#be123d"),
-    Pendiente("debates", "Debates", "Debates de los grupos, con facilitación y moderación.", "❞", "#a21caf"),
-    Pendiente("consultas", "Consultas", "Votaciones y consultas de los grupos, con sus resultados.", "☷", "#0369a2"),
-    Pendiente("documentos", "Órdenes del día y actas", "Órdenes del día y actas colaborativas de las reuniones.", "✍", "#4d7c10"),
-    Pendiente("decisiones", "Decisiones", "El registro común de lo que deciden los grupos.", "⚐", "#854d0e"),
     # Administrar
     Pendiente(
         "miembros", "Miembros",

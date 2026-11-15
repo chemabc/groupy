@@ -96,6 +96,10 @@ INSTALLED_APPS = [
     "eventos.apps.EventosConfig",
     "proyectos.apps.ProyectosConfig",
     "calendario.apps.CalendarioConfig",
+    "documentos.apps.DocumentosConfig",
+    "decisiones.apps.DecisionesConfig",
+    "debates.apps.DebatesConfig",
+    "consultas.apps.ConsultasConfig",
     "limpieza.apps.LimpiezaConfig",
 ]
 

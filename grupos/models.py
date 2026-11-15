@@ -163,12 +163,14 @@ class Grupo(models.Model):
         return self.nombre
 
     # Django llama a este método al leer un grupo de la base de datos. Se apuntan el padre y la
-    # organización con los que estaba guardado, para saber al guardarlo si han cambiado.
+    # organización con los que estaba guardado, para saber al guardarlo si han cambiado. Se leen del
+    # diccionario del objeto: si la consulta no los trajo (.only(…)), quedan vacíos en lugar de pedirlos
+    # otra vez a la base de datos (lo que volvería a llamar a este método sin fin).
     @classmethod
     def from_db(cls, db, field_names, values):
         grupo = super().from_db(db, field_names, values)
-        grupo._padre_guardado = grupo.padre_id
-        grupo._organizacion_guardada = grupo.organizacion_id
+        grupo._padre_guardado = grupo.__dict__.get("padre_id")
+        grupo._organizacion_guardada = grupo.__dict__.get("organizacion_id")
         return grupo
 
     # Comprueba el grupo antes de guardarlo: el padre debe ser de la misma organización, no puede estar

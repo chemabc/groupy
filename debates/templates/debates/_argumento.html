@@ -1,0 +1,21 @@
+{% comment %}
+  Un argumento con sus votos y sus respuestas (lo incluye debates/debate.html, y se incluye a sí mismo para
+  cada respuesta). Recibe «argumento» (con autor, botones e hijos), «opcion» y «abierto». Los pasados del
+  límite blando salen muy marcados.
+{% endcomment %}
+<li class="rounded border p-2 {% if argumento.pasado %}border-2 border-amber-500 bg-amber-50 dark:bg-amber-950{% elif argumento.a_favor %}border-emerald-200 dark:border-emerald-900{% else %}border-rose-200 dark:border-rose-900{% endif %}">
+  <p class="text-xs text-slate-500"><span class="{% if argumento.a_favor %}text-emerald-700 dark:text-emerald-400{% else %}text-rose-700 dark:text-rose-400{% endif %}">{{ argumento.a_favor|yesno:"A favor,En contra" }}</span> · {{ argumento.autor.alias|default:"—" }}{% if argumento.pasado %} · <strong class="text-amber-700 dark:text-amber-300">pasado del límite</strong>{% endif %}</p>
+  <p class="my-1 whitespace-pre-line text-sm">{{ argumento.texto }}</p>
+  {% include "debates/_votos.html" with botones=argumento.botones opcion=opcion.pk argumento=argumento.pk %}
+  {% if abierto %}
+    <details class="mt-1 text-xs">
+      <summary class="cursor-pointer text-marca">Responder</summary>
+      {% include "debates/_escribir.html" with padre=argumento.pk %}
+    </details>
+  {% endif %}
+  {% if argumento.hijos %}
+    <ul class="mt-2 space-y-2 border-l border-slate-200 pl-2 dark:border-slate-700">
+      {% for argumento in argumento.hijos %}{% include "debates/_argumento.html" %}{% endfor %}
+    </ul>
+  {% endif %}
+</li>

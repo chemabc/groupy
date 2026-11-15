@@ -1,0 +1,13 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Participación → Debates» (debates/views.py, lista). Recibe «tabla».
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+    <a href="{% url 'debates:nuevo' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Proponer un debate</a>
+    Los debates de tus grupos. Uno nuevo se abre cuando lo apoyan otras personas del grupo.
+  </p>
+  {% include "base/tabla.html" %}
+</div>
+{% endblock %}

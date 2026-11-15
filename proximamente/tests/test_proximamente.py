@@ -15,7 +15,7 @@ class PruebasDeProximamente(PruebaDePantalla):
         respuesta = self.comprobar_consultas("/proximamente/con-grupos/", 1, None)
         self.assertContains(respuesta, "Aún está vacío")
         self.assertContains(respuesta, "Conversaciones con un grupo entero")
-        self.assertContains(respuesta, 'data-codigo="proximamente.participacion"')
+        self.assertContains(respuesta, 'data-codigo="decisiones.participacion"')
 
     # Una de administrar: una persona cualquiera ni la ve en el menú ni puede abrirla; el superadmin sí.
     def test_herramienta_de_administrar(self):

@@ -163,7 +163,14 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   desplegable «Completar o cambiar todo»). Y el **árbol de tipologías** con el mismo aspecto (amarillo lo que
   se puede cambiar, rojo el elegido). Y el **grafo de grupos** (`grupos/grafo.py`: texto Mermaid
   dibujado por la isla «documento», nodos que se pulsan).
-- **Fases 5, 6 y 7 en curso** (encargo tras [A-47]: versiones sencillas y funcionales sin preguntar; las
-  dudas esenciales, apuntadas en docs/diseno.md §20 para el final). Lo que queda de [A-37] (eventos de los
-  grupos que administro, miembros, conversaciones con grupos y personas) se pospone.
+- 15 de noviembre de 2026: **fases 5, 6 y 7, versiones sencillas** (encargo tras [A-47], sin preguntar):
+  `documentos` (orden del día, acta y libres; Markdown con vista previa; autoría por párrafo; registro de
+  cambios; redacción; aprobar → acuerdos a decisiones), `decisiones` (registro que se llena solo por
+  eventos_sw; «sustituida por»), `debates` (opciones en columnas, votos solo en recuentos, opciones nuevas
+  con 👍, límites plataforma/organización, facilitación, cerrar → decisión) y `consultas` (formulario,
+  voto secreto, resultados, cierre → decisión, calendario, tarjeta de Inicio). Piezas comunes: `Colgante`
+  y `{% colgantes %}` («Cuelga de aquí» en fichas de eventos y proyectos), `base/anclas.py`,
+  `base/markdown.py`, `grupos.acceso.grupos_donde_puede`. **Las dudas esenciales están en docs/diseno.md
+  §20** y hay que preguntarlas. Lo que queda de [A-37] (eventos de los grupos que administro, miembros,
+  conversaciones con grupos y personas) sigue pospuesto; después, fase 8.
   Recuerda `migrate --database=boveda`.

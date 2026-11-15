@@ -68,4 +68,4 @@ class PruebasDelCalendario(PruebaDeEventos):
     # Pedir las fechas cuesta lo mismo con más eventos.
     def test_consultas(self):
         self.charla()
-        self.comprobar_consultas(DICIEMBRE, 6, lambda: self.charla(titulo=f"Charla {Evento.objects.count()}"))
+        self.comprobar_consultas(DICIEMBRE, 7, lambda: self.charla(titulo=f"Charla {Evento.objects.count()}"))

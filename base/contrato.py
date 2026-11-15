@@ -252,6 +252,30 @@ class ResumenDeTarjeta:
 
 
 @dataclass(frozen=True)
+class Colgante:
+    """
+    Algo de este módulo que puede colgar de un elemento de otro (sus debates, sus actas, sus consultas…) y
+    que sale en la ficha de ese elemento, en su recuadro «Cuelga de aquí», con un enlace para crear uno
+    nuevo. La ficha no importa el módulo: lo pinta la etiqueta {% colgantes %} de base (ver
+    base/templatetags/colgantes.py), que pide las filas a la función indicada.
+    """
+
+    # Código único, empezando por la etiqueta del módulo. Ejemplo: «debates.debates».
+    codigo: str
+    # Nombre visible del grupo de cosas: «Debates».
+    nombre: str
+    # Tipos de ancla de los que puede colgar: («eventos.evento», «proyectos.proyecto»).
+    anclas: tuple[str, ...]
+    # Ruta de la función que devuelve lo que cuelga y ve una persona: recibe (usuario, ancla_tipo,
+    # ancla_id) y devuelve una lista de FilaDeResumen. Debe hacer siempre las mismas consultas.
+    funcion: str
+    # Nombre de la dirección para crear uno nuevo; se le añade «?ancla=<tipo>:<id>». Vacío: sin enlace.
+    crear: str = ""
+    # Texto de ese enlace: «+ Debate».
+    texto_crear: str = ""
+
+
+@dataclass(frozen=True)
 class Emision:
     """
     Un eventos_sw que el módulo emite: un aviso de que algo ha pasado («consultas.cerrada»). Los demás
@@ -561,6 +585,8 @@ class ModuloConfig(AppConfig):
     fuentes_de_calendario: tuple[FuenteDeCalendario, ...] = ()
     # Sus recuadros de la portada («Inicio → Panel» y «Mis datos»).
     tarjetas_de_inicio: tuple[TarjetaDeInicio, ...] = ()
+    # Lo suyo que puede colgar de elementos de otros módulos (sale en sus fichas, «Cuelga de aquí»).
+    colgantes: tuple[Colgante, ...] = ()
     # Los eventos_sw que emite.
     emite: tuple[Emision, ...] = ()
     # Los eventos_sw que escucha, con su función.

@@ -1,0 +1,28 @@
+{% comment %}
+  Botones de voto de una opción o de un argumento (lo incluye debates/debate.html). Recibe «botones» (tipo,
+  icono, nombre, cuántos, si es el mío, si pide justificación), «opcion» (su número), «argumento» (su
+  número, o nada) y «abierto». Cada botón es un formulario: votar lo mismo otra vez lo quita. ⭐ y ⛔
+  abren un cuadro para la justificación breve (sale sin nombre). Solo se ven recuentos, nunca quién.
+{% endcomment %}
+<div class="flex flex-wrap items-center gap-1 text-xs">
+  {% for tipo, icono, nombre, cuantos, mio, justifica in botones %}
+    {% if abierto and justifica and not mio %}
+      <details class="relative">
+        <summary class="list-none cursor-pointer rounded border px-1.5 py-0.5 border-slate-200 hover:border-marca dark:border-slate-700" title="{{ nombre }}">{{ icono }}&#xFE0F; {{ cuantos }}</summary>
+        <form method="post" class="absolute z-10 mt-1 flex w-64 flex-col gap-1 rounded border border-slate-300 bg-white p-2 shadow dark:border-slate-700 dark:bg-slate-900">
+          {% csrf_token %}<input type="hidden" name="accion" value="votar"><input type="hidden" name="tipo" value="{{ tipo }}"><input type="hidden" name="opcion" value="{{ opcion }}">{% if argumento %}<input type="hidden" name="argumento" value="{{ argumento }}">{% endif %}
+          <input type="text" name="justificacion" required maxlength="300" placeholder="Por qué, en breve (sin tu nombre)" aria-label="Justificación" class="rounded border border-slate-300 px-1.5 py-0.5 dark:border-slate-700 dark:bg-slate-900">
+          <button type="submit" class="self-start rounded bg-marca px-2 py-0.5 text-white">{{ icono }}&#xFE0F; {{ nombre }}</button>
+        </form>
+      </details>
+    {% elif abierto %}
+      <form method="post">
+        {% csrf_token %}<input type="hidden" name="accion" value="votar"><input type="hidden" name="tipo" value="{{ tipo }}"><input type="hidden" name="opcion" value="{{ opcion }}">{% if argumento %}<input type="hidden" name="argumento" value="{{ argumento }}">{% endif %}
+        <button type="submit" title="{{ nombre }}{% if mio %} (tu voto: pulsa para quitarlo){% endif %}" aria-pressed="{{ mio|yesno:'true,false' }}"
+                class="rounded border px-1.5 py-0.5 {% if mio %}border-marca bg-marca/10 font-semibold{% else %}border-slate-200 hover:border-marca dark:border-slate-700{% endif %}">{{ icono }}&#xFE0F; {{ cuantos }}</button>
+      </form>
+    {% else %}
+      <span class="rounded border border-slate-200 px-1.5 py-0.5 dark:border-slate-700" title="{{ nombre }}">{{ icono }}&#xFE0F; {{ cuantos }}</span>
+    {% endif %}
+  {% endfor %}
+</div>

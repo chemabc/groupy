@@ -27,6 +27,7 @@ APARTADOS_CON_CODIGO = {
     "huecos": "codigo",
     "fuentes_de_calendario": "codigo",
     "tarjetas_de_inicio": "codigo",
+    "colgantes": "codigo",
     "emite": "nombre",
     "grupos_de_etiquetas": "codigo",
     "limpiables": "codigo",

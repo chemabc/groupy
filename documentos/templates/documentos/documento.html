@@ -1,0 +1,87 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de un documento (documentos/views.py, documento). Recibe «documento», «bloques» (cada párrafo
+  convertido, con los alias que han contribuido a él), «cambios» (el registro), «comentarios», «acuerdos» y
+  «temas» (de un acta), «redaccion» (quién la tiene), «escribe», «aprueba» y «crea_acta» (qué botones
+  salen), «ancla» (aquello de lo que cuelga, o nada) y «error».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-4xl space-y-3">
+  <p class="text-sm"><a href="{% url 'documentos:lista' %}" class="text-marca hover:underline">← Órdenes del día y actas</a>{% if ancla %} · cuelga de <strong>{{ ancla }}</strong>{% endif %}{% if documento.origen %} · sale de <a href="{% url 'documentos:documento' documento.origen.pk %}" class="text-marca hover:underline">{{ documento.origen }}</a>{% endif %}</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+
+  {# Registro de cambios: en la primera página, plegado #}
+  <details class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900">
+    <summary class="cursor-pointer font-semibold">Registro de cambios ({{ cambios|length }})</summary>
+    <ul class="mt-1 space-y-0.5 text-xs text-slate-600 dark:text-slate-300">
+      {% for cambio in cambios %}<li>{{ cambio.cuando|date:"d/m/Y H:i" }} · <strong>{{ cambio.alias }}</strong> · {{ cambio.resumen }}</li>{% endfor %}
+    </ul>
+    <p class="mt-1 text-xs text-slate-500">Nadie puede borrar este registro.</p>
+  </details>
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <p class="text-xs text-slate-500">{{ documento.get_tipo_display }} · {{ documento.grupo.nombre }} · <span class="{% if documento.estado == 'aprobado' %}font-semibold text-emerald-700 dark:text-emerald-400{% endif %}">{{ documento.get_estado_display }}{% if documento.aprobado_el %} el {{ documento.aprobado_el|date:"d/m/Y" }}{% endif %}</span></p>
+    <h2 class="mb-2 text-xl font-semibold">{{ documento.titulo }}</h2>
+    <div class="flex flex-wrap gap-2 text-sm">
+      {% if escribe %}<a href="{% url 'documentos:escribir' documento.pk %}" class="rounded bg-marca px-3 py-1 font-medium text-white">Escribir</a>{% endif %}
+      {% if crea_acta %}<form method="post">{% csrf_token %}<button type="submit" name="accion" value="acta" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Crear el acta desde este orden del día</button></form>{% endif %}
+      {% if aprueba %}<form method="post">{% csrf_token %}<button type="submit" name="accion" value="aprobar" onclick="return confirm('Al aprobarlo ya no se podrá cambiar{% if documento.tipo == 'acta' %} y sus acuerdos pasarán al registro de decisiones{% endif %}. ¿Seguir?')" class="rounded border border-emerald-400 px-3 py-1 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300">Aprobar</button></form>{% endif %}
+    </div>
+    <div class="documento mt-3">
+      {% for bloque in bloques %}
+        <div class="group/parrafo">{{ bloque.html }}{% if bloque.autores %}<p class="-mt-2 mb-2 text-xs text-slate-400" title="Quién ha contribuido a este párrafo (el último, quien lo cambió por última vez)">({{ bloque.autores|join:", " }})</p>{% endif %}</div>
+      {% empty %}
+        <p class="text-slate-400">Aún no hay texto.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if acuerdos or temas %}
+    <section class="grid gap-3 sm:grid-cols-2">
+      <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+        <h3 class="mb-1 font-semibold">Acuerdos ({{ acuerdos|length }})</h3>
+        <ul class="space-y-1">{% for texto, forma, detalle in acuerdos %}<li>{{ texto }} <span class="text-xs text-slate-500">· {{ forma }}{% if detalle %} {{ detalle }}{% endif %}</span></li>{% empty %}<li class="text-slate-400">Ninguno.</li>{% endfor %}</ul>
+        {% if documento.estado == "aprobado" %}<p class="mt-1 text-xs"><a href="{% url 'decisiones:lista' %}" class="text-marca hover:underline">Ya están en el registro de decisiones →</a></p>{% else %}<p class="mt-1 text-xs text-slate-500">Pasarán al registro de decisiones al aprobar el acta.</p>{% endif %}
+      </div>
+      <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+        <h3 class="mb-1 font-semibold">Para la próxima reunión</h3>
+        <ul class="space-y-1">{% for tema in temas %}<li>{{ tema }} <a href="{% url 'debates:nuevo' %}?pregunta={{ tema|urlencode }}&ancla=documentos.documento:{{ documento.pk }}" class="text-xs text-marca hover:underline">Proponer debate</a></li>{% empty %}<li class="text-slate-400">Nada.</li>{% endfor %}</ul>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_16rem]">
+    <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="mb-1 font-semibold">Comentarios y propuestas de cambio</h3>
+      <ul class="space-y-2">
+        {% for comentario in comentarios %}<li><p class="text-xs text-slate-500">{{ comentario.usuario.alias|default:"—" }} · {{ comentario.creado|date:"d/m/Y H:i" }}</p><p class="whitespace-pre-line">{{ comentario.texto }}</p></li>{% empty %}<li class="text-slate-400">Ninguno.</li>{% endfor %}
+      </ul>
+      {% if documento.estado == "borrador" %}
+        <form method="post" class="mt-2 flex flex-col gap-2">
+          {% csrf_token %}<input type="hidden" name="accion" value="comentar">
+          <textarea name="texto" rows="2" required aria-label="Comentario" placeholder="Comenta o propón un cambio…" class="rounded border border-slate-300 bg-white p-2 dark:border-slate-700 dark:bg-slate-900"></textarea>
+          <button type="submit" class="self-start rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Comentar</button>
+        </form>
+      {% endif %}
+    </div>
+    <aside class="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="mb-1 font-semibold">Redacción</h3>
+      <ul class="space-y-1">
+        {% for cometido in redaccion %}
+          <li class="flex items-center justify-between gap-2">{{ cometido.usuario.alias }}
+            {% if escribe and redaccion|length > 1 %}<form method="post">{% csrf_token %}<input type="hidden" name="persona" value="{{ cometido.usuario_id }}"><button type="submit" name="accion" value="quitar" class="text-xs text-red-700 hover:underline dark:text-red-400">Quitar</button></form>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      {% if escribe and redaccion|length < 2 %}
+        <form method="post" class="mt-2 flex gap-1">
+          {% csrf_token %}<input type="hidden" name="accion" value="dar">
+          <input type="text" name="alias" required placeholder="Alias" aria-label="Alias de quien también redacta" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+          <button type="submit" class="rounded border border-slate-300 px-2 dark:border-slate-700">Dar</button>
+        </form>
+        <p class="mt-1 text-xs text-slate-500">Hasta dos personas a la vez. Las demás comentan.</p>
+      {% endif %}
+    </aside>
+  </section>
+</div>
+{% endblock %}

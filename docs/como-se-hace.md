@@ -201,6 +201,39 @@ borrará solo.
 Ve a «Configuración de mi cuenta → Mis datos → Lugar» y elígelo de la lista. Si no está, propón uno nuevo. Solo lo ves tú y el
 superadmin.
 
+## Participación
+
+### Debatir
+
+En «Participación → Debates», abre uno. Cada opción va en su columna. Vota con ⭐ 👍 👎 ⛔ (⭐ y ⛔ piden una
+justificación breve, que sale sin tu nombre); pulsar otra vez el mismo voto lo quita. «+ Argumento» añade uno
+a favor o en contra (con tu alias) y «Responder» contesta a otro. Si ninguna opción te convence, propón otra
+en «Opciones propuestas»: se abre cuando la apoyan otras personas. Si todas te valen, pulsa 🤝.
+
+### Proponer un debate
+
+«Participación → Debates → Proponer un debate»: la pregunta y al menos dos opciones, una por línea. Queda
+esperando los apoyos de tu grupo y, al conseguirlos, se abre y tú tienes su facilitación. Para que cuelgue
+de una reunión o un proyecto, usa «+ Debate» en el recuadro «Cuelga de aquí» de su ficha.
+
+### Votar en una consulta
+
+Las que tienes pendientes salen en «Inicio → Panel». En la consulta, responde y pulsa **Votar**. Si no se
+puede cambiar el voto, te avisa antes. El voto es secreto: nadie ve desde la plataforma qué has votado.
+
+### Escribir el orden del día y el acta
+
+En la ficha de la reunión, en «Cuelga de aquí», pulsa «+ Documento» (sale como orden del día). Escribe en
+Markdown («## Título», «- punto», «**negrita**») y mira a la derecha cómo queda. En la reunión, desde el orden
+del día, pulsa «Crear el acta»: copia los puntos y añade los acuerdos y los temas pendientes. Escribe cada
+acuerdo como «- [consenso] …» o «- [votación 12-3-1] …». Al aprobar el acta, los acuerdos pasan a
+«Decisiones». Quien no tiene la redacción puede comentar.
+
+### Buscar lo que se decidió
+
+«Participación → Decisiones»: todo lo decidido por tus grupos (actas, debates, consultas). Filtra por cómo
+se tomó o por grupo, o escribe una palabra. Cada decisión lleva a su origen.
+
 ## Hablar con la administración
 
 ### Escribir a la administración de mi grupo

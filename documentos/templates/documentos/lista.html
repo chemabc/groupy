@@ -1,0 +1,13 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Participación → Órdenes del día y actas» (documentos/views.py, lista). Recibe «tabla».
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+    <a href="{% url 'documentos:nuevo' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Nuevo documento</a>
+    Órdenes del día, actas y documentos de tus grupos. El orden del día de una reunión se crea mejor desde la ficha de la reunión.
+  </p>
+  {% include "base/tabla.html" %}
+</div>
+{% endblock %}

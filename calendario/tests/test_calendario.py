@@ -222,7 +222,7 @@ class PruebasDeConsultas(PruebaDeCalendario):
     def test_calendario(self):
         self.comprobar_consultas("/calendario/", 1, None)
         self.mas()
-        self.comprobar_consultas("/calendario/datos/?start=2030-03-01&end=2030-04-01", 6, self.mas)
+        self.comprobar_consultas("/calendario/datos/?start=2030-03-01&end=2030-04-01", 7, self.mas)
 
     # Lista de recordatorios, apuntar uno y la ficha.
     def test_recordatorios(self):
@@ -236,4 +236,4 @@ class PruebasDeConsultas(PruebaDeCalendario):
         self.comprobar_consultas("/calendario/suscripcion/", 2, None)
         clave = ClaveDeCalendario.objects.get().clave
         self.mas_pronto()
-        self.comprobar_consultas(f"/calendario/ics/{clave}.ics", 6, self.mas_pronto)
+        self.comprobar_consultas(f"/calendario/ics/{clave}.ics", 7, self.mas_pronto)

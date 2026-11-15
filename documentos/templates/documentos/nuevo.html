@@ -1,0 +1,25 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Nuevo documento» (documentos/views.py, nuevo). Recibe «formulario», «elemento» (aquello de lo
+  que cuelga, o nada), «grupos» y «grupo» (si no cuelga de nada: dónde se puede crear y el elegido) y
+  «ancla» (el texto de la dirección).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-xl space-y-3">
+  {% if elemento %}
+    <p class="text-sm">Cuelga de <strong>{{ elemento }}</strong>: tendrá su mismo grupo y lo verá quien lo ve.</p>
+  {% else %}
+    <form method="get" class="flex items-center gap-2 text-sm">
+      <label for="grupo-del-documento">Grupo</label>
+      <select id="grupo-del-documento" name="grupo" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+        {% for g in grupos %}<option value="{{ g.pk }}" {% if g.pk == grupo.pk %}selected{% endif %}>{{ g.organizacion.nombre }} › {{ g.camino }}</option>{% endfor %}
+      </select>
+    </form>
+  {% endif %}
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Crear y escribir</button>
+  </form>
+</div>
+{% endblock %}

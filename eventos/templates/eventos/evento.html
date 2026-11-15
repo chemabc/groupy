@@ -1,4 +1,5 @@
 {% extends interfaz.plantilla %}
+{% load colgantes %}
 {% comment %}
   Ficha de un evento (eventos/views.py, evento). Recibe: evento, error, campos (pares nombre, valor de los
   de su tipo), recuento ({si, no, no_se}), mi_respuesta, respuestas (pares código, nombre), quien_va (las
@@ -82,5 +83,7 @@
       {% endfor %}
     </ul>
   </section>
+  {# Lo que otros módulos cuelgan de aquí (órdenes del día y actas, debates, consultas…): base/templatetags/colgantes.py #}
+  {% colgantes "eventos.evento" evento.pk %}
 </div>
 {% endblock %}

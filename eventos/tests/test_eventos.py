@@ -220,4 +220,4 @@ class PruebasDeLaFicha(PruebaDeEventos):
 
         self.comprobar_consultas("/eventos/", 2, mas)
         self.comprobar_consultas("/eventos/mios/", 2, mas)
-        self.comprobar_consultas(f"/eventos/{evento.pk}/", 7, mas)
+        self.comprobar_consultas(f"/eventos/{evento.pk}/", 10, mas)

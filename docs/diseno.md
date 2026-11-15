@@ -587,6 +587,21 @@ lo pedido en docs/todo.md, «Reorganización de menús», 1).** La portada de ca
   - *Descartado:* tarjetas que solo enseñen los números del menú (no dicen qué hay pendiente ni separan
     lo enviado de lo recibido).
 
+**Lo que cuelga de otra cosa (15 de noviembre de 2026, para documentos, debates y consultas).**
+- **`Colgante`**, pieza nueva del contrato: un módulo dice qué suyo puede colgar de qué anclas
+  («eventos.evento», «proyectos.proyecto»…) y la función que lo lista. La etiqueta `{% colgantes %}` de
+  `base` pinta en la ficha de ese elemento el recuadro **«Cuelga de aquí»**, con lo que ya cuelga y el
+  enlace para crear uno nuevo (`?ancla=tipo:número`). Así la ficha de una reunión enseña sus órdenes del
+  día, actas, debates y consultas sin importar esos módulos. Hoy está en las fichas de eventos y proyectos.
+  - Es lo que el contrato llamaba «huecos» (declarados pero sin usar): se deja `Hueco` para cuando una
+    ficha necesite varios sitios distintos.
+- **`base/anclas.py`:** pasa «tipo:número» a (tipo, número) y encuentra el elemento por el modelo que
+  declara su módulo; lo que cuelga toma de ahí su grupo y su audiencia.
+- **`base/markdown.py`:** Markdown seguro para lo que escriben las personas (sin HTML y sin enlaces
+  `javascript:`, `data:` ni `vbscript:`, tampoco disimulados con entidades).
+- **`grupos.acceso.grupos_donde_puede`:** los grupos donde alguien tiene un permiso, para los desplegables
+  «Grupo» al crear (estaba repetida en cuatro vistas; las viejas se pasarán a ella cuando se toquen).
+
 **Selector de personas (14 de noviembre de 2026, decisiones 1A, 2, 3A, 4A con buscador y 5 de la persona
 usuaria).** Para elegir personas (de entrada, la responsable y quienes colaboran en una tarea) ya no se
 escribe el alias a ciegas: un componente común abre una ventana con quienes ven aquello, de lo más cercano
@@ -1477,6 +1492,38 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 **Tablas:** `Debate`, `Opcion`, `Argumento` (padre opcional), `Voto` (único por persona y elemento),
 `LimitesDeDebate` (en cada nivel), y los contadores guardados en la opción.
 
+
+### 11.1 Cómo está hecho `debates`, versión sencilla (15 de noviembre de 2026, encargo tras [A-47])
+
+Hecho sin preguntar, con lo que ya decía este apartado; las dudas que cambiarían algo esencial van al
+apartado 20.
+- **Abrir:** «Proponer un debate» (pregunta, contexto, opciones de partida, fecha de cierre opcional y
+  quién participa) crea el debate «esperando apoyos» (solo lo ve quien lo propone) y una solicitud
+  `debates.abrir` (2 apoyos, 15 días; basta el sí del superadmin). Al aceptarse se abre con su audiencia.
+  Si cuelga de algo (una reunión, un proyecto, un acta, otro debate), toma su grupo y su audiencia.
+- **Facilitación:** cometido `debates.facilitacion`, para quien lo propone; quien facilita (o la
+  administración del grupo) la da a otras personas por alias, lo **amplía** (solo a más gente, nunca a
+  menos) y lo **cierra** con una conclusión y, si quiere, la opción elegida.
+- **Opciones nuevas: con 👍 dentro del debate, no con una solicitud.** Nacen «propuestas» y se abren
+  cuando las apoyan N personas (2 de partida; sin contar a quien la propone).
+  - *Motivo:* las solicitudes solo dejan una pendiente por persona y grupo, y frenarían el debate.
+- **Votos:** un voto por persona y elemento (opción, argumento o el debate entero para 🤝); repetirlo lo
+  quita y otro lo cambia; ⭐ y ⛔ piden justificación breve, que sale **sin nombre**. Solo se ven recuentos.
+- **Recuentos y clasificación** calculados al pintar (no guardados en la opción): argumentos a favor,
+  votos de cada tipo, argumento más apoyado y las dos clasificaciones (solo a favor; a favor menos en
+  contra). Cuesta 9 consultas haya lo que haya.
+- **Límites** (`LimitesDeDebate`): de la plataforma (superadmin) y de cada organización
+  (`debates.limitar`, admin de organización), en «Administrar → Mi organización → Debates»; vale el más
+  estricto. Palabras por intervención (blando: se marca; duro: no se publica), intervenciones por persona
+  en el debate (al llegar al blando, una más y marcada; al duro, ya no), opciones nuevas por persona, apoyos
+  para abrir una opción y si la fecha de fin es obligatoria. De partida: 250/400 palabras, 15/20
+  intervenciones, 2 opciones, 2 apoyos.
+- **Al cerrar**, `debates.cerrado` lleva la conclusión al registro de decisiones.
+- **Aún no:** límites por grupo y por debate, argumentos por opción, etiquetas y base de conocimiento,
+  «de consenso» que se confirma sola y reinicia las intervenciones, debate nuevo a partir de un argumento
+  (hoy, «+ Debate» en el recuadro «Cuelga de aquí» del debate), lectura pública sin alias, chat, vista
+  gráfica y resumen.
+
 ---
 
 ## 12. Consultas
@@ -1496,6 +1543,28 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
 - **Voto secreto** (seudónimo con clave aparte): nadie ve desde la plataforma qué ha votado cada persona.
 - Resultados en gráficos. El desglose por grupos solo se muestra con 10 votantes o más.
 - El resultado se copia como **decisión** al registro.
+
+
+### 12.1 Cómo está hecho `consultas`, versión sencilla (15 de noviembre de 2026, encargo tras [A-47])
+
+- **Crear** (permiso `consultas.crear`, de entrada solo admin del grupo y de la organización): título,
+  explicación, fechas, cuándo se ven los resultados (al cerrar, en una fecha posterior o en tiempo real, con
+  el aviso), quién vota y quién ve los resultados (con el selector de siempre) y si se puede cambiar el voto.
+  Las **preguntas** se ponen en su ficha y se pueden cambiar hasta que se abre.
+- **Votar:** una persona, un voto. Sin cambio de voto, se avisa antes y un segundo voto se rechaza.
+- **Voto secreto:** `Participacion` dice quién ha votado (sin hora) y `Papeleta` qué se ha votado (sin
+  nombre ni hora; solo la asamblea base, para el desglose). Si se puede cambiar el voto, la papeleta lleva
+  una clave HMAC del par consulta-persona con un secreto del servidor: con la base de datos sola no se sabe
+  de quién es, pero con el secreto sí. **Provisional** hasta la bóveda real (fase 8; ver apartado 20).
+- **Resultados** en barras (CSS, sin librería); las abiertas, como lista; desglose por grupos con 10 votos
+  o más.
+- **Cierre:** al pasar su fecha, se da por cerrada al abrir su ficha o con la tarea diaria
+  `consultas.cerrar`; `consultas.cerrada` lleva al registro de decisiones el título y la respuesta más
+  votada de cada pregunta.
+- **Extras:** su cierre sale en el calendario (`consultas.cierres`) y la tarjeta «Consultas por votar» en
+  «Inicio → Panel».
+- **Aún no:** adjuntar ficheros como documentación (hoy, enlaces en Markdown), gráficos de verdad y avisos
+  al abrirse.
 
 ---
 
@@ -1519,6 +1588,30 @@ modelo. Cuando está listo, se crea el **evento** de la acción, copiando lo que
     El último de la lista es el último que lo ha modificado.
   - No se guardan las versiones anteriores del texto, solo quién ha participado en cada párrafo.
   - Así nadie puede cambiar un acta en silencio por tener más permisos.
+
+
+### 13.1 Cómo está hecho `documentos`, versión sencilla (15 de noviembre de 2026, encargo tras [A-47])
+
+- **Tipos:** orden del día, acta y documento libre. Se crean sueltos (en un grupo, con el selector de
+  visibilidad) o **colgados** de una reunión o un proyecto (toman su grupo y su audiencia), desde el
+  recuadro «Cuelga de aquí» de su ficha.
+- **Escribir:** Markdown con **vista previa al momento** (htmx manda el texto medio segundo después de la
+  última tecla), **sin tiempo real**. Si otra persona ha guardado mientras tanto, no se pisa: se avisa
+  (número de versión).
+  - *Descartado por ahora:* el editor colaborativo en tiempo real (Yjs y un servidor aparte); ver
+    apartado 20.
+- **Quién escribe:** quien tiene el cometido `documentos.redaccion` (quien lo crea, y quien le dé; hasta
+  dos personas) o la toma de acta de la reunión de la que cuelga (`eventos.toma_de_acta`, por su código).
+  Las demás personas que lo ven **comentan** hasta que se aprueba.
+- **Autoría por párrafo:** al guardar se comparan los párrafos de antes y de después (`difflib`): los que
+  no cambian conservan sus alias; los cambiados ponen al final a quien cambia; los nuevos, solo a quien
+  escribe. Un título solo va con el párrafo que le sigue. Sale detrás de cada párrafo, en claro.
+- **Registro de cambios** plegado arriba (quién, cuándo, cuántos párrafos), sin borrar nunca.
+- **Acta desde el orden del día:** copia los puntos y añade «Asistentes», «Acuerdos alcanzados» y «Temas a
+  discutir en la próxima reunión». Cada línea de acuerdos puede empezar por `[consenso]` o `[votación
+  12-3-1]`. Al **aprobarla**, ya no se cambia y cada acuerdo sale con `documentos.acuerdo_tomado` hacia el
+  registro de decisiones. Cada tema lleva «Proponer debate».
+- **Aún no:** PDF con Typst, plantillas del superadmin (hoy, un texto de partida en el código), adjuntos.
 
 ---
 
@@ -1745,6 +1838,20 @@ jerarquía… han de aparecer en árbol»; «Árbol de proyectos: cada árbol en
 - Si una decisión se vuelve a tomar, la antigua **se marca como «sustituida por…»**, con un enlace a la
   nueva. **Nunca se borra**: deja de salir en la lista por defecto, pero sigue en su origen.
 
+
+### 16.1 Cómo está hecho `decisiones` (15 de noviembre de 2026, encargo tras [A-47])
+
+- Una tabla, `Decision`: texto, cómo se tomó (consenso, votación, debate, consulta), detalle (recuento),
+  grupo, audiencia (la de su origen: la ve quien podía participar), origen (ancla y enlace), fecha y
+  «sustituida por».
+- **Se llena sola** escuchando `documentos.acuerdo_tomado`, `debates.cerrado` y `consultas.cerrada`, que
+  traen todos los datos (así no importa esos módulos). Si llega dos veces, no se repite.
+- **Pantallas:** «Vigentes» y «Todas», con la tabla filtrable al momento (por cómo y por grupo, y
+  búsqueda); la ficha, con su origen. La administración del grupo (`decisiones.sustituir`) la marca como
+  sustituida por otra más nueva del mismo grupo.
+- La sección del menú «Participación» (debates, consultas, órdenes del día y actas, decisiones) la declara
+  este módulo y abre los debates.
+
 ---
 
 ## 17. Comunicaciones
@@ -1856,6 +1963,24 @@ llegarán con el chat (más adelante).
 ---
 
 ## 20. Pendiente de decidir
+
+**Dudas de las fases 5, 6 y 7 (15 de noviembre de 2026, para la persona usuaria al terminar el encargo de
+[A-47]).** Están hechas versiones sencillas; estas dudas cambiarían algo esencial:
+1. **Editor en tiempo real (documentos):** ¿hace falta de verdad que dos personas escriban a la vez el
+   mismo texto (Yjs y un servidor aparte, más peso y otra pieza que mantener), o basta lo de ahora (guardar
+   y, si otra persona guardó antes, aviso)?
+2. **Voto secreto con cambio de voto (consultas):** hoy, la clave de la papeleta se calcula con un secreto
+   del servidor; quien tenga la base de datos **y** ese secreto podría saber qué votó cada persona. ¿Vale así
+   hasta la bóveda (fase 8), o mientras tanto se quita «cambiar el voto»?
+3. **Quién crea consultas:** de entrada, solo la administración del grupo y de la organización. ¿También
+   cualquier persona del grupo, quizá con una solicitud con apoyos, como los debates?
+4. **Opción «de consenso» (debates):** ¿qué es exactamente «apoyos de N personas de opciones distintas»
+   (personas que habían votado 👍 a otras opciones)? ¿Y «se reinicia el número de intervenciones»: para
+   todo el mundo y en todo el debate?
+5. **Límites en cascada (debates):** hay plataforma y organización. ¿Hacen falta también por grupo y por
+   cada debate, con su pantalla?
+6. **PDF de las actas:** ¿Typst (otro programa en el contenedor) o basta imprimir la página desde el
+   navegador con una hoja de estilos de impresión?
 
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.

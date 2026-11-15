@@ -84,7 +84,7 @@ flowchart LR
       direction TB
       subgraph FUN["Funcional"]
         direction LR
-        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza<br/>administracion · mantenimiento · ayuda<br/>proximamente<br/>[Módulo · Funcional]"]:::capafun
+        f1["comunicaciones · eventos · proyectos<br/>calendario · limpieza · documentos<br/>decisiones · debates · consultas<br/>administracion · mantenimiento · ayuda<br/>proximamente<br/>[Módulo · Funcional]"]:::capafun
       end
       subgraph ORG["Organización"]
         direction LR
@@ -154,7 +154,7 @@ flowchart TB
   classDef capaiden fill:#dcfce7,stroke:#16a34a,color:#14532d
   classDef capaorg fill:#fef9c3,stroke:#ca8a04,color:#713f12
   classDef capafun fill:#fce7f3,stroke:#db2777,color:#831843
-  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, administracion, mantenimiento, ayuda,<br/>proximamente"]:::capafun
+  F["Funcional<br/>comunicaciones, eventos, proyectos, calendario,<br/>limpieza, documentos, decisiones, debates, consultas,<br/>administracion, mantenimiento, ayuda, proximamente"]:::capafun
   O["Organización<br/>grupos, permisos, audiencias, etiquetas,<br/>tipologias, solicitudes, lugares, talentos"]:::capaorg
   I["Identidad<br/>boveda, usuarios"]:::capaiden
   B["Base<br/>base, eventos_sw, ejemplos"]:::capabase
@@ -279,8 +279,10 @@ En cada diagrama, el módulo del que se habla va en el centro y con borde grueso
 ### 6.1 base [Módulo · Base]
 
 El cimiento: contrato y registro, plantilla general con los dos menús, componentes comunes y ayudas para
-las pruebas, y la portada, «Inicio» (Panel y Mis datos), que junta las tarjetas de los módulos. No depende
-de ningún otro módulo nuestro.
+las pruebas, y la portada, «Inicio» (Panel y Mis datos), que junta las tarjetas de los módulos. También lo
+común de lo que cuelga de otra cosa: `base/anclas.py` (llegar al elemento de un ancla), la etiqueta
+`{% colgantes %}` (el recuadro «Cuelga de aquí» de las fichas) y `base/markdown.py` (Markdown seguro). No
+depende de ningún otro módulo nuestro.
 
 ```mermaid
 flowchart LR
@@ -296,6 +298,9 @@ flowchart LR
   permisos -. "le presta la comprobación de permisos<br/>(registrar_comprobador_de_permisos)" .-> base
   tarjetas["comunicaciones · solicitudes · proyectos<br/>usuarios · talentos · lugares · grupos"]:::otro
   tarjetas -. "TarjetaDeInicio<br/>(Inicio → Panel · Mis datos)" .-> base
+  colg["documentos · debates · consultas"]:::otro
+  colg -. "Colgante («Cuelga de aquí» en las fichas)<br/>base/templatetags/colgantes.py" .-> base
+  colg -- "base.anclas · base.markdown" --> base
   base --> dj
 ```
 
@@ -817,7 +822,110 @@ flowchart LR
   menu -. "coloca sus entradas" .-> pro
 ```
 
-### 6.23 config [Configuración]
+### 6.23 documentos [Módulo · Funcional]
+
+Órdenes del día, actas y documentos libres en Markdown, con vista previa al momento (htmx), autoría por
+párrafo, registro de cambios que nadie borra, comentarios, redacción (hasta dos personas) y aprobación. Al
+aprobar un acta, sus acuerdos salen como eventos_sw hacia `decisiones`.
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  classDef libjs fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+  doc["documentos<br/>[Módulo · Funcional]"]:::yo
+  aud["audiencias"]:::otro
+  per["permisos (cometido documentos.redaccion;<br/>eventos.toma_de_acta por su código)"]:::otro
+  gru["grupos.acceso"]:::otro
+  bas["base: anclas · markdown · tablas · colgantes"]:::otro
+  esw["eventos_sw"]:::otro
+  dec["decisiones"]:::otro
+  fichas["fichas de eventos y proyectos"]:::otro
+  deb["debates (temas del acta)"]:::otro
+  htmx["htmx<br/>[Librería JS]"]:::libjs
+  doc --> aud
+  doc --> per
+  doc --> gru
+  doc --> bas
+  doc --> esw
+  doc ==> dec
+  doc -. "Colgante documentos.documentos" .-> fichas
+  doc -. "enlace «Proponer debate»" .-> deb
+  htmx -- "/documentos/vista-previa/" --> doc
+```
+
+### 6.24 decisiones [Módulo · Funcional]
+
+El registro común de lo decidido. Se llena solo: escucha `documentos.acuerdo_tomado`, `debates.cerrado` y
+`consultas.cerrada`, que traen todos los datos. «Sustituida por…» en lugar de borrar.
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  dec["decisiones<br/>[Módulo · Funcional]"]:::yo
+  emisores["documentos · debates · consultas"]:::otro
+  aud["audiencias"]:::otro
+  per["permisos (decisiones.sustituir)"]:::otro
+  emisores ==> dec
+  dec --> aud
+  dec --> per
+```
+
+### 6.25 debates [Módulo · Funcional]
+
+Una pregunta con opciones en columnas, argumentos con alias, votos que solo se ven como recuentos, opciones
+nuevas que se abren con 👍, límites en cascada (plataforma y organización) y facilitación. Se abre con una
+solicitud con apoyos; al cerrarse, su conclusión va a `decisiones`.
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  deb["debates<br/>[Módulo · Funcional]"]:::yo
+  sol["solicitudes (debates.abrir)"]:::otro
+  aud["audiencias"]:::otro
+  per["permisos (debates.facilitacion)"]:::otro
+  bas["base: anclas · markdown · tablas · colgantes"]:::otro
+  dec["decisiones"]:::otro
+  fichas["fichas de eventos, proyectos, actas y debates"]:::otro
+  deb --> sol
+  deb --> aud
+  deb --> per
+  deb --> bas
+  deb -. "TipoDeSolicitud debates.abrir" .-> sol
+  deb ==> dec
+  deb -. "Colgante debates.debates" .-> fichas
+```
+
+### 6.26 consultas [Módulo · Funcional]
+
+Votaciones con formulario (única, múltiple, abierta), quién vota, fechas, cuándo y quién ve los resultados y
+si se puede cambiar el voto. Voto secreto: `Participacion` (quién) y `Papeleta` (qué) sin nada que las una.
+Se cierra sola (tarea diaria o al abrirla) y el resultado va a `decisiones`.
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  con["consultas<br/>[Módulo · Funcional]"]:::yo
+  aud["audiencias"]:::otro
+  per["permisos (consultas.crear)"]:::otro
+  gru["grupos (asamblea base, para el desglose)"]:::otro
+  bas["base: anclas · markdown · tablas · colgantes · Inicio"]:::otro
+  dec["decisiones"]:::otro
+  cal["calendario"]:::otro
+  tra["trabajador (TareaDiaria consultas.cerrar)"]:::otro
+  con --> aud
+  con --> per
+  con --> gru
+  con --> bas
+  con ==> dec
+  con -. "FuenteDeCalendario consultas.cierres" .-> cal
+  con -. "TareaDiaria consultas.cerrar" .-> tra
+```
+
+### 6.27 config [Configuración]
 
 Los ajustes (`settings.py`: apps, bases de datos, caché, cookies, guías de desarrollo), las direcciones
 (`urls.py`), la disposición del menú (`menu.py`: el orden y la agrupación de todas las entradas), el

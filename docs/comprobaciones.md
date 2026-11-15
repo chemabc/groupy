@@ -612,3 +612,64 @@ Antes: reiniciar el servidor (cambia interfaz.js: recarga la página con Ctrl+F5
 - [ ] Botones + − ⤢ ⛶: acercan, alejan, ajustan y ponen a pantalla completa. Se puede arrastrar.
 - [ ] Al pulsar un grupo se va a su ficha (al arrastrar el dibujo, no).
 - [ ] Como **Nutria**: solo su rama (GRU Tajo › GRU Jarama › GRU Henares y GRU Lozoya).
+
+## 33. Participación: lo común («Cuelga de aquí»)
+
+Antes: migrar (0.3: hay cuatro módulos nuevos), rehacer los ejemplos (0.4: ahora traen un orden del día,
+un acta aprobada, un debate y una consulta), `npm run construir` (0.2) y reiniciar el servidor y el
+trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
+
+- [ ] El menú «Participación» tiene Debates, Consultas, Órdenes del día y actas y Decisiones. Al pulsar
+  «Participación» se abren los debates. Ya no dicen que están vacías.
+- [ ] En la ficha de un evento o de un proyecto, abajo, el recuadro **«Cuelga de aquí»** con tres columnas
+  (órdenes del día y actas, debates, consultas), cada una con su «+ …» para crear uno colgado de ahí.
+
+## 34. Órdenes del día y actas
+
+- [ ] Como **Nutria**, «Participación → Órdenes del día y actas»: el orden del día y el acta de noviembre (y
+  el de diciembre en borrador). Se filtra por tipo y estado al momento.
+- [ ] El acta: «sale de» su orden del día; arriba, «Registro de cambios (3)», plegado. Detrás de cada
+  párrafo, en claro, «(Lince)». Abajo, los dos acuerdos («ya están en el registro de decisiones») y el tema
+  pendiente con «Proponer debate» (lleva al formulario con la pregunta escrita).
+- [ ] Nutria puede comentar el orden del día de diciembre, pero no escribirlo (no le sale «Escribir»).
+- [ ] Como **Lince**, orden del día de diciembre → «Escribir»: el texto a la izquierda y la vista previa a la
+  derecha, que cambia mientras escribes. Guarda: en la ficha, el párrafo cambiado lleva «(Lince)» y el
+  registro, una línea más.
+- [ ] Abre «Escribir» en dos pestañas, guarda en una y luego en la otra: la segunda avisa de que otra
+  persona ha guardado (no pisa nada).
+- [ ] «Dar» la redacción a Nutria: ya le sale «Escribir». Como mucho dos personas.
+- [ ] «Crear el acta desde este orden del día»: copia los puntos y añade Asistentes, Acuerdos alcanzados y
+  Temas. Escribe un acuerdo «- [votación 5-2-0] …» y aprueba: ya no se puede escribir y el acuerdo sale en
+  «Decisiones» con forma «Votación» y detalle «5-2-0».
+
+## 35. Debates
+
+- [ ] Como **Nutria**, «Participación → Debates → ¿Dónde hacemos el huerto?»: arriba, la pregunta, quién
+  facilita y 🤝. Debajo, las dos clasificaciones y las tres opciones en columnas (en el móvil se deslizan).
+- [ ] Cada opción y cada argumento con sus botones ⭐ 👍 👎 ⛔ (los argumentos, también 🔁 🚫) y su número.
+  Pulsa 👍: se marca y suma 1; vuelve a pulsarlo: se quita. ⭐ y ⛔ piden una justificación, que sale bajo la
+  opción **sin nombre**.
+- [ ] Los argumentos llevan alias; «Responder» cuelga una respuesta debajo. «+ Argumento», a favor o en contra.
+- [ ] «Opciones propuestas»: la de consenso de Garza espera 👍. Con dos apoyos (Nutria y Lince), pasa a
+  columna.
+- [ ] Como **Lince** (facilita): «Dar la facilitación», «Ampliar a» (solo opciones más amplias) y «Cerrar el
+  debate» con una conclusión: sale arriba en verde y en «Decisiones».
+- [ ] «Proponer un debate»: queda «esperando apoyos» (solo lo ves tú) y sale en «Comunicaciones →
+  Solicitudes»; cuando lo apoyan dos personas del grupo, se abre.
+- [ ] Como **Zorro** (admin de ORG Ebro) o **superadmin**: «Administrar → Mi organización → Debates», los
+  límites. Pon 1/3 intervenciones: tu segundo argumento sale marcado en ámbar («pasado del límite») y el
+  tercero ya no se publica.
+
+## 36. Consultas y decisiones
+
+- [ ] Como **Nutria**, «Inicio → Panel»: «Consultas por votar» con «¿Qué día hacemos la asamblea?».
+- [ ] La consulta: vota. Se puede cambiar el voto (lo dice); vota otra vez y cambia. En una consulta sin
+  cambio de voto, sale el aviso en ámbar y te pide confirmar antes de votar.
+- [ ] Los resultados dicen «se verán al cerrar». En el calendario sale «Cierra: ¿Qué día…?».
+- [ ] Como **Lince** (admin de GRU Henares), «Nueva consulta»: al elegir «En una fecha» sale la fecha de
+  publicación; «En tiempo real», el aviso de que influye. Créala con la apertura en el futuro y añade
+  preguntas (única, múltiple, abierta); se pueden quitar hasta que se abra.
+- [ ] Cuando se cierre (o pon el cierre en el pasado en la trastienda y abre la ficha): resultados en
+  barras; el desglose por grupos solo con 10 votos o más; y el resultado en «Decisiones».
+- [ ] «Participación → Decisiones»: «Vigentes» y «Todas», filtrables por cómo y por grupo. En una ficha, como
+  Lince, «Sustituida por…» otra más nueva: sale de «Vigentes» y sigue en «Todas», con el aviso en ámbar.

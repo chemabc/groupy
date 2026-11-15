@@ -1,0 +1,90 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Ficha de una consulta (consultas/views.py, consulta). Recibe «consulta», «descripcion» (ya convertida),
+  «estado», «preguntas» (con sus respuestas y su documentación convertida), «prepara» (si quien mira le pone
+  preguntas), «nueva» (su formulario), «vota», «ha_votado», «recien_votado», «resultados» (o nada si aún no
+  los ve), «ancla», «error» y «abrir».
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-3xl space-y-3">
+  <p class="text-sm"><a href="{% url 'consultas:lista' %}" class="text-marca hover:underline">← Consultas</a>{% if ancla %} · cuelga de <strong>{{ ancla }}</strong>{% endif %}</p>
+  {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
+  {% if recien_votado %}<p class="rounded border border-green-300 bg-green-50 p-2 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300" role="status">Voto guardado. Es secreto: nadie ve desde la plataforma qué has votado.</p>{% endif %}
+
+  <section class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <p class="text-xs text-slate-500">{{ consulta.grupo.nombre }} · {{ estado }} · de {{ consulta.abre|date:"d/m/Y H:i" }} a {{ consulta.cierra|date:"d/m/Y H:i" }} · resultados: {{ consulta.get_resultados_display|lower }}{% if consulta.publicar_el %} ({{ consulta.publicar_el|date:"d/m/Y H:i" }}){% endif %}</p>
+    <h2 class="text-xl font-semibold">{{ consulta.titulo }}</h2>
+    {% if consulta.descripcion %}<div class="documento mt-1 text-sm">{{ descripcion }}</div>{% endif %}
+  </section>
+
+  {% if prepara %}
+    <section class="rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="mb-2 font-semibold">Preguntas (se pueden cambiar hasta que se abra)</h3>
+      <ol class="mb-3 list-decimal space-y-1 pl-5">
+        {% for p in preguntas %}
+          <li><span class="font-medium">{{ p.texto }}</span> <span class="text-xs text-slate-500">· {{ p.get_tipo_display|lower }}{% if p.respuestas.all %}: {% for r in p.respuestas.all %}{{ r.texto }}{% if not forloop.last %} / {% endif %}{% endfor %}{% endif %}</span>
+            <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="accion" value="quitar"><input type="hidden" name="pregunta" value="{{ p.pk }}"><button type="submit" class="text-xs text-red-700 hover:underline dark:text-red-400">Quitar</button></form></li>
+        {% empty %}<li class="list-none text-slate-400">Aún no tiene preguntas.</li>{% endfor %}
+      </ol>
+      <details {% if abrir == "pregunta" or not preguntas %}open{% endif %}>
+        <summary class="cursor-pointer font-semibold text-marca">+ Añadir una pregunta</summary>
+        <form method="post" class="mt-2">{% csrf_token %}<input type="hidden" name="accion" value="pregunta">{{ nueva }}<button type="submit" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Añadir</button></form>
+      </details>
+    </section>
+  {% endif %}
+
+  {% if vota %}
+    <form method="post" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+      {% csrf_token %}<input type="hidden" name="accion" value="votar">
+      {% if ha_votado %}<p class="rounded bg-slate-100 px-2 py-1 dark:bg-slate-800">Ya has votado.{% if consulta.cambiar_voto %} Puedes cambiar tu voto hasta el cierre: el nuevo sustituye al anterior.{% endif %}</p>{% endif %}
+      {% if not ha_votado or consulta.cambiar_voto %}
+        {% for p in preguntas %}
+          <fieldset class="space-y-1">
+            <legend class="font-medium">{{ forloop.counter }}. {{ p.texto }} <span class="text-xs font-normal text-slate-500">({{ p.get_tipo_display|lower }})</span></legend>
+            {% if p.documentacion %}<div class="documento text-xs text-slate-600 dark:text-slate-300">{{ p.documentacion_html }}</div>{% endif %}
+            {% if p.tipo == "abierta" %}
+              <textarea name="p{{ p.pk }}" rows="2" maxlength="2000" aria-label="{{ p.texto }}" class="w-full rounded border border-slate-300 bg-white p-1.5 dark:border-slate-700 dark:bg-slate-900"></textarea>
+            {% else %}
+              {% for r in p.respuestas.all %}<label class="flex items-center gap-2"><input type="{% if p.tipo == 'unica' %}radio{% else %}checkbox{% endif %}" name="p{{ p.pk }}" value="{{ r.pk }}"> {{ r.texto }}</label>{% endfor %}
+            {% endif %}
+          </fieldset>
+        {% endfor %}
+        {% if not consulta.cambiar_voto %}<p class="rounded bg-amber-50 px-2 py-1 text-amber-900 dark:bg-amber-950 dark:text-amber-200"><strong>Atención:</strong> en esta consulta no se puede cambiar el voto. Revísalo antes de enviarlo.</p>{% endif %}
+        <button type="submit" {% if not consulta.cambiar_voto %}onclick="return confirm('No podrás cambiar el voto. ¿Enviarlo?')"{% endif %} class="rounded bg-marca px-3 py-1.5 font-medium text-white">Votar</button>
+      {% endif %}
+    </form>
+  {% elif estado == "En preparación" and not prepara %}
+    <p class="text-sm text-slate-500">Se abre el {{ consulta.abre|date:"d/m/Y H:i" }}.</p>
+  {% endif %}
+
+  {% if resultados %}
+    <section class="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 class="font-semibold">Resultados · {{ resultados.total }} voto{{ resultados.total|pluralize }}</h3>
+      {% for parte in resultados.preguntas %}
+        <div>
+          <p class="font-medium">{{ parte.pregunta.texto }}</p>
+          {% if parte.filas %}
+            <ul class="mt-1 space-y-1">
+              {% for fila in parte.filas %}
+                <li><div class="flex justify-between gap-2 text-xs"><span>{{ fila.respuesta.texto }}</span><span>{{ fila.votos }} · {{ fila.porcentaje }} %</span></div>
+                  <div class="h-2 rounded bg-slate-100 dark:bg-slate-800"><div class="h-2 rounded bg-marca" style="width: {{ fila.porcentaje }}%"></div></div></li>
+              {% endfor %}
+            </ul>
+            {% if parte.desglose %}
+              <details class="mt-1 text-xs"><summary class="cursor-pointer text-marca">Por grupos</summary>
+                <table class="mt-1 w-full"><thead><tr><th class="text-left">Grupo</th>{% for fila in parte.filas %}<th class="text-right">{{ fila.respuesta.texto|truncatechars:18 }}</th>{% endfor %}</tr></thead>
+                  <tbody>{% for nombre, cuentas in parte.desglose %}<tr><td>{{ nombre }}</td>{% for n in cuentas %}<td class="text-right">{{ n }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+              </details>
+            {% endif %}
+          {% else %}
+            <ul class="mt-1 list-disc space-y-0.5 pl-5 text-slate-700 dark:text-slate-300">{% for texto in parte.textos %}<li class="whitespace-pre-line">{{ texto }}</li>{% empty %}<li class="list-none text-slate-400">Sin respuestas.</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+      {% endfor %}
+      {% if not resultados.con_desglose %}<p class="text-xs text-slate-500">El desglose por grupos sale con 10 votos o más.</p>{% endif %}
+    </section>
+  {% elif estado != "En preparación" %}
+    <p class="text-sm text-slate-500">Los resultados se verán {{ consulta.get_resultados_display|lower }}{% if consulta.publicar_el %} ({{ consulta.publicar_el|date:"d/m/Y H:i" }}){% endif %}.</p>
+  {% endif %}
+</div>
+{% endblock %}

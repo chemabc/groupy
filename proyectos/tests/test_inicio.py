@@ -55,7 +55,7 @@ class PruebasDeInicio(PruebaDePantalla):
 
     # El panel cuesta lo mismo con pocos datos que con muchos.
     def test_consultas_del_panel(self):
-        self.comprobar_consultas("/", 10, self.mas_de_todo)
+        self.comprobar_consultas("/", 12, self.mas_de_todo)
 
     # Lo que sale en el panel: los proyectos abiertos en los que participa (no el terminado) y las
     # solicitudes recibidas y enviadas, cada una con su enlace.

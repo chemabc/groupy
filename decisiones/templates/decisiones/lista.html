@@ -1,0 +1,11 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantallas «Participación → Decisiones → Vigentes» y «Todas» (decisiones/views.py). Reciben «tabla» (la
+  tabla filtrable) y «vigentes» (si se esconden las sustituidas).
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="text-sm text-slate-600 dark:text-slate-300">{% if vigentes %}Las decisiones de tus grupos que siguen en pie. Las sustituidas por otra más nueva están en «Todas».{% else %}Todas las decisiones de tus grupos, también las sustituidas por otra más nueva. Ninguna se borra.{% endif %} Se llenan solas con los acuerdos de las actas, los debates cerrados y las consultas.</p>
+  {% include "base/tabla.html" %}
+</div>
+{% endblock %}

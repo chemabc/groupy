@@ -1,0 +1,25 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Proponer un debate» (debates/views.py, nuevo). Recibe «formulario», «elemento» (de lo que cuelga,
+  o nada), «grupos» y «grupo» (si no cuelga de algo con grupo: dónde se puede proponer y el elegido).
+{% endcomment %}
+{% block contenido %}
+<div class="max-w-xl space-y-3">
+  {% if elemento %}<p class="text-sm">Cuelga de <strong>{{ elemento }}</strong>{% if not grupos %}: participa quien lo ve{% endif %}.</p>{% endif %}
+  {% if grupos %}
+    <form method="get" class="flex items-center gap-2 text-sm">
+      {% if request.GET.ancla %}<input type="hidden" name="ancla" value="{{ request.GET.ancla }}">{% endif %}
+      <label for="grupo-del-debate">Grupo</label>
+      <select id="grupo-del-debate" name="grupo" onchange="this.form.requestSubmit()" class="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
+        {% for g in grupos %}<option value="{{ g.pk }}" {% if g.pk == grupo.pk %}selected{% endif %}>{{ g.organizacion.nombre }} › {{ g.camino }}</option>{% endfor %}
+      </select>
+    </form>
+  {% endif %}
+  <form method="post" class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    {% csrf_token %}
+    {{ formulario }}
+    <p class="mb-2 text-xs text-slate-500">Quedará esperando apoyos de tu grupo; al conseguirlos se abre y tendrás su facilitación.</p>
+    <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Proponer</button>
+  </form>
+</div>
+{% endblock %}

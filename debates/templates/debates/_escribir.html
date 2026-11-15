@@ -1,0 +1,14 @@
+{% comment %}
+  Formulario para escribir un argumento en una opción (o una respuesta, con «padre»). Lo incluyen
+  debates/debate.html y debates/_argumento.html. Recibe «opcion», «padre» (opcional) y «limites».
+{% endcomment %}
+<form method="post" class="mt-1 flex flex-col gap-1">
+  {% csrf_token %}<input type="hidden" name="accion" value="argumentar"><input type="hidden" name="opcion" value="{{ opcion.pk }}">{% if padre %}<input type="hidden" name="padre" value="{{ padre }}">{% endif %}
+  <textarea name="texto" rows="2" required aria-label="Argumento" class="rounded border border-slate-300 bg-white p-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"></textarea>
+  <div class="flex flex-wrap items-center gap-2 text-xs">
+    <label><input type="radio" name="a_favor" value="si" checked> A favor</label>
+    <label><input type="radio" name="a_favor" value="no"> En contra</label>
+    <button type="submit" class="rounded bg-marca px-2 py-0.5 text-white">Publicar</button>
+    {% if limites.palabras_blando %}<span class="text-slate-500">Hasta {{ limites.palabras_blando }} palabras</span>{% endif %}
+  </div>
+</form>

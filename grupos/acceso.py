@@ -82,3 +82,16 @@ def grupos_visibles(alcance, solo_administrados=False):
     if alcance.todo:
         return consulta
     return consulta.filter(pk__in=alcance.administrados if solo_administrados else alcance.visibles())
+
+
+# Grupos donde una persona tiene un permiso (todos, si es superadmin), en orden de árbol y con su
+# organización: los que salen en el desplegable «Grupo» al crear algo (un documento, un debate, una
+# consulta…). Una consulta; los permisos salen de la caché.
+#   - usuario: quien crea.
+#   - permiso: el permiso que hace falta («debates.abrir»).
+def grupos_donde_puede(usuario, permiso):
+    consulta = Grupo.objects.en_orden_de_arbol().select_related("organizacion")
+    if usuario.is_superuser:
+        return list(consulta)
+    ids = [grupo for grupo, codigos in permisos_de(usuario).grupos.items() if permiso in codigos]
+    return list(consulta.filter(pk__in=ids)) if ids else []

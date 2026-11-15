@@ -1,0 +1,13 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantalla «Participación → Consultas» (consultas/views.py, lista). Recibe «tabla».
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+    <a href="{% url 'consultas:nueva' %}" class="rounded bg-marca px-3 py-1.5 font-medium text-white">Nueva consulta</a>
+    Las votaciones de tus grupos. El voto es secreto: nadie ve desde la plataforma qué ha votado cada persona.
+  </p>
+  {% include "base/tabla.html" %}
+</div>
+{% endblock %}
