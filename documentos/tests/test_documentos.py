@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
 from documentos import servicios
-from documentos.models import CambioDeDocumento, Documento
+from documentos.models import CambioDeDocumento, Documento, LimitesDeDocumento
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
 
 
@@ -49,6 +49,26 @@ class PruebasDeDocumentos(PruebaDePantalla):
     # Un orden del día de GRU Henares, de Lince, que ve todo el grupo.
     def odd(self):
         return servicios.crear(self.lince, Documento.ODD, "Orden del día de la asamblea", grupo=self.henares, visibilidad="grupo:0")
+
+    # En Typst, los títulos del texto de partida salen con «==» y los acuerdos del acta se leen igual.
+    def test_formato_typst(self):
+        odd = servicios.crear(self.lince, Documento.ODD, "Orden del día", grupo=self.henares, visibilidad="grupo:0", formato=Documento.TYPST)
+        self.assertTrue(odd.texto.startswith("== Puntos"))
+        acta = servicios.acta_desde(self.lince, odd)
+        self.assertEqual(acta.formato, Documento.TYPST)
+        self.assertIn(f"== {servicios.ACUERDOS}", acta.texto)
+        acta = servicios.guardar(self.lince, acta, acta.titulo, acta.texto.replace("- [consenso] \n", "- [consenso] Huerto en el solar\n"), acta.version)
+        self.assertEqual(servicios.acuerdos(acta)[0][0], "Huerto en el solar")
+        self.assertContains(self.client.get(f"/documentos/{acta.pk}/"), "== Puntos")
+
+    # Cuántas personas tienen la redacción: de partida 10; el documento puede bajarlo (su administración).
+    def test_maximo_de_redaccion(self):
+        odd = self.odd()
+        LimitesDeDocumento.objects.create(documento=odd, max_escritores=1)
+        with self.assertRaises(ValidationError):
+            servicios.dar_redaccion(self.lince, odd, self.nutria)
+        self.assertEqual(servicios.limites_de(self.henares, odd)["max_escritores"], 1)
+        self.assertEqual(servicios.limites_de(self.henares)["max_escritores"], 10)
 
     # Al crearlo, Lince tiene la redacción, el texto de partida y una línea en el registro.
     def test_crear(self):
@@ -110,4 +130,4 @@ class PruebasDeDocumentos(PruebaDePantalla):
             servicios.guardar(self.lince, odd, odd.titulo, odd.texto + f"\n\nPunto {otro.pk}", Documento.objects.get(pk=odd.pk).version)
 
         self.comprobar_consultas("/documentos/", 2, mas)
-        self.comprobar_consultas(f"/documentos/{odd.pk}/", 8, mas)
+        self.comprobar_consultas(f"/documentos/{odd.pk}/", 9, mas)

@@ -111,7 +111,7 @@ flowchart LR
     pg2[("PostgreSQL: bóveda<br/>(identidad real, aparte)<br/>[Servicio]")]:::servicio
     redis[("Redis: caché<br/>[Servicio]")]:::servicio
     trab["trabajador: procesar_bandeja<br/>(avisos y tareas diarias)<br/>[Servicio]"]:::servicio
-    edi["editor: Node + Hocuspocus + Yjs<br/>(tiempo real, pieza aparte, editor/)<br/>[Servicio]"]:::servicio
+    edi["editor: Node + Hocuspocus + Yjs + Typst<br/>(tiempo real, comentarios, PDF;<br/>otro repositorio, en editor/)<br/>[Servicio]"]:::servicio
   end
   osm["Teselas de OpenStreetMap<br/>[Servicio externo]"]:::servicio
 
@@ -845,8 +845,8 @@ flowchart LR
   doc["documentos<br/>[Módulo · Funcional]"]:::yo
   aud["audiencias"]:::otro
   per["permisos (cometido documentos.redaccion;<br/>eventos.toma_de_acta por su código)"]:::otro
-  gru["grupos.acceso"]:::otro
-  bas["base: anclas · markdown · tablas · colgantes · editor"]:::otro
+  gru["grupos (acceso; Contencion para los límites)"]:::otro
+  bas["base: anclas · markdown · tablas · colgantes · editor · limites"]:::otro
   edi["editor (servicio aparte)<br/>[Servicio]"]:::otro
   esw["eventos_sw"]:::otro
   dec["decisiones"]:::otro
@@ -899,9 +899,11 @@ flowchart LR
   sol["solicitudes (debates.abrir)"]:::otro
   aud["audiencias"]:::otro
   per["permisos (debates.facilitacion)"]:::otro
-  bas["base: anclas · markdown · tablas · colgantes"]:::otro
+  bas["base: anclas · markdown · tablas · colgantes · limites"]:::otro
+  gru["grupos (Contencion: límites de los antecesores)"]:::otro
   dec["decisiones"]:::otro
   fichas["fichas de eventos, proyectos, actas y debates"]:::otro
+  deb --> gru
   deb --> sol
   deb --> aud
   deb --> per
@@ -1112,7 +1114,10 @@ flowchart LR
 `base/editor.py` es el puente con el servicio `editor` (carpeta `editor/`, Node): da los pases, comprueba las
 firmas y cierra salas. `base/vistas_del_editor.py` recibe las llamadas del editor y las pasa al módulo que
 declara el texto (`TextoEditable` en su contrato), sin importarlo. La isla «editorEnVivo» (interfaz.js)
-carga el cliente del editor y lo monta; la plantilla es `base/_editor.html`.
+carga el cliente del editor y lo monta; la plantilla es `base/_editor.html`. El cliente pinta su barra de
+formato, los comentarios (otra sala, `<sala>#comentarios`, por la misma conexión) y la vista Typst, que pide
+al editor (`POST /render`, `GET /pdf`) con el pase. El pase lleva también el formato, el título y cuántas
+personas pueden escribir y comentar a la vez (`TextoEditable.opciones`).
 
 ```mermaid
 sequenceDiagram
@@ -1146,5 +1151,5 @@ sequenceDiagram
 | PostgreSQL (bóveda) | [Servicio] | La identidad real, separada | Solo `boveda` (por el enrutador) |
 | Redis | [Servicio] | Caché: permisos, audiencias, contadores, «tareas de hoy hechas» | permisos, audiencias, comunicaciones, base |
 | trabajador | [Servicio] | Reparte la bandeja de eventos_sw y hace las tareas diarias | eventos_sw, base/tareas.py |
-| editor | [Servicio] | Escribir a la vez en tiempo real (Node: Hocuspocus + Yjs; carpeta `editor/`, pieza aparte que pueden usar otras aplicaciones) | `base/editor.py` (pases, firmas, cerrar sala) y los módulos con `TextoEditable` (documentos) |
+| editor | [Servicio] | Escribir a la vez en tiempo real, comentarios anclados, vista y PDF con Typst (Node: Hocuspocus + Yjs + typst.ts; otro repositorio, en `editor/`, que pueden usar otras aplicaciones) | `base/editor.py` (pases, firmas, cerrar sala) y los módulos con `TextoEditable` (documentos) |
 | OpenStreetMap | [Servicio externo] | Teselas del mapa | isla «mapa» (lugares) |

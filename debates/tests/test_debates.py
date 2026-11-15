@@ -96,6 +96,21 @@ class PruebasDeDebates(PruebaDePantalla):
         self.assertIsNotNone(self.debate.intervenciones_desde)
         self.assertFalse(servicios.argumentar(self.garza, self.solar, "De nuevo").pasado)
 
+    # Límites en cascada: el grupo padre y el propio debate pueden ser más estrictos; vale el menor.
+    def test_limites_por_grupo_y_debate(self):
+        LimitesDeDebate.objects.create(organizacion=self.tajo, palabras_duro=300)
+        LimitesDeDebate.objects.create(grupo=self.general, palabras_duro=200, intervenciones_duro=9)
+        self.assertEqual(servicios.limites_de(self.henares, self.debate).palabras_duro, 200)
+        self.client.force_login(self.lince)
+        self.client.post(f"/debates/{self.debate.pk}/", {"accion": "limites", "palabras_duro": "3", "apoyos_para_opcion": "2"})
+        limites = servicios.limites_de(self.henares, self.debate)
+        self.assertEqual((limites.palabras_duro, limites.intervenciones_duro), (3, 9))
+        with self.assertRaises(ValidationError):
+            servicios.argumentar(self.nutria, self.solar, "uno dos tres cuatro")
+        self.client.force_login(self.nutria)
+        self.client.post(f"/debates/{self.debate.pk}/", {"accion": "limites", "palabras_duro": "1"})
+        self.assertEqual(servicios.limites_de(self.henares, self.debate).palabras_duro, 3)
+
     # Límites: pasado el blando, una intervención más y marcada; después, ya no. Las palabras de más, no.
     def test_limites(self):
         LimitesDeDebate.objects.create(organizacion=self.tajo, intervenciones_blando=1, intervenciones_duro=5, palabras_duro=5)

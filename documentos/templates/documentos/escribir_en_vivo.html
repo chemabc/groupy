@@ -1,14 +1,15 @@
 {% extends interfaz.plantilla %}
 {% comment %}
   Pantalla «Escribir» un documento con el editor en tiempo real (documentos/views.py, escribir, cuando hay
-  editor). Recibe «documento», «en_vivo» (base.editor.pase), «vista» (el texto ya convertido) y «error».
-  El texto se guarda solo mientras se escribe; el título, con su botón. A la derecha, la vista previa.
+  editor). Recibe «documento», «en_vivo» (base.editor.pase) y «error». El texto se guarda solo mientras se
+  escribe; el título, con su botón. El editor trae su barra de formato, los comentarios y la vista Typst
+  (se enciende y se apaga), «Previsualizar» y «PDF».
 {% endcomment %}
 {% block contenido %}
 <div class="space-y-3">
   <p class="flex flex-wrap items-center gap-2 text-sm">
     <a href="{% url 'documentos:documento' documento.pk %}" class="text-marca hover:underline">← {{ documento.titulo }}</a>
-    <span class="text-slate-500">· {{ documento.get_tipo_display }} · se guarda solo · Markdown: «## Título», «- punto», «**negrita**»</span>
+    <span class="text-slate-500">· {{ documento.get_tipo_display }} · se guarda solo · {% if documento.formato == "typst" %}Typst{% else %}Markdown{% endif %}</span>
   </p>
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
   {% if en_vivo.permiso == "escribir" %}
@@ -18,11 +19,7 @@
       <button type="submit" class="rounded border border-slate-300 px-3 text-sm dark:border-slate-700">Cambiar el título</button>
     </form>
   {% endif %}
-  <div class="grid gap-3 lg:grid-cols-2">
-    {% url 'documentos:vista_previa' as vista_previa %}
-    {% include "base/_editor.html" with destino="vista-previa" %}
-    {% include "documentos/_vista_previa.html" %}
-  </div>
+  {% include "base/_editor.html" %}
   {% if en_vivo.permiso == "escribir" %}<p class="text-xs text-slate-500">¿No conecta? <a href="?sin_directo=1" class="text-marca hover:underline">Escribir sin directo</a> (con el formulario de siempre; avisa a quien esté escribiendo).</p>{% endif %}
   {% if documento.tipo == "acta" %}<p class="text-xs text-slate-500">Cada línea de «Acuerdos alcanzados» puede empezar con [consenso] o [votación 12-3-1]; al aprobar el acta pasan al registro de decisiones.</p>{% endif %}
 </div>

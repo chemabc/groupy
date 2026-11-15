@@ -84,8 +84,9 @@ def color_de(alias):
     return COLORES[int(hashlib.sha256(alias.encode()).hexdigest(), 16) % len(COLORES)]
 
 
-# Lo que necesita el navegador para entrar en la sala de un texto: dirección, sala, pase, alias, color y
-# permiso. None si no hay editor o si la persona no puede ni leerlo. Lo usan las pantallas que pintan el
+# Lo que necesita el navegador para entrar en la sala de un texto: dirección, sala, pase, alias, color,
+# permiso y formato. El pase lleva además lo que diga el módulo (TextoEditable.opciones): título y cuántas
+# personas pueden escribir y comentar a la vez. None si no hay editor o si la persona no puede ni leerlo. Lo usan las pantallas que pintan el
 # editor (con la plantilla base/_editor.html) y editor_pase, que renueva el pase al reconectar.
 #   - usuario: quien va a entrar.
 #   - tipo, numero: el texto (su tipo de ancla y su número).
@@ -97,13 +98,15 @@ def pase(usuario, tipo, numero):
     if not permiso:
         return None
     alias = str(usuario)
+    opciones = import_string(declarado.opciones)(numero) if declarado.opciones else {}
     datos = {
         "app": settings.EDITOR["app"], "sala": sala(tipo, numero), "alias": alias, "permiso": permiso,
-        "exp": int(time.time()) + MINUTOS_DE_PASE * 60,
+        "exp": int(time.time()) + MINUTOS_DE_PASE * 60, **{clave: valor for clave, valor in opciones.items() if valor is not None},
     }
     return {
         "url": settings.EDITOR["url"], "cliente": settings.EDITOR["url"].replace("ws", "http", 1) + "/cliente.js", "sala": f"{settings.EDITOR['app']}/{sala(tipo, numero)}", "pase": _jwt(datos),
         "alias": alias, "color": color_de(alias), "permiso": permiso, "tipo": tipo, "numero": numero,
+        "formato": opciones.get("formato", "markdown"),
     }
 
 

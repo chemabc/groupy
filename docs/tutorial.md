@@ -791,3 +791,26 @@ sirve aquí y dónde se usa.
 - **Un contrato más.** `documentos` declara un `TextoEditable` con tres funciones (qué puede hacer cada
   persona, el texto inicial, guardar). `base` hace de puente, así que mañana un proyecto puede tener su
   propia documentación en tiempo real sin tocar el editor.
+
+## 36. Límites en cascada, compilar sin bloquear y comentarios anclados (15 de noviembre de 2026)
+
+- **Límites en cascada.** Cada nivel guarda solo lo suyo:
+  - la plataforma, en una fila sin dueño;
+  - una organización, en una fila con su organización;
+  - un grupo, en una fila con su grupo;
+  - un debate, en una fila con su debate.
+
+  Para saber lo que vale, se leen todas las filas que tocan en una consulta y se toma el **mínimo** de cada
+  campo (`base/limites.py`). Los grupos de arriba se encuentran con la **tabla de cierre** (`Contencion`:
+  una fila por cada par antecesor-descendiente, a cualquier distancia), sin recorrer el árbol.
+
+  *Ejemplo: la organización pone 400 palabras, GRU Tajo 300 y el debate 200: valen 200.*
+- **Una restricción única con vacíos.** Para que no haya dos filas del mismo nivel,
+  `UniqueConstraint(..., nulls_distinct=False)` trata los vacíos como iguales. Así solo puede haber una fila
+  «de la plataforma».
+- **Compilar sin bloquear.** Node atiende a todo el mundo con un solo hilo. Una compilación larga lo
+  pararía, así que Typst va en un **hilo de trabajo** (`worker_threads`) con un reloj: si tarda demasiado,
+  se mata y se crea otro.
+- **Comentarios que no se mueven.** Un comentario no guarda «de la letra 120 a la 130», que cambia al
+  escribir delante. Guarda una **posición relativa** de Yjs: «justo después de esta letra concreta». Yjs la
+  traduce al número de ahora cada vez que se pinta.

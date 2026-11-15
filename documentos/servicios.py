@@ -17,12 +17,14 @@ from audiencias.selector import audiencia_de
 from audiencias.servicios import filtrar_visibles, puede_ver
 from base import editor
 from base.anclas import buscar_ancla
+from base.limites import mas_estricto
 from base.contrato import FilaDeResumen
 from eventos_sw.servicios import emitir
+from grupos.models import Contencion
 from permisos.models import Cometido
 from permisos.servicios import asignar_cometido, exigir, puede
 
-from .models import CambioDeDocumento, Comentario, Documento
+from .models import CambioDeDocumento, Comentario, Documento, LimitesDeDocumento
 
 # Tipo de ancla de los documentos.
 ANCLA = "documentos.documento"
@@ -31,8 +33,9 @@ REDACCION = "documentos.redaccion"
 # Cometido de una reunión que también da permiso para escribir sus documentos (lo declara «eventos»; se
 # nombra por su código, sin importar el módulo).
 TOMA_DE_ACTA = "eventos.toma_de_acta"
-# Cuántas personas, como mucho, tienen la redacción de un documento a la vez (docs/diseno.md, apartado 13).
-MAXIMO_DE_REDACCION = 2
+# Límites de partida, si el superadmin no ha puesto los de la plataforma: cuántas personas escriben (tienen
+# la redacción) y cuántas comentan a la vez en el editor en tiempo real (None: sin límite).
+POR_DEFECTO = {"max_escritores": 10, "max_comentaristas": None}
 # Títulos fijos del final de un acta.
 ACUERDOS = "Acuerdos alcanzados"
 TEMAS = "Temas a discutir en la próxima reunión"
@@ -71,8 +74,9 @@ FINAL_DEL_ACTA = f"""
 #   - grupo, visibilidad: el grupo y la clave del selector («grupo:0»…), si no cuelga de nada.
 #   - ancla: (tipo, número) de aquello de lo que cuelga, o (None, None).
 #   - texto: el texto inicial (si no, el de su tipo).
+#   - formato: «markdown» (de partida) o «typst».
 @transaction.atomic
-def crear(usuario, tipo, titulo, grupo=None, visibilidad="privado", ancla=(None, None), texto=None):
+def crear(usuario, tipo, titulo, grupo=None, visibilidad="privado", ancla=(None, None), texto=None, formato=Documento.MARKDOWN):
     ancla_tipo, ancla_id = ancla
     elemento = buscar_ancla(ancla_tipo, ancla_id) if ancla_tipo else None
     if ancla_tipo and elemento is None:
@@ -85,9 +89,10 @@ def crear(usuario, tipo, titulo, grupo=None, visibilidad="privado", ancla=(None,
         audiencia = audiencia_de(visibilidad, grupo, personas=[usuario])
     exigir(usuario, "documentos.crear", grupo=grupo)
     if texto is None:
-        texto = ODD_INICIAL if tipo == Documento.ODD else FINAL_DEL_ACTA.lstrip() if tipo == Documento.ACTA else ""
+        texto = _en_formato(ODD_INICIAL if tipo == Documento.ODD else FINAL_DEL_ACTA.lstrip() if tipo == Documento.ACTA else "", formato)
     documento = Documento(
         tipo=tipo, titulo=titulo, grupo=grupo, audiencia=audiencia, ancla_tipo=ancla_tipo or "", ancla_id=ancla_id, creador=usuario, texto="",
+        formato=formato,
     )
     documento.full_clean()
     documento.save()
@@ -105,12 +110,46 @@ def acta_desde(usuario, odd):
     if odd.tipo != Documento.ODD or not puede_escribir(usuario, odd, aunque_aprobado=True):
         raise ValidationError("Solo quien redacta el orden del día crea el acta a partir de él.")
     titulo = odd.titulo.replace("Orden del día", "Acta", 1) if odd.titulo.startswith("Orden del día") else f"Acta: {odd.titulo}"
-    acta = crear(usuario, Documento.ACTA, titulo, ancla=(odd.ancla_tipo or None, odd.ancla_id), grupo=odd.grupo, texto=odd.texto.rstrip() + FINAL_DEL_ACTA)
+    acta = crear(usuario, Documento.ACTA, titulo, ancla=(odd.ancla_tipo or None, odd.ancla_id), grupo=odd.grupo, texto=odd.texto.rstrip() + _en_formato(FINAL_DEL_ACTA, odd.formato), formato=odd.formato)
     if not odd.ancla_tipo:
         acta.audiencia = odd.audiencia
     acta.origen = odd
     acta.save(update_fields=["audiencia", "origen"])
     return acta
+
+
+# Pasa un texto de partida (con títulos de Markdown, «## …») a Typst («== …»), para los documentos que se
+# escriben en Typst. El resto de lo que llevan (listas con «- », «[consenso]») vale igual en los dos.
+def _en_formato(texto, formato):
+    return re.sub(r"^## ", "== ", texto, flags=re.M) if formato == Documento.TYPST else texto
+
+
+# ── Límites ──────────────────────────────────────────────────────────────────────────────────────────
+
+
+# Los límites que valen en un documento (o en un grupo, si aún no hay documento): de cada uno, el más
+# estricto entre la plataforma (o los de partida), la organización, el grupo y sus antecesores y el propio
+# documento. Devuelve {"max_escritores", "max_comentaristas"}. Dos consultas.
+def limites_de(grupo, documento=None):
+    antecesores = Contencion.objects.filter(descendiente_id=grupo.pk).values("antecesor_id")
+    niveles = Q(organizacion__isnull=True, grupo__isnull=True, documento__isnull=True) | Q(organizacion_id=grupo.organizacion_id) | Q(grupo_id=grupo.pk) | Q(grupo_id__in=antecesores)
+    if documento is not None and documento.pk:
+        niveles |= Q(documento_id=documento.pk)
+    filas = list(LimitesDeDocumento.objects.filter(niveles))
+    plataforma = next((f for f in filas if not (f.organizacion_id or f.grupo_id or f.documento_id)), None)
+    return mas_estricto(filas, POR_DEFECTO, plataforma)
+
+
+# La fila de límites de un nivel (para cambiarla): la que hay o una nueva sin guardar.
+def fila_de_limites(organizacion_id=None, grupo_id=None, documento_id=None):
+    filtro = {"organizacion_id": organizacion_id, "grupo_id": grupo_id, "documento_id": documento_id}
+    return LimitesDeDocumento.objects.filter(**filtro).first() or LimitesDeDocumento(**filtro)
+
+
+# Dice si una persona puede cambiar las opciones de un documento (sus límites propios): la administración
+# de su grupo o de su organización.
+def puede_cambiar_opciones(usuario, documento):
+    return puede(usuario, "documentos.limitar", grupo=documento.grupo_id)
 
 
 # ── Quién escribe ────────────────────────────────────────────────────────────────────────────────────
@@ -155,7 +194,7 @@ def redaccion(documento):
     return list(Cometido.objects.filter(codigo=REDACCION, ancla_tipo=ANCLA, ancla_id=documento.pk).select_related("usuario"))
 
 
-# Da la redacción a otra persona que ve el documento (como mucho dos a la vez). Lo hace quien ya redacta o
+# Da la redacción a otra persona que ve el documento (como mucho las que digan sus límites; de partida, 10). Lo hace quien ya redacta o
 # la administración del grupo.
 #   - quien: quien lo hace.
 #   - persona: a quién se le da.
@@ -168,8 +207,9 @@ def dar_redaccion(quien, documento, persona):
     actuales = redaccion(documento)
     if any(c.usuario_id == persona.pk for c in actuales):
         return
-    if len(actuales) >= MAXIMO_DE_REDACCION:
-        raise ValidationError(f"Ya hay {MAXIMO_DE_REDACCION} personas con la redacción: quita a una antes.")
+    maximo = limites_de(documento.grupo, documento)["max_escritores"]
+    if maximo is not None and len(actuales) >= maximo:
+        raise ValidationError(f"Ya hay {maximo} personas con la redacción (el máximo): quita a una antes.")
     asignar_cometido(persona, REDACCION, ANCLA, documento.pk, grupo=documento.grupo)
 
 
@@ -290,6 +330,13 @@ def permiso_en_editor(usuario, numero):
     return "comentar" if documento.estado == Documento.BORRADOR else "leer"
 
 
+# Lo que el editor necesita saber además del permiso: el formato, el título (para el PDF) y cuántas personas
+# pueden escribir y comentar a la vez.
+def opciones_para_editor(numero):
+    documento = Documento.objects.select_related("grupo").get(pk=numero)
+    return {"formato": documento.formato, "titulo": documento.titulo, **limites_de(documento.grupo, documento)}
+
+
 # El texto con el que empieza la sala de un documento y su versión.
 def texto_para_editor(numero):
     documento = Documento.objects.get(pk=numero)
@@ -328,7 +375,7 @@ def comentar(usuario, documento, texto):
 def _lineas_del_apartado(texto, titulo):
     dentro, lineas = False, []
     for linea in (texto or "").splitlines():
-        if linea.startswith("## "):
+        if linea.startswith(("## ", "== ")):
             dentro = linea[3:].strip().lower() == titulo.lower()
             continue
         if dentro and re.match(r"^\s*[-*]\s+", linea):

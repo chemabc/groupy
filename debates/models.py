@@ -161,14 +161,24 @@ class Voto(models.Model):
 class LimitesDeDebate(models.Model):
     """
     Límites para que un debate no se desborde (docs/diseno.md, apartado 11): al pasar el blando se permite
-    una intervención más, muy marcada; al llegar al duro, ya no se puede. Van en cascada: los de la
-    plataforma (los pone el superadmin) y los de cada organización, que solo pueden ser más estrictos. Vacío:
-    sin límite en ese nivel.
+    una intervención más, muy marcada; al llegar al duro, ya no se puede. Van en cascada y vale el más
+    estricto: los de la plataforma (los pone el superadmin), los de cada organización (su admin), los de
+    cada grupo (su admin; valen también en sus subgrupos) y los de cada debate (quien lo facilita). Cada fila
+    es de un solo nivel: la de la plataforma no tiene ni organización, ni grupo, ni debate. Vacío: sin límite
+    en ese nivel.
     """
 
-    organizacion = models.OneToOneField(
+    organizacion = models.ForeignKey(
         "grupos.Organizacion", on_delete=models.CASCADE, null=True, blank=True, related_name="limites_de_debate",
-        verbose_name="organización", help_text="Vacío: los de toda la plataforma.",
+        verbose_name="organización", help_text="Si son de una organización: cuál.",
+    )
+    grupo = models.ForeignKey(
+        "grupos.Grupo", on_delete=models.CASCADE, null=True, blank=True, related_name="+",
+        verbose_name="grupo", help_text="Si son de un grupo (y sus subgrupos): cuál.",
+    )
+    debate = models.OneToOneField(
+        "Debate", on_delete=models.CASCADE, null=True, blank=True, related_name="limites_propios",
+        verbose_name="debate", help_text="Si son de un debate concreto: cuál.",
     )
     palabras_blando = models.PositiveIntegerField("palabras por intervención (blando)", null=True, blank=True, help_text="Pasado esto, la intervención sale marcada.")
     palabras_duro = models.PositiveIntegerField("palabras por intervención (duro)", null=True, blank=True, help_text="Pasado esto, no se publica.")
@@ -183,7 +193,10 @@ class LimitesDeDebate(models.Model):
     class Meta:
         verbose_name = "límites de los debates"
         verbose_name_plural = "límites de los debates"
+        constraints = [
+            models.UniqueConstraint(fields=["organizacion", "grupo", "debate"], nulls_distinct=False, name="limites_de_debate_por_nivel"),
+        ]
 
     # Texto con el que se muestra: de quién son.
     def __str__(self):
-        return f"Límites de {self.organizacion or 'la plataforma'}"
+        return f"Límites de {self.debate or self.grupo or self.organizacion or 'la plataforma'}"

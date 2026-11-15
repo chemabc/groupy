@@ -24,3 +24,7 @@ ficheros/
 
 # Editor colaborativo: es otro repositorio (se clona dentro de editor/; ver docs/arranque.md)
 editor/
+
+# Bocetos de la persona usuaria y configuración local de npm: no van al historial
+docs/todo.md
+.npmrc

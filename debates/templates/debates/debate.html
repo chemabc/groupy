@@ -4,7 +4,7 @@
   «columnas» (las opciones abiertas, cada una con sus recuentos, botones, justificaciones sin nombre,
   argumentos en árbol y el más votado), «propuestas» (opciones esperando apoyos), «solo_a_favor» y «neto»
   (las dos clasificaciones), «todas» y «todas_mio» (🤝), «abierto», «facilitacion», «facilita»,
-  «ampliaciones», «limites», «ancla» y «error». Las opciones van en columnas, una al lado de otra; en el móvil
+  «ampliaciones», «limites» (los que valen), «limites_propios» (el formulario de los de este debate, si facilita), «ancla» y «error». Las opciones van en columnas, una al lado de otra; en el móvil
   se deslizan de lado.
 {% endcomment %}
 {% block contenido %}
@@ -95,6 +95,18 @@
         <button type="submit" onclick="return confirm('¿Cerrar el debate? Ya no se podrá intervenir.')" class="self-start rounded border border-emerald-400 px-2 py-0.5 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300">Cerrar</button>
       </form>
     </section>
+  {% endif %}
+  {# Límites propios de este debate (solo quien facilita); valen junto con los de la plataforma, la organización y el grupo: el más estricto #}
+  {% if facilita and limites_propios %}
+    <details class="rounded-lg border border-slate-200 bg-white p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+      <summary class="cursor-pointer font-semibold">Límites de este debate</summary>
+      <p class="my-1 text-xs text-slate-500">Valen ahora: {{ limites.palabras_blando|default:"—" }}/{{ limites.palabras_duro|default:"—" }} palabras, {{ limites.intervenciones_blando|default:"—" }}/{{ limites.intervenciones_duro|default:"—" }} intervenciones por persona, {{ limites.opciones_por_persona|default:"—" }} opciones nuevas por persona, {{ limites.apoyos_para_opcion }} apoyos para abrir una opción. Lo que pongas aquí solo puede hacerlos más estrictos. Vacío: sin límite propio.</p>
+      <form method="post" class="grid gap-x-3 sm:grid-cols-2">
+        {% csrf_token %}<input type="hidden" name="accion" value="limites">
+        {% for campo in limites_propios %}<div>{{ campo.as_field_group }}</div>{% endfor %}
+        <button type="submit" class="self-start rounded bg-marca px-3 py-1 text-white">Guardar</button>
+      </form>
+    </details>
   {% endif %}
 </div>
 {% endblock %}

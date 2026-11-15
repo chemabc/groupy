@@ -24,9 +24,10 @@ class DocumentosConfig(ModuloConfig):
     anclas = (Ancla("documentos.documento", "documentos.Documento", "Un orden del día, un acta o un documento"),)
     permisos = (
         Permiso("documentos.crear", "Crear órdenes del día, actas y documentos del grupo", roles=("usuario", "admin_grupo", "admin_org")),
+        Permiso("documentos.limitar", "Poner cuántas personas escriben y comentan a la vez (organización, grupo o documento)", roles=("admin_grupo", "admin_org")),
     )
     cometidos = (
-        Cometido("documentos.redaccion", "Redacción", "Escribe el documento (hasta dos personas a la vez); las demás lo comentan."),
+        Cometido("documentos.redaccion", "Redacción", "Escribe el documento (tantas personas como digan sus límites; de partida, 10); las demás lo comentan."),
     )
     emite = (
         Emision(
@@ -39,7 +40,7 @@ class DocumentosConfig(ModuloConfig):
     textos_editables = (
         TextoEditable(
             "documentos.documento", permiso="documentos.servicios.permiso_en_editor", texto="documentos.servicios.texto_para_editor",
-            guardar="documentos.servicios.guardar_desde_editor",
+            guardar="documentos.servicios.guardar_desde_editor", opciones="documentos.servicios.opciones_para_editor",
         ),
     )
     colgantes = (
@@ -52,6 +53,9 @@ class DocumentosConfig(ModuloConfig):
         EntradaDeMenu(
             codigo="documentos.documentos", nombre="Órdenes del día y actas", url="documentos:lista", icono="✍", color="#4d7c10",
             otras_rutas=("documentos:nuevo", "documentos:documento", "documentos:escribir"),
+        ),
+        EntradaDeMenu(
+            codigo="documentos.limites", nombre="Documentos", url="documentos:limites", icono="✐", color="#5b6c1f", permiso="documentos.limitar",
         ),
     )
     ayuda = (
@@ -68,5 +72,16 @@ class DocumentosConfig(ModuloConfig):
                 "decisiones."
             ),
             ejemplo="Lince tiene la toma de acta de la asamblea: abre su orden del día, pulsa «Crear el acta» y la completa durante la reunión.",
+        ),
+        Ayuda(
+            seccion="documentos.limites",
+            titulo="Límites de los documentos",
+            texto=(
+                "Cuántas personas pueden tener la redacción de un documento y escribir a la vez, y cuántas pueden estar "
+                "comentando a la vez en el editor en tiempo real. Los pone el superadmin (toda la plataforma), la "
+                "administración de cada organización y de cada grupo (vale también en sus subgrupos) y, en las «Opciones» "
+                "de cada documento, la administración de su grupo. Vale siempre el más estricto. Quien llega de más entra "
+                "a leer."
+            ),
         ),
     )

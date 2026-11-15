@@ -17,4 +17,6 @@ urlpatterns = [
     path("<int:pk>/escribir/", views.escribir, name="escribir"),
     # Vista previa del texto mientras se escribe (la pide htmx).
     path("vista-previa/", views.vista_previa, name="vista_previa"),
+    # Cuántas personas escriben y comentan a la vez (plataforma, organización o grupo).
+    path("limites/", views.limites, name="limites"),
 ]

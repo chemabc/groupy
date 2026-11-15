@@ -91,7 +91,8 @@ class PruebasDelEditorEnVivoEnElNavegador(PruebaEnElNavegador):
     def esperar_texto(self, pagina, texto):
         pagina.locator(f".cm-content:has-text('{texto}')").wait_for(timeout=10000)
 
-    # Las dos escriben, cada una ve lo de la otra y la plataforma lo guarda con las dos en la autoría.
+    # Las dos escriben, cada una ve lo de la otra y la plataforma lo guarda con las dos en la autoría; la
+    # vista Typst se enciende y se apaga; y un comentario de una le sale a la otra, con su bocadillo.
     def test_dos_personas_a_la_vez(self):
         url = f"ws://127.0.0.1:{self.puerto}"
         with self.settings(EDITOR={"url": url, "interna": url.replace("ws", "http"), "app": "asambleas", "secreto": "secreto-de-prueba"}):
@@ -118,7 +119,24 @@ class PruebasDelEditorEnVivoEnElNavegador(PruebaEnElNavegador):
             segunda.keyboard.press("Control+End")
             segunda.keyboard.type("Y los jueves.")
             self.esperar_texto(primera, "Y los jueves")
-            primera.locator("#vista-previa:has-text('Y los jueves')").wait_for(timeout=10000)
+            # La vista Typst: apagada no hay panel; al encenderla sale el resultado compilado.
+            self.assertFalse(primera.locator(".ec-panel").is_visible())
+            primera.get_by_role("button", name="Vista Typst").click()
+            primera.locator(".ec-panel img[src^='blob:']").wait_for(timeout=15000)
+            primera.get_by_text("Al día").wait_for(timeout=10000)
+            primera.get_by_role("button", name="Vista Typst").click()
+            self.assertFalse(primera.locator(".ec-panel").is_visible())
+            # Un comentario: Nutria selecciona «jueves», comenta y a Lince le sale resaltado; al pulsarlo, el bocadillo.
+            segunda.locator(".cm-content").click()
+            segunda.keyboard.press("Control+End")
+            for _ in range(len("jueves.")):
+                segunda.keyboard.press("Shift+ArrowLeft")
+            segunda.get_by_role("button", name="💬 Comentar").click()
+            segunda.locator(".ec-burbuja textarea").fill("¿Y los viernes?")
+            segunda.locator(".ec-burbuja").get_by_role("button", name="Comentar").click()
+            primera.locator(".ec-comentado").first.wait_for(timeout=10000)
+            primera.locator(".ec-comentado").first.click()
+            primera.locator(".ec-burbuja:has-text('¿Y los viernes?')").wait_for(timeout=5000)
             for _ in range(60):
                 documento.refresh_from_db()
                 if "Y los jueves" in documento.texto:

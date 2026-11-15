@@ -15,8 +15,10 @@ from django.utils import timezone
 from audiencias.selector import audiencia_de
 from audiencias.servicios import filtrar_visibles, puede_ver
 from base.anclas import buscar_ancla
+from base.limites import mas_estricto
 from base.contrato import FilaDeResumen
 from eventos_sw.servicios import emitir
+from grupos.models import Contencion
 from permisos.models import Cometido
 from permisos.servicios import asignar_cometido, exigir, puede
 from solicitudes.servicios import pedir
@@ -46,7 +48,7 @@ AMPLITUD = ["privado", "grupo:0", "grupo:1", "grupo:2", "grupo:3", "grupo:4", "g
 
 @dataclass
 class Limites:
-    """Los límites que valen en un debate: el más estricto de cada uno entre la plataforma y la organización."""
+    """Los límites que valen en un debate: el más estricto de cada uno entre la plataforma, la organización, el grupo (y sus antecesores) y el propio debate."""
 
     palabras_blando: int | None
     palabras_duro: int | None
@@ -57,20 +59,29 @@ class Limites:
     fin_obligatorio: bool
 
 
-# Los límites de una organización: los de la plataforma (o los de partida) y los suyos, el más estricto de
-# cada uno. Una consulta.
-#   - organizacion_id: la organización del grupo que debate.
-def limites_de(organizacion_id):
-    filas = {fila.organizacion_id: fila for fila in LimitesDeDebate.objects.filter(Q(organizacion__isnull=True) | Q(organizacion_id=organizacion_id))}
-    valores = {}
-    for campo, defecto in POR_DEFECTO.items():
-        candidatos = [getattr(fila, campo) for fila in filas.values() if getattr(fila, campo) is not None]
-        if None not in filas:
-            candidatos.append(defecto)
-        valores[campo] = min(candidatos) if candidatos else None
+# Los límites que valen en un grupo (y, si se da, en un debate concreto): de cada uno, el más estricto entre
+# los de la plataforma (o los de partida), los de su organización, los de su grupo y sus antecesores y los
+# del debate. Dos consultas.
+#   - grupo: el grupo que debate.
+#   - debate: el debate, o None (al proponerlo aún no existe).
+def limites_de(grupo, debate=None):
+    antecesores = Contencion.objects.filter(descendiente_id=grupo.pk).values("antecesor_id")
+    niveles = Q(organizacion__isnull=True, grupo__isnull=True, debate__isnull=True) | Q(organizacion_id=grupo.organizacion_id) | Q(grupo_id=grupo.pk) | Q(grupo_id__in=antecesores)
+    if debate is not None and debate.pk:
+        niveles |= Q(debate_id=debate.pk)
+    filas = list(LimitesDeDebate.objects.filter(niveles))
+    plataforma = next((f for f in filas if not (f.organizacion_id or f.grupo_id or f.debate_id)), None)
+    valores = mas_estricto(filas, POR_DEFECTO, plataforma)
     valores["apoyos_para_opcion"] = valores["apoyos_para_opcion"] or POR_DEFECTO["apoyos_para_opcion"]
-    valores["fin_obligatorio"] = any(fila.fin_obligatorio for fila in filas.values())
+    valores["fin_obligatorio"] = any(fila.fin_obligatorio for fila in filas)
     return Limites(**valores)
+
+
+# La fila de límites de un nivel (para cambiarla): la que hay o una nueva sin guardar. Solo uno de los tres
+# va lleno (o ninguno: la plataforma).
+def fila_de_limites(organizacion_id=None, grupo_id=None, debate_id=None):
+    filtro = {"organizacion_id": organizacion_id, "grupo_id": grupo_id, "debate_id": debate_id}
+    return LimitesDeDebate.objects.filter(**filtro).first() or LimitesDeDebate(**filtro)
 
 
 # ── Proponer y abrir ─────────────────────────────────────────────────────────────────────────────────
@@ -99,7 +110,7 @@ def proponer(usuario, pregunta, descripcion, opciones, grupo=None, visibilidad="
         if getattr(elemento, "audiencia_id", None):
             visibilidad = "heredada"
     exigir(usuario, "debates.abrir", grupo=grupo)
-    if limites_de(grupo.organizacion_id).fin_obligatorio and cierra is None:
+    if limites_de(grupo).fin_obligatorio and cierra is None:
         raise ValidationError("Tu organización pide que cada debate diga cuándo se cierra.")
     debate = Debate.objects.create(
         pregunta=pregunta, descripcion=descripcion, grupo=grupo, visibilidad=visibilidad, creador=usuario, cierra=cierra,
@@ -198,7 +209,7 @@ def proponer_opcion(usuario, debate, texto, de_consenso=False):
     _exigir_abierto(usuario, debate)
     if not texto.strip():
         raise ValidationError("La opción está vacía.")
-    limites = limites_de(debate.grupo.organizacion_id)
+    limites = limites_de(debate.grupo, debate)
     suyas = Opcion.objects.filter(debate=debate, autor=usuario, de_partida=False).count()
     if limites.opciones_por_persona is not None and suyas >= limites.opciones_por_persona:
         raise ValidationError(f"Ya has propuesto {limites.opciones_por_persona} opciones en este debate.")
@@ -222,7 +233,7 @@ def argumentar(usuario, opcion, texto, a_favor=True, padre=None):
         raise ValidationError("Esa opción aún no está abierta: necesita apoyos.")
     if padre is not None and padre.opcion_id != opcion.pk:
         raise ValidationError("La respuesta tiene que ser en la misma opción.")
-    limites = limites_de(debate.grupo.organizacion_id)
+    limites = limites_de(debate.grupo, debate)
     palabras = len(texto.split())
     if limites.palabras_duro is not None and palabras > limites.palabras_duro:
         raise ValidationError(f"Tiene {palabras} palabras y el límite es {limites.palabras_duro}. Acórtalo.")
@@ -270,7 +281,7 @@ def votar(usuario, debate, tipo, opcion=None, argumento=None, justificacion=""):
             apoyos = apoyos_de_consenso(opcion)
         else:
             apoyos = Voto.objects.filter(opcion=opcion, tipo=Voto.APOYO).exclude(usuario_id=opcion.autor_id).count()
-        if apoyos >= limites_de(debate.grupo.organizacion_id).apoyos_para_opcion:
+        if apoyos >= limites_de(debate.grupo, debate).apoyos_para_opcion:
             opcion.estado = Opcion.ABIERTA
             opcion.save(update_fields=["estado"])
             if opcion.de_consenso:

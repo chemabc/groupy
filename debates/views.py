@@ -76,7 +76,8 @@ def nuevo(request):
 
 
 # Lo que hace cada botón de la ficha (función interna de debate()). Lanza ValidationError si no se puede.
-#   - accion: «votar», «argumentar», «opcion», «facilitar», «ampliar» o «cerrar».
+#   - accion: «votar», «argumentar», «opcion», «facilitar», «ampliar», «cerrar» o «limites» (los de este
+#     debate, solo quien facilita).
 def _hacer(request, debate, accion):
     usuario, datos = request.user, request.POST
     opcion = get_object_or_404(Opcion, pk=datos["opcion"], debate=debate) if datos.get("opcion") else None
@@ -97,6 +98,13 @@ def _hacer(request, debate, accion):
         servicios.ampliar(usuario, debate, datos.get("visibilidad", ""))
     elif accion == "cerrar":
         servicios.cerrar(usuario, debate, datos.get("conclusion", ""), elegida=opcion)
+    elif accion == "limites":
+        if not servicios.facilita(usuario, debate, servicios.facilitacion(debate)):
+            raise ValidationError("Solo quien facilita pone los límites de este debate.")
+        formulario = FormularioDeLimites(datos, instance=servicios.fila_de_limites(debate_id=debate.pk))
+        if not formulario.is_valid():
+            raise ValidationError("Revisa los límites: solo números enteros.")
+        formulario.save()
 
 
 # Botones de voto de una opción o de un argumento, listos para pintar: (tipo, icono, nombre, cuántos, si
@@ -156,7 +164,7 @@ def debate(request, pk):
         (columnas if opcion.estado == Opcion.ABIERTA else propuestas).append(opcion)
     de_facilitacion = servicios.facilitacion(debate)
     facilita = servicios.facilita(usuario, debate, de_facilitacion)
-    limites = servicios.limites_de(debate.grupo.organizacion_id)
+    limites = servicios.limites_de(debate.grupo, debate)
     contexto = {
         "debate": debate,
         "descripcion": texto_a_html(debate.descripcion),
@@ -171,6 +179,7 @@ def debate(request, pk):
         "facilita": facilita,
         "ampliaciones": [(clave, texto) for clave, texto in opciones_de_visibilidad(debate.grupo) if clave in servicios.AMPLITUD and debate.visibilidad in servicios.AMPLITUD and servicios.AMPLITUD.index(clave) > servicios.AMPLITUD.index(debate.visibilidad)] if facilita else [],
         "limites": limites,
+        "limites_propios": FormularioDeLimites(instance=servicios.fila_de_limites(debate_id=debate.pk)) if facilita else None,
         "ancla": buscar_ancla(debate.ancla_tipo, debate.ancla_id) if debate.ancla_tipo else None,
         "error": error,
     }
@@ -178,26 +187,33 @@ def debate(request, pk):
 
 
 # Pantalla «Administrar → Mi organización → Debates»: los límites de los debates de toda la plataforma (el
-# superadmin) y de cada organización que administra quien mira. Cada nivel solo puede ser más estricto.
-#   - GET «organizacion»: cuál se edita (vacío: la plataforma, solo el superadmin).
+# superadmin), de cada organización que administra quien mira y de cada grupo que administra (valen también
+# en sus subgrupos). Vale siempre el más estricto; cada debate puede tener además los suyos (los pone quien
+# lo facilita, en su ficha).
+#   - GET «nivel»: cuál se edita: «» (la plataforma, solo el superadmin), «o<número>» (una organización) o
+#     «g<número>» (un grupo).
 #   - POST: los campos de FormularioDeLimites.
 def limites(request):
     usuario = request.user
     organizaciones = list(organizaciones_con(usuario, "debates.limitar"))
-    if not organizaciones and not usuario.is_superuser:
+    grupos = grupos_donde_puede(usuario, "debates.limitar")
+    if not organizaciones and not grupos and not usuario.is_superuser:
         raise SinPermiso(explicar_falta("debates.limitar"))
-    ambitos = ([(None, "Toda la plataforma")] if usuario.is_superuser else []) + [(o.pk, o.nombre) for o in organizaciones]
-    elegido = request.GET.get("organizacion", "")
-    organizacion_id = int(elegido) if elegido.isdigit() else (None if usuario.is_superuser else ambitos[0][0])
-    if organizacion_id not in dict(ambitos):
+    niveles = ([("", "Toda la plataforma")] if usuario.is_superuser else [])
+    niveles += [(f"o{o.pk}", f"Organización: {o.nombre}") for o in organizaciones]
+    niveles += [(f"g{g.pk}", f"Grupo: {g.organizacion.nombre} › {g.camino}") for g in grupos]
+    elegido = request.GET.get("nivel", niveles[0][0])
+    if elegido not in dict(niveles):
         raise SinPermiso(explicar_falta("debates.limitar"))
-    fila = LimitesDeDebate.objects.filter(organizacion_id=organizacion_id).first() or LimitesDeDebate(organizacion_id=organizacion_id)
+    numero = int(elegido[1:]) if elegido else None
+    fila = servicios.fila_de_limites(organizacion_id=numero if elegido.startswith("o") else None, grupo_id=numero if elegido.startswith("g") else None)
     formulario = FormularioDeLimites(request.POST or None, instance=fila)
     if request.method == "POST" and formulario.is_valid():
         formulario.save()
-        return redirect(f"{request.path}?organizacion={organizacion_id or ''}")
+        return redirect(f"{request.path}?nivel={elegido}")
+    grupo = next((g for g in grupos if g.pk == numero), None) if elegido.startswith("g") else None
     contexto = {
-        "formulario": formulario, "ambitos": ambitos, "elegido": organizacion_id,
-        "valen": servicios.limites_de(organizacion_id) if organizacion_id else None, "por_defecto": servicios.POR_DEFECTO,
+        "formulario": formulario, "niveles": niveles, "elegido": elegido,
+        "valen": servicios.limites_de(grupo) if grupo else None, "por_defecto": servicios.POR_DEFECTO,
     }
     return render(request, "debates/limites.html", contexto)

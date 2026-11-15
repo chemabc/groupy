@@ -963,7 +963,7 @@ document.addEventListener("alpine:init", () => {
   // Isla del editor colaborativo en tiempo real (el servicio aparte de editor/; ver base/editor.py). La
   // pinta base/templates/base/_editor.html con todo en data-*:
   //   data-cliente (el script del editor), data-url (su WebSocket), data-sala, data-pase, data-alias,
-  //   data-color, data-permiso, data-renovar (dónde pedir un pase nuevo al reconectar) y, si hay vista
+  //   data-color, data-permiso, data-formato, data-renovar (dónde pedir un pase nuevo) y, si hay vista
   //   previa, data-vista-previa (dónde se convierte el texto) y data-destino (el id del recuadro que se
   //   cambia).
   // Carga el editor la primera vez, se conecta a la sala y enseña quién está y si hay conexión.
@@ -976,23 +976,19 @@ document.addEventListener("alpine:init", () => {
     espera: null,
 
     // Al arrancar: carga el script del editor y lo monta. El primer pase viene en la página; los
-    // siguientes (al reconectar, porque duran pocos minutos) se piden a data-renovar.
+    // siguientes (al reconectar y para compilar, porque duran pocos minutos) se piden a data-renovar.
     async init() {
       const datos = this.$root.dataset;
       await cargarUnaVez(datos.cliente);
-      let primero = datos.pase;
-      const pase = async () => {
-        if (primero) {
-          const este = primero;
-          primero = "";
-          return este;
-        }
+      // Pide un pase nuevo a la plataforma (al reconectar y para compilar con Typst).
+      const pedirPase = async () => {
         const respuesta = await fetch(datos.renovar, { headers: { Accept: "application/json" } });
         if (!respuesta.ok) throw new Error("Sin permiso");
         return (await respuesta.json()).pase;
       };
       this.editor = window.EditorColaborativo.montar(this.$refs.cuadro, {
-        url: datos.url, sala: datos.sala, pase, alias: datos.alias, color: datos.color, permiso: datos.permiso,
+        url: datos.url, sala: datos.sala, pase: datos.pase, pedirPase, alias: datos.alias, color: datos.color, permiso: datos.permiso,
+        formato: datos.formato,
         alCambiar: (texto) => this.previa(texto),
         alPersonas: (lista) => (this.personas = lista),
         alEstado: (estado) => (this.estado = estado),

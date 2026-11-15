@@ -1512,9 +1512,15 @@ apartado 20.
 - **Recuentos y clasificación** calculados al pintar (no guardados en la opción): argumentos a favor,
   votos de cada tipo, argumento más apoyado y las dos clasificaciones (solo a favor; a favor menos en
   contra). Cuesta 9 consultas haya lo que haya.
-- **Límites** (`LimitesDeDebate`): de la plataforma (superadmin) y de cada organización
-  (`debates.limitar`, admin de organización), en «Administrar → Mi organización → Debates»; vale el más
-  estricto. Palabras por intervención (blando: se marca; duro: no se publica), intervenciones por persona
+- **Límites** (`LimitesDeDebate`), en cascada; vale siempre el más estricto (15 de noviembre de 2026,
+  [A-51]):
+  - de la plataforma (superadmin);
+  - de cada organización (admin de organización);
+  - de cada grupo (admin del grupo; valen también en sus subgrupos);
+  - de cada debate (quien lo facilita, en «Límites de este debate» de su ficha).
+
+  Los tres primeros se ponen en «Administrar → Mi organización → Debates» (`debates.limitar`). El
+  cálculo común está en `base/limites.py` (`mas_estricto`). Palabras por intervención (blando: se marca; duro: no se publica), intervenciones por persona
   en el debate (al llegar al blando, una más y marcada; al duro, ya no), opciones nuevas por persona, apoyos
   para abrir una opción y si la fecha de fin es obligatoria. De partida: 250/400 palabras, 15/20
   intervenciones, 2 opciones, 2 apoyos.
@@ -1682,6 +1688,41 @@ editor**. La idea es acabar construyendo fuera un editor potente que esta herram
   autoría por párrafo que ya existe.
 - **Pases asimétricos (Ed25519) desde el principio:** HS256 basta mientras editor y plataforma son de la
   misma gente. Pasar a Ed25519 queda anotado para cuando lo usen otros.
+
+**Ampliado el 15 de noviembre de 2026 ([A-51], respuestas de la persona usuaria):**
+- **Repositorio propio:** el editor tiene su propio historial de git, dentro de `editor/` (la plataforma lo
+  ignora). Aún no está publicado en ningún servidor.
+- **Markdown, y Typst si se quiere:** cada documento elige al crearse en qué se escribe (`Documento.formato`):
+  - **Markdown**, lo de partida y recomendado;
+  - **Typst**, para maquetar a mano.
+
+  El PDF sale con Typst en los dos casos (el Markdown se convierte dentro del editor).
+- **Barra de formato** arriba del texto: negrita, cursiva, título, listas, cita, enlace, código, tabla y
+  separador, con las marcas del formato del documento.
+- **Vista Typst** al lado del texto, con un botón para encenderla:
+  - **encendida**, se compila poco después de cada cambio;
+  - **apagada**, no se ve y no se gasta nada;
+  - **«Previsualizar»** compila una vez y **«PDF»** lo descarga.
+  - **Cómo se compila:** en el servidor del editor (compilador de typst.ts para Node, Apache-2.0), en un hilo
+    aparte, con 8 segundos como mucho, en una carpeta vacía y sin paquetes de internet.
+  - *Descartado:* compilar en el navegador. Son unos 20 MB más para cada persona y el móvil sufre.
+- **Comentarios anclados al texto:** se selecciona un trozo y «💬 Comentar»; queda resaltado y, al pulsarlo,
+  sale un **bocadillo** debajo con el hilo, «Responder» y «✓ Resuelto».
+  - Se guardan en el editor, en una sala aparte (`#comentarios`), con posiciones relativas de Yjs: siguen
+    en su sitio aunque se escriba alrededor.
+  - Pueden comentar quienes escriben y quienes comentan; quien solo lee, no.
+  - *Elegido por sencillo y estable:* el bocadillo es un recuadro propio colocado bajo el trozo, sin
+    tooltips de CodeMirror (se perdería lo que se está escribiendo al llegar una respuesta).
+- **Muchas personas a la vez:** ya no hay un máximo fijo de dos. Hay **límites en cascada**
+  (`LimitesDeDocumento`) de cuántas personas escriben (tienen la redacción) y cuántas comentan a la vez;
+  vale el más estricto:
+  - la plataforma (superadmin);
+  - cada organización (su admin);
+  - cada grupo (su admin);
+  - cada documento («Opciones» en su ficha, la administración de su grupo).
+
+  Los tres primeros se ponen en «Administrar → Mi organización → Documentos». De partida, 10 escribiendo
+  y comentarios sin límite. El pase lleva los máximos; quien llega de más entra a leer, con un aviso.
 
 **Por hacer** (en `editor/LEEME.md`):
 - PDF con Typst: la dirección ya existe y responde «aún no»;
@@ -2050,14 +2091,14 @@ llegarán con el chat (más adelante).
 5. **Límites de los debates:** pendiente. La persona usuaria no entendió la pregunta; se le explica en [A-50].
 6. **PDF:** con Typst, dentro del editor (13.2).
 
-**Dudas del editor en tiempo real ([A-50]):**
-- **Formato del texto:** ¿se escribe en Markdown (como ahora, y Typst solo da forma al PDF con una
-  plantilla) o directamente en Typst (más potente para maquetar, pero más difícil para quien escribe un
-  acta)?
-- **Dónde vive el editor:** ¿lo sacamos ya a su propio repositorio, o sigue en `editor/` hasta que tenga más
-  piezas?
-- **Comentarios:** ¿los comentarios se anclan a un trozo del texto (como en un procesador de textos) o
-  siguen debajo del documento?
+**Respuestas del 15 de noviembre de 2026 ([A-51]):**
+- **Límites de los debates:** también por grupo (su admin) y por debate (quien facilita). Vale el más
+  estricto (11.1).
+- **Formato del texto:** Markdown, con la opción de Typst, barra de formato y vista Typst que se enciende y
+  se apaga (13.2).
+- **Comentarios:** anclados al trozo, con bocadillo (13.2).
+- **Repositorio:** aparte (13.2). Falta decidir dónde se publica.
+- **Voto secreto:** opción de cada consulta, secreta de partida y de verdad; cada votación lo dice (12.1).
 
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.

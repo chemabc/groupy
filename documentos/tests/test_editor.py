@@ -17,11 +17,11 @@ from django.test import override_settings
 from base import editor
 from base.pruebas import PruebaDePantalla, crear_usuario_de_prueba
 from documentos import servicios
-from documentos.models import CambioDeDocumento, Documento
+from documentos.models import CambioDeDocumento, Documento, LimitesDeDocumento
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
 
 # Consultas de «Escribir» con el editor en tiempo real.
-CONSULTAS_DE_ESCRIBIR = 4
+CONSULTAS_DE_ESCRIBIR = 6
 # Configuración de un editor de prueba (no hace falta que exista: cerrar_sala no llega y no pasa nada).
 EDITOR = {"url": "ws://editor.prueba:1234", "interna": "http://127.0.0.1:9", "app": "asambleas", "secreto": "secreto-de-prueba"}
 
@@ -68,6 +68,15 @@ class PruebasDelEditor(PruebaDePantalla):
         self.assertLessEqual(datos["exp"] - time.time(), editor.MINUTOS_DE_PASE * 60)
         self.client.force_login(self.erizo)
         self.assertEqual(self.client.get("/editor/pase/", {"sala": self.sala}).status_code, 403)
+
+    # El pase lleva el formato, el título y los límites que valen (el más estricto de todos los niveles).
+    def test_opciones_en_el_pase(self):
+        LimitesDeDocumento.objects.create(organizacion=self.tajo, max_escritores=6, max_comentaristas=40)
+        LimitesDeDocumento.objects.create(grupo=self.general, max_comentaristas=12)
+        LimitesDeDocumento.objects.create(documento=self.odd, max_escritores=3)
+        cuerpo = editor.pase(self.lince, servicios.ANCLA, self.odd.pk)["pase"].split(".")[1]
+        datos = json.loads(base64.urlsafe_b64decode(cuerpo + "=" * (-len(cuerpo) % 4)))
+        self.assertEqual((datos["formato"], datos["titulo"], datos["max_escritores"], datos["max_comentaristas"]), ("markdown", "Orden del día", 3, 12))
 
     # El texto inicial solo se da con la firma buena.
     def test_texto(self):

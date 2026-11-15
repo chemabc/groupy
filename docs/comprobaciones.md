@@ -177,7 +177,8 @@ cd editor && npm install && npm run construir && \
 EDITOR_URL=ws://localhost:1234 EDITOR_URL_INTERNA=http://localhost:1234 python manage.py runserver 0.0.0.0:8000
 ```
 
-- [ ] Las pruebas del propio editor: `cd editor && npm run probar` (4 pruebas).
+- [ ] Las pruebas del propio editor: `cd editor && npm run probar` (7 pruebas). Es otro repositorio:
+  `git -C editor log --oneline -3`.
 
 ---
 
@@ -681,6 +682,12 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
 - [ ] Como **Zorro** (admin de ORG Ebro) o **superadmin**: «Administrar → Mi organización → Debates», los
   límites. Pon 1/3 intervenciones: tu segundo argumento sale marcado en ámbar («pasado del límite») y el
   tercero ya no se publica.
+- [ ] Como **Lince** (admin de GRU Henares): «Administrar → Mi organización → Debates» deja elegir «Grupo:
+  ORG Tajo › … GRU Henares». Pon 300 palabras de límite duro: debajo dice cuánto vale ahora en ese grupo,
+  juntando niveles.
+- [ ] Como Lince, en la ficha de «¿Dónde hacemos el huerto?» (facilita), «Límites de este debate»: pon 5
+  palabras de límite duro. Un argumento de más de 5 palabras ya no se publica. Como **Nutria** (no
+  facilita), ese recuadro no sale.
 
 ## 36. Consultas y decisiones
 
@@ -716,5 +723,20 @@ Necesita el paso 0.8.
   tocado los dos dicen «(Lince, Nutria)», y el registro de cambios, «Lince, Nutria».
 - [ ] Aprueba el documento como Lince: quien estaba escribiendo se desconecta y, al volver, ya no lo puede
   cambiar.
+- [ ] **Barra de formato:** selecciona una palabra y pulsa **B**: queda entre `**`. Prueba el título, la
+  lista y la tabla.
+- [ ] **Vista Typst:** apagada, no hay panel. Al pulsarla, sale al lado el resultado compilado y se pone al
+  día poco después de escribir. Vuelve a pulsarla: se esconde. «Previsualizar» la enseña una vez y «PDF»
+  descarga el documento.
+- [ ] **Comentarios:** como Nutria (sin redacción), selecciona un trozo y «💬 Comentar». A Lince le sale
+  resaltado en amarillo; al pulsarlo, el bocadillo con el comentario. Responde y pulsa «✓ Resuelto»: el
+  resalte se va. «↓ 💬» salta al siguiente.
+- [ ] **Typst a mano:** «Nuevo documento» con «Se escribe en: Typst». Los botones de la barra ponen marcas
+  de Typst (`*negrita*`, `== Título`) y la ficha enseña el texto tal cual.
+- [ ] **Límites:** como Lince, en la ficha del documento, «Opciones» → 1 persona escribiendo. Dar la
+  redacción a otra persona ya no deja. Y si dos con la redacción abren «Escribir», la segunda entra a leer,
+  con un aviso arriba.
+- [ ] «Administrar → Mi organización → Documentos»: los mismos límites por plataforma (superadmin),
+  organización y grupo.
 - [ ] Para el editor (`docker stop` del servicio o Ctrl+C) y abre «Escribir» en otro borrador: pone
   «Conectando…». Abajo, «Escribir sin directo» abre el formulario de siempre.

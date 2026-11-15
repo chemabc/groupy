@@ -42,7 +42,7 @@ def _comprobar_funciones():
     rutas += [fuente.mover for fuente in registro.fuentes_de_calendario.values() if fuente.mover]
     rutas += [tarjeta.funcion for tarjeta in registro.tarjetas_de_inicio.values()]
     rutas += [colgante.funcion for colgante in registro.colgantes.values()]
-    rutas += [ruta for editable in registro.textos_editables.values() for ruta in (editable.permiso, editable.texto, editable.guardar)]
+    rutas += [ruta for editable in registro.textos_editables.values() for ruta in (editable.permiso, editable.texto, editable.guardar, editable.opciones) if ruta]
     rutas += [aviso.preparar for aviso in registro.avisos.values()]
     rutas += [tipo.resolver for tipo in registro.solicitudes.values()]
     rutas += [tarea.funcion for tarea in registro.tareas_diarias.values()]

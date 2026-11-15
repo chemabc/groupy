@@ -3,7 +3,9 @@
   Ficha de un documento (documentos/views.py, documento). Recibe «documento», «bloques» (cada párrafo
   convertido, con los alias que han contribuido a él), «cambios» (el registro), «comentarios», «acuerdos» y
   «temas» (de un acta), «redaccion» (quién la tiene), «escribe», «en_directo» (si hay editor en tiempo real y es borrador: quien no escribe lo sigue en directo), «aprueba» y «crea_acta» (qué botones
-  salen), «ancla» (aquello de lo que cuelga, o nada) y «error».
+  salen), «ancla» (aquello de lo que cuelga, o nada), «error», «limites» (cuántas personas escriben y
+  comentan a la vez) y «opciones» (el formulario de los límites propios, si quien mira puede cambiarlos).
+  Cada bloque trae su «html» (Markdown convertido) o, si el documento es de Typst, su «texto» tal cual.
 {% endcomment %}
 {% block contenido %}
 <div class="max-w-4xl space-y-3">
@@ -29,7 +31,7 @@
     </div>
     <div class="documento mt-3">
       {% for bloque in bloques %}
-        <div class="group/parrafo">{{ bloque.html }}{% if bloque.autores %}<p class="-mt-2 mb-2 text-xs text-slate-400" title="Quién ha contribuido a este párrafo (el último, quien lo cambió por última vez)">({{ bloque.autores|join:", " }})</p>{% endif %}</div>
+        <div class="group/parrafo">{% if bloque.html %}{{ bloque.html }}{% else %}<pre class="mb-2 whitespace-pre-wrap font-mono text-sm">{{ bloque.texto }}</pre>{% endif %}{% if bloque.autores %}<p class="-mt-2 mb-2 text-xs text-slate-400" title="Quién ha contribuido a este párrafo (el último, quien lo cambió por última vez)">({{ bloque.autores|join:", " }})</p>{% endif %}</div>
       {% empty %}
         <p class="text-slate-400">Aún no hay texto.</p>
       {% endfor %}
@@ -73,13 +75,25 @@
           </li>
         {% endfor %}
       </ul>
-      {% if escribe and redaccion|length < 2 %}
+      {% if escribe and limites.max_escritores is None or escribe and redaccion|length < limites.max_escritores %}
         <form method="post" class="mt-2 flex gap-1">
           {% csrf_token %}<input type="hidden" name="accion" value="dar">
           <input type="text" name="alias" required placeholder="Alias" aria-label="Alias de quien también redacta" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900">
           <button type="submit" class="rounded border border-slate-300 px-2 dark:border-slate-700">Dar</button>
         </form>
-        <p class="mt-1 text-xs text-slate-500">Hasta dos personas a la vez. Las demás comentan.</p>
+      {% endif %}
+      <p class="mt-1 text-xs text-slate-500">Escriben a la vez hasta {{ limites.max_escritores|default:"todas las" }} personas{% if limites.max_comentaristas %}; comentan a la vez hasta {{ limites.max_comentaristas }}{% endif %}. Las demás comentan o leen.</p>
+      {# Opciones de este documento: la administración de su grupo pone sus propios límites (valen si son más estrictos) #}
+      {% if opciones %}
+        <details class="mt-3 border-t border-slate-200 pt-2 dark:border-slate-800">
+          <summary class="cursor-pointer font-semibold">Opciones</summary>
+          <form method="post" class="mt-2 space-y-1">
+            {% csrf_token %}<input type="hidden" name="accion" value="opciones">
+            {{ opciones }}
+            <button type="submit" class="rounded bg-marca px-3 py-1 text-white">Guardar</button>
+          </form>
+          <p class="mt-1 text-xs text-slate-500">Solo pueden hacer más estrictos los de la plataforma, la organización y el grupo. Vacío: sin límite propio.</p>
+        </details>
       {% endif %}
     </aside>
   </section>

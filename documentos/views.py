@@ -17,10 +17,10 @@ from base.anclas import buscar_ancla, leer_ancla
 from base.markdown import texto_a_html
 from base.tablas import Columna, Filtro, FuenteDeLista, Tabla
 from grupos.acceso import grupos_donde_puede
-from permisos.servicios import SinPermiso, explicar_falta
+from permisos.servicios import SinPermiso, explicar_falta, organizaciones_con
 
 from . import servicios
-from .formularios import FormularioDeDocumentoNuevo
+from .formularios import FormularioDeDocumentoNuevo, FormularioDeLimites
 from .models import Documento
 
 # Máximo de documentos de la lista (se filtran en el navegador).
@@ -75,6 +75,7 @@ def nuevo(request):
         try:
             documento = servicios.crear(
                 usuario, datos["tipo"], datos["titulo"], grupo=grupo, visibilidad=datos.get("visibilidad", "privado"), ancla=ancla if elemento else (None, None),
+                formato=datos["formato"],
             )
         except ValidationError as error:
             formulario.add_error(None, error)
@@ -94,7 +95,7 @@ def _documento(usuario, pk):
 
 # Ficha de un documento: el texto párrafo a párrafo, cada uno con quién ha contribuido (en claro, entre
 # paréntesis); arriba, el registro de cambios plegado; los acuerdos y los temas pendientes de un acta; los
-# comentarios; y los botones de escribir, crear el acta, aprobar y dar la redacción. Unas 8 consultas.
+# comentarios; los botones de escribir, crear el acta, aprobar y dar la redacción; y sus «Opciones». Unas 9 consultas.
 #   - POST «accion»: «comentar» (con «texto»), «aprobar», «acta», «dar» (con «alias») o «quitar» (con
 #     «persona»).
 def documento(request, pk):
@@ -118,14 +119,24 @@ def documento(request, pk):
         elif accion == "quitar":
             persona = get_object_or_404(get_user_model(), pk=request.POST.get("persona"))
             servicios.quitar_redaccion(usuario, documento, persona)
+        elif accion == "opciones":
+            if not servicios.puede_cambiar_opciones(usuario, documento):
+                raise ValidationError("Las opciones del documento las cambia la administración de su grupo.")
+            opciones = FormularioDeLimites(request.POST, instance=servicios.fila_de_limites(documento_id=documento.pk))
+            if not opciones.is_valid():
+                raise ValidationError("Revisa las opciones: solo números enteros.")
+            opciones.save()
         if accion:
             return redirect("documentos:documento", documento.pk)
     except ValidationError as excepcion:
         error = " ".join(excepcion.messages)
+    # Markdown se pinta convertido; Typst, tal cual (se ve compilado en el editor y en el PDF).
+    convertir = texto_a_html if documento.formato == Documento.MARKDOWN else None
     bloques = [
-        {"html": texto_a_html(texto), "autores": documento.autorias[numero] if numero < len(documento.autorias) else []}
+        {"html": convertir(texto) if convertir else None, "texto": texto, "autores": documento.autorias[numero] if numero < len(documento.autorias) else []}
         for numero, texto in enumerate(servicios.parrafos(documento.texto))
     ]
+    cambia_opciones = servicios.puede_cambiar_opciones(usuario, documento)
     contexto = {
         "documento": documento,
         "bloques": bloques,
@@ -140,6 +151,8 @@ def documento(request, pk):
         "crea_acta": documento.tipo == Documento.ODD and servicios.puede_escribir(usuario, documento, aunque_aprobado=True),
         "ancla": buscar_ancla(documento.ancla_tipo, documento.ancla_id) if documento.ancla_tipo else None,
         "error": error,
+        "limites": servicios.limites_de(documento.grupo, documento),
+        "opciones": FormularioDeLimites(instance=servicios.fila_de_limites(documento_id=documento.pk)) if cambia_opciones else None,
     }
     return render(request, "documentos/documento.html", contexto)
 
@@ -165,7 +178,7 @@ def escribir(request, pk):
                 error = " ".join(excepcion.messages)
             else:
                 return redirect("documentos:escribir", documento.pk)
-        contexto = {"documento": documento, "en_vivo": en_vivo, "vista": texto_a_html(documento.texto), "error": error}
+        contexto = {"documento": documento, "en_vivo": en_vivo, "error": error}
         return render(request, "documentos/escribir_en_vivo.html", contexto)
     if not servicios.puede_escribir(usuario, documento):
         raise SinPermiso("Solo quien tiene la redacción puede escribirlo (y no si ya está aprobado). Puedes comentarlo en su ficha.")
@@ -191,3 +204,32 @@ def vista_previa(request):
     if len(request.POST.get("texto", "")) > 200_000:
         raise Http404("Texto demasiado largo.")
     return render(request, "documentos/_vista_previa.html", {"vista": texto_a_html(request.POST.get("texto", ""))})
+
+
+# Pantalla «Administrar → Mi organización → Documentos»: cuántas personas escriben y comentan a la vez los
+# documentos de toda la plataforma (el superadmin), de cada organización y de cada grupo que administra
+# quien mira (valen también en sus subgrupos). Cada documento puede tener además los suyos (en sus
+# «Opciones»). Vale siempre el más estricto.
+#   - GET «nivel»: «» (la plataforma, solo el superadmin), «o<número>» (una organización) o «g<número>» (un grupo).
+#   - POST: los campos de FormularioDeLimites.
+def limites(request):
+    usuario = request.user
+    organizaciones = list(organizaciones_con(usuario, "documentos.limitar"))
+    grupos = grupos_donde_puede(usuario, "documentos.limitar")
+    if not organizaciones and not grupos and not usuario.is_superuser:
+        raise SinPermiso(explicar_falta("documentos.limitar"))
+    niveles = [("", "Toda la plataforma")] if usuario.is_superuser else []
+    niveles += [(f"o{o.pk}", f"Organización: {o.nombre}") for o in organizaciones]
+    niveles += [(f"g{g.pk}", f"Grupo: {g.organizacion.nombre} › {g.camino}") for g in grupos]
+    elegido = request.GET.get("nivel", niveles[0][0])
+    if elegido not in dict(niveles):
+        raise SinPermiso(explicar_falta("documentos.limitar"))
+    numero = int(elegido[1:]) if elegido else None
+    fila = servicios.fila_de_limites(organizacion_id=numero if elegido.startswith("o") else None, grupo_id=numero if elegido.startswith("g") else None)
+    formulario = FormularioDeLimites(request.POST or None, instance=fila)
+    if request.method == "POST" and formulario.is_valid():
+        formulario.save()
+        return redirect(f"{request.path}?nivel={elegido}")
+    grupo = next((g for g in grupos if g.pk == numero), None) if elegido.startswith("g") else None
+    contexto = {"formulario": formulario, "niveles": niveles, "elegido": elegido, "valen": servicios.limites_de(grupo) if grupo else None, "por_defecto": servicios.POR_DEFECTO}
+    return render(request, "documentos/limites.html", contexto)

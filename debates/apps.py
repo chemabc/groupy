@@ -25,7 +25,7 @@ class DebatesConfig(ModuloConfig):
     anclas = (Ancla("debates.debate", "debates.Debate", "Un debate"),)
     permisos = (
         Permiso("debates.abrir", "Proponer debates en el grupo (se abren con apoyos)", roles=("usuario", "admin_grupo", "admin_org")),
-        Permiso("debates.limitar", "Poner los límites de los debates de la organización", roles=("admin_org",)),
+        Permiso("debates.limitar", "Poner los límites de los debates de la organización o del grupo", roles=("admin_org", "admin_grupo")),
     )
     cometidos = (
         Cometido("debates.facilitacion", "Facilitación", "Cuida el debate: amplía quién participa, da la facilitación a otras personas y lo cierra con una conclusión."),
@@ -76,7 +76,8 @@ class DebatesConfig(ModuloConfig):
             texto=(
                 "Palabras por intervención, intervenciones por persona, opciones nuevas por persona y apoyos para abrir "
                 "una opción. Al pasar el límite blando se permite una intervención más, muy marcada; al llegar al duro, "
-                "ya no. Cada organización solo puede ser más estricta que la plataforma."
+                "ya no. Los pone el superadmin (toda la plataforma), la administración de cada organización y de cada "
+                "grupo (vale también en sus subgrupos) y quien facilita cada debate; vale siempre el más estricto."
             ),
         ),
     )

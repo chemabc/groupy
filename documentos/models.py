@@ -21,10 +21,17 @@ class Documento(models.Model):
     BORRADOR = "borrador"
     APROBADO = "aprobado"
     ESTADOS = [(BORRADOR, "Borrador"), (APROBADO, "Aprobado")]
+    MARKDOWN = "markdown"
+    TYPST = "typst"
+    FORMATOS = [(MARKDOWN, "Markdown (sencillo, recomendado)"), (TYPST, "Typst (para maquetar a mano)")]
 
     tipo = models.CharField("tipo", max_length=10, choices=TIPOS, default=LIBRE, help_text="Orden del día, acta o documento libre.")
     titulo = models.CharField("título", max_length=200, help_text="Cómo se llama: «Acta de la asamblea del 14 de noviembre».")
-    texto = models.TextField("texto", blank=True, help_text="El documento, en Markdown (# títulos, - listas, **negrita**…).")
+    texto = models.TextField("texto", blank=True, help_text="El documento, en Markdown (# títulos, - listas, **negrita**…) o en Typst.")
+    formato = models.CharField(
+        "formato", max_length=10, choices=FORMATOS, default=MARKDOWN,
+        help_text="En qué se escribe: Markdown (sencillo) o Typst (más potente para maquetar). El PDF sale siempre con Typst.",
+    )
     grupo = models.ForeignKey("grupos.Grupo", on_delete=models.CASCADE, related_name="+", verbose_name="grupo", help_text="Grupo al que pertenece.")
     audiencia = models.ForeignKey(
         "audiencias.Audiencia", on_delete=models.PROTECT, related_name="+", verbose_name="quién lo ve",
@@ -102,3 +109,44 @@ class Comentario(models.Model):
     # Texto con el que se muestra: el principio del comentario.
     def __str__(self):
         return self.texto[:60]
+
+
+class LimitesDeDocumento(models.Model):
+    """
+    Cuántas personas pueden escribir y comentar un documento a la vez en el editor en tiempo real. Van en
+    cascada y vale el más estricto: los de la plataforma (el superadmin), los de cada organización (su
+    admin), los de cada grupo (su admin; valen también en sus subgrupos) y los de cada documento (la
+    administración de su grupo, en sus «Opciones»). Cada fila es de un solo nivel; la de la plataforma no
+    tiene ninguno. Vacío: sin límite en ese nivel.
+    """
+
+    organizacion = models.ForeignKey(
+        "grupos.Organizacion", on_delete=models.CASCADE, null=True, blank=True, related_name="+",
+        verbose_name="organización", help_text="Si son de una organización: cuál.",
+    )
+    grupo = models.ForeignKey(
+        "grupos.Grupo", on_delete=models.CASCADE, null=True, blank=True, related_name="+",
+        verbose_name="grupo", help_text="Si son de un grupo (y sus subgrupos): cuál.",
+    )
+    documento = models.OneToOneField(
+        Documento, on_delete=models.CASCADE, null=True, blank=True, related_name="limites_propios",
+        verbose_name="documento", help_text="Si son de un documento concreto: cuál.",
+    )
+    max_escritores = models.PositiveIntegerField(
+        "personas que escriben", null=True, blank=True,
+        help_text="Cuántas personas pueden tener la redacción y escribir a la vez. Quien llega de más entra a leer.",
+    )
+    max_comentaristas = models.PositiveIntegerField(
+        "personas que comentan a la vez", null=True, blank=True, help_text="Cuántas personas pueden estar comentando a la vez en el editor.",
+    )
+
+    class Meta:
+        verbose_name = "límites de los documentos"
+        verbose_name_plural = "límites de los documentos"
+        constraints = [
+            models.UniqueConstraint(fields=["organizacion", "grupo", "documento"], nulls_distinct=False, name="limites_de_documento_por_nivel"),
+        ]
+
+    # Texto con el que se muestra: de quién son.
+    def __str__(self):
+        return f"Límites de {self.documento or self.grupo or self.organizacion or 'la plataforma'}"

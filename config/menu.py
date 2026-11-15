@@ -118,6 +118,7 @@ DISPOSICION = (
             "etiquetas.etiquetas",
             "solicitudes.ajustes",
             "debates.limites",
+            "documentos.limites",
             "lugares.configuracion",
             "proximamente.web_publica",
         )),

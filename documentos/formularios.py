@@ -4,7 +4,7 @@ Formularios del módulo «documentos».
 
 from django import forms
 
-from .models import Documento
+from .models import Documento, LimitesDeDocumento
 
 
 class FormularioDeDocumentoNuevo(forms.Form):
@@ -15,6 +15,10 @@ class FormularioDeDocumentoNuevo(forms.Form):
 
     tipo = forms.ChoiceField(label="Tipo", choices=Documento.TIPOS, help_text="El acta se crea mejor desde su orden del día, que copia los puntos.")
     titulo = forms.CharField(label="Título", max_length=200, help_text="«Orden del día de la asamblea del jueves».")
+    formato = forms.ChoiceField(
+        label="Se escribe en", choices=Documento.FORMATOS, initial=Documento.MARKDOWN,
+        help_text="Markdown es lo sencillo (## título, - punto, **negrita**). Typst sirve para maquetar a mano. El PDF sale igual de bien con los dos.",
+    )
     visibilidad = forms.ChoiceField(label="Quién lo ve", help_text="Todo nace privado. Quien lo ve puede leerlo y comentarlo.")
 
     # Prepara el desplegable de visibilidad.
@@ -25,3 +29,11 @@ class FormularioDeDocumentoNuevo(forms.Form):
             del self.fields["visibilidad"]
         else:
             self.fields["visibilidad"].choices = visibilidades
+
+
+class FormularioDeLimites(forms.ModelForm):
+    """Cuántas personas escriben y comentan a la vez, en un nivel (plataforma, organización, grupo o documento). Vacío: sin límite en ese nivel."""
+
+    class Meta:
+        model = LimitesDeDocumento
+        fields = ["max_escritores", "max_comentaristas"]

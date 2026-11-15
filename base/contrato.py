@@ -295,6 +295,10 @@ class TextoEditable:
     # versión con la que iba el editor) y devuelve la versión nueva. Lanza ValidationError si ya no acepta
     # cambios (por ejemplo, un acta aprobada): entonces el editor cierra la sala.
     guardar: str
+    # Ruta de una función que da lo demás que el editor debe saber del texto: recibe (id) y devuelve un
+    # diccionario con «formato» («markdown» o «typst»), «titulo» (para el PDF), «max_escritores» y
+    # «max_comentaristas» (cuántas personas a la vez; None, sin límite). Vacío: Markdown y sin límites.
+    opciones: str = ""
 
 
 @dataclass(frozen=True)

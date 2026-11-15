@@ -268,7 +268,31 @@ Es un servicio aparte (carpeta `editor/`; ver «Diseño», apartado 13.2, y `edi
   - Compactar la historia al aprobar.
   - Cifrar la carpeta.
 
-### 9.4 El cliente en el navegador
+### 9.4 Compilar con Typst
+- **Qué se hace:**
+  - Se compila en el servidor del editor, en un hilo aparte, con 8 segundos como mucho (si no, se mata el
+    hilo).
+  - Compila de una en una, en una carpeta vacía: un texto no puede leer ficheros del servidor (probado).
+  - No se permiten paquetes (`@preview/…`), que se descargarían de internet.
+  - Solo compila quien trae un pase de la sala.
+  - Apagada, la vista no pide nada.
+- **Riesgo que queda:** mucha gente con la vista encendida a la vez, o alguien pidiendo compilaciones sin
+  parar, puede llenar la cola y hacer esperar a los demás.
+- **Para el futuro:** un límite de compilaciones por pase y minuto, y varias compilaciones a la vez si el
+  servidor tiene procesadores de sobra.
+
+### 9.5 Comentarios dentro del texto
+- **Qué se hace:**
+  - Viven en el editor, en una sala aparte de cada texto.
+  - Llevan el alias y el color de quien comenta.
+  - Quien solo lee no puede escribirlos: el servidor descarta lo que mande.
+- **Riesgo que queda:**
+  - La plataforma no los tiene: no salen en su búsqueda ni los borra `limpieza`.
+  - «Resuelto» los esconde, pero siguen guardados.
+- **Para el futuro:** que el editor avise a la plataforma de los comentarios, y borrarlos al aprobar o
+  borrar el documento.
+
+### 9.6 El cliente en el navegador
 - **Qué se hace:** el script del editor se sirve desde el propio editor (`/cliente.js`).
 - **Riesgo que queda:** sin una política de contenidos (CSP), la página confía en todo lo que sirva esa
   dirección.
