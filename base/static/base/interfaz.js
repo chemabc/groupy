@@ -988,7 +988,7 @@ document.addEventListener("alpine:init", () => {
       };
       this.editor = window.EditorColaborativo.montar(this.$refs.cuadro, {
         url: datos.url, sala: datos.sala, pase: datos.pase, pedirPase, alias: datos.alias, color: datos.color, permiso: datos.permiso,
-        formato: datos.formato,
+        formato: datos.formato, biblioteca: datos.biblioteca === "1",
         alCambiar: (texto) => this.previa(texto),
         alPersonas: (lista) => (this.personas = lista),
         alEstado: (estado) => (this.estado = estado),
@@ -1016,6 +1016,34 @@ document.addEventListener("alpine:init", () => {
     destroy() {
       clearTimeout(this.espera);
       this.editor?.destruir();
+    },
+  }));
+
+  // Isla de la biblioteca del editor (plantillas, fragmentos, cabeceras y pies, e imágenes), para la
+  // pantalla «Plantillas de documentos» y «Enciclopedia de fragmentos» (documentos/templates). Se usa así:
+  //   <div x-data="bibliotecaDelEditor" data-cliente="…/cliente.js" data-url="ws://…" data-pase="…"
+  //        data-clase="plantilla" data-renovar="/editor/pase/?sala=biblioteca" data-personas="/grupos/…">
+  //     <div x-ref="cuadro"></div>
+  //   </div>
+  // Carga el script del editor y le pide que pinte la biblioteca de esa clase. Los pases se renuevan en
+  // data-renovar; para compartir con personas sueltas, el editor busca aquí (data-personas), porque solo la
+  // plataforma conoce a las personas.
+  Alpine.data("bibliotecaDelEditor", () => ({
+    async init() {
+      const datos = this.$root.dataset;
+      await cargarUnaVez(datos.cliente);
+      // Pide un pase nuevo a la plataforma (duran pocos minutos).
+      const pedirPase = async () => {
+        const respuesta = await fetch(datos.renovar, { headers: { Accept: "application/json" } });
+        if (!respuesta.ok) throw new Error("Sin permiso");
+        return (await respuesta.json()).pase;
+      };
+      // Busca personas por su alias para compartir con ellas: [{ id, nombre }].
+      const buscarPersonas = async (texto) => {
+        const respuesta = await fetch(`${datos.personas}?buscar=${encodeURIComponent(texto)}`, { headers: { Accept: "application/json" } });
+        return respuesta.ok ? (await respuesta.json()).personas : [];
+      };
+      window.EditorColaborativo.montarBiblioteca(this.$refs.cuadro, { url: datos.url, pase: datos.pase, pedirPase, clase: datos.clase, buscarPersonas });
     },
   }));
 

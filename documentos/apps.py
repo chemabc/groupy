@@ -55,6 +55,12 @@ class DocumentosConfig(ModuloConfig):
             codigo="documentos.documentos", nombre="Órdenes del día y actas", url="documentos:lista", icono="✍", color="#4d7c10",
             otras_rutas=("documentos:nuevo", "documentos:documento", "documentos:escribir", "documentos:version"),
         ),
+        # La biblioteca del editor (ver documentos/views.py, biblioteca). Sus pestañas, en config/menu.py.
+        EntradaDeMenu(codigo="documentos.biblioteca", nombre="Plantillas de documentos", url="documentos:plantillas", icono="⎘", color="#3d6b12"),
+        EntradaDeMenu(codigo="documentos.plantillas", nombre="Plantillas", url="documentos:plantillas", icono="⊞", color="#4a5d23"),
+        EntradaDeMenu(codigo="documentos.membretes", nombre="Cabeceras y pies", url="documentos:membretes", icono="⊤", color="#556b2f"),
+        EntradaDeMenu(codigo="documentos.imagenes", nombre="Imágenes", url="documentos:imagenes", icono="⛶", color="#6b8e23"),
+        EntradaDeMenu(codigo="documentos.fragmentos", nombre="Enciclopedia de fragmentos", url="documentos:fragmentos", icono="⧉", color="#2f5d0a"),
         EntradaDeMenu(
             codigo="documentos.limites", nombre="Documentos", url="documentos:limites", icono="✐", color="#5b6c1f", permiso="documentos.limitar",
         ),

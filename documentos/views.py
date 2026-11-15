@@ -267,3 +267,37 @@ def version(request, pk, numero):
         "vista": texto_a_html(elegida.texto) if documento.formato == Documento.MARKDOWN else None,
     }
     return render(request, "documentos/version.html", contexto)
+
+
+# Qué se explica arriba de cada pantalla de la biblioteca.
+EXPLICACIONES_DE_BIBLIOTECA = {
+    "plantilla": (
+        "Una plantilla es todo lo que puede llevar un documento de partida: su aspecto (página, letra, títulos, "
+        "en Typst) y, si se quiere, un texto de partida (el esqueleto de un acta, por ejemplo). Cada documento "
+        "elige la suya en el desplegable «Plantilla» del editor."
+    ),
+    "membrete": (
+        "La cabecera y el pie de página (el de una organización, por ejemplo), en Typst y con imágenes. Cada "
+        "documento elige el suyo en el desplegable «Cabecera y pie» del editor, aparte de la plantilla."
+    ),
+    "imagen": (
+        "Imágenes (PNG, JPEG o GIF, de 2 MB como mucho) para los documentos, las plantillas y las cabeceras y pies. "
+        "Las sube la administración, en carpetas de su organización (plantillas, grupos…)."
+    ),
+    "fragmento": (
+        "Trozos de texto, de código o de las dos cosas, en carpetas y subcarpetas. Desde el editor se meten en el "
+        "documento con un clic («📚 Fragmentos e imágenes»)."
+    ),
+}
+
+
+# Pantallas de la biblioteca del editor: «Plantillas de documentos» (plantillas, cabeceras y pies, imágenes)
+# y «Enciclopedia de fragmentos». La biblioteca vive en el editor colaborativo (cifrada); aquí solo se le da
+# a la persona su pase (con sus ámbitos: toda la plataforma, sus organizaciones y sus grupos) y la isla
+# «bibliotecaDelEditor» la pinta. Cualquier persona crea lo suyo y lo comparte con sus grupos o con
+# personas; lo común lo cambia el superadmin y lo de cada organización, su admin.
+#   - clase: «plantilla», «membrete», «imagen» o «fragmento» (viene de documentos/urls.py).
+def biblioteca(request, clase):
+    return render(request, "documentos/biblioteca.html", {
+        "clase": clase, "en_biblioteca": editor.pase_de_biblioteca(request.user), "explicacion": EXPLICACIONES_DE_BIBLIOTECA[clase],
+    })

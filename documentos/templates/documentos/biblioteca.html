@@ -1,0 +1,21 @@
+{% extends interfaz.plantilla %}
+{% comment %}
+  Pantallas «Plantillas de documentos» (pestañas Plantillas, Cabeceras y pies, Imágenes) y «Enciclopedia de
+  fragmentos» (documentos/views.py, biblioteca). Recibe «clase», «explicacion» y «en_biblioteca» (lo que
+  devuelve base.editor.pase_de_biblioteca: url, cliente y pase; None si el editor no está en marcha). La
+  pinta el propio editor, con la isla «bibliotecaDelEditor».
+{% endcomment %}
+{% block contenido %}
+<div class="space-y-3">
+  <p class="max-w-3xl text-sm text-slate-600 dark:text-slate-300">{{ explicacion }}</p>
+  <p class="max-w-3xl text-xs text-slate-500">Ves lo de toda la plataforma, lo de tus organizaciones y grupos, lo tuyo y lo que te han compartido. Puedes crear lo tuyo y compartirlo con tus grupos o con personas; lo común lo cambia el superadmin, y lo de cada organización, su admin. Se guarda cifrado.</p>
+  {% if en_biblioteca %}
+    <div x-data="bibliotecaDelEditor" data-cliente="{{ en_biblioteca.cliente }}" data-url="{{ en_biblioteca.url }}" data-pase="{{ en_biblioteca.pase }}"
+         data-clase="{{ clase }}" data-renovar="{% url 'base:editor_pase' %}?sala=biblioteca" data-personas="{% url 'grupos:personas_para_editor' %}">
+      <div x-ref="cuadro" class="text-sm"><p class="text-slate-500">Cargando la biblioteca…</p></div>
+    </div>
+  {% else %}
+    <p class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">El editor colaborativo no está en marcha: la biblioteca vive en él. Mira «Ayuda → Guía de desarrollo» (apartado 0) para arrancarlo.</p>
+  {% endif %}
+</div>
+{% endblock %}

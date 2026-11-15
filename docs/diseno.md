@@ -1744,6 +1744,48 @@ editor**. La idea es acabar construyendo fuera un editor potente que esta herram
   Los tres primeros se ponen en «Administrar → Mi organización → Documentos». De partida, 10 escribiendo
   y comentarios sin límite. El pase lleva los máximos; quien llega de más entra a leer, con un aviso.
 
+### 13.3 Biblioteca del editor: plantillas, fragmentos, cabeceras y pies, e imágenes (15 de noviembre de 2026, [A-52] y [A-53])
+
+Pedido por la persona usuaria en [A-52]; respuestas a las cuatro preguntas en [A-53].
+
+- **Vive en el editor** (no en la plataforma), porque el editor es para varias herramientas. Lo de una
+  aplicación nunca lo ve otra.
+- **Cuatro árboles** de carpetas y subcarpetas:
+  - **Plantillas**: *todo* lo que puede llevar un documento de partida (respuesta 4: «anything can go in the
+    template»): su aspecto en Typst (página, letra, títulos; la variable `titulo`) y, si se quiere, un
+    texto de partida. Cada documento elige la suya en el desplegable «Plantilla»; si el texto está vacío, se
+    pone el de partida.
+  - **Fragmentos** (la «enciclopedia»): texto, código o las dos cosas. Se meten con un clic desde el cajón
+    «📚 Fragmentos e imágenes».
+  - **Cabeceras y pies** (membretes): **se eligen aparte**, como una plantilla (respuesta 3), en el
+    desplegable «Cabecera y pie».
+  - **Imágenes**: PNG, JPEG o GIF, de 2 MB como mucho, en carpetas como `ORG Tajo / plantillas` o
+    `ORG Tajo / grupos`. Se ponen en el texto (`![nombre](imagen:<número>)`), en las plantillas y en los
+    membretes.
+- **Quién crea y cambia** (respuestas 1 y 2):
+  - lo común, el superadmin; lo de cada organización, su admin;
+  - **cualquier persona crea sus propias plantillas y fragmentos** y los **comparte con un grupo o con
+    personas sueltas**;
+  - las imágenes y las carpetas de primer nivel, la administración.
+- **Cómo lo sabe el editor:** el pase lleva un número de la persona que no dice quién es
+  (`base.editor.id_para_editor`, HMAC) y sus **ámbitos**: toda la plataforma (`comun`), sus organizaciones
+  (`o<n>`) y sus grupos, también los que contienen a los suyos (`g<n>`). Lleva «cambiar» en los que
+  administra. Los da `grupos` (contrato: `ambitos_del_editor`). Para compartir con personas, el navegador
+  busca en la plataforma (`grupos:personas_para_editor`), que solo devuelve a quien se puede ver.
+- **Desde esta plataforma, solo actas:** las carpetas de primer nivel de plantillas y fragmentos que ve la
+  plataforma se limitan a «Actas» (`"carpetas": ["Actas"]` en la configuración del editor). Las cabeceras y
+  pies y las imágenes no se limitan así: son de cada organización.
+- **Cifrado** (respuesta 1: «los snippets se almacenan encriptados»): se cifra **toda** la biblioteca, no
+  solo los fragmentos, con AES-256-GCM y la clave `EDITOR_CLAVE`. Ver «Seguridad y privacidad», 9.7.
+- **Dónde se ve:** «Participación → Plantillas de documentos» (pestañas Plantillas, Cabeceras y pies,
+  Imágenes) y «Participación → Enciclopedia de fragmentos». La pantalla la pinta el propio editor
+  (`EditorColaborativo.montarBiblioteca`), con la isla «bibliotecaDelEditor».
+- *Descartado:*
+  - guardar la biblioteca en la plataforma: el editor no podría servirla a otras herramientas;
+  - cifrar solo los fragmentos: es el mismo código y protege también los nombres de las carpetas;
+  - escribir plantillas a la vez (en tiempo real): de momento, cada cual en su ficha, con «Guardar» y
+    «Previsualizar».
+
 **Por hacer** (en `editor/LEEME.md`):
 - PDF con Typst: la dirección ya existe y responde «aún no»;
 - comentarios anclados al texto;
@@ -2120,25 +2162,13 @@ llegarán con el chat (más adelante).
 - **Repositorio:** aparte (13.2). Falta decidir dónde se publica.
 - **Voto secreto:** opción de cada consulta, secreta de partida y de verdad; cada votación lo dice (12.1).
 
-**Plantillas, fragmentos e imágenes del editor ([A-52], petición de la persona usuaria):**
-- **Lo pedido:**
-  - una sección «Plantillas de documentos», con carpetas y categorías y las plantillas dentro (por
-    ejemplo, libros de física o actas); cada documento elige su plantilla en un desplegable;
-  - una enciclopedia de fragmentos (texto, código o mezcla), con carpetas, subcarpetas y los fragmentos
-    dentro;
-  - desde esta plataforma, el editor solo ve las plantillas y los fragmentos de actas (con sus
-    subcarpetas);
-  - cabecera y pie de página de cada organización, hechos con el propio editor;
-  - imágenes en el editor, guardadas en `imagenes/<organización>/` con su árbol de subcarpetas
-    (`plantillas/`, `grupos/`…).
-- **Propuesta (por confirmar):** la biblioteca (plantillas, fragmentos e imágenes) vive **en el editor**,
-  porque es para varias herramientas. Cada aplicación dice en el pase qué carpetas ve cada persona y si
-  puede cambiarlas.
-- **Preguntas:**
-  1. ¿Quién crea y cambia plantillas y fragmentos?
-  2. ¿Quién sube imágenes?
-  3. ¿La cabecera y el pie de la organización van siempre debajo de cualquier plantilla, o se eligen?
-  4. Una plantilla, ¿es solo el aspecto o también un texto de partida?
+**Plantillas, fragmentos e imágenes del editor**, contestado el 15 de noviembre de 2026 ([A-53]); hecho en
+13.3:
+1. **Dónde:** todo vive en el editor, y los fragmentos se guardan cifrados (se cifra toda la biblioteca).
+2. **Quién:** la administración (común: superadmin; organización: su admin), y además cualquier persona
+   crea sus propias plantillas y fragmentos y los comparte con un grupo o con personas.
+3. **Cabecera y pie:** se eligen, como una plantilla.
+4. **Plantilla:** aspecto y texto de partida; puede llevar cualquier cosa.
 
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.

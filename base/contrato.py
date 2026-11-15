@@ -636,6 +636,10 @@ class ModuloConfig(AppConfig):
     # Solo el módulo que reparte las notificaciones («comunicaciones»): ruta de la función que recibe
     # cada aviso. El registro le añade una escucha asíncrona por cada TipoDeAviso de cualquier módulo.
     reparte_avisos: str = ""
+    # Solo el módulo que conoce los grupos («grupos»): ruta de la función que da los ámbitos de una persona
+    # para la biblioteca del editor colaborativo (recibe el usuario y devuelve [{id, nombre, cambiar}]; ver
+    # base/editor.py). Vacío: los pases no llevan biblioteca.
+    ambitos_del_editor: str = ""
     # Cómo crear y borrar sus datos de ejemplo. Vacío si no tiene.
     datos_de_ejemplo: DatosDeEjemplo | None = None
     # Sus secciones del menú izquierdo.

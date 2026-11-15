@@ -67,13 +67,18 @@ services:
     #   - HOME: carpeta para la caché de npm (el usuario no tiene otra en esta imagen)
     #   - EDITOR_PUERTO: puerto en el que escucha
     #   - EDITOR_DATOS: carpeta donde guarda su copia de cada sala
-    #   - EDITOR_APLICACIONES: las aplicaciones que lo usan, con su secreto y la dirección a la que llama
-    #     (la plataforma, en el contenedor «app», puerto 8000)
+    #   - EDITOR_APLICACIONES: las aplicaciones que lo usan, con su secreto, la dirección a la que llama
+    #     (la plataforma, en el contenedor «app», puerto 8000) y las carpetas de primer nivel de plantillas y
+    #     fragmentos que ve (la plataforma, solo «Actas»)
+    #   - EDITOR_CLAVE: clave con la que cifra la biblioteca (32 bytes en base64). Esta es solo para
+    #     desarrollo: en producción, otra (openssl rand -base64 32), guardada aparte; si se pierde, se pierde
+    #     la biblioteca
     environment:
       HOME: /tmp
       EDITOR_PUERTO: "1234"
       EDITOR_DATOS: /workspace/editor/datos
-      EDITOR_APLICACIONES: '{"asambleas": {"secreto": "solo-para-desarrollo-cambiar-en-produccion", "url": "http://app:8000/editor"}}'
+      EDITOR_APLICACIONES: '{"asambleas": {"secreto": "solo-para-desarrollo-cambiar-en-produccion", "url": "http://app:8000/editor", "carpetas": ["Actas"]}}'
+      EDITOR_CLAVE: p7W1ang9nadfmH153EJnuLo0Uwk64iDtNKd/684axXU=
     # Abre el puerto al navegador de tu ordenador
     #   - "1234:1234": el 1234 de tu ordenador va al 1234 del contenedor
     ports:

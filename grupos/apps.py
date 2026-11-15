@@ -15,6 +15,8 @@ class GruposConfig(ModuloConfig):
     name = "grupos"
     verbose_name = "Organizaciones y grupos"
     capa = Capa.ORGANIZACION
+    # Los ámbitos de cada persona en la biblioteca del editor colaborativo (ver grupos/editor.py).
+    ambitos_del_editor = "grupos.editor.ambitos_para_editor"
     descripcion = (
         "Organizaciones, grupos y subgrupos (con su tabla de cierre), pertenencias con su rol y su "
         "asamblea base, admin de cada organización, relaciones libres entre grupos e invitaciones a "

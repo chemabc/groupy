@@ -15,6 +15,11 @@ Cómo encaja:
 - **Cerrar una sala:** al aprobar un acta (o quitar un permiso), la plataforma pide al editor que eche a
   todo el mundo; al volver a entrar, cada persona trae un pase nuevo con su permiso de ahora.
 
+- **La biblioteca** (plantillas, fragmentos, cabeceras y pies, e imágenes) vive en el editor. Para que
+  sepa qué ve y qué cambia cada persona, el pase lleva además un número que la identifica sin decir quién
+  es (id_para_editor) y sus «ámbitos»: toda la plataforma, sus organizaciones y sus grupos, con «cambiar»
+  en los que administra. Los da el módulo que conoce los grupos (contrato: ambitos_del_editor).
+
 Si no hay editor configurado (settings.EDITOR vacío), todo sigue funcionando con el formulario de siempre.
 """
 
@@ -35,6 +40,8 @@ from .registro import registro
 MINUTOS_DE_PASE = 5
 # Segundos de margen para la hora de una petición firmada que llega del editor.
 MARGEN_DE_HORA = 5 * 60
+# Nombre de la «sala» de los pases de la biblioteca (no es un texto: solo sirve para entrar en ella).
+SALA_DE_BIBLIOTECA = "biblioteca"
 # Colores de los cursores de cada persona (se elige uno por su alias, siempre el mismo).
 COLORES = ("#7c3aed", "#0369a1", "#047857", "#b45309", "#be123c", "#4338ca", "#0f766e", "#a21caf")
 
@@ -79,13 +86,43 @@ def _jwt(datos):
     return f"{cabecera}.{cuerpo}.{_base64url(_firma(f'{cabecera}.{cuerpo}'))}"
 
 
+# Número con el que el editor conoce a una persona (para la biblioteca: lo suyo y lo compartido con ella).
+# Siempre el mismo para la misma persona, pero no deja saber quién es ni su número en la plataforma: es una
+# firma HMAC de su número con el secreto del editor, recortada.
+def id_para_editor(usuario):
+    return _base64url(_firma(f"usuario:{usuario.pk}"))[:22]
+
+
+# Lo que el pase lleva para la biblioteca: el número de la persona y sus ámbitos. Vacío si ningún módulo
+# da los ámbitos (contrato: ambitos_del_editor).
+def _biblioteca(usuario):
+    if not registro.ambitos_del_editor:
+        return {}
+    return {"usuario": id_para_editor(usuario), "ambitos": import_string(registro.ambitos_del_editor)(usuario)}
+
+
+# Lo que necesita la pantalla de la biblioteca: dirección, cliente y un pase (sala «biblioteca», para
+# leer). None si no hay editor o ningún módulo da ámbitos. Lo usan la pantalla de la biblioteca (en
+# «documentos») y editor_pase, que lo renueva.
+#   - usuario: quien entra.
+def pase_de_biblioteca(usuario):
+    biblioteca = _biblioteca(usuario) if activo() else {}
+    if not biblioteca:
+        return None
+    datos = {
+        "app": settings.EDITOR["app"], "sala": SALA_DE_BIBLIOTECA, "alias": str(usuario), "permiso": "leer",
+        "exp": int(time.time()) + MINUTOS_DE_PASE * 60, **biblioteca,
+    }
+    return {"url": settings.EDITOR["url"], "cliente": settings.EDITOR["url"].replace("ws", "http", 1) + "/cliente.js", "pase": _jwt(datos)}
+
+
 # Color fijo de una persona en el editor, sacado de su alias.
 def color_de(alias):
     return COLORES[int(hashlib.sha256(alias.encode()).hexdigest(), 16) % len(COLORES)]
 
 
 # Lo que necesita el navegador para entrar en la sala de un texto: dirección, sala, pase, alias, color,
-# permiso y formato. El pase lleva además lo que diga el módulo (TextoEditable.opciones): título y cuántas
+# permiso, formato y si hay biblioteca (entonces el pase lleva el número de la persona y sus ámbitos). El pase lleva además lo que diga el módulo (TextoEditable.opciones): título y cuántas
 # personas pueden escribir y comentar a la vez. None si no hay editor o si la persona no puede ni leerlo. Lo usan las pantallas que pintan el
 # editor (con la plantilla base/_editor.html) y editor_pase, que renueva el pase al reconectar.
 #   - usuario: quien va a entrar.
@@ -99,14 +136,16 @@ def pase(usuario, tipo, numero):
         return None
     alias = str(usuario)
     opciones = import_string(declarado.opciones)(numero) if declarado.opciones else {}
+    biblioteca = _biblioteca(usuario)
     datos = {
         "app": settings.EDITOR["app"], "sala": sala(tipo, numero), "alias": alias, "permiso": permiso,
         "exp": int(time.time()) + MINUTOS_DE_PASE * 60, **{clave: valor for clave, valor in opciones.items() if valor is not None},
+        **biblioteca,
     }
     return {
         "url": settings.EDITOR["url"], "cliente": settings.EDITOR["url"].replace("ws", "http", 1) + "/cliente.js", "sala": f"{settings.EDITOR['app']}/{sala(tipo, numero)}", "pase": _jwt(datos),
         "alias": alias, "color": color_de(alias), "permiso": permiso, "tipo": tipo, "numero": numero,
-        "formato": opciones.get("formato", "markdown"),
+        "formato": opciones.get("formato", "markdown"), "biblioteca": bool(biblioteca),
     }
 
 

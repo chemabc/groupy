@@ -62,6 +62,12 @@ DISPOSICION = (
             "debates.debates",
             "consultas.consultas",
             "documentos.documentos",
+            Pestanas("documentos.biblioteca", (
+                "documentos.plantillas",
+                "documentos.membretes",
+                "documentos.imagenes",
+            )),
+            "documentos.fragmentos",
             "decisiones.decisiones",
         )),
         ("grupos.organizaciones", (

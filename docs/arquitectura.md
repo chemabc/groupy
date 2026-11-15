@@ -401,7 +401,9 @@ flowchart LR
 Organizaciones y grupos a cualquier profundidad (tabla de cierre `Contencion`), pertenencias, asamblea
 base, admins, relaciones e invitaciones entre organizaciones. La solicitud «Entrar en un grupo». El
 componente de **árboles de grupos** (`grupos/arboles.py` y la plantilla `grupos/arboles.html`): los grupos
-de cada persona en árbol, con su asamblea base en amarillo y el grupo que se mira en rojo.
+de cada persona en árbol, con su asamblea base en amarillo y el grupo que se mira en rojo. Y
+`grupos/editor.py`: los **ámbitos** de cada persona en la biblioteca del editor (toda la plataforma, sus
+organizaciones y sus grupos; contrato `ambitos_del_editor`) y la búsqueda de personas para compartir.
 
 ```mermaid
 flowchart LR
@@ -429,6 +431,10 @@ flowchart LR
   gru -. "TipoDeSolicitud grupos.entrar" .-> sol
   gru ==> com
   casi --> gru
+  ged["grupos.editor<br/>ámbitos y personas para la biblioteca del editor"]:::otro
+  bed["base.editor (id_para_editor)"]:::otro
+  ged --> bed
+  bed -. "ambitos_del_editor" .-> ged
 ```
 
 ### 6.7 permisos [Módulo · Organización]
@@ -835,7 +841,9 @@ flowchart LR
 párrafo, registro de cambios que nadie borra, comentarios, redacción (hasta dos personas) y aprobación. Al
 aprobar un acta, sus acuerdos salen como eventos_sw hacia `decisiones`. Si hay editor en tiempo real, su
 texto se escribe ahí (declara un `TextoEditable`; el puente es `base/editor.py`) y, al aprobarse, se le pide
-cerrar la sala.
+cerrar la sala. Y las pantallas de la **biblioteca del editor** («Plantillas de documentos» y «Enciclopedia
+de fragmentos»), que solo dan el pase: la biblioteca vive en el editor y la pinta la isla
+«bibliotecaDelEditor».
 
 ```mermaid
 flowchart LR
@@ -865,6 +873,9 @@ flowchart LR
   doc -. "TextoEditable documentos.documento" .-> bas
   bas -- "pases, firmas, cerrar sala" --> edi
   edi -- "/editor/texto/ y /editor/guardado/" --> bas
+  isla["isla «bibliotecaDelEditor»<br/>[Isla JS]"]:::libjs
+  doc -- "pase de la biblioteca" --> isla
+  isla -- "/biblioteca (con el pase)" --> edi
 ```
 
 ### 6.24 decisiones [Módulo · Funcional]
@@ -1119,6 +1130,30 @@ formato, los comentarios (otra sala, `<sala>#comentarios`, por la misma conexió
 al editor (`POST /render`, `GET /pdf`) con el pase. El pase lleva también el formato, el título y cuántas
 personas pueden escribir y comentar a la vez (`TextoEditable.opciones`).
 
+**Biblioteca** (plantillas, fragmentos, cabeceras y pies, imágenes; diseño 13.3). Vive en el editor, cifrada
+(`editor/src/biblioteca.mjs` y `cifrado.mjs`). El pase lleva además el número de la persona
+(`id_para_editor`) y sus ámbitos, que da `grupos` por el contrato (`ambitos_del_editor`). La plantilla y la
+cabecera y pie elegidas se guardan en la propia sala (mapa «opciones» de Yjs) y se aplican al compilar.
+
+```mermaid
+flowchart LR
+  classDef yo fill:#fce7f3,stroke:#db2777,stroke-width:4px,color:#831843
+  classDef otro fill:#f8fafc,stroke:#94a3b8,color:#334155
+  classDef libjs fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+  bib["editor: biblioteca<br/>(biblioteca.mjs + cifrado.mjs)<br/>[Servicio]"]:::yo
+  dis["disco: indice.cif e imagenes/*.cif<br/>(AES-256-GCM, EDITOR_CLAVE)"]:::otro
+  typ["editor: renderizador (Typst)<br/>imágenes en memoria"]:::otro
+  bed["base.editor<br/>pase con usuario y ámbitos"]:::otro
+  ged["grupos.editor<br/>ámbitos · personas"]:::otro
+  isla["islas «bibliotecaDelEditor»<br/>y «editorEnVivo»<br/>[Isla JS]"]:::libjs
+  bed -. "ambitos_del_editor" .-> ged
+  bed -- "pase" --> isla
+  isla -- "GET/POST/PUT/DELETE /biblioteca" --> bib
+  isla -- "buscar personas" --> ged
+  bib --> dis
+  typ -- "plantilla, membrete, imágenes" --> bib
+```
+
 ```mermaid
 sequenceDiagram
   participant N as Navegador (isla editorEnVivo)
@@ -1153,5 +1188,5 @@ sequenceDiagram
 | PostgreSQL (bóveda) | [Servicio] | La identidad real, separada | Solo `boveda` (por el enrutador) |
 | Redis | [Servicio] | Caché: permisos, audiencias, contadores, «tareas de hoy hechas» | permisos, audiencias, comunicaciones, base |
 | trabajador | [Servicio] | Reparte la bandeja de eventos_sw y hace las tareas diarias | eventos_sw, base/tareas.py |
-| editor | [Servicio] | Escribir a la vez en tiempo real, comentarios anclados, vista y PDF con Typst (Node: Hocuspocus + Yjs + typst.ts; otro repositorio, en `editor/`, que pueden usar otras aplicaciones) | `base/editor.py` (pases, firmas, cerrar sala) y los módulos con `TextoEditable` (documentos) |
+| editor | [Servicio] | Escribir a la vez en tiempo real, comentarios anclados, vista y PDF con Typst, y la biblioteca cifrada de plantillas, fragmentos, cabeceras y pies e imágenes (Node: Hocuspocus + Yjs + typst.ts; otro repositorio, en `editor/`, que pueden usar otras aplicaciones) | `base/editor.py` (pases, firmas, cerrar sala) y los módulos con `TextoEditable` (documentos) |
 | OpenStreetMap | [Servicio externo] | Teselas del mapa | isla «mapa» (lugares) |

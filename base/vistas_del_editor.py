@@ -20,10 +20,13 @@ from . import editor
 
 # Pase nuevo para entrar en la sala de un texto (lo pide el editor en el navegador al reconectar, porque
 # los pases duran pocos minutos). Devuelve {"pase": "…"} o 403 si ya no puede entrar. Sin más consultas
-# que las del permiso del módulo.
-#   - GET «sala»: «documentos.documento:12».
+# que las del permiso del módulo (o las de los ámbitos, para la biblioteca).
+#   - GET «sala»: «documentos.documento:12», o «biblioteca» (el pase de la pantalla de la biblioteca).
 @require_GET
 def pase(request):
+    if request.GET.get("sala") == editor.SALA_DE_BIBLIOTECA:
+        datos = editor.pase_de_biblioteca(request.user)
+        return JsonResponse({"pase": datos["pase"]}) if datos else HttpResponseForbidden("No hay biblioteca.")
     tipo, numero = editor.leer_sala(request.GET.get("sala", ""))
     datos = editor.pase(request.user, tipo, numero) if tipo else None
     if datos is None:

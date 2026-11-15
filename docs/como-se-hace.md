@@ -244,15 +244,31 @@ Si la plataforma tiene el editor en tiempo real, «Escribir» lo abre. Arriba ti
 (negrita, títulos, listas…). «Vista Typst» enseña al lado cómo quedará el PDF mientras escribes; apágala
 si no la necesitas. «Previsualizar» lo enseña una vez y «PDF» lo descarga. Para comentar un trozo,
 selecciónalo y pulsa «💬 Comentar»; los trozos comentados salen en amarillo y, al pulsarlos, se ve el hilo.
+Quien tiene la redacción escribe, y lo que escribe cada persona aparece al momento a las demás, con su
+nombre en color. Se guarda solo, unos segundos después; arriba pone «En directo». Quien no tiene la
+redacción pulsa «Seguir en directo» en la ficha y lo ve escribirse. Si no conecta, «Escribir sin directo»
+abre el formulario de siempre.
+
+### Usar una plantilla, una cabecera y pie, fragmentos e imágenes
+
+En «Escribir», arriba, elige la **Plantilla** (el aspecto del PDF y, si el documento está vacío, su texto de
+partida) y la **Cabecera y pie** (por ejemplo, la de tu organización). Lo elegido vale para todas las
+personas que escriben. «📚 Fragmentos e imágenes» abre un cajón: pulsa un fragmento o una imagen y se mete
+donde está el cursor. Enciende la «Vista Typst» para ver cómo queda.
+
+### Crear mis plantillas y fragmentos y compartirlos
+
+«Participación → Plantillas de documentos» (o «Enciclopedia de fragmentos»). Elige una carpeta y pulsa
+«＋ Nueva plantilla» (o «＋ Nuevo fragmento»): es tuya («Solo yo»). Para compartirla, en su ficha,
+«Compartir con…» un grupo o escribe el alias de una persona, y «Guardar». Lo de toda la plataforma lo
+cambia el superadmin, y lo de cada organización, su admin, que también sube las imágenes. Todo se guarda
+cifrado.
 
 ### Ver una versión anterior y volver a ella
 
 En la ficha del documento, «Versiones». Cada una es el texto tal como quedó en un rato de escritura. Al
 abrirla ves lo que ha cambiado desde entonces. Si redactas, «Volver a esta versión» recupera ese texto (lo
-de ahora no se pierde: queda como otra versión). Quien tiene la redacción escribe, y lo
-que escribe cada persona aparece al momento a las demás, con su nombre en color. Se guarda solo, unos
-segundos después; arriba pone «En directo». Quien no tiene la redacción pulsa «Seguir en directo» en la
-ficha y lo ve escribirse. Si no conecta, «Escribir sin directo» abre el formulario de siempre.
+de ahora no se pierde: queda como otra versión).
 
 ### Buscar lo que se decidió
 

@@ -60,6 +60,8 @@ class RegistroDeModulos:
         self.escuchas = {}
         # Ruta de la función que reparte las notificaciones (la declara «comunicaciones»), o vacío.
         self.repartidor_de_avisos = ""
+        # Ruta de la función que da los ámbitos de una persona en la biblioteca del editor (ver base/editor.py).
+        self.ambitos_del_editor = ""
         # Datos de ejemplo de cada módulo, por su etiqueta.
         self.datos_de_ejemplo = {}
         # Secciones del menú izquierdo, ya colocadas (con sus subsecciones dentro) según la disposición.
@@ -139,6 +141,10 @@ class RegistroDeModulos:
             if self.repartidor_de_avisos:
                 self.errores.append(f"Dos módulos dicen repartir los avisos: «{etiqueta}» y otro.")
             self.repartidor_de_avisos = config.reparte_avisos
+        if config.ambitos_del_editor:
+            if self.ambitos_del_editor:
+                self.errores.append(f"Dos módulos dicen dar los ámbitos del editor: «{etiqueta}» y otro.")
+            self.ambitos_del_editor = config.ambitos_del_editor
         if config.datos_de_ejemplo is not None:
             self.datos_de_ejemplo[etiqueta] = config.datos_de_ejemplo
         # Menú: se comprueba el prefijo de cada entrada y de sus subsecciones, y se apuntan todas por su

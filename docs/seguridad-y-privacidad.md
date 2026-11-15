@@ -306,3 +306,31 @@ Es un servicio aparte (carpeta `editor/`; ver «Diseño», apartado 13.2, y `edi
   dirección.
 - **Para el futuro:** al poner la CSP (apartado 2.3), permitir solo el script y el WebSocket del editor. O
   servir el cliente desde los estáticos de la plataforma, con su huella (SRI).
+
+### 9.7 Biblioteca del editor (plantillas, fragmentos, cabeceras y pies, imágenes)
+- **Qué se hace:**
+  - Todo se guarda **cifrado** con AES-256-GCM y la clave `EDITOR_CLAVE`: el índice (nombres, textos, con
+    quién se comparte) y cada imagen. Cada fichero va sellado: si se toca o se cambia por otro, no se lee.
+  - El editor no sabe quién es cada persona: el pase lleva un número sacado con HMAC de su número en la
+    plataforma, que no se puede volver atrás, y los ámbitos a los que pertenece.
+  - Se ve solo lo de tus ámbitos, lo tuyo y lo compartido contigo; se cambia lo de los ámbitos que
+    administras y lo tuyo. Lo de una aplicación nunca lo ve otra.
+  - Para compartir con una persona, la plataforma solo devuelve a quien ya se puede ver en las listas de
+    miembros, con el número del editor (nunca el de la plataforma).
+  - Las imágenes se comprueban por sus primeros bytes (solo PNG, JPEG y GIF; nada de SVG, que puede llevar
+    código), con 2 MB como mucho, y se sirven con `nosniff` y sin caché compartida.
+  - Al compilar, solo se dan al compilador las imágenes que ve quien compila, en memoria.
+- **Riesgo que queda:**
+  - La clave está en el mismo servidor que los datos: protege si se roban el disco o una copia, no si
+    alguien controla el servidor del editor mientras funciona.
+  - **Si se pierde la clave, se pierde la biblioteca.** Hay que guardarla aparte.
+  - Los ámbitos viajan en el pase: si alguien deja un grupo, sigue viendo lo compartido con ese grupo hasta
+    que caduca su pase (5 minutos).
+  - Quien recibe algo compartido puede copiarlo; dejar de compartir no lo borra de donde lo copió.
+  - Las imágenes se ven con el pase en la dirección (`?pase=…`, para poder usar `<img>`): puede quedar en
+    los registros del servidor, aunque caduca en 5 minutos.
+- **Para el futuro:**
+  - Guardar la clave en un gestor de secretos y poder cambiarla (descifrar con la vieja y cifrar con la
+    nueva).
+  - Una clave por aplicación, sacada de la principal.
+  - Ver las imágenes con un permiso de un solo uso en vez del pase.

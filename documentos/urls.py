@@ -20,4 +20,9 @@ urlpatterns = [
     path("vista-previa/", views.vista_previa, name="vista_previa"),
     # Cuántas personas escriben y comentan a la vez (plataforma, organización o grupo).
     path("limites/", views.limites, name="limites"),
+    # La biblioteca del editor: plantillas, cabeceras y pies, imágenes y la enciclopedia de fragmentos.
+    path("plantillas/", views.biblioteca, {"clase": "plantilla"}, name="plantillas"),
+    path("plantillas/cabeceras-y-pies/", views.biblioteca, {"clase": "membrete"}, name="membretes"),
+    path("plantillas/imagenes/", views.biblioteca, {"clase": "imagen"}, name="imagenes"),
+    path("fragmentos/", views.biblioteca, {"clase": "fragmento"}, name="fragmentos"),
 ]

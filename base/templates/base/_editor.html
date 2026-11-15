@@ -1,13 +1,14 @@
 {% comment %}
   Editor colaborativo en tiempo real (isla «editorEnVivo» de interfaz.js; ver base/editor.py). Recibe
   «en_vivo» (lo que devuelve base.editor.pase: url, cliente, sala, pase, alias, color, permiso, tipo,
-  numero, formato) y, si hay vista previa, «vista_previa» (su dirección) y «destino» (el id del recuadro que se
+  numero, formato, biblioteca) y, si hay vista previa, «vista_previa» (su dirección) y «destino» (el id del recuadro que se
   cambia). Arriba, quién está en la sala y si hay conexión; debajo, el editor (su barra de formato, el
   texto, los comentarios y la vista Typst los pinta el propio editor).
 {% endcomment %}
 <div x-data="editorEnVivo" class="space-y-1"
      data-cliente="{{ en_vivo.cliente }}" data-url="{{ en_vivo.url }}" data-sala="{{ en_vivo.sala }}" data-pase="{{ en_vivo.pase }}"
      data-alias="{{ en_vivo.alias }}" data-color="{{ en_vivo.color }}" data-permiso="{{ en_vivo.permiso }}" data-formato="{{ en_vivo.formato }}"
+     data-biblioteca="{{ en_vivo.biblioteca|yesno:'1,' }}"
      data-renovar="{% url 'base:editor_pase' %}?sala={{ en_vivo.tipo|urlencode }}:{{ en_vivo.numero }}"
      {% if vista_previa %}data-vista-previa="{{ vista_previa }}" data-destino="{{ destino }}"{% endif %}>
   <p class="flex flex-wrap items-center gap-1 text-xs" aria-live="polite">

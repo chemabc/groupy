@@ -196,3 +196,11 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   organización, grupo y debate; documentos (escritores y comentaristas) por plataforma, organización, grupo
   y documento. **Consultas secretas o públicas** (secretas de partida y de verdad: urna en Redis con tandas
   desordenadas, `consultas/urna.py`).
+- 15 de noviembre de 2026 ([A-52], [A-53]): **comentarios del editor registrados** en la plataforma y
+  **versiones** de cada documento (ver, comparar, volver). Y la **biblioteca del editor** (diseño 13.3):
+  plantillas (aspecto y texto de partida), enciclopedia de fragmentos, cabeceras y pies, e imágenes, en
+  carpetas; vive **en el editor, cifrada** (AES-256-GCM, `EDITOR_CLAVE`). Ve y cambia cada cual según los
+  **ámbitos** del pase (`grupos/editor.py`, contrato `ambitos_del_editor`; número de persona con
+  `base.editor.id_para_editor`); cualquiera crea lo suyo y lo comparte con grupos o personas; desde aquí,
+  solo las carpetas «Actas». Pantallas «Plantillas de documentos» y «Enciclopedia de fragmentos»
+  (`documentos`, isla «bibliotecaDelEditor»); desplegables «Plantilla» y «Cabecera y pie» en el editor.

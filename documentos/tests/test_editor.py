@@ -21,7 +21,7 @@ from documentos.models import CambioDeDocumento, ComentarioEnElTexto, Documento,
 from grupos.servicios import admitir, crear_grupo, crear_organizacion
 
 # Consultas de «Escribir» con el editor en tiempo real.
-CONSULTAS_DE_ESCRIBIR = 6
+CONSULTAS_DE_ESCRIBIR = 8
 # Configuración de un editor de prueba (no hace falta que exista: cerrar_sala no llega y no pasa nada).
 EDITOR = {"url": "ws://editor.prueba:1234", "interna": "http://127.0.0.1:9", "app": "asambleas", "secreto": "secreto-de-prueba"}
 
@@ -132,3 +132,90 @@ class PruebasDelEditor(PruebaDePantalla):
             servicios.guardar_desde_editor(self.odd.pk, self.odd.texto + f"\nOtro {CambioDeDocumento.objects.count()}\n", ["Lince"])
 
         self.comprobar_consultas(f"/documentos/{self.odd.pk}/escribir/", CONSULTAS_DE_ESCRIBIR, mas)
+
+
+# Consultas de las pantallas de la biblioteca con el editor en marcha (los ámbitos de la persona).
+CONSULTAS_DE_BIBLIOTECA = 3
+
+
+@override_settings(EDITOR=EDITOR)
+class PruebasDeLaBiblioteca(PruebaDePantalla):
+    """La biblioteca del editor vista desde la plataforma: el pase con los ámbitos, las pantallas y las personas."""
+
+    # Estructura: ORG Tajo (GRU Tajo ⊃ GRU Henares) con Lince (admin de la organización) y Nutria en GRU
+    # Henares; ORG Ebro con Erizo.
+    @classmethod
+    def setUpTestData(cls):
+        from grupos.models import AdminDeOrganizacion
+
+        cls.tajo, cls.general = crear_organizacion("ORG Tajo", "GRU Tajo")
+        cls.henares = crear_grupo(cls.tajo, "GRU Henares", padre=cls.general)
+        cls.ebro, cls.gru_ebro = crear_organizacion("ORG Ebro", "GRU Ebro")
+        cls.lince, cls.nutria, cls.erizo = (crear_usuario_de_prueba(a) for a in ("Lince", "Nutria", "Erizo"))
+        admitir(cls.lince, cls.henares)
+        admitir(cls.nutria, cls.henares)
+        admitir(cls.erizo, cls.gru_ebro)
+        AdminDeOrganizacion.objects.create(usuario=cls.lince, organizacion=cls.tajo)
+        cls.usuario = cls.lince
+
+    # Lee los datos de un pase (su parte de en medio).
+    def datos_del_pase(self, pase):
+        cuerpo = pase.split(".")[1]
+        return json.loads(base64.urlsafe_b64decode(cuerpo + "=" * (-len(cuerpo) % 4)))
+
+    # El pase de un texto y el de la biblioteca llevan el número de la persona (no su número en la
+    # plataforma) y sus ámbitos: lo común (sin cambiar, no es superadmin), su organización (la administra)
+    # y sus grupos (también el que contiene al suyo).
+    def test_ambitos_en_el_pase(self):
+        odd = servicios.crear(self.lince, Documento.ODD, "Orden del día", grupo=self.henares, visibilidad="grupo:0")
+        en_vivo = editor.pase(self.lince, servicios.ANCLA, odd.pk)
+        self.assertTrue(en_vivo["biblioteca"])
+        datos = self.datos_del_pase(en_vivo["pase"])
+        self.assertEqual(datos["usuario"], editor.id_para_editor(self.lince))
+        self.assertNotEqual(datos["usuario"], str(self.lince.pk))
+        self.assertNotEqual(editor.id_para_editor(self.lince), editor.id_para_editor(self.nutria))
+        ambitos = {ambito["id"]: ambito["cambiar"] for ambito in datos["ambitos"]}
+        self.assertEqual(ambitos, {"comun": False, f"o{self.tajo.pk}": True, f"g{self.general.pk}": False, f"g{self.henares.pk}": False})
+        nutria = {a["id"]: a["cambiar"] for a in self.datos_del_pase(editor.pase_de_biblioteca(self.nutria)["pase"])["ambitos"]}
+        self.assertFalse(nutria[f"o{self.tajo.pk}"])
+        self.assertEqual(self.datos_del_pase(editor.pase_de_biblioteca(self.lince)["pase"])["sala"], "biblioteca")
+
+    # Las cuatro pantallas pintan la isla con su clase y su pase; el pase se renueva en /editor/pase/.
+    def test_pantallas(self):
+        for direccion, clase in (("/documentos/plantillas/", "plantilla"), ("/documentos/plantillas/cabeceras-y-pies/", "membrete"),
+                                 ("/documentos/plantillas/imagenes/", "imagen"), ("/documentos/fragmentos/", "fragmento")):
+            respuesta = self.client.get(direccion)
+            self.assertContains(respuesta, f'data-clase="{clase}"')
+            self.assertContains(respuesta, 'x-data="bibliotecaDelEditor"')
+        self.assertIn("pase", self.client.get("/editor/pase/", {"sala": "biblioteca"}).json())
+
+        # Un grupo más de Lince, en otra organización (un ámbito más: no debe costar más consultas).
+        def mas():
+            _, grupo = crear_organizacion(f"ORG Otra {Documento.objects.count()}{time.time_ns()}", f"GRU Otro {time.time_ns()}")
+            admitir(self.lince, grupo)
+
+        self.comprobar_consultas("/documentos/plantillas/", CONSULTAS_DE_BIBLIOTECA, mas)
+
+    # Para compartir con personas: solo las que se ven (Nutria, de su grupo; Erizo, de otra organización, no),
+    # con el número del editor y no el de la plataforma.
+    def test_personas(self):
+        self.assertEqual(self.client.get("/organizaciones/personas-para-el-editor/", {"buscar": "N"}).json(), {"personas": []})
+        personas = self.client.get("/organizaciones/personas-para-el-editor/", {"buscar": "utri"}).json()["personas"]
+        self.assertEqual(personas, [{"id": editor.id_para_editor(self.nutria), "nombre": "Nutria"}])
+        self.assertEqual(self.client.get("/organizaciones/personas-para-el-editor/", {"buscar": "Erizo"}).json(), {"personas": []})
+
+
+class PruebasDeLaBibliotecaSinEditor(PruebaDePantalla):
+    """Sin editor configurado, la pantalla explica que la biblioteca vive en él."""
+
+    # Una persona cualquiera.
+    @classmethod
+    def setUpTestData(cls):
+        cls.usuario = crear_usuario_de_prueba("Lince")
+
+    # Avisa y no pinta la isla; el pase de la biblioteca no se da.
+    def test_sin_editor(self):
+        respuesta = self.client.get("/documentos/fragmentos/")
+        self.assertContains(respuesta, "no está en marcha")
+        self.assertNotContains(respuesta, 'x-data="bibliotecaDelEditor"')
+        self.assertEqual(self.client.get("/editor/pase/", {"sala": "biblioteca"}).status_code, 403)

@@ -179,16 +179,21 @@ python manage.py tareas_diarias
 
 ```bash
 # Terminal 1: instala, construye y arranca el editor, que llama a la plataforma en localhost:8000
-#   - EDITOR_APLICACIONES: esta plataforma, con el secreto de desarrollo
+#   - EDITOR_CLAVE: la clave de desarrollo con la que cifra la biblioteca (la misma que en docker)
+#   - EDITOR_APLICACIONES: esta plataforma, con el secreto de desarrollo y solo las carpetas «Actas»
 cd editor && npm install && npm run construir && \
-  EDITOR_APLICACIONES='{"asambleas":{"secreto":"solo-para-desarrollo-cambiar-en-produccion","url":"http://localhost:8000/editor"}}' npm run arrancar
+  EDITOR_CLAVE=p7W1ang9nadfmH153EJnuLo0Uwk64iDtNKd/684axXU= \
+  EDITOR_APLICACIONES='{"asambleas":{"secreto":"solo-para-desarrollo-cambiar-en-produccion","url":"http://localhost:8000/editor","carpetas":["Actas"]}}' npm run arrancar
 # Terminal 2: arranca la plataforma diciéndole dónde está el editor
 #   - EDITOR_URL: el WebSocket que abre el navegador
 #   - EDITOR_URL_INTERNA: la dirección desde la que la plataforma le pide cerrar salas
 EDITOR_URL=ws://localhost:1234 EDITOR_URL_INTERNA=http://localhost:1234 python manage.py runserver 0.0.0.0:8000
 ```
 
-- [ ] Las pruebas del propio editor: `cd editor && npm run probar` (7 pruebas). Es otro repositorio:
+- [ ] **¿Tiene biblioteca?** Al arrancar, el editor dice «Editor colaborativo en marcha en el puerto 1234»
+  sin «(sin biblioteca: falta EDITOR_CLAVE)». **Si lo dice:** falta `EDITOR_CLAVE` (nueva en
+  `.devcontainer/docker-compose.yml`): «Rebuild Container», o arráncalo a mano como arriba.
+- [ ] Las pruebas del propio editor: `cd editor && npm run probar` (10 pruebas). Es otro repositorio:
   `git -C editor log --oneline -3`.
 
 ---
@@ -760,3 +765,30 @@ Necesita el paso 0.8.
   y ve el texto vuelto.
 - [ ] Para el editor (`docker stop` del servicio o Ctrl+C) y abre «Escribir» en otro borrador: pone
   «Conectando…». Abajo, «Escribir sin directo» abre el formulario de siempre.
+
+## 38. Biblioteca del editor: plantillas, fragmentos, cabeceras y pies, e imágenes
+
+Necesita el paso 0.8 (con biblioteca).
+- [ ] Como **superadmin**, «Participación → Plantillas de documentos → Plantillas». «📁 Nueva carpeta»:
+  solo deja llamarla **Actas** (lo dice abajo); de quién es: «Toda la plataforma». Guárdala.
+- [ ] Dentro de «Actas», «＋ Nueva plantilla»: un nombre, en «Aspecto» `#set heading(numbering: "1.")`
+  y en «Texto de partida» un esqueleto (`## Asistentes`, `## Orden del día`…). «Previsualizar» enseña
+  cómo queda. Guárdala.
+- [ ] «Imágenes»: carpeta «ORG …» (de la organización) y «Subir imagen» con un PNG. Sale en el árbol con
+  su miniatura y, en su ficha, cómo ponerla en Markdown y en Typst. Prueba a subir un fichero que no sea
+  una imagen: no deja.
+- [ ] «Cabeceras y pies»: una nueva con la imagen en la cabecera (`#image("/imagenes/…", height: 1.2cm)`,
+  copia el número de la ficha de la imagen) y un texto en el pie. «Previsualizar».
+- [ ] Como **Lince** (sin administrar nada), en «Plantillas» ves la de «Actas» pero de **solo lectura**. Dentro
+  de «Actas» crea tu propia plantilla: es «Solo yo». Compártela con uno de tus grupos («Compartir con…») y
+  con una persona (escribe «Nut» y elige a Nutria).
+- [ ] Como **Nutria**, ves la plantilla de Lince (de solo lectura). Una persona de otra organización no la ve.
+- [ ] «Participación → Enciclopedia de fragmentos»: como superadmin, carpeta «Actas» y subcarpetas; como
+  Lince, un fragmento tuyo («## Ruegos y preguntas»).
+- [ ] En un documento **vacío**, «Escribir»: arriba salen los desplegables **Plantilla** y **Cabecera y pie**.
+  Elige la plantilla: aparece su texto de partida. Elige la cabecera y pie y enciende la «Vista Typst»:
+  sale con la imagen, el aspecto y el pie. Quien lo tenga abierto a la vez ve el mismo cambio.
+- [ ] «📚 Fragmentos e imágenes»: pulsa el fragmento y la imagen: se meten donde está el cursor.
+- [ ] Quien solo comenta o lee ve los desplegables, pero no puede cambiarlos ni meter nada.
+- [ ] El cifrado: en el contenedor, `ls editor/datos/biblioteca` y `head -c 200 editor/datos/biblioteca/indice.cif`:
+  no se lee ningún nombre.

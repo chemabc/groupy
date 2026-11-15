@@ -818,3 +818,30 @@ sirve aquí y dónde se usa.
   la base de datos, quedan unidas aunque no compartan ninguna columna: tienen el mismo número de
   transacción, números seguidos y están juntas en el disco. Por eso la papeleta espera en una lista de
   Redis y se guarda junto a otras cuatro o más, en desorden y con un número al azar (`uuid4`).
+
+## 37. Cifrar con un sello, saber quién es sin saber quién es, y ficheros que no existen (15 de noviembre de 2026)
+
+- **Cifrar y sellar a la vez (AES-256-GCM).** Cifrar esconde lo que hay; no impide que alguien cambie bytes
+  a ciegas. GCM añade un **sello** (16 bytes) que se calcula con la clave: al descifrar, si un solo byte
+  no cuadra, da error. Cada fichero lleva además su número al azar (*iv*), para que dos textos iguales no
+  se parezcan cifrados, y un «para qué» sellado (`indice`, `imagen:<número>`): así no se puede cambiar un
+  fichero cifrado por otro (`editor/src/cifrado.mjs`).
+- **La clave importa más que el candado.** Quien tiene la clave lo lee todo; quien la pierde, lo pierde
+  todo. Por eso va en una variable de entorno, fuera del código y de los datos, y hay que guardarla aparte.
+- **Un número que identifica sin delatar.** El editor tiene que saber que «esto es de la misma persona que
+  ayer», pero no quién es. La plataforma le da `HMAC(secreto, "usuario:12")`: siempre sale lo mismo para la
+  misma persona y, sin el secreto, no se puede volver al 12 (`base/editor.py`, `id_para_editor`).
+- **Ámbitos en vez de grupos.** El editor no sabe qué es una organización ni un grupo: solo recibe
+  «ámbitos» con un nombre y si los administras. Cada aplicación decide qué es un ámbito. Así el mismo
+  editor sirve a otras herramientas (`editor/src/biblioteca.mjs`).
+- **Mirar los primeros bytes, no el nombre.** Un fichero se puede llamar `foto.png` y ser otra cosa. Los
+  formatos de imagen empiezan siempre igual (PNG por `89 50 4E 47`, JPEG por `FF D8 FF`, GIF por `GIF8`), y
+  eso es lo que se mira. El SVG no se admite: es texto y puede llevar código.
+- **Ficheros que no existen (sombras).** El compilador de Typst solo ve una carpeta vacía. Para que pueda
+  poner una imagen, se le da en memoria con `mapShadow(ruta, bytes)`: la ve como si estuviera en el disco,
+  pero nunca se escribe. Antes de cada compilación se borran todas (`resetShadow`), y solo se le dan las
+  imágenes que ve quien compila.
+- **Lo elegido vive con el texto.** La plantilla y la cabecera y pie de un documento van en un mapa de Yjs
+  dentro de la propia sala. Así se reparten a todo el mundo como cualquier cambio del texto, y solo los
+  cambia quien puede escribir, sin código de más.
+
