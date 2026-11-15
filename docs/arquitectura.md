@@ -55,16 +55,18 @@ flowchart LR
     htmx["htmx 2.0<br/>[Librería JS]"]:::libjs
     alpine["Alpine.js 3<br/>[Librería JS]"]:::libjs
     css["Tailwind CSS 4<br/>(estilos compilados)<br/>[Librería JS]"]:::libjs
-    islas["Islas: menú, panel de ayuda, índice,<br/>tabla, copiar, selectores de palabras y de personas,<br/>ordenar, mapa, calendario, kanban, documento<br/>[Isla JS]"]:::capabase
+    islas["Islas: menú, panel de ayuda, índice,<br/>tabla, copiar, selectores de palabras y de personas,<br/>ordenar, mapa, calendario, kanban, documento,<br/>editor en vivo<br/>[Isla JS]"]:::capabase
     sortable["SortableJS<br/>[Librería JS]"]:::libjs
     fullcal["FullCalendar 6<br/>[Librería JS]"]:::libjs
     leaflet["Leaflet + markercluster<br/>[Librería JS]"]:::libjs
     merm["Mermaid 11 + svg-pan-zoom<br/>[Librería JS]"]:::libjs
+    cliente["cliente del editor: CodeMirror 6 + Yjs<br/>+ proveedor Hocuspocus (/cliente.js)<br/>[Librería JS]"]:::libjs
     alpine --> islas
     islas --> sortable
     islas --> fullcal
     islas --> leaflet
     islas --> merm
+    islas -- "lo carga al escribir" --> cliente
   end
 
   subgraph DJ["Servidor: Django 5.2"]
@@ -109,6 +111,7 @@ flowchart LR
     pg2[("PostgreSQL: bóveda<br/>(identidad real, aparte)<br/>[Servicio]")]:::servicio
     redis[("Redis: caché<br/>[Servicio]")]:::servicio
     trab["trabajador: procesar_bandeja<br/>(avisos y tareas diarias)<br/>[Servicio]"]:::servicio
+    edi["editor: Node + Hocuspocus + Yjs<br/>(tiempo real, pieza aparte, editor/)<br/>[Servicio]"]:::servicio
   end
   osm["Teselas de OpenStreetMap<br/>[Servicio externo]"]:::servicio
 
@@ -131,6 +134,9 @@ flowchart LR
   cache --> redis
   trab -- "mismo código" --> CAPAS
   leaflet --> osm
+  cliente -- "WebSocket con pase firmado" --> edi
+  edi -- "texto inicial y guardado (firmados)" --> urls
+  vistas -- "cerrar sala (firmado)" --> edi
   config --> NUCLEO
   contrib --> orm
   tw -. "genera static/generado" .-> css
@@ -144,7 +150,8 @@ sin recargar; **Alpine** da los comportamientos pequeños, y las **islas** de Ja
 para el calendario, el kanban, los mapas, los diagramas y poco más. Los datos van a **PostgreSQL**
 (dos bases que no se pueden unir: la plataforma y la bóveda) y lo que se calcula mucho (permisos,
 audiencias, contadores) se guarda en **Redis**. Un **trabajador** aparte reparte las notificaciones y
-hace las tareas de cada día.
+hace las tareas de cada día. El **editor en tiempo real** es otro servicio aparte (Node), que cualquier
+aplicación puede usar: la plataforma le da pases firmados y él le devuelve lo escrito.
 
 ## 3. Las capas y la regla de dependencias
 
@@ -826,7 +833,9 @@ flowchart LR
 
 Órdenes del día, actas y documentos libres en Markdown, con vista previa al momento (htmx), autoría por
 párrafo, registro de cambios que nadie borra, comentarios, redacción (hasta dos personas) y aprobación. Al
-aprobar un acta, sus acuerdos salen como eventos_sw hacia `decisiones`.
+aprobar un acta, sus acuerdos salen como eventos_sw hacia `decisiones`. Si hay editor en tiempo real, su
+texto se escribe ahí (declara un `TextoEditable`; el puente es `base/editor.py`) y, al aprobarse, se le pide
+cerrar la sala.
 
 ```mermaid
 flowchart LR
@@ -837,7 +846,8 @@ flowchart LR
   aud["audiencias"]:::otro
   per["permisos (cometido documentos.redaccion;<br/>eventos.toma_de_acta por su código)"]:::otro
   gru["grupos.acceso"]:::otro
-  bas["base: anclas · markdown · tablas · colgantes"]:::otro
+  bas["base: anclas · markdown · tablas · colgantes · editor"]:::otro
+  edi["editor (servicio aparte)<br/>[Servicio]"]:::otro
   esw["eventos_sw"]:::otro
   dec["decisiones"]:::otro
   fichas["fichas de eventos y proyectos"]:::otro
@@ -852,6 +862,9 @@ flowchart LR
   doc -. "Colgante documentos.documentos" .-> fichas
   doc -. "enlace «Proponer debate»" .-> deb
   htmx -- "/documentos/vista-previa/" --> doc
+  doc -. "TextoEditable documentos.documento" .-> bas
+  bas -- "pases, firmas, cerrar sala" --> edi
+  edi -- "/editor/texto/ y /editor/guardado/" --> bas
 ```
 
 ### 6.24 decisiones [Módulo · Funcional]
@@ -1094,6 +1107,37 @@ flowchart LR
   lug --> hojas
 ```
 
+### 7.7 Editor en tiempo real [Componente de base] y su servicio [Servicio]
+
+`base/editor.py` es el puente con el servicio `editor` (carpeta `editor/`, Node): da los pases, comprueba las
+firmas y cierra salas. `base/vistas_del_editor.py` recibe las llamadas del editor y las pasa al módulo que
+declara el texto (`TextoEditable` en su contrato), sin importarlo. La isla «editorEnVivo» (interfaz.js)
+carga el cliente del editor y lo monta; la plantilla es `base/_editor.html`.
+
+```mermaid
+sequenceDiagram
+  participant N as Navegador (isla editorEnVivo)
+  participant P as Plataforma (Django)
+  participant M as Módulo (documentos)
+  participant E as editor (Node)
+  N->>P: GET /documentos/12/escribir/
+  P->>M: ¿qué puede hacer? (TextoEditable.permiso)
+  M-->>P: «escribir»
+  P-->>N: página con el pase (JWT, 5 minutos)
+  N->>E: WebSocket a la sala, con el pase
+  E->>E: comprueba la firma y la sala (quien no escribe, solo lee)
+  E->>P: GET /editor/texto/ (firmado), si no tiene la sala
+  P->>M: TextoEditable.texto
+  P-->>E: texto y versión
+  N-)E: cambios de cada persona (Yjs)
+  E-)N: los cambios de las demás, al momento
+  E->>P: POST /editor/guardado/ (firmado), unos segundos después
+  P->>M: TextoEditable.guardar (autorías, registro)
+  P-->>E: versión nueva (o 409 si ya está aprobado)
+  N->>P: GET /editor/pase/ al reconectar
+  P->>E: POST /salas/cerrar (firmado), al aprobar
+```
+
 ## 8. Servicios
 
 | Servicio | Etiqueta | Para qué | Quién lo usa |
@@ -1102,4 +1146,5 @@ flowchart LR
 | PostgreSQL (bóveda) | [Servicio] | La identidad real, separada | Solo `boveda` (por el enrutador) |
 | Redis | [Servicio] | Caché: permisos, audiencias, contadores, «tareas de hoy hechas» | permisos, audiencias, comunicaciones, base |
 | trabajador | [Servicio] | Reparte la bandeja de eventos_sw y hace las tareas diarias | eventos_sw, base/tareas.py |
+| editor | [Servicio] | Escribir a la vez en tiempo real (Node: Hocuspocus + Yjs; carpeta `editor/`, pieza aparte que pueden usar otras aplicaciones) | `base/editor.py` (pases, firmas, cerrar sala) y los módulos con `TextoEditable` (documentos) |
 | OpenStreetMap | [Servicio externo] | Teselas del mapa | isla «mapa» (lugares) |

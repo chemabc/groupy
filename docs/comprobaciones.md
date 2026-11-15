@@ -158,6 +158,27 @@ python manage.py tareas_diarias
   arrastra a los demás (en paralelo, un fallo deja sus datos sin deshacer). Busca en la salida el primer
   «failed:» o pásalas en serie (`python manage.py test`, unos 5 minutos), que dice cuál es.
 
+### 0.8 Editor en tiempo real (servicio «editor»)
+
+- [ ] **¿Ya está?** http://localhost:1234/salud dice «bien», y en la terminal del contenedor
+  `echo $EDITOR_URL` dice `ws://localhost:1234`. **Si no:** el servicio es nuevo en
+  `.devcontainer/docker-compose.yml`. En VS Code, «Dev Containers: Rebuild Container»: instala lo suyo,
+  lo arranca solo y le pasa a la plataforma las variables `EDITOR_…`.
+- [ ] **Para probarlo sin reconstruir**, en dos terminales del contenedor:
+
+```bash
+# Terminal 1: instala, construye y arranca el editor, que llama a la plataforma en localhost:8000
+#   - EDITOR_APLICACIONES: esta plataforma, con el secreto de desarrollo
+cd editor && npm install && npm run construir && \
+  EDITOR_APLICACIONES='{"asambleas":{"secreto":"solo-para-desarrollo-cambiar-en-produccion","url":"http://localhost:8000/editor"}}' npm run arrancar
+# Terminal 2: arranca la plataforma diciéndole dónde está el editor
+#   - EDITOR_URL: el WebSocket que abre el navegador
+#   - EDITOR_URL_INTERNA: la dirección desde la que la plataforma le pide cerrar salas
+EDITOR_URL=ws://localhost:1234 EDITOR_URL_INTERNA=http://localhost:1234 python manage.py runserver 0.0.0.0:8000
+```
+
+- [ ] Las pruebas del propio editor: `cd editor && npm run probar` (4 pruebas).
+
 ---
 
 ## 1. Desarrollo y mantenimiento y trastienda
@@ -678,3 +699,22 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
   preguntas. Con dos apoyos se abre y ya se vota.
 - [ ] «Participación → Decisiones»: «Vigentes» y «Todas», filtrables por cómo y por grupo. En una ficha, como
   Lince, «Sustituida por…» otra más nueva: sale de «Vigentes» y sigue en «Todas», con el aviso en ámbar.
+
+## 37. Editor en tiempo real (actas entre varias personas)
+
+Necesita el paso 0.8.
+- [ ] Como **Lince**, «Participación → Órdenes del día y actas → Orden del día de la asamblea de
+  diciembre» y «Escribir». Arriba sale «En directo» y tu alias en color; a la izquierda, el cuadro; a la
+  derecha, la vista previa, que cambia mientras escribes.
+- [ ] En otro navegador (o en una ventana privada), entra como **Nutria** (sin redacción) y abre el mismo
+  documento. En la ficha sale «Seguir en directo»: pone «Solo lectura» y ves escribir a Lince al momento,
+  pero no puedes cambiar nada.
+- [ ] Como Lince, en la ficha, dale la redacción a Nutria. Nutria vuelve a la ficha y pulsa «Escribir»: ya
+  puede escribir. Escribid los dos a la vez: cada uno ve el texto y el cursor del otro, con
+  su nombre.
+- [ ] Dejad de escribir unos segundos y abrid la ficha: el texto está guardado. Los párrafos que habéis
+  tocado los dos dicen «(Lince, Nutria)», y el registro de cambios, «Lince, Nutria».
+- [ ] Aprueba el documento como Lince: quien estaba escribiendo se desconecta y, al volver, ya no lo puede
+  cambiar.
+- [ ] Para el editor (`docker stop` del servicio o Ctrl+C) y abre «Escribir» en otro borrador: pone
+  «Conectando…». Abajo, «Escribir sin directo» abre el formulario de siempre.

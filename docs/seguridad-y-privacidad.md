@@ -226,19 +226,51 @@ Cada entrada tiene tres partes:
 
 ---
 
-## 9. Editor externo de documentos (en construcción)
+## 9. Editor colaborativo en tiempo real
 
-El editor en tiempo real será una pieza aparte (ver «Diseño», apartado 13.2). Lo previsto para que sea
-seguro:
-- **Qué se hace (esqueleto):**
-  - La plataforma decide quién entra en cada documento y con qué permiso: leer, comentar o escribir.
-  - Se lo dice al editor con un **pase firmado de vida corta** (unos minutos), con la persona (alias), el
-    documento y el permiso.
-  - El editor no consulta la base de datos de la plataforma ni conoce a las personas.
+Es un servicio aparte (carpeta `editor/`; ver «Diseño», apartado 13.2, y `editor/LEEME.md`).
+
+### 9.1 Quién entra y qué puede hacer
+- **Qué se hace:**
+  - La plataforma decide en cada texto quién lo escribe, quién lo comenta y quién solo lo lee.
+  - Se lo dice al editor con un **pase firmado** (JWT HS256) que dura **5 minutos** y lleva el alias, la
+    sala y el permiso.
+  - El editor no ve la base de datos ni conoce a las personas. Quien no puede escribir entra de solo
+    lectura: el servidor descarta sus cambios aunque los mande a mano.
+  - Al reconectar se pide un pase nuevo; si se ha perdido el permiso, ya no se entra.
+  - Al aprobar un acta o al quitar la redacción a alguien, la plataforma pide al editor que cierre la sala.
 - **Riesgo que queda:**
-  - Mientras dura el pase, quien lo tenga entra aunque haya perdido el permiso hace un momento.
-  - El editor guarda el texto en su memoria y en su disco: es una copia más que hay que proteger y borrar.
+  - Si el editor no recibe ese aviso (caído, red), quien ya está dentro sigue con su permiso hasta que se
+    desconecta.
+  - El secreto es **compartido** (HS256): quien tenga el del editor podría fabricar pases.
 - **Para el futuro:**
-  - Pases de pocos minutos que se renuevan.
-  - La plataforma avisa al editor de que eche a alguien.
-  - Cifrado de lo que el editor guarda.
+  - Pases asimétricos (Ed25519): la plataforma firma y el editor solo comprueba.
+
+### 9.2 Las llamadas entre servidores
+- **Qué se hace:**
+  - El texto inicial, lo guardado y «cerrar sala» van firmados con HMAC del cuerpo y de la hora.
+  - Se rechaza una firma de hace más de 5 minutos.
+- **Riesgo que queda:** dentro de esos 5 minutos, una petición de guardado copiada se podría repetir. Solo
+  volvería a poner un texto que ya estuvo, y quedaría en el registro de cambios.
+- **Para el futuro:** un número de un solo uso en cada petición. Y HTTPS entre los dos servidores en
+  producción.
+
+### 9.3 Una copia más del texto
+- **Qué se hace:**
+  - El editor guarda en su carpeta (`EDITOR_DATOS`) el estado de Yjs de cada sala. Ese estado lleva la
+    historia fina: también lo borrado.
+  - La plataforma tiene siempre el texto bueno.
+- **Riesgo que queda:**
+  - Esa copia no se borra cuando `limpieza` borra el documento.
+  - Su historia guarda texto que se escribió y se quitó (por ejemplo, un nombre puesto por error).
+- **Para el futuro:**
+  - Que la plataforma pida al editor borrar la sala al borrar o aprobar el documento.
+  - Compactar la historia al aprobar.
+  - Cifrar la carpeta.
+
+### 9.4 El cliente en el navegador
+- **Qué se hace:** el script del editor se sirve desde el propio editor (`/cliente.js`).
+- **Riesgo que queda:** sin una política de contenidos (CSP), la página confía en todo lo que sirva esa
+  dirección.
+- **Para el futuro:** al poner la CSP (apartado 2.3), permitir solo el script y el WebSocket del editor. O
+  servir el cliente desde los estáticos de la plataforma, con su huella (SRI).

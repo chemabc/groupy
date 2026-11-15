@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from audiencias.selector import opciones
+from base import editor
 from base.anclas import buscar_ancla, leer_ancla
 from base.markdown import texto_a_html
 from base.tablas import Columna, Filtro, FuenteDeLista, Tabla
@@ -134,6 +135,7 @@ def documento(request, pk):
         "temas": servicios.temas(documento) if documento.tipo == Documento.ACTA else [],
         "redaccion": servicios.redaccion(documento),
         "escribe": servicios.puede_escribir(usuario, documento),
+        "en_directo": editor.activo() and documento.estado == Documento.BORRADOR,
         "aprueba": servicios.puede_aprobar(usuario, documento),
         "crea_acta": documento.tipo == Documento.ODD and servicios.puede_escribir(usuario, documento, aunque_aprobado=True),
         "ancla": buscar_ancla(documento.ancla_tipo, documento.ancla_id) if documento.ancla_tipo else None,
@@ -144,10 +146,27 @@ def documento(request, pk):
 
 # Pantalla «Escribir»: el título y el texto en Markdown a la izquierda y la vista previa a la derecha, que
 # se pone al día mientras se escribe (htmx). Solo para quien tiene la redacción.
-#   - POST «titulo», «texto» y «version» (la que tenía al abrir, para no pisar a otra persona).
+# Si hay editor en tiempo real (base/editor.py), el texto se escribe ahí entre varias personas a la vez y
+# se guarda solo; quien no tiene la redacción lo sigue en directo, de solo lectura.
+#   - GET «sin_directo»: usar el formulario aunque haya editor en tiempo real (si no conecta).
+#   - POST «titulo», «texto» y «version» (la que tenía al abrir, para no pisar a otra persona); con el
+#     editor en tiempo real, solo «titulo».
 def escribir(request, pk):
     usuario = request.user
     documento = _documento(usuario, pk)
+    # «?sin_directo=1»: el formulario de siempre (la salida si el editor en tiempo real no responde).
+    en_vivo = None if request.GET.get("sin_directo") else editor.pase(usuario, servicios.ANCLA, documento.pk)
+    if en_vivo:
+        error = ""
+        if request.method == "POST":
+            try:
+                servicios.cambiar_titulo(usuario, documento, request.POST.get("titulo", ""))
+            except ValidationError as excepcion:
+                error = " ".join(excepcion.messages)
+            else:
+                return redirect("documentos:escribir", documento.pk)
+        contexto = {"documento": documento, "en_vivo": en_vivo, "vista": texto_a_html(documento.texto), "error": error}
+        return render(request, "documentos/escribir_en_vivo.html", contexto)
     if not servicios.puede_escribir(usuario, documento):
         raise SinPermiso("Solo quien tiene la redacción puede escribirlo (y no si ya está aprobado). Puedes comentarlo en su ficha.")
     error = ""

@@ -960,6 +960,69 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 
+  // Isla del editor colaborativo en tiempo real (el servicio aparte de editor/; ver base/editor.py). La
+  // pinta base/templates/base/_editor.html con todo en data-*:
+  //   data-cliente (el script del editor), data-url (su WebSocket), data-sala, data-pase, data-alias,
+  //   data-color, data-permiso, data-renovar (dónde pedir un pase nuevo al reconectar) y, si hay vista
+  //   previa, data-vista-previa (dónde se convierte el texto) y data-destino (el id del recuadro que se
+  //   cambia).
+  // Carga el editor la primera vez, se conecta a la sala y enseña quién está y si hay conexión.
+  Alpine.data("editorEnVivo", () => ({
+    // Quién está en la sala ([{name, color}]) y el estado de la conexión.
+    personas: [],
+    estado: "connecting",
+    // El editor montado (para quitarlo al salir) y el reloj de la vista previa.
+    editor: null,
+    espera: null,
+
+    // Al arrancar: carga el script del editor y lo monta. El primer pase viene en la página; los
+    // siguientes (al reconectar, porque duran pocos minutos) se piden a data-renovar.
+    async init() {
+      const datos = this.$root.dataset;
+      await cargarUnaVez(datos.cliente);
+      let primero = datos.pase;
+      const pase = async () => {
+        if (primero) {
+          const este = primero;
+          primero = "";
+          return este;
+        }
+        const respuesta = await fetch(datos.renovar, { headers: { Accept: "application/json" } });
+        if (!respuesta.ok) throw new Error("Sin permiso");
+        return (await respuesta.json()).pase;
+      };
+      this.editor = window.EditorColaborativo.montar(this.$refs.cuadro, {
+        url: datos.url, sala: datos.sala, pase, alias: datos.alias, color: datos.color, permiso: datos.permiso,
+        alCambiar: (texto) => this.previa(texto),
+        alPersonas: (lista) => (this.personas = lista),
+        alEstado: (estado) => (this.estado = estado),
+      });
+    },
+
+    // Pide la vista previa del texto medio segundo después del último cambio (si la pantalla tiene).
+    previa(texto) {
+      const datos = this.$root.dataset;
+      if (!datos.vistaPrevia) return;
+      clearTimeout(this.espera);
+      this.espera = setTimeout(async () => {
+        const cuerpo = new URLSearchParams({ texto });
+        const respuesta = await fetch(datos.vistaPrevia, {
+          method: "POST",
+          headers: { "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content },
+          body: cuerpo,
+        });
+        const destino = document.getElementById(datos.destino);
+        if (respuesta.ok && destino) destino.outerHTML = await respuesta.text();
+      }, 500);
+    },
+
+    // Al salir de la pantalla: se desconecta.
+    destroy() {
+      clearTimeout(this.espera);
+      this.editor?.destruir();
+    },
+  }));
+
   // Isla de calendario (FullCalendar), para la pantalla «Calendario» (calendario/templates). Se usa así:
   //   <div x-data="calendario" data-estaticos="/static/generado/fullcalendar/" data-datos="/calendario/datos/"
   //        data-mover="/calendario/mover/" data-nuevo="/calendario/recordatorios/nuevo/">

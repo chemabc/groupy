@@ -21,3 +21,7 @@ static/generado/
 
 # Ficheros que suben las personas (carteles…): no van al historial
 ficheros/
+
+# Editor colaborativo: el cliente construido y su copia de las salas
+editor/publico/
+editor/datos/

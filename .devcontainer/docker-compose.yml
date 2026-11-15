@@ -31,10 +31,55 @@ services:
       BOVEDA_DATABASE_URL: postgres://boveda:boveda@db:5432/boveda
       BOVEDA_CLAVE_HMAC: solo-para-desarrollo-cambiar-en-produccion
       REDIS_URL: redis://redis:6379/0
+      # Editor colaborativo en tiempo real (servicio «editor», más abajo; ver base/editor.py)
+      #   - EDITOR_URL: dirección WebSocket del editor desde el navegador (el puerto 1234 se abre abajo)
+      #   - EDITOR_URL_INTERNA: dirección del editor desde la plataforma, dentro de Docker
+      #   - EDITOR_SECRETO: secreto que comparten la plataforma y el editor (el mismo que en «editor»)
+      EDITOR_URL: ws://localhost:1234
+      EDITOR_URL_INTERNA: http://editor:1234
+      EDITOR_SECRETO: solo-para-desarrollo-cambiar-en-produccion
     # Arranca primero la base de datos y Redis
     depends_on:
       - db
       - redis
+
+  # Editor colaborativo en tiempo real: servicio aparte, en Node (carpeta editor/; ver editor/LEEME.md).
+  # Varias personas escriben a la vez el mismo texto; la plataforma decide quién entra con pases firmados.
+  editor:
+    # Imagen oficial de Node 20 sobre Debian 13, versión reducida
+    image: node:20-trixie-slim
+    # Usuario con el que se ejecuta: el tuyo, para que lo que cree (node_modules, datos) sea tuyo
+    #   - HOST_UID, HOST_GID: tu número de usuario y de grupo (si no existen, 1000)
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    # El mismo código que «app»
+    #   - ..: la raíz del proyecto
+    #   - /workspace: donde aparece dentro del contenedor
+    volumes:
+      - ..:/workspace
+    # Carpeta en la que se ejecutan las órdenes: la del editor
+    working_dir: /workspace/editor
+    # Instala sus librerías (la primera vez tarda), construye el cliente del navegador y lo arranca
+    #   - npm install --no-audit --no-fund: instala lo de editor/package.json sin avisos de más
+    #   - npm run construir: crea editor/publico/cliente.js
+    #   - npm run arrancar: arranca editor/src/servidor.mjs
+    command: bash -c "npm install --no-audit --no-fund && npm run construir && npm run arrancar"
+    # Variables del editor
+    #   - HOME: carpeta para la caché de npm (el usuario no tiene otra en esta imagen)
+    #   - EDITOR_PUERTO: puerto en el que escucha
+    #   - EDITOR_DATOS: carpeta donde guarda su copia de cada sala
+    #   - EDITOR_APLICACIONES: las aplicaciones que lo usan, con su secreto y la dirección a la que llama
+    #     (la plataforma, en el contenedor «app», puerto 8000)
+    environment:
+      HOME: /tmp
+      EDITOR_PUERTO: "1234"
+      EDITOR_DATOS: /workspace/editor/datos
+      EDITOR_APLICACIONES: '{"asambleas": {"secreto": "solo-para-desarrollo-cambiar-en-produccion", "url": "http://app:8000/editor"}}'
+    # Abre el puerto al navegador de tu ordenador
+    #   - "1234:1234": el 1234 de tu ordenador va al 1234 del contenedor
+    ports:
+      - "1234:1234"
+    # Si se para por un error, vuelve a arrancar solo
+    restart: unless-stopped
 
   # Trabajador: entrega los avisos asíncronos de eventos_sw (notificaciones…) en cuanto aparecen en la
   # bandeja de salida. Es provisional hasta elegir Celery o RQ (docs/diseno.md, apartado 20); entonces

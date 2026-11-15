@@ -2,7 +2,7 @@
 Configuración y contrato del módulo «documentos».
 """
 
-from base.contrato import Ancla, Ayuda, Capa, Colgante, Cometido, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso
+from base.contrato import Ancla, Ayuda, Capa, Colgante, Cometido, DatosDeEjemplo, Emision, EntradaDeMenu, ModuloConfig, Permiso, TextoEditable
 
 
 class DocumentosConfig(ModuloConfig):
@@ -35,6 +35,13 @@ class DocumentosConfig(ModuloConfig):
         ),
     )
     # Los documentos pueden colgar de una reunión (sus órdenes del día y actas) o de un proyecto.
+    # El texto de cada documento se escribe en el editor colaborativo en tiempo real, si lo hay.
+    textos_editables = (
+        TextoEditable(
+            "documentos.documento", permiso="documentos.servicios.permiso_en_editor", texto="documentos.servicios.texto_para_editor",
+            guardar="documentos.servicios.guardar_desde_editor",
+        ),
+    )
     colgantes = (
         Colgante(
             "documentos.documentos", "Órdenes del día y actas", ("eventos.evento", "proyectos.proyecto"), "documentos.servicios.colgantes",

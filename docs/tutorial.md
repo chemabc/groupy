@@ -761,3 +761,33 @@ sirve aquí y dónde se usa.
 - **Quién escribió cada párrafo.** `difflib` (biblioteca de Python que compara listas, la de las
   herramientas de diferencias) compara los párrafos de antes y de después y dice cuáles son iguales,
   cuáles cambian, cuáles se añaden y cuáles se quitan.
+
+## 35. Escribir a la vez: Yjs, un servidor aparte y pases firmados (15 de noviembre de 2026)
+
+- **El problema.** Si dos personas escriben a la vez y cada una guarda su texto entero, la segunda pisa a
+  la primera. Hace falta unir los cambios letra a letra.
+- **Yjs** es una librería de JavaScript que guarda el texto como una lista de letras, cada una con quién y
+  cuándo la puso. Dos cambios hechos a la vez se unen siempre igual, en cualquier orden (es un **CRDT**:
+  «tipo de dato que se replica sin conflictos»). **Hocuspocus** es el servidor que reparte esos cambios
+  por **WebSocket** (una conexión que queda abierta y por la que el servidor puede mandar cosas sin que
+  se las pidan).
+
+  *Ejemplo: Lince escribe «Regar los martes.» y Nutria, a la vez, «Y los jueves.»; las dos ven las dos
+  frases en menos de un segundo.*
+- **Una pieza aparte.** El editor (carpeta `editor/`, en Node) no sabe nada de asambleas. Para que lo use
+  otra aplicación basta con darla de alta con un nombre, un secreto y una dirección.
+- **Pases firmados (JWT).** Un JWT es un texto en tres trozos separados por puntos:
+  - la cabecera;
+  - los datos (alias, sala, permiso, caducidad), en base64;
+  - una **firma HMAC** de los dos anteriores con un secreto.
+
+  El editor recalcula la firma con el mismo secreto. Si coincide, sabe que el pase lo hizo la plataforma y
+  que nadie ha cambiado el permiso. No tiene que preguntar a nadie.
+- **Firmar también entre servidores.** Cuando el editor llama a la plataforma («dame el texto», «esto es lo
+  escrito»), firma el cuerpo y la hora. La hora sirve para que una petición copiada no se pueda repetir más
+  tarde.
+- **Quién manda.** La plataforma decide los permisos y guarda el texto bueno. El editor solo une los
+  cambios y los reparte. Si el editor se cae, la plataforma sigue teniendo lo último guardado.
+- **Un contrato más.** `documentos` declara un `TextoEditable` con tres funciones (qué puede hacer cada
+  persona, el texto inicial, guardar). `base` hace de puente, así que mañana un proyecto puede tener su
+  propia documentación en tiempo real sin tocar el editor.

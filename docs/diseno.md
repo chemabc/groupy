@@ -1612,8 +1612,8 @@ apartado 20.
 - **Escribir:** Markdown con **vista previa al momento** (htmx manda el texto medio segundo después de la
   última tecla), **sin tiempo real**. Si otra persona ha guardado mientras tanto, no se pisa: se avisa
   (número de versión).
-  - *Descartado por ahora:* el editor colaborativo en tiempo real (Yjs y un servidor aparte); ver
-    apartado 20.
+  - *Al principio se dejó fuera* el editor colaborativo en tiempo real. Ya está hecho su esqueleto
+    (13.2); este formulario queda para cuando no hay editor o no conecta.
 - **Quién escribe:** quien tiene el cometido `documentos.redaccion` (quien lo crea, y quien le dé; hasta
   dos personas) o la toma de acta de la reunión de la que cuelga (`eventos.toma_de_acta`, por su código).
   Las demás personas que lo ven **comentan** hasta que se aprueba.
@@ -1626,6 +1626,69 @@ apartado 20.
   12-3-1]`. Al **aprobarla**, ya no se cambia y cada acuerdo sale con `documentos.acuerdo_tomado` hacia el
   registro de decisiones. Cada tema lleva «Proponer debate».
 - **Aún no:** PDF con Typst, plantillas del superadmin (hoy, un texto de partida en el código), adjuntos.
+
+
+### 13.2 Editor colaborativo en tiempo real: pieza aparte (15 de noviembre de 2026, respuestas 1 y 6 del apartado 20)
+
+**Decidido por la persona usuaria:** colaboración en tiempo real de verdad. El editor es **una pieza aparte**,
+que se irá mejorando y que **podrán usar otros proyectos**; el PDF de las actas, con **Typst, dentro del
+editor**. La idea es acabar construyendo fuera un editor potente que esta herramienta use.
+
+**Esqueleto hecho** (carpeta `editor/`, Node, todo MIT; detalle en `editor/LEEME.md`):
+- **Servidor:** Hocuspocus sobre Yjs. Une lo que escriben varias personas a la vez sin pisarse y reparte
+  los cambios por WebSocket. Guarda su copia de cada sala en ficheros.
+- **Cliente:** CodeMirror con los cursores y los nombres de las demás personas en color. Se construye en
+  un solo script (132 KB comprimido) que sirve el propio editor en `/cliente.js`.
+  - *Sin colores de Markdown:* doblarían el peso, y la vista previa ya enseña cómo queda.
+
+**Encaje con la plataforma:**
+- **Contrato:** cada módulo que tenga textos editables declara un `TextoEditable` (tipo de ancla y tres
+  funciones: permiso, texto inicial, guardar). `documentos` declara el suyo.
+- **`base/editor.py` hace de puente:**
+  - da los pases;
+  - comprueba las firmas;
+  - cierra salas;
+  - y `base/vistas_del_editor.py` recibe las llamadas del editor y las pasa al módulo, sin importarlo.
+- **La plataforma tiene siempre el texto bueno.** El editor avisa de lo escrito unos segundos después de
+  cada cambio, con quién ha escrito.
+  - Las autorías por párrafo y el registro de cambios siguen funcionando igual.
+  - Si en ese rato han escrito dos personas, el párrafo cambiado lleva a las dos.
+- **Sin editor** (`EDITOR_URL` vacío), todo funciona como antes, con el formulario. Si el editor no conecta,
+  «Escribir sin directo» abre el formulario.
+
+**Acceso y permisos:**
+- **La plataforma decide; el editor solo comprueba.** Al abrir «Escribir», la plataforma pregunta al
+  módulo qué puede hacer esa persona:
+  - **escribir:** quien tiene la redacción, si es borrador;
+  - **comentar:** quien lo ve, si es borrador;
+  - **leer:** quien lo ve, si ya está aprobado;
+  - **nada:** quien no lo ve.
+- **El pase:** con eso, la plataforma le da un pase. Es un JWT HS256 que dura 5 minutos, con su alias, la
+  sala y el permiso, firmado con el secreto que comparten la plataforma y el editor.
+  - El editor no ve la base de datos ni conoce a las personas.
+  - Quien no escribe entra de solo lectura: el servidor descarta lo que intente cambiar.
+  - Quien no escribe ve «Seguir en directo» en la ficha.
+- **Al reconectar**, el navegador pide un pase nuevo (`/editor/pase/`). Si ya no tiene permiso, no entra.
+- **Al aprobar un acta o quitar la redacción**, la plataforma pide al editor que cierre la sala; quien
+  vuelve, entra con su permiso de ahora. Si
+  el editor guardara después, la plataforma responde 409 y el editor cierra la sala.
+- **Entre servidores**, cada petición va firmada (HMAC del cuerpo y de la hora, con 5 minutos de margen).
+- **Riesgos y lo que falta:** en «Seguridad y privacidad», apartado 9.
+
+**Descartado:**
+- **Que el editor tenga sus propios usuarios o lea la base de datos de la plataforma:** lo ataría a esta
+  aplicación.
+- **Etherpad o un editor completo ya hecho:** es más pesado, tiene su propio modelo de usuarios y no da la
+  autoría por párrafo que ya existe.
+- **Pases asimétricos (Ed25519) desde el principio:** HS256 basta mientras editor y plataforma son de la
+  misma gente. Pasar a Ed25519 queda anotado para cuando lo usen otros.
+
+**Por hacer** (en `editor/LEEME.md`):
+- PDF con Typst: la dirección ya existe y responde «aún no»;
+- comentarios anclados al texto;
+- autoría letra a letra;
+- expulsar a una persona sin cerrar la sala;
+- varias instancias con Redis.
 
 ---
 
@@ -1978,23 +2041,23 @@ llegarán con el chat (más adelante).
 
 ## 20. Pendiente de decidir
 
-**Dudas de las fases 5, 6 y 7 (15 de noviembre de 2026, para la persona usuaria al terminar el encargo de
-[A-47]).** Están hechas versiones sencillas; estas dudas cambiarían algo esencial:
-1. **Editor en tiempo real (documentos):** ¿hace falta de verdad que dos personas escriban a la vez el
-   mismo texto (Yjs y un servidor aparte, más peso y otra pieza que mantener), o basta lo de ahora (guardar
-   y, si otra persona guardó antes, aviso)?
-2. **Voto secreto con cambio de voto (consultas):** hoy, la clave de la papeleta se calcula con un secreto
-   del servidor; quien tenga la base de datos **y** ese secreto podría saber qué votó cada persona. ¿Vale así
-   hasta la bóveda (fase 8), o mientras tanto se quita «cambiar el voto»?
-3. **Quién crea consultas:** de entrada, solo la administración del grupo y de la organización. ¿También
-   cualquier persona del grupo, quizá con una solicitud con apoyos, como los debates?
-4. **Opción «de consenso» (debates):** ¿qué es exactamente «apoyos de N personas de opciones distintas»
-   (personas que habían votado 👍 a otras opciones)? ¿Y «se reinicia el número de intervenciones»: para
-   todo el mundo y en todo el debate?
-5. **Límites en cascada (debates):** hay plataforma y organización. ¿Hacen falta también por grupo y por
-   cada debate, con su pantalla?
-6. **PDF de las actas:** ¿Typst (otro programa en el contenedor) o basta imprimir la página desde el
-   navegador con una hoja de estilos de impresión?
+**Dudas de las fases 5, 6 y 7, contestadas el 15 de noviembre de 2026** ([A-50]):
+1. **Tiempo real:** sí, en una pieza aparte reutilizable (13.2).
+2. **Voto secreto con cambio de voto:** se deja así hasta la bóveda. Riesgos en «Seguridad y privacidad».
+3. **Consultas:** cualquier miembro, con apoyos (12.1).
+4. **Opción de consenso:** apoyos de gente que había apoyado opciones distintas; las intervenciones vuelven a
+   contar para todo el mundo (11.1).
+5. **Límites de los debates:** pendiente. La persona usuaria no entendió la pregunta; se le explica en [A-50].
+6. **PDF:** con Typst, dentro del editor (13.2).
+
+**Dudas del editor en tiempo real ([A-50]):**
+- **Formato del texto:** ¿se escribe en Markdown (como ahora, y Typst solo da forma al PDF con una
+  plantilla) o directamente en Typst (más potente para maquetar, pero más difícil para quien escribe un
+  acta)?
+- **Dónde vive el editor:** ¿lo sacamos ya a su propio repositorio, o sigue en `editor/` hasta que tenga más
+  piezas?
+- **Comentarios:** ¿los comentarios se anclan a un trozo del texto (como en un procesador de textos) o
+  siguen debajo del documento?
 
 - Proyectos conjuntos entre organizaciones (apartado 8.1): qué audiencia tiene el proyecto, qué ve cada
   organización del otro grupo y cómo se comunican.

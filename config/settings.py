@@ -212,6 +212,23 @@ DATABASE_ROUTERS = ["config.enrutador.EnrutadorDeLaBoveda"]
 # vale para desarrollo.
 BOVEDA_CLAVE_HMAC = os.environ.get("BOVEDA_CLAVE_HMAC", "solo-para-desarrollo-cambiar-en-produccion")
 
+# Editor colaborativo en tiempo real (servicio aparte, carpeta editor/; ver base/editor.py). Si no se
+# indica EDITOR_URL, no hay editor en tiempo real y los textos se escriben con el formulario de siempre.
+#   - url: dirección WebSocket del editor tal como la ve el navegador («ws://localhost:1234»).
+#   - interna: dirección HTTP del editor desde la plataforma, para pedirle cosas («http://editor:1234»).
+#   - app: nombre de esta aplicación dentro del editor (otras aplicaciones usan el suyo).
+#   - secreto: el secreto que comparten la plataforma y el editor (firma los pases y las peticiones).
+EDITOR = (
+    {
+        "url": os.environ["EDITOR_URL"],
+        "interna": os.environ.get("EDITOR_URL_INTERNA", "http://editor:1234"),
+        "app": os.environ.get("EDITOR_APP", "asambleas"),
+        "secreto": os.environ.get("EDITOR_SECRETO", "solo-para-desarrollo-cambiar-en-produccion"),
+    }
+    if os.environ.get("EDITOR_URL") and not PROBANDO
+    else None
+)
+
 # Tipo de número que usan por defecto las claves primarias de las tablas.
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

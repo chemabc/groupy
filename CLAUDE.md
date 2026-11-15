@@ -177,3 +177,11 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   §20** y hay que preguntarlas. Lo que queda de [A-37] (eventos de los grupos que administro, miembros,
   conversaciones con grupos y personas) sigue pospuesto; después, fase 8.
   Recuerda `migrate --database=boveda`.
+- 15 de noviembre de 2026 ([A-50], respuestas a las dudas de §20): **opción de consenso** en debates (apoyos
+  de personas que defendían opciones distintas; reinicia las intervenciones de todo el mundo), **consultas
+  propuestas por cualquier miembro con apoyos** (`consultas.proponer`, solicitud `consultas.abrir`),
+  documento **`docs/seguridad-y-privacidad.md`** y **esqueleto del editor colaborativo en tiempo real**:
+  servicio aparte en `editor/` (Node, Hocuspocus + Yjs + CodeMirror, MIT; pases JWT firmados por la
+  plataforma, llamadas firmadas, pensado para que lo usen otras aplicaciones), `TextoEditable` en el
+  contrato, puente `base/editor.py`, isla «editorEnVivo», servicio `editor` en docker. PDF con Typst: por
+  hacer dentro del editor. Dudas nuevas en docs/diseno.md §20.

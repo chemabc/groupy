@@ -96,6 +96,16 @@
   }
   /* Documentos en Markdown convertidos en HTML (Desarrollo y mantenimiento → Documentación): títulos,
      párrafos, listas, tablas, código y citas con un aspecto cuidado y legible, en los tres temas. */
+  /* Editor colaborativo en tiempo real (base/templates/base/_editor.html): el cuadro de CodeMirror ocupa
+     su recuadro, con letra de ancho fijo, como el formulario de siempre. */
+  .editor-en-vivo .cm-editor {
+    min-height: 24rem;
+    font-family: ui-monospace, monospace;
+  }
+  .editor-en-vivo .cm-editor.cm-focused {
+    outline: none;
+  }
+
   .documento {
     @apply leading-relaxed text-slate-800 dark:text-slate-200;
   }

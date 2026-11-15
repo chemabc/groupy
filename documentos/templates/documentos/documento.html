@@ -2,7 +2,7 @@
 {% comment %}
   Ficha de un documento (documentos/views.py, documento). Recibe «documento», «bloques» (cada párrafo
   convertido, con los alias que han contribuido a él), «cambios» (el registro), «comentarios», «acuerdos» y
-  «temas» (de un acta), «redaccion» (quién la tiene), «escribe», «aprueba» y «crea_acta» (qué botones
+  «temas» (de un acta), «redaccion» (quién la tiene), «escribe», «en_directo» (si hay editor en tiempo real y es borrador: quien no escribe lo sigue en directo), «aprueba» y «crea_acta» (qué botones
   salen), «ancla» (aquello de lo que cuelga, o nada) y «error».
 {% endcomment %}
 {% block contenido %}
@@ -23,7 +23,7 @@
     <p class="text-xs text-slate-500">{{ documento.get_tipo_display }} · {{ documento.grupo.nombre }} · <span class="{% if documento.estado == 'aprobado' %}font-semibold text-emerald-700 dark:text-emerald-400{% endif %}">{{ documento.get_estado_display }}{% if documento.aprobado_el %} el {{ documento.aprobado_el|date:"d/m/Y" }}{% endif %}</span></p>
     <h2 class="mb-2 text-xl font-semibold">{{ documento.titulo }}</h2>
     <div class="flex flex-wrap gap-2 text-sm">
-      {% if escribe %}<a href="{% url 'documentos:escribir' documento.pk %}" class="rounded bg-marca px-3 py-1 font-medium text-white">Escribir</a>{% endif %}
+      {% if escribe %}<a href="{% url 'documentos:escribir' documento.pk %}" class="rounded bg-marca px-3 py-1 font-medium text-white">Escribir</a>{% elif en_directo %}<a href="{% url 'documentos:escribir' documento.pk %}" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Seguir en directo</a>{% endif %}
       {% if crea_acta %}<form method="post">{% csrf_token %}<button type="submit" name="accion" value="acta" class="rounded border border-slate-300 px-3 py-1 dark:border-slate-700">Crear el acta desde este orden del día</button></form>{% endif %}
       {% if aprueba %}<form method="post">{% csrf_token %}<button type="submit" name="accion" value="aprobar" onclick="return confirm('Al aprobarlo ya no se podrá cambiar{% if documento.tipo == 'acta' %} y sus acuerdos pasarán al registro de decisiones{% endif %}. ¿Seguir?')" class="rounded border border-emerald-400 px-3 py-1 text-emerald-800 dark:border-emerald-700 dark:text-emerald-300">Aprobar</button></form>{% endif %}
     </div>

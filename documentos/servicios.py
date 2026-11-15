@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from audiencias.selector import audiencia_de
 from audiencias.servicios import filtrar_visibles, puede_ver
+from base import editor
 from base.anclas import buscar_ancla
 from base.contrato import FilaDeResumen
 from eventos_sw.servicios import emitir
@@ -180,6 +181,8 @@ def quitar_redaccion(quien, documento, persona):
     if len(redaccion(documento)) <= 1:
         raise ValidationError("Siempre tiene que haber alguien con la redacción.")
     Cometido.objects.filter(usuario=persona, codigo=REDACCION, ancla_tipo=ANCLA, ancla_id=documento.pk).delete()
+    # En el editor en tiempo real, se cierra la sala: al volver, cada persona entra con su permiso de ahora.
+    transaction.on_commit(lambda: editor.cerrar_sala(ANCLA, documento.pk))
 
 
 # ── Guardar, autoría y registro ──────────────────────────────────────────────────────────────────────
@@ -208,8 +211,9 @@ def parrafos(texto):
 # nuevos, solo a quien escribe. Devuelve (autorías nuevas, resumen del cambio).
 #   - antes, despues: los párrafos de antes y de después.
 #   - autorias: la lista de alias de cada párrafo de antes.
-#   - alias: quien cambia.
+#   - alias: quien cambia, o la lista de quienes han cambiado a la vez (en el editor en tiempo real).
 def calcular_autorias(antes, despues, autorias, alias):
+    quienes = list(alias) if isinstance(alias, (list, tuple)) else [alias]
     autorias = list(autorias) + [[] for _ in range(len(antes) - len(autorias))]
     nuevas, cambiados, anadidos, quitados = [], 0, 0, 0
     for operacion, i1, i2, j1, j2 in difflib.SequenceMatcher(None, antes, despues, autojunk=False).get_opcodes():
@@ -221,7 +225,7 @@ def calcular_autorias(antes, despues, autorias, alias):
             continue
         previos = [nombre for i in range(i1, i2) for nombre in autorias[i]]
         for _ in range(j1, j2):
-            lista = [nombre for nombre in dict.fromkeys(previos) if nombre != alias] + [alias]
+            lista = [nombre for nombre in dict.fromkeys(previos) if nombre not in quienes] + quienes
             nuevas.append(lista)
         if operacion == "replace":
             cambiados += min(i2 - i1, j2 - j1)
@@ -234,13 +238,15 @@ def calcular_autorias(antes, despues, autorias, alias):
 
 
 # Guarda el texto nuevo con su autoría y apunta el cambio en el registro (función interna).
-def _guardar_texto(documento, usuario, texto, resumen=None):
-    alias = str(usuario)
+#   - quien: el usuario que guarda, o la lista de alias que han escrito (desde el editor en tiempo real).
+def _guardar_texto(documento, quien, texto, resumen=None):
+    alias = quien if isinstance(quien, list) else str(quien)
     nuevas, calculado = calcular_autorias(parrafos(documento.texto), parrafos(texto), documento.autorias, alias)
     documento.texto, documento.autorias = texto, nuevas
     documento.version += 1
     documento.save()
-    CambioDeDocumento.objects.create(documento=documento, alias=alias, resumen=(resumen or calculado)[:200])
+    firma = ", ".join(alias) if isinstance(alias, list) else alias
+    CambioDeDocumento.objects.create(documento=documento, alias=firma[:30], resumen=(resumen or calculado)[:200])
 
 
 # Guarda los cambios de quien redacta. Si otra persona ha guardado desde que se abrió (la versión no
@@ -258,6 +264,50 @@ def guardar(usuario, documento, titulo, texto, version):
     documento.titulo = titulo
     _guardar_texto(documento, usuario, texto)
     return documento
+
+
+# Cambia solo el título (desde la pantalla del editor en tiempo real, donde el texto se guarda solo).
+@transaction.atomic
+def cambiar_titulo(usuario, documento, titulo):
+    if not puede_escribir(usuario, documento):
+        raise ValidationError("Solo quien tiene la redacción puede cambiarlo (y no si ya está aprobado).")
+    if titulo.strip() and titulo.strip() != documento.titulo:
+        documento.titulo = titulo.strip()[:200]
+        documento.save(update_fields=["titulo"])
+
+
+# ── Editor en tiempo real (ver TextoEditable en documentos/apps.py y base/editor.py) ─────────────────
+
+
+# Qué puede hacer una persona en la sala de un documento: «escribir» si tiene la redacción y es borrador;
+# «comentar» si lo ve y es borrador; «leer» si lo ve; "" si no lo ve.
+def permiso_en_editor(usuario, numero):
+    documento = Documento.objects.filter(pk=numero).first()
+    if documento is None or not ve(usuario, documento):
+        return ""
+    if puede_escribir(usuario, documento):
+        return "escribir"
+    return "comentar" if documento.estado == Documento.BORRADOR else "leer"
+
+
+# El texto con el que empieza la sala de un documento y su versión.
+def texto_para_editor(numero):
+    documento = Documento.objects.get(pk=numero)
+    return documento.texto, documento.version
+
+
+# Guarda lo escrito en el editor en tiempo real, con quién ha escrito (las autorías se reparten entre
+# ellas). Si el documento ya está aprobado, no lo acepta. Devuelve la versión nueva.
+#   - alias: los alias que han escrito desde el último guardado.
+#   - version: la que tenía el editor (no se compara: mientras hay sala, manda el editor).
+@transaction.atomic
+def guardar_desde_editor(numero, texto, alias, version=None):
+    documento = Documento.objects.select_for_update().get(pk=numero)
+    if documento.estado != Documento.BORRADOR:
+        raise ValidationError("El documento ya está aprobado: no admite cambios.")
+    if texto != documento.texto:
+        _guardar_texto(documento, [str(a)[:30] for a in alias] or ["(sin alias)"], texto)
+    return documento.version
 
 
 # Apunta un comentario de alguien que ve el documento (mientras es borrador).
@@ -319,6 +369,8 @@ def aprobar(usuario, documento):
     documento.estado, documento.aprobado_el = Documento.APROBADO, timezone.now()
     documento.save(update_fields=["estado", "aprobado_el"])
     CambioDeDocumento.objects.create(documento=documento, alias=str(usuario), resumen="aprobado")
+    # Quien está en la sala del editor en tiempo real sale y, al volver, ya solo puede leer.
+    transaction.on_commit(lambda: editor.cerrar_sala(ANCLA, documento.pk))
     if documento.tipo == Documento.ACTA:
         for texto, forma, detalle in acuerdos(documento):
             emitir(

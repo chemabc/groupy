@@ -28,6 +28,7 @@ APARTADOS_CON_CODIGO = {
     "fuentes_de_calendario": "codigo",
     "tarjetas_de_inicio": "codigo",
     "colgantes": "codigo",
+    "textos_editables": "tipo",
     "emite": "nombre",
     "grupos_de_etiquetas": "codigo",
     "limpiables": "codigo",

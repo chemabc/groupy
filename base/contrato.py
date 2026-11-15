@@ -276,6 +276,28 @@ class Colgante:
 
 
 @dataclass(frozen=True)
+class TextoEditable:
+    """
+    Un texto de este módulo que se escribe en el editor colaborativo en tiempo real (el servicio aparte de
+    la carpeta editor/; ver base/editor.py y docs/diseno.md, apartado 13.2). El editor no conoce los
+    módulos: «base» le da los pases y recibe lo escrito, y pregunta aquí a quién se le deja hacer qué y
+    dónde se guarda.
+    """
+
+    # Tipo de ancla del elemento que tiene el texto. Ejemplo: «documentos.documento».
+    tipo: str
+    # Ruta de la función que dice qué puede hacer una persona: recibe (usuario, id) y devuelve «escribir»,
+    # «comentar», «leer» o "" (nada: no entra).
+    permiso: str
+    # Ruta de la función que da el texto con el que empieza la sala: recibe (id) y devuelve (texto, versión).
+    texto: str
+    # Ruta de la función que guarda lo escrito: recibe (id, texto, lista de alias que han escrito,
+    # versión con la que iba el editor) y devuelve la versión nueva. Lanza ValidationError si ya no acepta
+    # cambios (por ejemplo, un acta aprobada): entonces el editor cierra la sala.
+    guardar: str
+
+
+@dataclass(frozen=True)
 class Emision:
     """
     Un eventos_sw que el módulo emite: un aviso de que algo ha pasado («consultas.cerrada»). Los demás
@@ -587,6 +609,8 @@ class ModuloConfig(AppConfig):
     tarjetas_de_inicio: tuple[TarjetaDeInicio, ...] = ()
     # Lo suyo que puede colgar de elementos de otros módulos (sale en sus fichas, «Cuelga de aquí»).
     colgantes: tuple[Colgante, ...] = ()
+    # Los textos que se escriben en el editor colaborativo en tiempo real.
+    textos_editables: tuple[TextoEditable, ...] = ()
     # Los eventos_sw que emite.
     emite: tuple[Emision, ...] = ()
     # Los eventos_sw que escucha, con su función.

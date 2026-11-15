@@ -237,6 +237,13 @@ del día, pulsa «Crear el acta»: copia los puntos y añade los acuerdos y los 
 acuerdo como «- [consenso] …» o «- [votación 12-3-1] …». Al aprobar el acta, los acuerdos pasan a
 «Decisiones». Quien no tiene la redacción puede comentar.
 
+### Escribir el acta entre varias personas a la vez
+
+Si la plataforma tiene el editor en tiempo real, «Escribir» lo abre. Quien tiene la redacción escribe, y lo
+que escribe cada persona aparece al momento a las demás, con su nombre en color. Se guarda solo, unos
+segundos después; arriba pone «En directo». Quien no tiene la redacción pulsa «Seguir en directo» en la
+ficha y lo ve escribirse. Si no conecta, «Escribir sin directo» abre el formulario de siempre.
+
 ### Buscar lo que se decidió
 
 «Participación → Decisiones»: todo lo decidido por tus grupos (actas, debates, consultas). Filtra por cómo
