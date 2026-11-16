@@ -28,3 +28,7 @@ editor/
 # Bocetos de la persona usuaria y configuración local de npm: no van al historial
 docs/todo.md
 .npmrc
+
+# Permisos que cada persona da a Claude Code en su ordenador: son personales, no van al historial
+# (si algún día hay unos comunes para todo el equipo, irían en .claude/settings.json, que sí se sube)
+.claude/settings.local.json
