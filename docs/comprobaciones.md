@@ -697,7 +697,7 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
 
 ## 34. Órdenes del día y actas
 
-- [ ] Como **Nutria**, «Participación → Órdenes del día y actas»: el orden del día y el acta de noviembre (y
+- [ ] Como **Nutria**, «Participación → Documentos»: el orden del día y el acta de noviembre (y
   el de diciembre en borrador). Se filtra por tipo y estado al momento.
 - [ ] El acta: «sale de» su orden del día; arriba, «Registro de cambios (3)», plegado. Detrás de cada
   párrafo, en claro, «(Lince)». Abajo, los dos acuerdos («ya están en el registro de decisiones») y el tema
@@ -708,7 +708,8 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
   registro, una línea más.
 - [ ] Abre «Escribir» en dos pestañas, guarda en una y luego en la otra: la segunda avisa de que otra
   persona ha guardado (no pisa nada).
-- [ ] «Dar» la redacción a Nutria: ya le sale «Escribir». Como mucho dos personas.
+- [ ] «Dar» la redacción a Nutria: ya le sale «Escribir». Como mucho 10 personas de partida (se cambia en «Opciones»
+  y en «Administrar → Mi organización → Documentos»).
 - [ ] «Crear el acta desde este orden del día»: copia los puntos y añade Asistentes, Acuerdos alcanzados y
   Temas. Escribe un acuerdo «- [votación 5-2-0] …» y aprueba: ya no se puede escribir y el acuerdo sale en
   «Decisiones» con forma «Votación» y detalle «5-2-0».
@@ -762,12 +763,12 @@ trabajador (0.5: hay una tarea diaria nueva, `consultas.cerrar`).
 ## 37. Editor en tiempo real (actas entre varias personas)
 
 Necesita el paso 0.8.
-- [ ] Como **Lince**, «Participación → Órdenes del día y actas → Orden del día de la asamblea de
+- [ ] Como **Lince**, «Participación → Documentos → Orden del día de la asamblea de
   diciembre» y «Escribir». Arriba sale «En directo» y tu alias en color; a la izquierda, el cuadro; a la
   derecha, la vista previa, que cambia mientras escribes.
 - [ ] En otro navegador (o en una ventana privada), entra como **Nutria** (sin redacción) y abre el mismo
-  documento. En la ficha sale «Seguir en directo»: pone «Solo lectura» y ves escribir a Lince al momento,
-  pero no puedes cambiar nada.
+  documento. En la ficha sale «Seguir en directo»: pone «No tienes la redacción: no puedes escribir, pero sí
+  comentar» y ves escribir a Lince al momento, pero no puedes cambiar el texto.
 - [ ] Como Lince, en la ficha, dale la redacción a Nutria. Nutria vuelve a la ficha y pulsa «Escribir»: ya
   puede escribir. Escribid los dos a la vez: cada uno ve el texto y el cursor del otro, con
   su nombre.
