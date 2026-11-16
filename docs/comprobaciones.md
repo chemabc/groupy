@@ -950,3 +950,12 @@ Antes: el 0.8 (sobre todo «¿Llega el editor a la plataforma?» y reiniciar el 
 - [ ] Como una persona sin grupos (o sin permiso de crear), la lista dice «No puedes crear documentos» con
   la explicación, y no salen los botones de crear.
 
+
+## 45. Cursor del editor en modo oscuro
+
+Antes: reinicia el editor para que se rehaga su cliente (o, sin reiniciar, `npm run construir` en `editor/`;
+para saber si ya está, busca «ec-seleccion» en `editor/publico/cliente.js`). Recarga la página con Ctrl+F5.
+- [ ] Como **Nutria**, en modo oscuro, abre «Documento: ¿Dónde hacemos el huerto?» → «Escribir»: al pulsar en
+  el cuadro **se ve el cursor** (claro) y al seleccionar, la selección en violeta suave, con el texto legible.
+- [ ] Como **superadmin** (que no tiene la redacción), en ese mismo documento: el aviso dice «No tienes la
+  redacción: no puedes escribir, pero sí comentar…», no «Solo lectura».

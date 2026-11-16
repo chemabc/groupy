@@ -147,6 +147,11 @@ class PruebasDelEditorEnVivoEnElNavegador(PruebaEnElNavegador):
             primera.keyboard.press("Control+End")
             primera.keyboard.type("Regar los martes. ")
             self.esperar_texto(segunda, "Regar los martes")
+            # El cursor tiene el color del texto (el de CodeMirror es negro y no se veía en modo oscuro).
+            colores = primera.evaluate(
+                "() => [getComputedStyle(document.querySelector('.cm-cursor')).borderLeftColor, getComputedStyle(document.querySelector('.cm-content')).color]"
+            )
+            self.assertEqual(colores[0], colores[1])
             segunda.locator(".cm-content").click()
             segunda.keyboard.press("Control+End")
             segunda.keyboard.type("Y los jueves.")

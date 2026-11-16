@@ -14,7 +14,8 @@
   <p class="flex flex-wrap items-center gap-1 text-xs" aria-live="polite">
     <span x-show="estado === 'connected'" class="rounded bg-emerald-100 px-1.5 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">En directo</span>
     <span x-show="estado !== 'connected'" x-cloak class="rounded bg-amber-100 px-1.5 text-amber-900 dark:bg-amber-950 dark:text-amber-200">Conectando…</span>
-    {% if en_vivo.permiso != "escribir" %}<span class="text-slate-500">Solo lectura: ves lo que se escribe al momento.</span>{% endif %}
+    {% if en_vivo.permiso == "comentar" %}<span class="text-amber-700 dark:text-amber-300">No tienes la redacción: no puedes escribir, pero sí comentar (selecciona un trozo y pulsa «💬 Comentar»). Ves lo que se escribe al momento.</span>
+    {% elif en_vivo.permiso != "escribir" %}<span class="text-amber-700 dark:text-amber-300">Solo lectura: no puedes escribir ni comentar. Ves lo que se escribe al momento.</span>{% endif %}
     <template x-for="persona in personas" :key="persona.name">
       <span class="rounded-full px-1.5 text-white" :style="`background:${persona.color}`" x-text="persona.name"></span>
     </template>

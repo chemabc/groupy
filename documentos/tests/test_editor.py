@@ -122,14 +122,14 @@ class PruebasDelEditor(PruebaDePantalla):
         self.assertContains(respuesta, "«Ruegos»")
         self.assertContains(respuesta, "Del pozo")
 
-    # Con editor, «Escribir» pinta la isla con su sala y su pase, sin el formulario del texto; Nutria la ve
-    # de solo lectura. Cuesta lo mismo que sin editor.
+    # Con editor, «Escribir» pinta la isla con su sala y su pase, sin el formulario del texto; a Nutria (sin
+    # la redacción) le dice que no puede escribir, pero sí comentar. Cuesta lo mismo que sin editor.
     def test_pantalla(self):
         respuesta = self.client.get(f"/documentos/{self.odd.pk}/escribir/")
         self.assertContains(respuesta, f'data-sala="asambleas/{self.sala}"')
         self.assertNotContains(respuesta, 'name="texto"')
         self.client.force_login(self.nutria)
-        self.assertContains(self.client.get(f"/documentos/{self.odd.pk}/escribir/"), "Solo lectura")
+        self.assertContains(self.client.get(f"/documentos/{self.odd.pk}/escribir/"), "no puedes escribir, pero sí comentar")
         self.assertContains(self.client.get(f"/documentos/{self.odd.pk}/"), "Seguir en directo")
         self.client.force_login(self.lince)
 
