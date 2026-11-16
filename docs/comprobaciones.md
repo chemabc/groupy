@@ -1,6 +1,8 @@
 # Comprobaciones pendientes
 
-Guía para comprobar a mano, paso a paso, lo construido. Empieza por **«Antes de empezar»**: cada paso
+Guía para comprobar a mano, paso a paso, lo construido. Para dejarlo todo al día y limpio antes de una
+ronda, sigue `docs/arranque.md`, apartado 5; después, la **«Guía rápida de comprobación»** recorre lo más
+arriesgado de lo último. Para el detalle, empieza por **«Antes de empezar»**: cada paso
 dice primero **cómo saber si ya está hecho** y, solo si no lo está, **qué ejecutar**. Después, una
 sección por pieza, en el orden en que se hicieron, con **qué mirar** en cada pantalla.
 
@@ -20,6 +22,43 @@ sin marcar). Si algo no sale como dice la guía, apunta la pieza y el paso y cu�
 
 Truco: abre una **ventana privada** (o otro navegador) para tener a dos personas a la vez, por ejemplo
 Lince en una y Nutria en otra.
+
+---
+
+## Guía rápida de comprobación
+
+Un recorrido corto (unos 20 minutos) por lo más arriesgado de lo último que se ha hecho. Antes, deja todo al
+día y limpio con `docs/arranque.md`, apartado 5. Después, cuenta a Claude qué ha ido bien y qué no (por
+ejemplo, «1, 2 y 4 bien; en el 3, tal cosa»): lo comprobado se quita de esta guía y de su sección de abajo.
+
+- [ ] **1. Privacidad** (sección 2). Como **Nutria**, crea un proyecto personal y copia su dirección. Como
+  **superadmin**, no sale en ninguna lista y, pegando la dirección, no te deja verlo.
+- [ ] **2. Permisos** (sección 10). Como **superadmin**, «Usuarios → Roles y permisos → Explicar un permiso»:
+  Nutria, `documentos.crear`, GRU Henares. El razonamiento dice por qué sí o por qué no, y tiene sentido.
+- [ ] **3. Consultas secretas** (sección 36).
+  - Como **Nutria**, vota en «¿Qué día hacemos la asamblea?», cambia el voto, y arriba sale «🔒 Voto secreto».
+  - Como **Lince**, crea una consulta sin «voto secreto» y vota: en los resultados salen los alias.
+  - Como **Garza**, propón una consulta: espera dos apoyos y Nutria la ve en «Comunicaciones → Solicitudes».
+- [ ] **4. Documentos y editor** (secciones 37, 44, 45 y 46).
+  - Como **Lince**, «Participación → Documentos → Nuevo»: crea uno con descripción. En la lista, su **ⓘ** la
+    enseña en una ventanita.
+  - Abre «Escribir» en el orden del día de diciembre: el **cursor se ve**, también en modo oscuro.
+  - En una ventana privada, como **Nutria**, el mismo documento → «Seguir en directo»: dice «No tienes la
+    redacción… pero sí comentar». Comenta un trozo: a Lince le sale en amarillo.
+  - Como Lince, dale la redacción a Nutria (en la ficha) y escribid los dos a la vez: cada uno ve el cursor
+    y el nombre del otro.
+  - Como Lince, **💾 Guardar versión** con una nota. En la ficha, «Versiones» la enseña con su fecha, su
+    hora y la nota.
+  - **Sin conexión:** en una terminal de tu ordenador, `docker stop $(docker ps -q -f name=editor)`. A los 5
+    segundos sale el **aviso rojo**. Escribe algo y vuelve a arrancarlo con
+    `docker start $(docker ps -aq -f name=editor)`: el aviso se va y lo escrito queda guardado.
+- [ ] **5. Del acta a decisiones** (sección 34). En el orden del día, «Crear el acta desde este orden del
+  día». En «Acuerdos alcanzados», `- [votación 5-2-0] Huerto en el solar`; aprueba el acta. En
+  «Participación → Decisiones» sale como «Votación», «5-2-0».
+- [ ] **6. Menú** (sección 46). Arrastra el borde derecho del menú: el ancho se recuerda al recargar y con
+  doble clic vuelve al de partida.
+
+El paso 4 y el 5 cambian datos de ejemplo. Para dejarlos como recién hechos, `docs/arranque.md`, paso 5.6.
 
 ---
 
@@ -979,10 +1018,10 @@ Antes:
   (opcional)»; con Intro sale «Guardada la versión N a las HH:MM: «…»». En la ficha, «Versiones» enseña esa
   versión con su nota; lo que escribas después va a una versión nueva aunque no pasen 10 minutos. Sin
   directo (`?sin_directo=1`), el cuadro «Nota de la versión» junto a «Guardar» hace lo mismo.
-- [ ] Sin conexión: con el documento abierto en «Escribir», para el editor (`docker compose stop editor`
-  desde tu ordenador, en `.devcontainer`). A los 5 segundos sale el **aviso rojo** «Sin conexión con el
+- [ ] Sin conexión: con el documento abierto en «Escribir», para el editor (en una terminal de tu ordenador,
+  `docker stop $(docker ps -q -f name=editor)`). A los 5 segundos sale el **aviso rojo** «Sin conexión con el
   editor desde las…». Escribe algo; al intentar cerrar la pestaña, el navegador pregunta. Arranca el editor
-  (`docker compose start editor`): el aviso se va solo y lo escrito llega a la plataforma.
+  (`docker start $(docker ps -aq -f name=editor)`): el aviso se va solo y lo escrito llega a la plataforma.
 - [ ] Repite, pero cierra la pestaña antes de arrancar el editor. Al abrir otra vez el documento sale «Hay
   texto escrito sin conexión»: al desplegarlo, el texto, «Copiar el texto» y «Descartar».
 - [ ] El **menú de la izquierda**: arrastra su borde derecho para ensancharlo o estrecharlo (entre 160 y 480
