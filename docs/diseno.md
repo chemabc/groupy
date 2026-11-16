@@ -1873,6 +1873,44 @@ votaciones, y subir PDF como contexto; crear, editar, guardar, modificar y elimi
   administración del grupo (conversación con el asunto ya puesto) o comentar. `Ancla.congela` recibe ahora
   una lista de números, para que la lista no haga una consulta por documento.
 
+### 13.5 Escribir durante horas, descripción y notas de versión (16 de noviembre de 2026, [A-65] a [A-67])
+
+Al probar el editor, la persona usuaria no podía poner el cursor ni escribir. **Causa:** el cursor de
+CodeMirror es negro y en modo oscuro no se veía; además, quien no tiene la redacción veía «Solo lectura»
+aunque pudiera comentar. Arreglado: el cursor y la selección toman el color del texto y el aviso dice «No
+tienes la redacción: no puedes escribir, pero sí comentar». Respuestas a las preguntas de [A-66]:
+- **El pase sigue durando 5 minutos (1A).** Solo se mira al entrar en la sala: una vez dentro, la
+  conexión dura horas; si se corta, el navegador pide uno nuevo solo (se vuelve a comprobar el permiso).
+  Lo que faltaba era no perder nada si la reconexión no llega: si en 5 segundos no ha vuelto, sale un
+  **aviso rojo** («no cierres esta pestaña») y, mientras no hay conexión, se guarda una **copia del texto en
+  el navegador** (`localStorage`, una por pestaña), que se borra al volver la conexión y quedar todo
+  enviado. Si la pestaña se cerró antes, al abrir otra vez el texto se ofrecen las copias que no coinciden
+  con el texto de ahora para copiarlas y pegar lo que falte. Cerrar la pestaña sin conexión y con algo sin
+  enviar pide confirmación. Vive en el editor (sirve a cualquier aplicación).
+  - *Descartado:* que el superadmin elija la duración del pase (1B): alargarlo no ayuda a escribir y deja
+    más tiempo a un pase filtrado. Y mezclar la copia sola con el texto (y-indexeddb): si el texto de la
+    sala se rehízo (vuelta a una versión), duplicaría trozos.
+- **Cuántas personas escriben a la vez**: no eran 2 sino 10 de partida, y ya se cambiaba en cascada en
+  «Administrar → Mi organización → Documentos» y en las «Opciones» de cada documento. No hace falta nada más.
+- **Descripción de cada documento (2A).** `Documento.descripcion` (hasta 300 letras, opcional), para
+  textos, archivos y enlaces. Se pone al crearlo y se cambia al escribir (junto al título) o en la ficha del
+  archivo o enlace. En la lista, un **ⓘ** junto al nombre la enseña en una ventanita (se cierra al pulsar
+  fuera, con Escape o al desplazar); la búsqueda también mira en ella. En la ficha sale bajo el título.
+  - *Descartado:* al pasar el ratón (2B: no funciona en el móvil) y debajo del título en la tabla (2C).
+- **Notas de versión (3A).** Ya salían la fecha y la hora de cada versión («último cambio»). Ahora, encima
+  del editor, **«💾 Guardar versión»** pide una nota opcional (como el mensaje de un commit), cierra la versión
+  de ahora con ella (`VersionDeDocumento.nota` y `fijada`) y lo que se escriba después va a una nueva. Manda
+  el texto que ve quien pulsa, porque el editor guarda cada pocos segundos y lo último podría no haber
+  llegado; solo se puede con conexión. En el formulario sin directo, el cuadro «Nota de la versión» junto a
+  «Guardar». El botón está en la plataforma (`base/_editor.html` con `guardar_version`), no en el editor,
+  que sigue sin saber de versiones.
+  - *Descartado:* poner la nota después, desde la lista de versiones (3B y 3C).
+- **Ancho del menú izquierdo (4A).** Su borde derecho se arrastra (o se mueve con las flechas del teclado
+  sobre él), entre 160 y 480 píxeles; doble clic vuelve al de partida (15rem). Se recuerda en el navegador
+  (`menu.ancho`), como el panel de ayuda, y el script de la cabecera lo aplica antes de pintar. Con el menú
+  plegado o en el móvil, el borde no sale.
+  - *Descartado:* guardarlo en las preferencias de la cuenta (4B) y tres anchos fijos (4C).
+
 ---
 
 ## 14. Proyectos, tareas y limpieza

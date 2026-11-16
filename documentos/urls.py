@@ -24,6 +24,8 @@ urlpatterns = [
     path("<int:pk>/archivo/", views.descargar, name="descargar"),
     path("<int:pk>/archivo/<int:numero>/", views.descargar, name="descargar_version"),
     path("<int:pk>/versiones/<int:numero>/", views.version, name="version"),
+    # «Guardar versión» desde el editor en tiempo real (con una nota opcional).
+    path("<int:pk>/versiones/guardar/", views.guardar_version, name="guardar_version"),
     # Vista previa del texto mientras se escribe (la pide htmx).
     path("vista-previa/", views.vista_previa, name="vista_previa"),
     # Cuántas personas escriben y comentan a la vez (plataforma, organización o grupo).

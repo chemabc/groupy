@@ -52,6 +52,22 @@ class PruebasDeParticipacionEnElNavegador(PruebaEnElNavegador):
         self.pagina.get_by_text("Notas viejas").wait_for()
         self.assertEqual(self.errores, [])
 
+    # En la lista, el ⓘ de un documento con descripción la enseña en una ventanita, que se cierra con Escape;
+    # uno sin descripción no tiene ⓘ.
+    def test_descripcion_en_la_lista(self):
+        self.preparar()
+        servicios.crear(self.usuario, Documento.LIBRE, "Huerto", grupo=self.grupo, visibilidad="grupo:0", descripcion="Dónde y cuándo plantamos")
+        servicios.crear(self.usuario, Documento.LIBRE, "Sin nada", grupo=self.grupo, visibilidad="grupo:0")
+        self.abrir("/documentos/")
+        texto = self.pagina.get_by_text("Dónde y cuándo plantamos")
+        self.assertFalse(texto.is_visible())
+        self.pagina.get_by_role("button", name="Descripción de «Huerto»").click()
+        texto.wait_for(state="visible")
+        self.pagina.keyboard.press("Escape")
+        texto.wait_for(state="hidden")
+        self.assertEqual(self.pagina.get_by_role("button", name="Descripción de «Sin nada»").count(), 0)
+        self.assertEqual(self.errores, [])
+
     # Al escribir, la vista previa de la derecha muestra el texto convertido, sin guardar ni recargar.
     def test_vista_previa(self):
         self.preparar()
@@ -106,9 +122,14 @@ class PruebasDelEditorEnVivoEnElNavegador(PruebaEnElNavegador):
             **os.environ, "EDITOR_PUERTO": str(self.puerto), "EDITOR_APLICACIONES": json.dumps(aplicaciones), "EDITOR_DATOS": tempfile.mkdtemp(),
             "EDITOR_CLAVE": base64.b64encode(os.urandom(32)).decode(),
         }
-        self.editor = subprocess.Popen(["node", "src/servidor.mjs"], cwd=self.carpeta, env=entorno, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        self.editor.stdout.readline()  # espera a «Editor colaborativo en marcha…»
+        self.entorno = entorno
+        self.arrancar_editor()
         self.addCleanup(self.parar_editor)
+
+    # Arranca el servidor del editor de la prueba (con su puerto y su carpeta) y espera a que esté en marcha.
+    def arrancar_editor(self):
+        self.editor = subprocess.Popen(["node", "src/servidor.mjs"], cwd=self.carpeta, env=self.entorno, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.editor.stdout.readline()  # espera a «Editor colaborativo en marcha…»
 
     # Para el servidor del editor de la prueba.
     def parar_editor(self):
@@ -181,6 +202,53 @@ class PruebasDelEditorEnVivoEnElNavegador(PruebaEnElNavegador):
                 time.sleep(0.25)
             self.assertIn("Regar los martes. Y los jueves.", documento.texto)
             self.assertTrue({self.usuario.alias, "Nutria"} <= set(sum(documento.autorias, [])))
+            self.assertEqual(self.errores, [])
+
+    # «💾 Guardar versión» con una nota: la versión queda guardada a mano con ella. Después se para el
+    # editor: sale el aviso rojo y lo escrito sin conexión queda en una copia del navegador; se cierra la
+    # pestaña sin que vuelva la conexión y, al abrir otra vez el texto (con el editor de nuevo en marcha), se
+    # ofrece esa copia para recuperarla.
+    def test_guardar_version_y_sin_conexion(self):
+        with self.settings(EDITOR=self.configuracion()):
+            _tajo, grupo = crear_organizacion("ORG Tajo", "GRU Tajo")
+            admitir(self.usuario, grupo, rol=Pertenencia.ADMIN_GRUPO)
+            documento = servicios.crear(self.usuario, Documento.LIBRE, "Notas", grupo=grupo, visibilidad="grupo:0", texto="## Huerto\n")
+            self.abrir(f"/documentos/{documento.pk}/escribir/")
+            pagina = self.pagina
+            self.esperar_texto(pagina, "Huerto")
+            pagina.get_by_text("En directo").wait_for()
+            pagina.locator(".cm-content").click()
+            pagina.keyboard.press("Control+End")
+            pagina.keyboard.type("Regar los martes.")
+            pagina.get_by_role("button", name="💾 Guardar versión").click()
+            pagina.get_by_label("Nota de la versión").fill("Riego")
+            pagina.keyboard.press("Enter")
+            pagina.get_by_text("Guardada la versión").wait_for()
+            version = documento.versiones.first()
+            self.assertEqual((version.nota, version.fijada), ("Riego", True))
+            self.assertIn("Regar los martes.", version.texto)
+            # Sin conexión: aviso rojo y copia en el navegador.
+            self.parar_editor()
+            pagina.get_by_text("Sin conexión con el editor desde las").wait_for(timeout=15000)
+            pagina.locator(".cm-content").click()
+            pagina.keyboard.press("Control+End")
+            pagina.keyboard.type(" Y los jueves.")
+            copias = pagina.evaluate("() => Object.keys(localStorage).filter((clave) => clave.startsWith('editor-colaborativo:copia:')).map((clave) => localStorage.getItem(clave))")
+            self.assertEqual(len(copias), 1)
+            self.assertIn("Y los jueves.", copias[0])
+            contexto = pagina.context
+            nueva = contexto.new_page()
+            nueva.on("pageerror", lambda error: self.errores.append(str(error)))
+            pagina.close()
+            self.arrancar_editor()
+            self.pagina = nueva
+            self.abrir(f"/documentos/{documento.pk}/escribir/")
+            nueva.get_by_text("En directo").wait_for()
+            nueva.get_by_text("Hay texto escrito sin conexión").wait_for(timeout=10000)
+            nueva.locator(".ec-copia summary").click()
+            self.assertIn("Y los jueves.", nueva.locator(".ec-copia textarea").input_value())
+            nueva.get_by_role("button", name="Descartar").click()
+            nueva.get_by_text("Hay texto escrito sin conexión").wait_for(state="hidden")
             self.assertEqual(self.errores, [])
 
     # La biblioteca: quien administra ORG Tajo crea una carpeta y una plantilla (con su vista previa) y un

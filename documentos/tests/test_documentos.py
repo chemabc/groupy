@@ -92,6 +92,49 @@ class PruebasDeDocumentos(PruebaDePantalla):
 
         self.comprobar_consultas(f"/documentos/{odd.pk}/versiones/1/", 3, mas)
 
+    # «Guardar versión»: cierra la versión de ahora con su nota (y con el texto que llega del editor, si es
+    # otro) y lo siguiente va a una nueva aunque no haya pasado el rato; sin nota también vale. Solo quien
+    # tiene la redacción. La nota sale en la ficha y en la pantalla de la versión.
+    def test_guardar_version(self):
+        odd = self.odd()
+        odd = servicios.guardar(self.lince, odd, odd.titulo, "Uno", odd.version)
+        version = servicios.guardar_version(self.lince, odd, "Uno y dos", "Puntos del huerto")
+        self.assertEqual((version.numero, version.texto, version.nota, version.fijada), (2, "Uno y dos", "Puntos del huerto", True))
+        odd.refresh_from_db()
+        odd = servicios.guardar(self.lince, odd, odd.titulo, "Uno, dos y tres", odd.version)
+        self.assertEqual(odd.versiones.first().numero, 3)
+        self.assertEqual(servicios.guardar_version(self.lince, odd).nota, "")
+        with self.assertRaises(ValidationError):
+            servicios.guardar_version(self.nutria, odd, nota="No")
+        self.assertContains(self.client.get(f"/documentos/{odd.pk}/"), "«Puntos del huerto»")
+        self.assertContains(self.client.get(f"/documentos/{odd.pk}/versiones/2/"), "«Puntos del huerto»")
+        # Desde la pantalla (lo que pide el botón del editor) y desde el formulario de siempre (con «nota»).
+        respuesta = self.client.post(f"/documentos/{odd.pk}/versiones/guardar/", {"texto": "Cuatro", "nota": "Otro punto"})
+        self.assertIn("Guardada la versión 4", respuesta.json()["mensaje"])
+        odd.refresh_from_db()
+        self.client.post(f"/documentos/{odd.pk}/escribir/?sin_directo=1", {"titulo": odd.titulo, "texto": "Cinco", "version": odd.version, "nota": "Quinto"})
+        self.assertEqual(list(odd.versiones.values_list("numero", "nota")[:2]), [(5, "Quinto"), (4, "Otro punto")])
+        self.client.force_login(self.nutria)
+        self.assertEqual(self.client.post(f"/documentos/{odd.pk}/versiones/guardar/", {"nota": "No"}).status_code, 400)
+
+    # La descripción: se pone al crear, se cambia al escribir y sale en la ficha y en la lista (botón ⓘ,
+    # y se busca por ella).
+    def test_descripcion(self):
+        respuesta = self.client.post(
+            f"/documentos/nuevo/?grupo={self.henares.pk}",
+            {"tipo": Documento.LIBRE, "titulo": "Huerto", "formato": Documento.MARKDOWN, "descripcion": "Dónde y cuándo plantamos", "visibilidad": "grupo:0"},
+        )
+        documento = Documento.objects.get(titulo="Huerto")
+        self.assertRedirects(respuesta, f"/documentos/{documento.pk}/escribir/", fetch_redirect_response=False)
+        self.assertEqual(documento.descripcion, "Dónde y cuándo plantamos")
+        self.assertContains(self.client.get(f"/documentos/{documento.pk}/"), "Dónde y cuándo plantamos")
+        lista = self.client.get("/documentos/")
+        self.assertContains(lista, "Dónde y cuándo plantamos")
+        self.assertContains(lista, 'aria-label="Descripción de «Huerto»"')
+        servicios.cambiar_titulo(self.lince, documento, "Huerto", "Solo dónde")
+        documento.refresh_from_db()
+        self.assertEqual(documento.descripcion, "Solo dónde")
+
     # Cuántas personas tienen la redacción: de partida 10; el documento puede bajarlo (su administración).
     def test_maximo_de_redaccion(self):
         odd = self.odd()

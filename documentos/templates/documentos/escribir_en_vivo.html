@@ -2,7 +2,8 @@
 {% comment %}
   Pantalla «Escribir» un documento con el editor en tiempo real (documentos/views.py, escribir, cuando hay
   editor). Recibe «documento», «en_vivo» (base.editor.pase) y «error». El texto se guarda solo mientras se
-  escribe; el título, con su botón. El editor trae su barra de formato, los comentarios y la vista Typst
+  escribe; el título y la descripción, con su botón. Quien escribe tiene además «Guardar versión» (con una
+  nota opcional), que pinta base/_editor.html al recibir «guardar_version». El editor trae su barra de formato, los comentarios y la vista Typst
   (se enciende y se apaga), «Previsualizar» y «PDF».
 {% endcomment %}
 {% block contenido %}
@@ -13,13 +14,20 @@
   </p>
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
   {% if en_vivo.permiso == "escribir" %}
-    <form method="post" class="flex gap-2">
+    <form method="post" class="space-y-1">
       {% csrf_token %}
-      <input type="text" name="titulo" value="{{ documento.titulo }}" maxlength="200" aria-label="Título" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-lg font-semibold dark:border-slate-700 dark:bg-slate-900">
-      <button type="submit" class="rounded border border-slate-300 px-3 text-sm dark:border-slate-700">Cambiar el título</button>
+      <div class="flex gap-2">
+        <input type="text" name="titulo" value="{{ documento.titulo }}" maxlength="200" aria-label="Título" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-lg font-semibold dark:border-slate-700 dark:bg-slate-900">
+        <button type="submit" class="rounded border border-slate-300 px-3 text-sm dark:border-slate-700">Cambiar el título y la descripción</button>
+      </div>
+      <textarea name="descripcion" rows="1" maxlength="300" aria-label="Descripción" placeholder="Descripción: de qué trata, en una o dos frases (opcional; se ve en la lista al pulsar ⓘ)"
+                class="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900">{{ documento.descripcion }}</textarea>
     </form>
+  {% elif documento.descripcion %}
+    <p class="text-sm text-slate-600 dark:text-slate-300">{{ documento.descripcion }}</p>
   {% endif %}
-  {% include "base/_editor.html" %}
+  {% url 'documentos:guardar_version' documento.pk as guardar_version %}
+  {% include "base/_editor.html" with guardar_version=guardar_version %}
   {% if en_vivo.permiso == "escribir" %}<p class="text-xs text-slate-500">¿No conecta? <a href="?sin_directo=1" class="text-marca hover:underline">Escribir sin directo</a> (con el formulario de siempre; avisa a quien esté escribiendo).</p>{% endif %}
   {% if documento.tipo == "acta" %}<p class="text-xs text-slate-500">Cada línea de «Acuerdos alcanzados» puede empezar con [consenso] o [votación 12-3-1]; al aprobar el acta pasan al registro de decisiones.</p>{% endif %}
 </div>

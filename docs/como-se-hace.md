@@ -38,6 +38,14 @@ rápida que explica qué es esa sección y para qué se usa (a veces, con un eje
 
 Si la pantalla principal no cabe, sale una barra de desplazamiento abajo.
 
+### Cambiar el ancho del menú de la izquierda
+
+- Arrastra el borde derecho del menú.
+- Con el teclado: llega al borde con el tabulador y usa las flechas ← y →.
+- Doble clic en el borde: vuelve al ancho de partida.
+
+Se recuerda en ese navegador. Con el menú plegado (☰) no se puede cambiar.
+
 ### Cambiar el tamaño de la letra de la ayuda
 
 Arriba del panel, los botones **−** y **+** achican o agrandan la letra del panel (solo la del panel; la
@@ -326,6 +334,25 @@ Quien tiene la redacción escribe, y lo que escribe cada persona aparece al mome
 nombre en color. Se guarda solo, unos segundos después; arriba pone «En directo». Quien no tiene la
 redacción pulsa «Seguir en directo» en la ficha y lo ve escribirse. Si no conecta, «Escribir sin directo»
 abre el formulario de siempre.
+
+### Guardar una versión con una nota
+
+Mientras escribes, las versiones se guardan solas (una por cada rato de escritura). Si quieres marcar un
+momento, pulsa **💾 Guardar versión** encima del editor, escribe si quieres qué has cambiado («Acuerdos de
+la asamblea», por ejemplo) y pulsa Intro. Lo que escribas después irá a una versión nueva. En la ficha del
+documento, «Versiones» enseña cada una con su fecha, su hora y su nota.
+
+### Si se corta la conexión mientras escribes
+
+Sale un aviso rojo: **no cierres la pestaña**. Puedes seguir escribiendo; se envía solo al volver la
+conexión. Si aun así se cerró, al abrir otra vez el documento sale «Hay texto escrito sin conexión»: ábrelo,
+pulsa «Copiar el texto», pega lo que falte y después «Descartar».
+
+### Poner la descripción de un documento
+
+Al crearlo, rellena «Descripción» (una o dos frases). Para cambiarla, en «Escribir», debajo del título, y
+pulsa «Cambiar el título y la descripción» (en un archivo o un enlace, en su ficha, «Cambiar»). En la lista
+de documentos, pulsa el **ⓘ** junto al nombre para leerla sin abrirlo.
 
 ### Usar una plantilla, una cabecera y pie, fragmentos e imágenes
 

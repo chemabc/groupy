@@ -7,9 +7,18 @@ from django import forms
 from .models import Documento, LimitesDeDocumento
 
 
+# El campo «Descripción» de los formularios de crear y cambiar un documento (texto, archivo o enlace).
+def campo_de_descripcion():
+    return forms.CharField(
+        label="Descripción", max_length=300, required=False,
+        widget=forms.Textarea(attrs={"rows": 2, "maxlength": 300}),
+        help_text="De qué trata, en una o dos frases (opcional). Se ve en la lista de documentos al pulsar ⓘ.",
+    )
+
+
 class FormularioDeDocumentoNuevo(forms.Form):
     """
-    Crear un documento: tipo, título y, si no cuelga de nada, quién lo ve (el grupo se elige antes, arriba
+    Crear un documento: tipo, título, descripción y, si no cuelga de nada, quién lo ve (el grupo se elige antes, arriba
     de la pantalla). Si cuelga de algo (una reunión), toma su grupo y su visibilidad, y ese campo no sale.
     """
 
@@ -18,6 +27,7 @@ class FormularioDeDocumentoNuevo(forms.Form):
         help_text="El acta se crea mejor desde su orden del día, que copia los puntos.",
     )
     titulo = forms.CharField(label="Título", max_length=200, help_text="«Orden del día de la asamblea del jueves».")
+    descripcion = campo_de_descripcion()
     formato = forms.ChoiceField(
         label="Se escribe en", choices=Documento.FORMATOS, initial=Documento.MARKDOWN,
         help_text="Markdown es lo sencillo (## título, - punto, **negrita**). Typst sirve para maquetar a mano. El PDF sale igual de bien con los dos.",
@@ -35,7 +45,7 @@ class FormularioDeDocumentoNuevo(forms.Form):
 
 
 class FormularioDeArchivo(forms.Form):
-    """Subir un archivo: el fichero, su nombre y, si no cuelga de nada, quién lo ve."""
+    """Subir un archivo: el fichero, su nombre, su descripción y, si no cuelga de nada, quién lo ve."""
 
     archivo = forms.FileField(
         label="Archivo",
@@ -43,6 +53,7 @@ class FormularioDeArchivo(forms.Form):
         widget=forms.ClearableFileInput(attrs={"accept": ".pdf,.png,.jpg,.jpeg,.webp,.gif,.odt,.ods,.odp,.odg,.txt,.csv,.md"}),
     )
     titulo = forms.CharField(label="Nombre", max_length=200, required=False, help_text="Cómo se verá en las listas. Si lo dejas vacío, el nombre del archivo.")
+    descripcion = campo_de_descripcion()
     visibilidad = forms.ChoiceField(label="Quién lo ve", help_text="Todo nace privado.")
 
     # Prepara el desplegable de visibilidad (o lo quita, si cuelga de algo y toma su visibilidad).
@@ -62,11 +73,12 @@ class FormularioDeVersion(forms.Form):
 
 class FormularioDeEnlace(forms.Form):
     """
-    Un enlace: su nombre y adónde lleva, a otra web (Drive…) o a otro documento de la plataforma (uno de
-    los dos). También sirve para cambiar el nombre de un archivo (solo_nombre).
+    Un enlace: su nombre, su descripción y adónde lleva, a otra web (Drive…) o a otro documento de la plataforma (uno de
+    los dos). También sirve para cambiar el nombre y la descripción de un archivo (solo_nombre).
     """
 
     titulo = forms.CharField(label="Nombre", max_length=200, required=False, help_text="Cómo se verá en las listas.")
+    descripcion = campo_de_descripcion()
     url = forms.URLField(
         label="Dirección", max_length=1000, required=False, assume_scheme="https",
         help_text="De otra web: «https://drive.google.com/…». Déjala vacía si enlazas un documento de aquí.",

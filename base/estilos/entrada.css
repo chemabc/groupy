@@ -38,6 +38,12 @@
 }
 
 @layer base {
+  /* Ancho del menú izquierdo desplegado (se cambia arrastrando su borde; ver separadorDelMenu en
+     interfaz.js). El script de la cabecera pone el guardado antes de pintar; este es el de partida. */
+  :root {
+    --ancho-del-menu: 15rem;
+  }
+
   /* En modo oscuro, el color de marca un poco más claro para que se lea bien sobre fondo oscuro, y los
      controles del navegador (barras de desplazamiento, casillas) también oscuros. */
   [data-tema="oscuro"] {

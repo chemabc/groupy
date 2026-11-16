@@ -236,3 +236,7 @@ producción, solo el superadmin (`GUIAS_DE_DESARROLLO_PARA_TODOS`). Qué documen
   Django rechazaba las llamadas del editor; ahora el editor dice el motivo real de cada rechazo) y **«Lo que
   puedes hacer»** en documentos (columna «Puedo» con R U D, C arriba, y en la ficha el motivo y a quién pedir
   la redacción). Después, fase 8 (chat, Telegram, bóveda real) y `moderacion`.
+- 16 de noviembre de 2026 ([A-65] a [A-67]): **cursor del editor visible en modo oscuro**, aviso claro para
+  quien solo comenta, **aviso rojo y copia en el navegador sin conexión** (en el editor), **descripción** de
+  cada documento (ⓘ en la lista), **«Guardar versión» con nota** (`VersionDeDocumento.nota` y `fijada`) y
+  **ancho del menú izquierdo** arrastrando su borde (`separadorDelMenu`). Ver docs/diseno.md, 13.5.

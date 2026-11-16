@@ -68,3 +68,28 @@ class PruebasEnElNavegador(PruebaEnElNavegador):
         self.pagina.wait_for_selector("#tabla-pequena")
         self.assertTrue(self.pagina.url.endswith("/componentes/"))
         self.assertEqual(self.errores, [])
+
+    # El borde del menú izquierdo se arrastra para ensancharlo; el ancho se recuerda al recargar, no pasa
+    # del máximo y con doble clic vuelve al de partida. Con el menú plegado, el borde no sale.
+    def test_ancho_del_menu(self):
+        self.abrir("/estructura/")
+        menu = self.pagina.locator("#menu-lateral")
+        borde = self.pagina.get_by_role("separator", name="Ancho del menú")
+        partida = menu.bounding_box()["width"]
+        caja = borde.bounding_box()
+        self.pagina.mouse.move(caja["x"] + 2, caja["y"] + 100)
+        self.pagina.mouse.down()
+        self.pagina.mouse.move(caja["x"] + 102, caja["y"] + 100, steps=5)
+        self.pagina.mouse.up()
+        self.assertAlmostEqual(menu.bounding_box()["width"], partida + 100, delta=3)
+        self.pagina.reload()
+        self.assertAlmostEqual(menu.bounding_box()["width"], partida + 100, delta=3)
+        borde.focus()
+        for _ in range(20):
+            self.pagina.keyboard.press("ArrowRight")
+        self.assertEqual(round(menu.bounding_box()["width"]), 480)
+        borde.dblclick()
+        self.assertAlmostEqual(menu.bounding_box()["width"], partida, delta=1)
+        self.pagina.locator('button[title="Plegar o desplegar el menú"]').click()
+        borde.wait_for(state="hidden")
+        self.assertEqual(self.errores, [])

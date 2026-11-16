@@ -316,7 +316,8 @@ Es un servicio aparte (carpeta `editor/`; ver «Diseño», apartado 13.2, y `edi
     sala y el permiso.
   - El editor no ve la base de datos ni conoce a las personas. Quien no puede escribir entra de solo
     lectura: el servidor descarta sus cambios aunque los mande a mano.
-  - Al reconectar se pide un pase nuevo; si se ha perdido el permiso, ya no se entra.
+  - El pase solo se mira al entrar: una vez dentro, la conexión dura horas sin renovarlo. Al reconectar se
+    pide un pase nuevo; si se ha perdido el permiso, ya no se entra.
   - Al aprobar un acta o al quitar la redacción a alguien, la plataforma pide al editor que cierre la sala.
 - **Riesgo que queda:**
   - Si el editor no recibe ese aviso (caído, red), quien ya está dentro sigue con su permiso hasta que se
@@ -378,6 +379,20 @@ Es un servicio aparte (carpeta `editor/`; ver «Diseño», apartado 13.2, y `edi
   dirección.
 - **Para el futuro:** al poner la CSP (apartado 2.3), permitir solo el script y el WebSocket del editor. O
   servir el cliente desde los estáticos de la plataforma, con su huella (SRI).
+
+### 9.6.1 Copia de lo escrito sin conexión, en el navegador
+- **Qué se hace:**
+  - Mientras no hay conexión con el editor, el texto de quien escribe se guarda en su navegador
+    (`localStorage`), una copia por pestaña, para no perderlo si cierra o recarga la pestaña.
+  - Se borra sola al volver la conexión y quedar todo enviado. Si queda alguna, se ofrece al abrir otra vez
+    ese texto, con «Descartar».
+  - Quien solo lee o comenta no guarda copia.
+- **Riesgo que queda:**
+  - En un ordenador compartido, la copia queda en ese navegador hasta que se vuelve a abrir el texto con
+    conexión o se descarta: otra persona con acceso a ese perfil del navegador podría leerla.
+  - Sobrevive a cerrar la sesión de la plataforma.
+- **Para el futuro:** borrar todas las copias del editor al pulsar «Salir» (si ya no queda nada sin enviar)
+  y cifrarlas con una clave que dé la plataforma en el pase.
 
 ### 9.7 Biblioteca del editor (plantillas, fragmentos, cabeceras y pies, imágenes)
 - **Qué se hace:**

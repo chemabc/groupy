@@ -97,15 +97,16 @@ FINAL_DEL_ACTA = f"""
 #   - ancla: (tipo, número) de aquello de lo que cuelga, o (None, None).
 #   - texto: el texto inicial (si no, el de su tipo).
 #   - formato: «markdown» (de partida) o «typst».
+#   - descripcion: de qué trata, en una o dos frases (opcional).
 @transaction.atomic
-def crear(usuario, tipo, titulo, grupo=None, visibilidad="privado", ancla=(None, None), texto=None, formato=Documento.MARKDOWN):
+def crear(usuario, tipo, titulo, grupo=None, visibilidad="privado", ancla=(None, None), texto=None, formato=Documento.MARKDOWN, descripcion=""):
     grupo, audiencia = _grupo_y_audiencia(usuario, ancla, grupo, visibilidad)
     exigir(usuario, "documentos.crear", grupo=grupo)
     if texto is None:
         texto = _en_formato(ODD_INICIAL if tipo == Documento.ODD else FINAL_DEL_ACTA.lstrip() if tipo == Documento.ACTA else "", formato)
     documento = Documento(
         tipo=tipo, titulo=titulo, grupo=grupo, audiencia=audiencia, ancla_tipo=ancla[0] or "", ancla_id=ancla[1], creador=usuario, texto="",
-        formato=formato,
+        formato=formato, descripcion=descripcion.strip()[:300],
     )
     documento.full_clean()
     documento.save()
@@ -339,11 +340,12 @@ def _guardar_texto(documento, quien, texto, resumen=None):
 
 # Apunta el texto actual en las versiones (función interna). Mientras se sigue escribiendo (menos de
 # VERSION_CADA minutos desde el último cambio de una versión de edición), se pone al día la última; si no,
-# o si hay un motivo («creado», «aprobado», «vuelta a la versión 3»), empieza una nueva.
+# si hay un motivo («creado», «aprobado», «vuelta a la versión 3») o si la última se guardó a mano
+# («Guardar versión»), empieza una nueva.
 #   - autores: los alias de quien escribe.
 def _apuntar_version(documento, autores, motivo=""):
     ultima = documento.versiones.first()
-    seguida = ultima is not None and not motivo and not ultima.motivo and timezone.now() - ultima.cerrada < timedelta(minutes=VERSION_CADA)
+    seguida = ultima is not None and not motivo and not ultima.motivo and not ultima.fijada and timezone.now() - ultima.cerrada < timedelta(minutes=VERSION_CADA)
     if seguida:
         ultima.texto = documento.texto
         ultima.autores = list(dict.fromkeys(ultima.autores + autores))
@@ -399,26 +401,68 @@ def guardar_comentarios_del_editor(numero, comentarios):
 #   - usuario: quien guarda.
 #   - titulo, texto: lo nuevo.
 #   - version: la versión que tenía al abrirlo.
+#   - descripcion: la nueva, o None para no tocarla.
+#   - nota: si se pone, la versión queda guardada a mano con esa nota (ver guardar_version).
 @transaction.atomic
-def guardar(usuario, documento, titulo, texto, version):
+def guardar(usuario, documento, titulo, texto, version, descripcion=None, nota=""):
     documento = Documento.objects.select_for_update().get(pk=documento.pk)
     if not puede_escribir(usuario, documento):
         raise ValidationError("Solo quien tiene la redacción puede escribirlo (y no si ya está aprobado).")
     if int(version) != documento.version:
         raise ValidationError("Otra persona ha guardado cambios mientras escribías. Copia tu texto, recarga la página y vuelve a ponerlo.")
     documento.titulo = titulo
-    _guardar_texto(documento, usuario, texto)
+    if descripcion is not None:
+        documento.descripcion = descripcion.strip()[:300]
+    if texto != documento.texto:
+        _guardar_texto(documento, usuario, texto)
+    else:
+        documento.save(update_fields=["titulo", "descripcion", "actualizado"])
+    if nota.strip():
+        _fijar_version(documento, nota)
     return documento
 
 
-# Cambia solo el título (desde la pantalla del editor en tiempo real, donde el texto se guarda solo).
+# Cambia el título y la descripción (desde la pantalla del editor en tiempo real, donde el texto se guarda
+# solo).
+#   - descripcion: la nueva, o None para no tocarla.
 @transaction.atomic
-def cambiar_titulo(usuario, documento, titulo):
+def cambiar_titulo(usuario, documento, titulo, descripcion=None):
     if not puede_escribir(usuario, documento):
         raise ValidationError("Solo quien tiene la redacción puede cambiarlo (y no si ya está aprobado).")
-    if titulo.strip() and titulo.strip() != documento.titulo:
+    if titulo.strip():
         documento.titulo = titulo.strip()[:200]
-        documento.save(update_fields=["titulo"])
+    if descripcion is not None:
+        documento.descripcion = descripcion.strip()[:300]
+    documento.save(update_fields=["titulo", "descripcion"])
+
+
+# «Guardar versión»: cierra la versión de ahora (con una nota, si se quiere, como el mensaje de un commit) y
+# lo que se escriba después va a una nueva. Desde el editor en tiempo real llega además el texto que ve
+# quien pulsa, porque el editor guarda cada pocos segundos y lo último aún podría no haber llegado. Solo
+# quien tiene la redacción, y si es borrador. Devuelve la versión guardada.
+#   - texto: lo que hay en el editor (o None: el texto ya guardado).
+#   - nota: lo que se cambió, en pocas palabras (opcional).
+@transaction.atomic
+def guardar_version(usuario, documento, texto=None, nota=""):
+    documento = Documento.objects.select_for_update().get(pk=documento.pk)
+    if not puede_escribir(usuario, documento):
+        raise ValidationError("Solo quien tiene la redacción guarda versiones (y no si ya está aprobado).")
+    if texto is not None and len(texto) > 200_000:
+        raise ValidationError("El texto es demasiado largo.")
+    if texto is not None and texto != documento.texto:
+        _guardar_texto(documento, usuario, texto)
+    return _fijar_version(documento, nota)
+
+
+# Marca la última versión como guardada a mano, con su nota (función interna de guardar_version y de
+# guardar). Si ya estaba guardada a mano y no ha cambiado nada, solo pone al día la nota.
+def _fijar_version(documento, nota):
+    ultima = documento.versiones.first()
+    ultima.fijada = True
+    if nota.strip():
+        ultima.nota = nota.strip()[:200]
+    ultima.save(update_fields=["fijada", "nota"])
+    return ultima
 
 
 # ── Editor en tiempo real (ver TextoEditable en documentos/apps.py y base/editor.py) ─────────────────
@@ -662,15 +706,15 @@ def _guardar_version(documento, comprobado, usuario):
 #   - usuario: quien lo sube (necesita «documentos.crear» en el grupo).
 #   - subido: el archivo del formulario.
 #   - titulo: cómo se llamará (si se deja vacío, el nombre del archivo).
-#   - grupo, visibilidad, ancla: como en crear().
+#   - grupo, visibilidad, ancla, descripcion: como en crear().
 @transaction.atomic
-def subir_archivo(usuario, subido, titulo="", grupo=None, visibilidad="privado", ancla=(None, None)):
+def subir_archivo(usuario, subido, titulo="", grupo=None, visibilidad="privado", ancla=(None, None), descripcion=""):
     comprobado = comprobar(subido)
     grupo, audiencia = _grupo_y_audiencia(usuario, ancla, grupo, visibilidad)
     exigir(usuario, "documentos.crear", grupo=grupo)
     documento = Documento(
         tipo=Documento.ARCHIVO, titulo=(titulo or comprobado.nombre)[:200], grupo=grupo, audiencia=audiencia, ancla_tipo=ancla[0] or "",
-        ancla_id=ancla[1], creador=usuario, estado=Documento.APROBADO,
+        ancla_id=ancla[1], creador=usuario, estado=Documento.APROBADO, descripcion=descripcion.strip()[:300],
     )
     documento.full_clean()
     documento.save()
@@ -694,15 +738,16 @@ def nueva_version(usuario, documento, subido):
 #   - titulo: cómo se llamará.
 #   - url: la dirección de fuera, o vacía.
 #   - enlazado: el documento de la plataforma, o None (uno de los dos, no los dos).
-#   - grupo, visibilidad, ancla: como en crear().
+#   - grupo, visibilidad, ancla, descripcion: como en crear().
 @transaction.atomic
-def enlazar(usuario, titulo, url="", enlazado=None, grupo=None, visibilidad="privado", ancla=(None, None)):
+def enlazar(usuario, titulo, url="", enlazado=None, grupo=None, visibilidad="privado", ancla=(None, None), descripcion=""):
     _comprobar_destino(usuario, url, enlazado)
     grupo, audiencia = _grupo_y_audiencia(usuario, ancla, grupo, visibilidad)
     exigir(usuario, "documentos.crear", grupo=grupo)
     documento = Documento(
         tipo=Documento.ENLACE, titulo=titulo or (enlazado.titulo if enlazado else url)[:200], grupo=grupo, audiencia=audiencia,
         ancla_tipo=ancla[0] or "", ancla_id=ancla[1], creador=usuario, url=url, enlazado=enlazado, estado=Documento.APROBADO,
+        descripcion=descripcion.strip()[:300],
     )
     documento.full_clean()
     documento.save()
@@ -725,12 +770,16 @@ def _comprobar_destino(usuario, url, enlazado):
 #   - documento: el archivo o el enlace.
 #   - titulo: el nombre nuevo.
 #   - url, enlazado: el destino nuevo de un enlace (se ignoran en un archivo).
+#   - descripcion: la nueva, o None para no tocarla.
 @transaction.atomic
-def cambiar(usuario, documento, titulo, url="", enlazado=None):
+def cambiar(usuario, documento, titulo, url="", enlazado=None, descripcion=None):
     if not puede_modificar(usuario, documento):
         raise ValidationError("No puedes cambiarlo (o está congelado por una votación abierta).")
     documento.titulo = titulo.strip()[:200] or documento.titulo
     campos = ["titulo", "actualizado"]
+    if descripcion is not None:
+        documento.descripcion = descripcion.strip()[:300]
+        campos.append("descripcion")
     if documento.tipo == Documento.ENLACE:
         _comprobar_destino(usuario, url, enlazado)
         documento.url, documento.enlazado = url, enlazado

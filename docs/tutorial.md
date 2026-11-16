@@ -922,3 +922,25 @@ sirve aquí y dónde se usa.
   ese pase entraba («AUTENTICADO») pero no llegaba a sincronizar; y una petición a `http://app:8000` daba 400.
 - **Una prueba para que no vuelva:** `test_el_editor_llega_por_app` pide el texto con `Host: app:8000`.
 
+
+## 43. Un cursor invisible, una copia por si acaso y un commit en un documento (16 de noviembre de 2026)
+
+- **El cursor invisible.** CodeMirror no usa el cursor del navegador: dibuja el suyo (`.cm-cursor`), de
+  color negro, y pone transparente el de verdad (`caret-color`). Sobre el fondo oscuro no se veía, y
+  parecía que no se podía escribir. Se arregla con CSS: `border-left-color: currentColor`, el color del
+  texto, que ya cambia con el tema. Para encontrarlo se abrió la página en un navegador de pruebas
+  (Playwright), se escribió y se miró el estilo calculado (`getComputedStyle`) del cursor.
+- **Un pase corto no corta una conexión larga.** El pase se comprueba al abrir el WebSocket; después la
+  conexión sigue abierta sin volver a mirarlo. Solo al reconectar hace falta uno nuevo, y se pide solo.
+- **Una copia por pestaña en `localStorage`.** Mientras no hay conexión, se guarda el texto con una clave
+  propia de cada pestaña (`…:copia:<sala>:<hora>-<azar>`): así dos pestañas no se pisan y, al volver a abrir,
+  se pueden ofrecer las que dejaron otras. No se mezclan solas con el texto: Yjs junta bien los cambios de
+  un mismo documento, pero si la sala se rehízo desde la plataforma (volver a una versión), el estado viejo
+  duplicaría trozos. El evento `beforeunload` con `preventDefault()` hace que el navegador pregunte antes
+  de cerrar la pestaña.
+- **«Guardar versión» como un commit.** Una versión tiene `fijada`: si está a `True`, lo siguiente que se
+  guarde abre una nueva. El botón manda también el texto que ve quien pulsa, porque el editor guarda con
+  unos segundos de retraso (`debounce`) y lo último podría no haber llegado a la plataforma.
+- **Una ventanita que no se recorta.** La tabla de documentos puede desplazarse de lado (`overflow`), y eso
+  recorta lo que sobresale. Por eso la ventanita del ⓘ va con `position: fixed`, colocada con las medidas del
+  botón (`getBoundingClientRect`) al abrirse, y se cierra al desplazar la página.

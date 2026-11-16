@@ -73,9 +73,10 @@
 
   <div class="flex min-h-0 flex-1">
     {# Menú izquierdo (solo en pantallas medianas o grandes). No se vuelve a pintar al navegar. #}
-    {# Su anchura depende del atributo data-menu de <html> (variante «plegado:» de entrada.css). #}
-    <nav x-data="menuLateral" @alternar-menu.window="alternarPlegado()" @scroll.debounce.200ms="apuntarDesplazamiento()"
-         class="hidden w-60 shrink-0 plegado:w-14 flex-col gap-0.5 overflow-y-auto border-r border-slate-200 bg-white p-2 md:flex dark:border-slate-800 dark:bg-slate-900"
+    {# Su anchura es la variable --ancho-del-menu (se cambia arrastrando el borde de su derecha) o, si #}
+    {# está plegado, estrecha: depende del atributo data-menu de <html> (variante «plegado:» de entrada.css). #}
+    <nav id="menu-lateral" x-data="menuLateral" @alternar-menu.window="alternarPlegado()" @scroll.debounce.200ms="apuntarDesplazamiento()"
+         class="hidden w-(--ancho-del-menu) shrink-0 plegado:w-14 flex-col gap-0.5 overflow-y-auto border-r border-slate-200 bg-white p-2 md:flex dark:border-slate-800 dark:bg-slate-900"
          aria-label="Secciones">
       {# Un bloque por cada parte del menú (base/disposicion.py): lo propio, sin título; «Administrar» y #}
       {# «Plataforma», con su título y una franja de color a la izquierda, para que se vea siempre si se #}
@@ -90,6 +91,14 @@
         </div>
       {% endfor %}
     </nav>
+    {# Borde del menú: se arrastra con el ratón (o con las flechas del teclado) para cambiar su ancho; #}
+    {# doble clic, vuelve al de partida. Con el menú plegado o en el móvil no sale. #}
+    <div x-data="separadorDelMenu" role="separator" aria-orientation="vertical" aria-label="Ancho del menú" aria-controls="menu-lateral" tabindex="0"
+         title="Arrastra para cambiar el ancho del menú (doble clic: ancho de partida)"
+         class="hidden w-1 shrink-0 cursor-col-resize touch-none bg-slate-100 hover:bg-marca/40 focus:bg-marca/40 focus:outline-none md:block plegado:md:hidden dark:bg-slate-800"
+         :class="arrastrando && 'bg-marca/60'"
+         @pointerdown="empezarAArrastrar($event)" @pointermove="arrastrar($event)" @pointerup="soltar($event)"
+         @dblclick="anchoDePartida()" @keydown.left.prevent="ensanchar(-24)" @keydown.right.prevent="ensanchar(24)"></div>
 
     {# Parte central, la que se desplaza (también de lado, si con el panel de ayuda abierto no cabe). El #}
     {# hueco de abajo deja sitio a la barra del móvil. data-desplaza: aquí se desplaza el contenido (lo #}

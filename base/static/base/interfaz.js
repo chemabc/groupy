@@ -156,6 +156,67 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 
+  // Componente del borde del menú izquierdo (base/templates/base/pagina.html): se arrastra para cambiar el
+  // ancho del menú desplegado, entre ANCHO_MINIMO_DEL_MENU y ANCHO_MAXIMO_DEL_MENU, y se recuerda en el
+  // navegador («menu.ancho»; el script de la cabecera lo aplica antes de pintar). También con las flechas
+  // del teclado sobre el borde; doble clic, vuelve al ancho de partida. El ancho es la variable de CSS
+  // --ancho-del-menu de <html>.
+  Alpine.data("separadorDelMenu", () => ({
+    arrastrando: false,
+
+    // Empieza a arrastrar: desde ahora el ratón (o el dedo) mueve el borde aunque salga de él, y no se
+    // selecciona texto al arrastrar.
+    //   - evento: el «pointerdown» sobre el borde.
+    empezarAArrastrar(evento) {
+      if (evento.button !== 0) return;
+      this.arrastrando = true;
+      evento.target.setPointerCapture(evento.pointerId);
+      document.body.style.userSelect = "none";
+    },
+
+    // Mientras se arrastra: el menú va desde su borde izquierdo hasta donde está el ratón.
+    //   - evento: el «pointermove».
+    arrastrar(evento) {
+      if (!this.arrastrando) return;
+      const menu = document.getElementById("menu-lateral");
+      this.ponerAncho(evento.clientX - menu.getBoundingClientRect().left);
+    },
+
+    // Al soltar: deja de arrastrar y guarda el ancho.
+    soltar(evento) {
+      if (!this.arrastrando) return;
+      this.arrastrando = false;
+      evento.target.releasePointerCapture(evento.pointerId);
+      document.body.style.userSelect = "";
+      guardar("menu.ancho", this.anchoActual());
+    },
+
+    // Ensancha (o estrecha, con un número negativo) el menú unos píxeles y lo guarda. Lo usan las flechas.
+    //   - pixeles: cuánto.
+    ensanchar(pixeles) {
+      this.ponerAncho(this.anchoActual() + pixeles);
+      guardar("menu.ancho", this.anchoActual());
+    },
+
+    // Vuelve al ancho de partida (el de entrada.css) y olvida el guardado.
+    anchoDePartida() {
+      document.documentElement.style.removeProperty("--ancho-del-menu");
+      guardar("menu.ancho", 0);
+    },
+
+    // Ancho actual del menú, en píxeles.
+    anchoActual() {
+      return Math.round(document.getElementById("menu-lateral").getBoundingClientRect().width);
+    },
+
+    // Pone el ancho del menú, sin salir de sus límites.
+    //   - pixeles: el ancho pedido.
+    ponerAncho(pixeles) {
+      const ancho = Math.round(Math.min(Math.max(pixeles, ANCHO_MINIMO_DEL_MENU), ANCHO_MAXIMO_DEL_MENU));
+      document.documentElement.style.setProperty("--ancho-del-menu", `${ancho}px`);
+    },
+  }));
+
   // Componente del panel de ayuda de la derecha (base/templates/base/pagina.html). Abre páginas de ayuda
   // sin dejar la pantalla en la que se está: como está fuera de la zona central, navegar con el menú no lo
   // toca ni lo vuelve a pintar. Recuerda en el navegador si está abierto, qué página tenía y su ancho, y
@@ -975,12 +1036,18 @@ document.addEventListener("alpine:init", () => {
   //   data-cliente (el script del editor), data-url (su WebSocket), data-sala, data-pase, data-alias,
   //   data-color, data-permiso, data-formato, data-renovar (dónde pedir un pase nuevo) y, si hay vista
   //   previa, data-vista-previa (dónde se convierte el texto) y data-destino (el id del recuadro que se
-  //   cambia).
-  // Carga el editor la primera vez, se conecta a la sala y enseña quién está y si hay conexión.
+  //   cambia); y, si se pueden guardar versiones a mano, data-guardar-version (dónde se piden).
+  // Carga el editor la primera vez, se conecta a la sala y enseña quién está y si hay conexión. Con
+  // «Guardar versión», pide una nota opcional y manda el texto que se ve y la nota.
   Alpine.data("editorEnVivo", () => ({
     // Quién está en la sala ([{name, color}]) y el estado de la conexión.
     personas: [],
     estado: "connecting",
+    // «Guardar versión»: si se está escribiendo la nota, la nota, y el mensaje de lo guardado (o del error).
+    pidiendoNota: false,
+    nota: "",
+    mensajeDeVersion: "",
+    errorDeVersion: false,
     // El editor montado (para quitarlo al salir) y el reloj de la vista previa.
     editor: null,
     espera: null,
@@ -1020,6 +1087,25 @@ document.addEventListener("alpine:init", () => {
         const destino = document.getElementById(datos.destino);
         if (respuesta.ok && destino) destino.outerHTML = await respuesta.text();
       }, 500);
+    },
+
+    // «Guardar versión»: manda a data-guardar-version el texto que hay en el editor (el editor guarda cada
+    // pocos segundos y lo último podría no haber llegado) y la nota; enseña lo que responde la plataforma.
+    async guardarVersion() {
+      const datos = this.$root.dataset;
+      const cuerpo = new URLSearchParams({ texto: this.editor.vista.state.doc.toString(), nota: this.nota });
+      const respuesta = await fetch(datos.guardarVersion, {
+        method: "POST",
+        headers: { "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content, Accept: "application/json" },
+        body: cuerpo,
+      });
+      const resultado = await respuesta.json().catch(() => ({ error: "No se ha podido guardar la versión." }));
+      this.errorDeVersion = !respuesta.ok;
+      this.mensajeDeVersion = resultado.mensaje || resultado.error;
+      if (respuesta.ok) {
+        this.nota = "";
+        this.pidiendoNota = false;
+      }
     },
 
     // Al salir de la pantalla: se desconecta.
@@ -1189,6 +1275,10 @@ function htmxListo() {
   if (window.htmx) return Promise.resolve();
   return new Promise((resolver) => document.addEventListener("DOMContentLoaded", resolver, { once: true }));
 }
+
+// Límites del ancho del menú izquierdo desplegado, en píxeles (componente separadorDelMenu).
+const ANCHO_MINIMO_DEL_MENU = 160;
+const ANCHO_MAXIMO_DEL_MENU = 480;
 
 // Tamaños de letra del panel de ayuda, de menor a mayor (1 es el normal). Los botones − y + van de uno a
 // otro. La usa el componente panelDeAyuda.

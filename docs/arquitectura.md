@@ -55,12 +55,12 @@ flowchart LR
     htmx["htmx 2.0<br/>[Librería JS]"]:::libjs
     alpine["Alpine.js 3<br/>[Librería JS]"]:::libjs
     css["Tailwind CSS 4<br/>(estilos compilados)<br/>[Librería JS]"]:::libjs
-    islas["Islas: menú, panel de ayuda, índice,<br/>tabla, copiar, selectores de palabras y de personas,<br/>ordenar, mapa, calendario, kanban, documento,<br/>editor en vivo<br/>[Isla JS]"]:::capabase
+    islas["Islas: menú (y su borde, que cambia el ancho), panel de ayuda, índice,<br/>tabla, copiar, selectores de palabras y de personas,<br/>ordenar, mapa, calendario, kanban, documento,<br/>editor en vivo<br/>[Isla JS]"]:::capabase
     sortable["SortableJS<br/>[Librería JS]"]:::libjs
     fullcal["FullCalendar 6<br/>[Librería JS]"]:::libjs
     leaflet["Leaflet + markercluster<br/>[Librería JS]"]:::libjs
     merm["Mermaid 11 + svg-pan-zoom<br/>[Librería JS]"]:::libjs
-    cliente["cliente del editor: CodeMirror 6 + Yjs<br/>+ proveedor Hocuspocus (/cliente.js)<br/>[Librería JS]"]:::libjs
+    cliente["cliente del editor: CodeMirror 6 + Yjs<br/>+ proveedor Hocuspocus (/cliente.js;<br/>copia sin conexión en localStorage)<br/>[Librería JS]"]:::libjs
     alpine --> islas
     islas --> sortable
     islas --> fullcal
@@ -876,7 +876,9 @@ flowchart LR
 ### 6.23 documentos [Módulo · Funcional]
 
 Órdenes del día, actas y documentos libres en Markdown, con vista previa al momento (htmx), autoría por
-párrafo, registro de cambios que nadie borra, comentarios, redacción (hasta dos personas) y aprobación. Al
+párrafo, registro de cambios que nadie borra, comentarios, redacción (10 personas de partida; límites en
+cascada por plataforma, organización, grupo y documento), aprobación, una **descripción** corta de cada
+documento (ⓘ en la lista) y **versiones** (solas o con «Guardar versión» y una nota). Al
 aprobar un acta, sus acuerdos salen como eventos_sw hacia `decisiones`. Si hay editor en tiempo real, su
 texto se escribe ahí (declara un `TextoEditable`; el puente es `base/editor.py`) y, al aprobarse, se le pide
 cerrar la sala. Y las pantallas de la **biblioteca del editor** («Plantillas de documentos» y «Enciclopedia
@@ -926,6 +928,8 @@ flowchart LR
   bas -- "pases, firmas, cerrar sala" --> edi
   edi -- "/editor/texto/ y /editor/guardado/" --> bas
   isla["isla «bibliotecaDelEditor»<br/>[Isla JS]"]:::libjs
+  vivo["isla «editorEnVivo»<br/>[Isla JS]"]:::libjs
+  vivo -- "/documentos/N/versiones/guardar/<br/>(«Guardar versión» con nota)" --> doc
   doc -- "pase de la biblioteca" --> isla
   isla -- "/biblioteca (con el pase)" --> edi
 ```

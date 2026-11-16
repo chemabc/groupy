@@ -35,6 +35,10 @@ class Documento(models.Model):
 
     tipo = models.CharField("tipo", max_length=10, choices=TIPOS, default=LIBRE, help_text="Orden del día, acta o documento libre.")
     titulo = models.CharField("título", max_length=200, help_text="Cómo se llama: «Acta de la asamblea del 14 de noviembre».")
+    descripcion = models.CharField(
+        "descripción", max_length=300, blank=True,
+        help_text="De qué trata, en una o dos frases. Se ve en la lista de documentos al pulsar ⓘ, sin abrirlo.",
+    )
     texto = models.TextField("texto", blank=True, help_text="El documento, en Markdown (# títulos, - listas, **negrita**…) o en Typst.")
     formato = models.CharField(
         "formato", max_length=10, choices=FORMATOS, default=MARKDOWN,
@@ -254,7 +258,8 @@ class VersionDeDocumento(models.Model):
     Una versión guardada del texto de un documento, para verla después, compararla o volver a ella. No se
     guarda una por cada cambio (el editor en tiempo real guarda cada pocos segundos): mientras se sigue
     escribiendo, la última versión se va poniendo al día; si pasan más de VERSION_CADA minutos sin
-    escribir, o al aprobarse, empieza una nueva.
+    escribir, o al aprobarse, empieza una nueva. También empieza una nueva después de que alguien pulse
+    «Guardar versión» (con una nota, si quiere, como el mensaje de un commit).
     """
 
     documento = models.ForeignKey(Documento, on_delete=models.CASCADE, related_name="versiones", verbose_name="documento", help_text="El documento.")
@@ -264,6 +269,14 @@ class VersionDeDocumento(models.Model):
     empezada = models.DateTimeField("empezada", auto_now_add=True, help_text="Cuándo se empezó a escribir esta versión.")
     cerrada = models.DateTimeField("último cambio", auto_now=True, help_text="Cuándo cambió por última vez.")
     motivo = models.CharField("motivo", max_length=80, blank=True, help_text="«creado», «aprobado», «vuelta a la versión 3»… o vacío (edición).")
+    nota = models.CharField(
+        "nota", max_length=200, blank=True,
+        help_text="Lo que se cambió, en pocas palabras, si quien pulsó «Guardar versión» quiso ponerlo (como el mensaje de un commit).",
+    )
+    fijada = models.BooleanField(
+        "guardada a mano", default=False,
+        help_text="Alguien pulsó «Guardar versión»: queda cerrada y lo que se escriba después va a una versión nueva.",
+    )
 
     class Meta:
         verbose_name = "versión de documento"

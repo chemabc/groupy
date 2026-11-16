@@ -959,3 +959,31 @@ para saber si ya está, busca «ec-seleccion» en `editor/publico/cliente.js`). 
   el cuadro **se ve el cursor** (claro) y al seleccionar, la selección en violeta suave, con el texto legible.
 - [ ] Como **superadmin** (que no tiene la redacción), en ese mismo documento: el aviso dice «No tienes la
   redacción: no puedes escribir, pero sí comentar…», no «Solo lectura».
+
+## 46. Escribir durante horas, descripción, notas de versión y ancho del menú
+
+Antes:
+- Migración nueva de documentos (0.3): `python manage.py showmigrations documentos` debe tener marcada
+  `[X] 0005_descripcion_y_notas_de_version`; si no, `python manage.py migrate`.
+- Clases nuevas (0.2): si `static/generado/estilos.css` no contiene `ancho-del-menu`, `npm run construir`.
+- Cliente del editor (0.8): si `editor/publico/cliente.js` no contiene `ec-sin-conexion`, reinicia el
+  editor (o `npm run construir` dentro de `editor/`). Recarga con Ctrl+F5.
+- [ ] Como **Nutria**, «Participación → Documentos → Nuevo»: sale el campo «Descripción». Crea uno con
+  descripción; en la lista sale **ⓘ** junto al nombre: al pulsarlo, una ventanita con la descripción (se
+  cierra con Escape o pulsando fuera). Los que no tienen descripción, sin ⓘ. Buscar una palabra de la
+  descripción lo encuentra.
+- [ ] En «Escribir», bajo el título, la descripción; «Cambiar el título y la descripción» la guarda. En la
+  ficha sale bajo el título. En un archivo o un enlace, «Cambiar» también la tiene.
+- [ ] En «Escribir» (en directo), escribe algo y pulsa **💾 Guardar versión**: pide «Qué has cambiado
+  (opcional)»; con Intro sale «Guardada la versión N a las HH:MM: «…»». En la ficha, «Versiones» enseña esa
+  versión con su nota; lo que escribas después va a una versión nueva aunque no pasen 10 minutos. Sin
+  directo (`?sin_directo=1`), el cuadro «Nota de la versión» junto a «Guardar» hace lo mismo.
+- [ ] Sin conexión: con el documento abierto en «Escribir», para el editor (`docker compose stop editor`
+  desde tu ordenador, en `.devcontainer`). A los 5 segundos sale el **aviso rojo** «Sin conexión con el
+  editor desde las…». Escribe algo; al intentar cerrar la pestaña, el navegador pregunta. Arranca el editor
+  (`docker compose start editor`): el aviso se va solo y lo escrito llega a la plataforma.
+- [ ] Repite, pero cierra la pestaña antes de arrancar el editor. Al abrir otra vez el documento sale «Hay
+  texto escrito sin conexión»: al desplegarlo, el texto, «Copiar el texto» y «Descartar».
+- [ ] El **menú de la izquierda**: arrastra su borde derecho para ensancharlo o estrecharlo (entre 160 y 480
+  píxeles); al recargar, sigue igual; doble clic en el borde, vuelve al ancho de partida. Con el menú plegado
+  (☰) el borde no sale.

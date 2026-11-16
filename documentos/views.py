@@ -10,7 +10,7 @@ import difflib
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.apps import apps
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -42,7 +42,7 @@ def lista(request):
     permisos = servicios.permisos_en_lista(usuario, documentos)
     filas = [
         {
-            "pk": d.pk, "titulo": d.titulo, "tipo": d.get_tipo_display(), "formato": _formato(d), "cuelga": _cuelga_de(d.ancla_tipo),
+            "pk": d.pk, "titulo": d.titulo, "descripcion": d.descripcion, "tipo": d.get_tipo_display(), "formato": _formato(d), "cuelga": _cuelga_de(d.ancla_tipo),
             "grupo": d.grupo.nombre, "estado": _estado(d), "fecha": timezone.localtime(d.actualizado).date(),
             # Lo que puede hacer quien mira (R U D), su texto para buscar y filtrar, y si puede cambiarlo.
             "permisos": _letras(permisos[d.pk]), "cambia": "Sí" if permisos[d.pk].u else "No", "detalle": permisos[d.pk],
@@ -57,11 +57,11 @@ def lista(request):
         request,
         identificador="documentos",
         columnas=[
-            Columna("titulo", "Nombre", enlace="documentos:documento"), Columna("tipo", "Tipo"), Columna("formato", "Formato"),
+            Columna("titulo", "Nombre", plantilla="documentos/_celda_de_nombre.html"), Columna("tipo", "Tipo"), Columna("formato", "Formato"),
             Columna("cuelga", "Cuelga de"), Columna("grupo", "Grupo"), Columna("estado", "Estado"), Columna("fecha", "Último cambio"),
             Columna("permisos", "Puedo", ordenable=False, plantilla="documentos/_celda_de_permisos.html"),
         ],
-        fuente=FuenteDeLista(filas, campos_de_busqueda=["titulo", "grupo", "formato"]),
+        fuente=FuenteDeLista(filas, campos_de_busqueda=["titulo", "descripcion", "grupo", "formato"]),
         filtros=[
             Filtro("tipo", "Tipo", opciones=opciones_de("tipo")),
             Filtro("formato", "Formato", opciones=opciones_de("formato")),
@@ -157,7 +157,7 @@ def nuevo(request):
         try:
             documento = servicios.crear(
                 usuario, datos["tipo"], datos["titulo"], grupo=grupo, visibilidad=datos.get("visibilidad", "privado"), ancla=ancla,
-                formato=datos["formato"],
+                formato=datos["formato"], descripcion=datos["descripcion"],
             )
         except ValidationError as error:
             formulario.add_error(None, error)
@@ -179,7 +179,8 @@ def subir(request):
         datos = formulario.cleaned_data
         try:
             documento = servicios.subir_archivo(
-                usuario, datos["archivo"], datos["titulo"], grupo=grupo, visibilidad=datos.get("visibilidad", "privado"), ancla=ancla
+                usuario, datos["archivo"], datos["titulo"], grupo=grupo, visibilidad=datos.get("visibilidad", "privado"), ancla=ancla,
+                descripcion=datos["descripcion"],
             )
         except ValidationError as error:
             formulario.add_error("archivo", error)
@@ -203,7 +204,7 @@ def enlazar(request):
         try:
             documento = servicios.enlazar(
                 usuario, datos["titulo"], url=datos["url"], enlazado=datos["documento"], grupo=grupo,
-                visibilidad=datos.get("visibilidad", "privado"), ancla=ancla,
+                visibilidad=datos.get("visibilidad", "privado"), ancla=ancla, descripcion=datos["descripcion"],
             )
         except ValidationError as error:
             formulario.add_error(None, error)
@@ -326,7 +327,7 @@ def _archivo_o_enlace(request, documento, accion):
     cambio = FormularioDeEnlace(
         request.POST if accion == "cambiar" else None, documentos=_para_enlazar(usuario) if documento.tipo == Documento.ENLACE and modifica else Documento.objects.none(),
         visibilidades=None, solo_nombre=documento.tipo == Documento.ARCHIVO,
-        initial={"titulo": documento.titulo, "url": documento.url, "documento": documento.enlazado_id},
+        initial={"titulo": documento.titulo, "descripcion": documento.descripcion, "url": documento.url, "documento": documento.enlazado_id},
     )
     error = ""
     try:
@@ -337,7 +338,9 @@ def _archivo_o_enlace(request, documento, accion):
             return redirect("documentos:documento", documento.pk)
         if accion == "cambiar" and cambio.is_valid():
             datos = cambio.cleaned_data
-            servicios.cambiar(usuario, documento, datos["titulo"], url=datos.get("url", ""), enlazado=datos.get("documento"))
+            servicios.cambiar(
+                usuario, documento, datos["titulo"], url=datos.get("url", ""), enlazado=datos.get("documento"), descripcion=datos["descripcion"],
+            )
             return redirect("documentos:documento", documento.pk)
     except ValidationError as excepcion:
         error = " ".join(excepcion.messages)
@@ -421,8 +424,9 @@ def espacio(request):
 # Si hay editor en tiempo real (base/editor.py), el texto se escribe ahí entre varias personas a la vez y
 # se guarda solo; quien no tiene la redacción lo sigue en directo, de solo lectura.
 #   - GET «sin_directo»: usar el formulario aunque haya editor en tiempo real (si no conecta).
-#   - POST «titulo», «texto» y «version» (la que tenía al abrir, para no pisar a otra persona); con el
-#     editor en tiempo real, solo «titulo».
+#   - POST «titulo», «descripcion», «texto», «version» (la que tenía al abrir, para no pisar a otra persona)
+#     y «nota» (si se pone, la versión queda guardada a mano con ella); con el editor en tiempo real, solo
+#     «titulo» y «descripcion» («Guardar versión» va a guardar_version).
 def escribir(request, pk):
     usuario = request.user
     documento = _documento(usuario, pk)
@@ -432,7 +436,7 @@ def escribir(request, pk):
         error = ""
         if request.method == "POST":
             try:
-                servicios.cambiar_titulo(usuario, documento, request.POST.get("titulo", ""))
+                servicios.cambiar_titulo(usuario, documento, request.POST.get("titulo", ""), request.POST.get("descripcion"))
             except ValidationError as excepcion:
                 error = " ".join(excepcion.messages)
             else:
@@ -442,17 +446,37 @@ def escribir(request, pk):
     if not servicios.puede_escribir(usuario, documento):
         raise SinPermiso("Solo quien tiene la redacción puede escribirlo (y no si ya está aprobado). Puedes comentarlo en su ficha.")
     error = ""
-    titulo, texto, version = documento.titulo, documento.texto, documento.version
+    titulo, descripcion, texto, version = documento.titulo, documento.descripcion, documento.texto, documento.version
     if request.method == "POST":
         titulo, texto, version = request.POST.get("titulo", "").strip() or documento.titulo, request.POST.get("texto", ""), request.POST.get("version", "0")
+        descripcion = request.POST.get("descripcion", "")
         try:
-            servicios.guardar(usuario, documento, titulo, texto, version)
+            servicios.guardar(usuario, documento, titulo, texto, version, descripcion=descripcion, nota=request.POST.get("nota", ""))
         except ValidationError as excepcion:
             error = " ".join(excepcion.messages)
         else:
             return redirect("documentos:documento", documento.pk)
-    contexto = {"documento": documento, "titulo": titulo, "texto": texto, "version": version, "vista": texto_a_html(texto), "error": error}
+    contexto = {
+        "documento": documento, "titulo": titulo, "descripcion": descripcion, "texto": texto, "version": version, "vista": texto_a_html(texto), "error": error,
+    }
     return render(request, "documentos/escribir.html", contexto)
+
+
+# «Guardar versión» desde el editor en tiempo real (botón encima del editor; lo pide la isla «editorEnVivo»):
+# cierra la versión de ahora con la nota, si la hay, y lo que se escriba después va a una nueva. Responde
+# en JSON con el mensaje que se enseña: {"mensaje": …} o {"error": …}.
+#   - POST «texto»: lo que hay en el editor de quien pulsa (el editor guarda cada pocos segundos y lo último
+#     podría no haber llegado); «nota»: lo que se cambió (opcional).
+@require_POST
+def guardar_version(request, pk):
+    documento = _documento(request.user, pk)
+    texto = request.POST.get("texto")
+    try:
+        version = servicios.guardar_version(request.user, documento, texto, request.POST.get("nota", ""))
+    except ValidationError as excepcion:
+        return JsonResponse({"error": " ".join(excepcion.messages)}, status=400)
+    hora = timezone.localtime(version.cerrada).strftime("%H:%M")
+    return JsonResponse({"mensaje": f"Guardada la versión {version.numero} a las {hora}" + (f": «{version.nota}»." if version.nota else ".")})
 
 
 # Vista previa del texto mientras se escribe: devuelve el HTML del Markdown recibido (lo pide htmx desde

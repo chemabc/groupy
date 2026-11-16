@@ -1,0 +1,18 @@
+{% comment %}
+  Celda «Nombre» de la lista de documentos (documentos/views.py, lista): el enlace a la ficha y, si el
+  documento tiene descripción, un botón ⓘ que la enseña en una ventanita (se cierra al pulsar fuera, con
+  Escape o al desplazar la página). La ventanita va «fixed», colocada bajo el botón al abrirse, para que la
+  tabla (que se desplaza de lado en el móvil) no la recorte. Recibe «fila» (con «pk», «titulo» y «descripcion»).
+{% endcomment %}
+<span class="inline-flex items-center gap-1">
+  <a href="{% url 'documentos:documento' fila.pk %}" class="text-marca hover:underline">{{ fila.titulo }}</a>
+  {% if fila.descripcion %}
+    <span x-data="{ abierto: false, arriba: 0, izquierda: 0 }" @click.outside="abierto = false" @keydown.escape.window="abierto = false" @scroll.window="abierto = false">
+      <button type="button" aria-label="Descripción de «{{ fila.titulo }}»" title="Descripción" :aria-expanded="abierto"
+              class="grid size-5 place-items-center rounded-full text-xs text-slate-500 hover:bg-slate-100 hover:text-marca dark:hover:bg-slate-800"
+              @click="const caja = $el.getBoundingClientRect(); arriba = caja.bottom + 4; izquierda = Math.max(8, Math.min(caja.left - 8, window.innerWidth - 328)); abierto = !abierto">ⓘ</button>
+      <span x-show="abierto" x-cloak role="note" :style="`top:${arriba}px;left:${izquierda}px`"
+            class="fixed z-50 block w-80 max-w-[calc(100vw-16px)] whitespace-normal rounded-lg border border-slate-200 bg-white p-2 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">{{ fila.descripcion }}</span>
+    </span>
+  {% endif %}
+</span>

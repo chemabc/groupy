@@ -7,7 +7,7 @@
 {% block contenido %}
 <div class="max-w-5xl space-y-3">
   <p class="text-sm"><a href="{% url 'documentos:documento' documento.pk %}" class="text-marca hover:underline">← {{ documento.titulo }}</a>
-    <span class="text-slate-500">· versión {{ version.numero }} · {{ version.cerrada|date:"d/m/Y H:i" }} · {{ version.autores|join:", " }}{% if version.motivo %} · {{ version.motivo }}{% endif %}</span></p>
+    <span class="text-slate-500">· versión {{ version.numero }} · {{ version.cerrada|date:"d/m/Y H:i" }} · {{ version.autores|join:", " }}{% if version.motivo %} · {{ version.motivo }}{% endif %}{% if version.nota %} · <em>«{{ version.nota }}»</em>{% elif version.fijada %} · guardada a mano{% endif %}</span></p>
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
   {% if vuelve %}
     <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="volver">

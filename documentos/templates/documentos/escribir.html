@@ -1,7 +1,7 @@
 {% extends interfaz.plantilla %}
 {% comment %}
   Pantalla «Escribir» un documento (documentos/views.py, escribir). Recibe «documento», «titulo», «texto»,
-  «version» (la que tenía al abrir), «vista» (el texto ya convertido) y «error». La vista previa de la
+  «version» (la que tenía al abrir), «descripcion», «vista» (el texto ya convertido) y «error». La vista previa de la
   derecha se pone al día mientras se escribe: htmx manda el texto a documentos:vista_previa medio segundo
   después de la última tecla.
 {% endcomment %}
@@ -14,6 +14,8 @@
   </p>
   {% if error %}<p class="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300" role="alert">{{ error }}</p>{% endif %}
   <input type="text" name="titulo" value="{{ titulo }}" maxlength="200" aria-label="Título" class="w-full rounded border border-slate-300 bg-white px-2 py-1 text-lg font-semibold dark:border-slate-700 dark:bg-slate-900">
+  <textarea name="descripcion" rows="2" maxlength="300" aria-label="Descripción" placeholder="Descripción: de qué trata, en una o dos frases (opcional; se ve en la lista al pulsar ⓘ)"
+            class="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900">{{ descripcion }}</textarea>
   <div class="grid gap-3 lg:grid-cols-2">
     <textarea name="texto" rows="24" aria-label="Texto" spellcheck="true"
               hx-post="{% url 'documentos:vista_previa' %}" hx-trigger="input changed delay:500ms" hx-target="#vista-previa" hx-swap="outerHTML"
@@ -21,6 +23,8 @@
     {% include "documentos/_vista_previa.html" %}
   </div>
   <p class="flex flex-wrap items-center gap-3">
+    <input type="text" name="nota" maxlength="200" aria-label="Nota de la versión" placeholder="Nota de la versión: qué has cambiado (opcional)"
+           class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900">
     <button type="submit" class="rounded bg-marca px-3 py-1.5 text-sm font-medium text-white">Guardar</button>
     {% if documento.tipo == "acta" %}<span class="text-xs text-slate-500">Cada línea de «Acuerdos alcanzados» puede empezar con [consenso] o [votación 12-3-1]; al aprobar el acta pasan al registro de decisiones.</span>{% endif %}
   </p>

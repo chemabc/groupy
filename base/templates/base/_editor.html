@@ -2,7 +2,8 @@
   Editor colaborativo en tiempo real (isla «editorEnVivo» de interfaz.js; ver base/editor.py). Recibe
   «en_vivo» (lo que devuelve base.editor.pase: url, cliente, sala, pase, alias, color, permiso, tipo,
   numero, formato, biblioteca) y, si hay vista previa, «vista_previa» (su dirección) y «destino» (el id del recuadro que se
-  cambia). Arriba, quién está en la sala y si hay conexión; debajo, el editor (su barra de formato, el
+  cambia). Si recibe «guardar_version» (una dirección) y la persona escribe, sale «💾 Guardar versión», que
+  pide una nota opcional y cierra la versión de ahora (como un commit). Arriba, quién está en la sala y si hay conexión; debajo, el editor (su barra de formato, el
   texto, los comentarios y la vista Typst los pinta el propio editor).
 {% endcomment %}
 <div x-data="editorEnVivo" class="space-y-1"
@@ -10,7 +11,8 @@
      data-alias="{{ en_vivo.alias }}" data-color="{{ en_vivo.color }}" data-permiso="{{ en_vivo.permiso }}" data-formato="{{ en_vivo.formato }}"
      data-biblioteca="{{ en_vivo.biblioteca|yesno:'1,' }}"
      data-renovar="{% url 'base:editor_pase' %}?sala={{ en_vivo.tipo|urlencode }}:{{ en_vivo.numero }}"
-     {% if vista_previa %}data-vista-previa="{{ vista_previa }}" data-destino="{{ destino }}"{% endif %}>
+     {% if vista_previa %}data-vista-previa="{{ vista_previa }}" data-destino="{{ destino }}"{% endif %}
+     {% if guardar_version and en_vivo.permiso == "escribir" %}data-guardar-version="{{ guardar_version }}"{% endif %}>
   <p class="flex flex-wrap items-center gap-1 text-xs" aria-live="polite">
     <span x-show="estado === 'connected'" class="rounded bg-emerald-100 px-1.5 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">En directo</span>
     <span x-show="estado !== 'connected'" x-cloak class="rounded bg-amber-100 px-1.5 text-amber-900 dark:bg-amber-950 dark:text-amber-200">Conectando…</span>
@@ -19,6 +21,21 @@
     <template x-for="persona in personas" :key="persona.name">
       <span class="rounded-full px-1.5 text-white" :style="`background:${persona.color}`" x-text="persona.name"></span>
     </template>
+    {% if guardar_version and en_vivo.permiso == "escribir" %}
+      <span class="ml-auto inline-flex flex-wrap items-center gap-1">
+        <span x-show="mensajeDeVersion" x-cloak x-text="mensajeDeVersion" :class="errorDeVersion ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'"></span>
+        <button type="button" x-show="!pidiendoNota" :disabled="estado !== 'connected'" @click="pidiendoNota = true; mensajeDeVersion = ''; $nextTick(() => $refs.nota.focus())"
+                title="Cierra la versión de ahora (con una nota, si quieres) y lo que escribas después va a una nueva"
+                class="rounded border border-slate-300 px-2 py-0.5 hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800">💾 Guardar versión</button>
+        <span x-show="pidiendoNota" x-cloak class="inline-flex items-center gap-1">
+          <input type="text" x-ref="nota" x-model="nota" maxlength="200" aria-label="Nota de la versión" placeholder="Qué has cambiado (opcional)"
+                 @keydown.enter.prevent="guardarVersion()" @keydown.escape="pidiendoNota = false"
+                 class="w-64 rounded border border-slate-300 bg-white px-1.5 py-0.5 dark:border-slate-700 dark:bg-slate-900">
+          <button type="button" @click="guardarVersion()" class="rounded bg-marca px-2 py-0.5 text-white">Guardar</button>
+          <button type="button" @click="pidiendoNota = false" class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700">Cancelar</button>
+        </span>
+      </span>
+    {% endif %}
   </p>
   <div x-ref="cuadro" class="editor-en-vivo text-sm"></div>
 </div>
