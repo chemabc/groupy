@@ -188,153 +188,127 @@ python -m playwright install --with-deps chromium
 
 ## 5. Antes de comprobar: todo al día y limpio
 
-Antes de una ronda de comprobaciones a mano (`docs/comprobaciones.md`), estos pasos aseguran que se usa la
-última versión del código, que las librerías están instaladas, que los servicios han arrancado de nuevo
-con ese código y que las dos bases de datos responden. Se hacen en este orden; ninguno borra datos.
+Cada vez que vayas a hacer una ronda de comprobaciones a mano (`docs/comprobaciones.md`), copia y pega estos
+tres bloques, en orden. Así te aseguras de que se usa la última versión del código, de que las librerías
+están instaladas, de que los servicios han arrancado de nuevo con ese código y de que las dos bases de datos
+responden. **Ninguno borra datos.**
 
-### 5.1 ¿Hace falta «Rebuild Container»?
+**¿Hay que reconstruir el contenedor o la bóveda?** Casi nunca. «Rebuild Container» rehace las imágenes y
+lee otra vez `.devcontainer/`: solo hace falta si ha cambiado esa carpeta (el apartado 5.6 dice cómo
+saberlo). **La bóveda no se reconstruye nunca:** es una base de datos del servicio `db`, sus datos viven en un
+volumen que sobrevive a todo, y se pone al día con sus migraciones (las aplica el bloque 3).
 
-**Casi nunca.** Reconstruir el contenedor rehace las **imágenes** (Python, Node, Chromium…) y lee otra vez
-`.devcontainer/`. Solo hace falta si ha cambiado algo de esa carpeta (un servicio nuevo, una variable
-nueva). **La bóveda no se reconstruye:** es una base de datos dentro del servicio `db`, y sus datos viven en
-un volumen (`pgdata`) que sobrevive a reconstruir. Lo que la pone al día son sus migraciones (paso 5.4).
+### 5.1 Bloque 1: reiniciar los servicios (en una terminal de tu ordenador, fuera de VS Code)
 
-Para saber si ha cambiado `.devcontainer/` desde la última vez que reconstruiste (dentro del contenedor):
-
-```bash
-# Lista los commits que han tocado la carpeta del contenedor en los últimos 7 días
-#     --since="7 days ago": solo los recientes (pon la fecha de tu última reconstrucción)
-#     --oneline: un commit por línea
-#     -- .devcontainer: solo los que cambian esa carpeta
-git log --since="7 days ago" --oneline -- .devcontainer
-```
-
-Si sale alguno: en VS Code, `F1` → «Dev Containers: Rebuild Container». Tarda unos minutos; después,
-sigue desde el paso 5.3 (los servicios ya arrancan nuevos).
-
-### 5.2 Reiniciar los servicios (en una terminal de tu ordenador, fuera de VS Code)
-
-El **editor** y el **trabajador** leen su código solo al arrancar: hay que reiniciarlos después de cada
-cambio. Al arrancar, el editor instala lo suyo y vuelve a construir su cliente (`editor/publico/cliente.js`).
+El **editor** y el **trabajador** leen su código solo al arrancar, así que hay que reiniciarlos después de
+cada cambio. Al arrancar, el editor instala lo suyo y vuelve a construir su cliente. `docker` no está dentro
+del contenedor: este bloque va en la terminal de Ubuntu.
 
 ```bash
 # Reinicia el editor y el trabajador (los busca por su nombre)
 #     docker ps -q: solo los identificadores de los contenedores en marcha
-#     -f name=editor / -f name=trabajador: solo los que llevan ese nombre
+#     -f name=editor, -f name=trabajador: solo los que llevan ese nombre
 #     docker restart: los para y los vuelve a arrancar
 docker restart $(docker ps -q -f name=editor) $(docker ps -q -f name=trabajador)
-
-# Comprueba que están todos en marcha: app, editor, trabajador, db, redis y antivirus
-#     --format: solo el nombre y el estado («Up …»; si alguno dice «Restarting», algo falla)
+# Espera 20 segundos a que el editor instale y construya lo suyo
+sleep 20
+# Enseña los servicios: deben salir app, editor, trabajador, db, redis y antivirus, todos con «Up»
+#     --format: solo el nombre y el estado («Restarting» quiere decir que algo falla)
 docker ps --format '{{.Names}}  {{.Status}}'
+```
 
-# Si alguno falla, sus últimos mensajes dicen por qué
-#     --tail 30: solo las 30 últimas líneas
+Si alguno no dice «Up», sus últimos mensajes dicen por qué (cambia `editor` por el nombre del servicio):
+
+```bash
+# Las 30 últimas líneas de lo que ha escrito el servicio
+#     -a: también los parados
+#     --tail 30: solo las últimas 30 líneas
 docker logs --tail 30 $(docker ps -aq -f name=editor)
 ```
 
-### 5.3 Código y librerías al día (en la terminal de VS Code, dentro del contenedor)
+### 5.2 Bloque 2: el servidor (en una terminal de VS Code)
+
+Si ya estaba en marcha, páralo con **Ctrl+C** en su terminal y vuelve a arrancarlo, para que empiece limpio.
+Deja esta terminal abierta mientras compruebas.
 
 ```bash
-# En qué versión está cada repositorio (el último commit) y si hay cambios sin guardar
-#     log -1 --oneline: solo el último commit, en una línea
-#     status --short: lo cambiado y sin guardar, si hay algo
-#     -C editor: lo mismo dentro de la carpeta del editor (es otro repositorio)
-git log -1 --oneline && git status --short
-git -C editor log -1 --oneline && git -C editor status --short
-
-# Librerías de Python (si ya están, solo lo comprueba)
-#     --user: en la carpeta del usuario
-#     -q: sin detalles
-#     -r requirements.txt: las de esa lista
-pip install --user -q -r requirements.txt
-
-# Librerías de la interfaz y ficheros generados (htmx, Alpine y el CSS con las clases nuevas)
-#     install: lee package.json y llena node_modules
-#     run construir: copia htmx y Alpine y compila static/generado/estilos.css
-npm install && npm run construir
-```
-
-### 5.4 Bases de datos al día y funcionando
-
-```bash
-# Pone al día las tablas de la plataforma
-#     migrate: aplica las migraciones que falten (si no falta ninguna, no hace nada)
-python manage.py migrate
-
-# Lo mismo en la base de la bóveda (va aparte)
-#     --database=boveda: aplica solo en esa base
-python manage.py migrate --database=boveda
-
-# Comprueba que el código no tiene cambios de tablas sin migración y que los ajustes están bien
-#     makemigrations --check --dry-run: dice «No changes detected» sin crear nada
-#     check: revisa la configuración de Django
-python manage.py makemigrations --check --dry-run && python manage.py check
-
-# Pregunta a las dos bases y a Redis si responden: escribe «default asambleas», «boveda boveda» y «Redis: True»
-#     shell -c: ejecuta el Python que va entre comillas con Django ya cargado
-python manage.py shell -c "
-from django.db import connections
-import redis
-for nombre in ('default', 'boveda'):
-    with connections[nombre].cursor() as cursor:
-        cursor.execute('select current_database()')
-        print(nombre, cursor.fetchone()[0])
-print('Redis:', redis.Redis(host='redis').ping())
-"
-```
-
-### 5.5 Los demás servicios responden
-
-```bash
-# El editor: escribe «bien»
-#     -s: sin barra de progreso
-curl -s http://editor:1234/salud; echo
-
-# La plataforma vista desde el editor: escribe «403» (la petición llega; falta la firma, y está bien)
-#     -o /dev/null: no enseña la respuesta
-#     -w "%{http_code}": escribe solo el código de la respuesta
-curl -s -o /dev/null -w "%{http_code}\n" "http://app:8000/editor/texto/?sala=x"
-
-# El antivirus: escribe «b'PONG\x00'» (la primera vez tras reconstruir tarda unos minutos)
-#     -c: ejecuta la línea de Python que va entre comillas
-python -c "import socket; s=socket.create_connection(('antivirus',3310),5); s.sendall(b'zPING\0'); print(s.recv(10))"
-
-# El trabajador: escribe 0 (o un número que baja en unos segundos)
-python manage.py shell -c "from eventos_sw.models import AvisoPendiente; print(AvisoPendiente.objects.count())"
-```
-
-### 5.6 Datos de ejemplo y servidor
-
-```bash
-# Crea los datos de ejemplo que falten (no toca lo que ya hay)
-#     ejemplos crear: orden del módulo «ejemplos»
-python manage.py ejemplos crear
-
-# Opcional: si quieres empezar con los datos de ejemplo como recién hechos, bórralos y créalos de nuevo
-#     ejemplos borrar: quita los datos de ejemplo de cada módulo (lo que hayas creado con las personas
-#       de ejemplo puede irse con ellas)
-python manage.py ejemplos borrar && python manage.py ejemplos crear
-
-# Ejecuta las tareas diarias una vez (series, solicitudes caducadas, limpieza)
-#     tareas_diarias: orden del módulo base
-python manage.py tareas_diarias
-```
-
-El **servidor** se reinicia solo al cambiar el código, pero si llevaba tiempo en marcha conviene pararlo
-(Ctrl+C en su terminal) y arrancarlo de nuevo:
-
-```bash
-# Arranca el servidor de desarrollo
-#     runserver: servidor web de Django para desarrollo
+# Va a la carpeta del proyecto y arranca el servidor de desarrollo
+#     runserver: servidor web de Django para desarrollo (se reinicia solo al cambiar el código)
 #     0.0.0.0:8000: escucha en todas las direcciones del contenedor, en el puerto 8000
-python manage.py runserver 0.0.0.0:8000
+cd /workspace && python manage.py runserver 0.0.0.0:8000
 ```
 
-### 5.7 En el navegador
+### 5.3 Bloque 3: todo al día y comprobado (en otra terminal de VS Code)
 
-- Abre http://localhost:8000 y recarga **sin caché**: **Ctrl+F5** (o Ctrl+Mayús+R). Así se cargan el CSS, el
-  JavaScript y el cliente del editor nuevos.
-- Opcional: las pruebas automáticas (`python manage.py test`, unos 7 minutos) deben acabar en `OK`.
+Abre otra terminal (el **+** del panel de terminales) y pega:
 
-Ya puedes empezar por la **Guía rápida de comprobación**, al principio de `docs/comprobaciones.md`.
+```bash
+# Pone todo al día y comprueba que responde; dice ✔ o ✘ en cada paso (tarda un minuto y medio)
+cd /workspace && bash herramientas/al_dia.sh
+```
+
+Tiene que acabar en **«Todo bien»**. Debajo de cada ✘ sale el motivo; la tabla de 5.5 dice qué hacer.
+
+### 5.4 En el navegador
+
+Abre http://localhost:8000 y recarga **sin caché**, con **Ctrl+F5** (o Ctrl+Mayús+R): así se cargan el CSS,
+el JavaScript y el cliente del editor nuevos. Empieza por la **«Guía rápida de comprobación»**, al principio de
+`docs/comprobaciones.md`.
+
+### 5.5 Qué hace `herramientas/al_dia.sh` y qué hacer si un paso falla
+
+Cada línea del script está explicada en el propio fichero. Son estas órdenes (todas dentro del contenedor, en
+`/workspace`):
+
+| Paso | Orden | Si sale ✘ |
+|---|---|---|
+| Versiones | `git log -1` y `git -C editor log -1` | Solo informa. «Cambios sin guardar»: es código sin commit. |
+| Librerías de Python | `pip install --user -q -r requirements.txt` | Lee el motivo (suele ser la red). |
+| Librerías de la interfaz | `npm install` | Ídem. |
+| Interfaz construida | `npm run construir` | Lee el motivo; suele ser un error en una plantilla o en el CSS. |
+| Cliente del editor al día | mira si `editor/src` es más nuevo que `editor/publico/cliente.js` | Repite el bloque 1 (reinicia el editor). |
+| Tablas de la plataforma | `python manage.py migrate` | Lee el motivo y avisa a Claude. |
+| Tablas de la bóveda | `python manage.py migrate --database=boveda` | Ídem. |
+| Sin cambios de tablas pendientes | `python manage.py makemigrations --check --dry-run` | Falta una migración en el código: avisa a Claude. |
+| Configuración de Django | `python manage.py check` | Lee el motivo y avisa a Claude. |
+| Bases y Redis responden | una consulta a cada base y un `ping` a Redis | Repite el bloque 1 o reinicia `db` / `redis` igual que el editor. |
+| Redis guarda en disco | `config_get('appendonly')` | «Rebuild Container» (5.6). |
+| El editor responde | `curl http://editor:1234/salud` → «bien» | Repite el bloque 1 y mira `docker logs` del editor. |
+| La plataforma responde al editor | `curl http://app:8000/editor/texto/?sala=x` → «403» | El servidor no está en marcha (bloque 2). |
+| El antivirus responde | PING a `antivirus:3310` → «PONG» | Tras reconstruir tarda unos minutos; si no, reinícialo como el editor. |
+| El trabajador reparte los avisos | cuenta la bandeja de avisos: 0 o bajando | Repite el bloque 1 (reinicia el trabajador). |
+| Datos de ejemplo | `python manage.py ejemplos crear` | Lee el motivo y avisa a Claude. |
+| Tareas diarias | `python manage.py tareas_diarias` | Ídem. |
+| El servidor está en marcha | `curl http://localhost:8000/` → 200 o 302 | Bloque 2. |
+
+### 5.6 De vez en cuando
+
+**¿Ha cambiado `.devcontainer/`?** Si esta orden (dentro del contenedor) enseña algún commit desde la última
+vez que reconstruiste, en VS Code, `F1` → «Dev Containers: Rebuild Container» y después los bloques 2 y 3.
+
+```bash
+# Los commits de los últimos 7 días que han tocado la carpeta del contenedor
+#     --since="7 days ago": cambia el plazo por el tiempo desde tu última reconstrucción
+#     --oneline: un commit por línea
+#     -- .devcontainer: solo los que cambian esa carpeta
+cd /workspace && git log --since="7 days ago" --oneline -- .devcontainer
+```
+
+**Datos de ejemplo como recién hechos** (las comprobaciones los cambian):
+
+```bash
+# Borra los datos de ejemplo de cada módulo y los crea de nuevo
+#     ejemplos borrar: quita los datos de ejemplo (lo que hayas creado con las personas de ejemplo puede
+#       irse con ellas)
+#     ejemplos crear: los crea de nuevo
+cd /workspace && python manage.py ejemplos borrar && python manage.py ejemplos crear
+```
+
+**Pruebas automáticas** (unos 7 minutos; deben acabar en `OK`):
+
+```bash
+# Pasa todas las pruebas, también las del navegador
+#     test: crea bases de datos temporales, ejecuta las pruebas y las borra al terminar
+#     --noinput: si quedó una base temporal de otra vez, la borra sin preguntar
+cd /workspace && python manage.py test --noinput
+```
