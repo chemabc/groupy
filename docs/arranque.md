@@ -277,6 +277,7 @@ Cada línea del script está explicada en el propio fichero. Son estas órdenes 
 | La plataforma responde al editor | `curl http://app:8000/editor/texto/?sala=x` → «403» | El servidor no está en marcha (bloque 2). |
 | El antivirus responde | PING a `antivirus:3310` → «PONG» | Tras reconstruir tarda unos minutos; si no, reinícialo como el editor. |
 | El trabajador reparte los avisos | cuenta la bandeja de avisos: 0 o bajando | Repite el bloque 1 (reinicia el trabajador). |
+| Sin avisos fallidos | cuenta los avisos que fallaron 5 veces | Arregla la causa (casi siempre, reiniciar el trabajador) y ejecuta la orden que enseña: los vuelve a poner en cola. |
 | Datos de ejemplo | `python manage.py ejemplos crear` | Lee el motivo y avisa a Claude. |
 | Tareas diarias | `python manage.py tareas_diarias` | Ídem. |
 | El servidor está en marcha | `curl http://localhost:8000/` → 200 o 302 | Bloque 2. |

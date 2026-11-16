@@ -133,8 +133,9 @@ paso "La plataforma responde al editor" contiene "403" curl -s -m 5 -o /dev/null
 paso "El antivirus responde" contiene "PONG" python -c "import socket; s=socket.create_connection(('antivirus',3310),5); s.sendall(b'zPING\0'); print(s.recv(10))"
 # El trabajador vacía la bandeja de avisos: se cuentan, se esperan 5 segundos y se cuentan otra vez. Bien si
 # está vacía o si baja.
+# (sin los fallidos: esos ya no se reintentan, los mira el paso siguiente).
 contar_bandeja() {
-  python manage.py shell -c "from eventos_sw.models import AvisoPendiente; print(AvisoPendiente.objects.count())" 2>/dev/null | tail -n 1
+  python manage.py shell -c "from eventos_sw.models import AvisoPendiente; print(AvisoPendiente.objects.filter(fallido=False).count())" 2>/dev/null | tail -n 1
 }
 trabajador() {
   local antes despues
@@ -153,6 +154,18 @@ print(aviso.ultimo_error.strip().splitlines()[-1] if aviso else '(ninguno ha fal
   return 1
 }
 paso "El trabajador reparte los avisos" trabajador
+# Avisos que fallaron 5 veces y ya no se reintentan (por ejemplo, con el trabajador con código viejo). Una
+# vez arreglada la causa, se vuelven a poner en cola con la orden que se enseña.
+fallidos() {
+  local cuantos
+  cuantos=$(python manage.py shell -c "from eventos_sw.models import AvisoPendiente; print(AvisoPendiente.objects.filter(fallido=True).count())" 2>/dev/null | tail -n 1)
+  [ "$cuantos" = "0" ] && return 0
+  echo "Hay $cuantos aviso(s) que fallaron 5 veces y ya no se reintentan. Cuando el trabajador esté reiniciado,"
+  echo "vuelve a ponerlos en cola con:"
+  echo "python manage.py shell -c \"from eventos_sw.models import AvisoPendiente; from django.utils import timezone; AvisoPendiente.objects.filter(fallido=True).update(fallido=False, intentos=0, proximo_intento=timezone.now())\""
+  return 1
+}
+paso "Sin avisos fallidos" fallidos
 
 echo "── Datos ──"
 # ejemplos crear: crea los datos de ejemplo que falten (no toca lo que ya hay)
